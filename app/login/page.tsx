@@ -1,0 +1,110 @@
+"use client";
+
+import { useState } from "react";
+import { signIn, signUp } from "../lib/auth";
+
+type Mode = "signin" | "signup";
+
+export default function LoginPage() {
+  const [mode, setMode] = useState<Mode>("signin");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+    setLoading(true);
+
+    try {
+      if (mode === "signup") {
+        await signUp(email, password, name);
+        setMessage("check your email to confirm your account.");
+      } else {
+        await signIn(email, password);
+        // AuthProvider handles redirect
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="page flex items-center justify-center px-6">
+      <div className="w-full max-w-sm font-mono">
+        <div className="mb-10">
+          <h1 className="page-title">spine</h1>
+          <p className="text-xs text-stone-400 mt-0.5">your reading journal</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === "signup" && (
+            <div>
+              <label className="text-xs text-stone-400 block mb-1">name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="srija"
+                required
+                autoFocus
+                className="underline-input"
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="text-xs text-stone-400 block mb-1">email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+              autoFocus={mode === "signin"}
+              className="underline-input"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-stone-400 block mb-1">password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              className="underline-input"
+            />
+          </div>
+
+          {error && <p className="text-xs text-red-400">{error}</p>}
+          {message && <p className="text-xs text-stone-500">{message}</p>}
+
+          <div className="pt-2 flex items-center gap-4">
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary"
+            >
+              {loading ? "..." : mode === "signin" ? "sign in" : "create account"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setError(""); setMessage(""); }}
+              className="back-link"
+            >
+              {mode === "signin" ? "create account →" : "← sign in"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
