@@ -7,6 +7,12 @@ import BookCard from "../../components/BookCard";
 import { getEntries } from "../../lib/db";
 import type { BookEntry } from "../../types";
 
+function effectiveDate(e: BookEntry): string {
+  if (e.status === "finished" && e.dateFinished) return e.dateFinished;
+  if (e.status === "did-not-finish" && e.dateShelved) return e.dateShelved;
+  return e.dateStarted || e.createdAt;
+}
+
 function monthKey(iso: string) {
   const d = new Date(iso);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -34,7 +40,7 @@ export default function BooksPage() {
   }, [year]);
 
   const grouped = entries.reduce<Record<string, BookEntry[]>>((acc, e) => {
-    const key = monthKey(e.createdAt);
+    const key = monthKey(effectiveDate(e));
     if (!acc[key]) acc[key] = [];
     acc[key].push(e);
     return acc;

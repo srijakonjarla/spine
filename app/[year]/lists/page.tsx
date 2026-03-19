@@ -45,6 +45,7 @@ export default function ListsPage() {
         {/* new list input */}
         <div className="mb-10">
           <input
+            id="new-list-name"
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import HabitGrid from "../../components/HabitGrid";
+import { StatBlock } from "../../components/StatBlock";
 import { getReadingLog, toggleDay } from "../../lib/habits";
 
 export default function HabitsPage() {
@@ -61,24 +62,12 @@ export default function HabitsPage() {
         </div>
 
         <div className="border-t border-stone-200 pt-6 grid grid-cols-3 gap-4">
-          <div>
-            <p className="text-xl font-semibold text-stone-800">{loggedDates.size}</p>
-            <p className="text-xs text-stone-400">days read</p>
-          </div>
-          <div>
-            <p className="text-xl font-semibold text-stone-800">{streak}</p>
-            <p className="text-xs text-stone-400">day streak</p>
-          </div>
-          <div>
-            <p className="text-xl font-semibold text-stone-800">
-              {Math.round(
-                (loggedDates.size /
-                  (year === new Date().getFullYear() ? getDayOfYear() : 365)) *
-                  100
-              )}%
-            </p>
-            <p className="text-xs text-stone-400">of year</p>
-          </div>
+          <StatBlock value={loggedDates.size} label="days read" />
+          <StatBlock value={streak} label="day streak" />
+          <StatBlock
+            value={`${Math.round((loggedDates.size / (year === new Date().getFullYear() ? getDayOfYear() : 365)) * 100)}%`}
+            label="of year"
+          />
         </div>
       </div>
     </div>

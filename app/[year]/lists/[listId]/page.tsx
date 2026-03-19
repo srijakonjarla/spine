@@ -10,7 +10,10 @@ import {
   addListItem,
   updateListItem,
   removeListItem,
+  toggleListBookmark,
 } from "../../../lib/lists";
+import { BookmarkButton } from "../../../components/BookmarkButton";
+import { searchCatalog, findOrCreateCatalogEntry, type CatalogEntry } from "../../../lib/catalog";
 import type { BookList, ListItem } from "../../../types";
 
 interface NewItemDraft {
@@ -20,17 +23,21 @@ interface NewItemDraft {
   notes: string;
 }
 
-const EMPTY_DRAFT: NewItemDraft = { title: "", author: "", releaseDate: "", notes: "" };
+const emptyDraft = (year: string): NewItemDraft => ({ title: "", author: "", releaseDate: `${year}-01-01`, notes: "" });
 
 export default function ListDetailPage() {
   const { year, listId } = useParams<{ year: string; listId: string }>();
   const router = useRouter();
   const [list, setList] = useState<BookList | null>(null);
-  const [draft, setDraft] = useState<NewItemDraft>(EMPTY_DRAFT);
+  const [draft, setDraft] = useState<NewItemDraft>(() => emptyDraft(year));
   const [adding, setAdding] = useState(false);
   const [showDraftForm, setShowDraftForm] = useState(false);
+  const [suggestions, setSuggestions] = useState<CatalogEntry[]>([]);
+  const [suggestionIdx, setSuggestionIdx] = useState(-1);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const itemSaveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     getList(listId).then((l) => {
@@ -47,19 +54,51 @@ export default function ListDetailPage() {
     [listId]
   );
 
+  const handleTitleChange = (value: string) => {
+    setDraft((d) => ({ ...d, title: value }));
+    setSuggestionIdx(-1);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (!value.trim()) { setSuggestions([]); return; }
+    searchTimer.current = setTimeout(async () => {
+      try { setSuggestions(await searchCatalog(value)); } catch { /* ignore */ }
+    }, 250);
+  };
+
+  const handleSelectSuggestion = (s: CatalogEntry) => {
+    setDraft((d) => ({
+      ...d,
+      title: s.title,
+      author: s.author,
+      releaseDate: s.releaseDate || d.releaseDate,
+    }));
+    setSuggestions([]);
+    setSuggestionIdx(-1);
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+    if (suggestions.length > 0) {
+      if (e.key === "ArrowDown") { e.preventDefault(); setSuggestionIdx((i) => Math.min(i + 1, suggestions.length - 1)); return; }
+      if (e.key === "ArrowUp") { e.preventDefault(); setSuggestionIdx((i) => Math.max(i - 1, -1)); return; }
+      if (e.key === "Escape") { setSuggestions([]); setSuggestionIdx(-1); return; }
+      if (e.key === "Enter" && suggestionIdx >= 0) { e.preventDefault(); handleSelectSuggestion(suggestions[suggestionIdx]); return; }
+    }
+    if (e.key === "Enter") { e.preventDefault(); handleAddItem(); }
+  };
+
   const handleAddItem = async () => {
     const title = draft.title.trim();
     if (!title || adding) return;
     setAdding(true);
     try {
+      const catalog = await findOrCreateCatalogEntry(title, draft.author.trim(), draft.releaseDate.trim() || undefined);
       const item = await addListItem(listId, {
-        title,
-        author: draft.author.trim(),
+        catalogId: catalog.id,
         releaseDate: draft.releaseDate.trim(),
         notes: draft.notes.trim(),
       });
       setList((prev) => prev ? { ...prev, items: [...prev.items, item] } : prev);
-      setDraft(EMPTY_DRAFT);
+      setDraft(emptyDraft(year));
+      setSuggestions([]);
       setShowDraftForm(false);
     } catch (err) {
       console.error(err);
@@ -68,12 +107,16 @@ export default function ListDetailPage() {
     }
   };
 
-  const handleUpdateItem = (id: string, patch: Partial<ListItem>) => {
+  const handleUpdateItem = (id: string, patch: { releaseDate?: string; notes?: string }) => {
     setList((prev) =>
       prev ? { ...prev, items: prev.items.map((i) => i.id === id ? { ...i, ...patch } : i) } : prev
     );
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => updateListItem(id, patch), 600);
+    const existing = itemSaveTimers.current.get(id);
+    if (existing) clearTimeout(existing);
+    itemSaveTimers.current.set(id, setTimeout(() => {
+      updateListItem(id, patch);
+      itemSaveTimers.current.delete(id);
+    }, 600));
   };
 
   const handleRemoveItem = async (id: string) => {
@@ -91,14 +134,24 @@ export default function ListDetailPage() {
   return (
     <div className="page">
       <div className="page-content">
-        <div className="mb-8">
+        <div className="mb-8 flex items-center justify-between">
           <Link href={`/${year}/lists`} className="back-link">
             ← lists
           </Link>
+          <BookmarkButton
+            bookmarked={list.bookmarked}
+            onToggle={async () => {
+              const next = !list.bookmarked;
+              setList((prev) => prev ? { ...prev, bookmarked: next } : prev);
+              await toggleListBookmark(listId, next);
+            }}
+            size="sm"
+          />
         </div>
 
         {/* title */}
         <input
+          id="list-title"
           type="text"
           value={list.title}
           onChange={(e) => {
@@ -107,11 +160,12 @@ export default function ListDetailPage() {
             saveListField({ title });
           }}
           placeholder="list title"
-          className="w-full text-lg font-semibold text-stone-900 bg-transparent border-none outline-none placeholder:text-stone-300 mb-1"
+          className="w-full text-lg font-semibold text-stone-900 bg-transparent border-none outline-none placeholder:text-stone-300 mb-1 lowercase"
         />
 
         {/* description */}
         <input
+          id="list-description"
           type="text"
           value={list.description}
           onChange={(e) => {
@@ -132,44 +186,34 @@ export default function ListDetailPage() {
             <div key={item.id} className="group flex gap-3">
               <span className="text-xs text-stone-300 shrink-0 mt-0.5">{i + 1}.</span>
               <div className="flex-1 min-w-0 border-b border-stone-100 pb-3">
-                <input
-                  type="text"
-                  value={item.title}
-                  onChange={(e) => handleUpdateItem(item.id, { title: e.target.value })}
-                  placeholder="title"
-                  className="w-full text-sm text-stone-800 bg-transparent border-none outline-none placeholder:text-stone-300 font-medium"
-                />
+                <p className="text-sm text-stone-800 font-medium lowercase">{item.title}</p>
                 <div className="flex gap-3 mt-0.5">
+                  {item.author && (
+                    <p className="flex-1 text-xs text-stone-500 lowercase truncate">{item.author}</p>
+                  )}
                   <input
-                    type="text"
-                    value={item.author}
-                    onChange={(e) => handleUpdateItem(item.id, { author: e.target.value })}
-                    placeholder="author"
-                    className="flex-1 text-xs text-stone-500 bg-transparent border-none outline-none placeholder:text-stone-200"
-                  />
-                  <input
-                    type="text"
+                    id={`item-release-date-${item.id}`}
+                    type="date"
                     value={item.releaseDate}
                     onChange={(e) => handleUpdateItem(item.id, { releaseDate: e.target.value })}
-                    placeholder="release date"
-                    className="w-28 text-xs text-stone-500 bg-transparent border-none outline-none placeholder:text-stone-200 text-right"
+                    className="text-xs text-stone-500 bg-transparent border-none outline-none lowercase"
                   />
                 </div>
-                {(item.notes !== undefined) && (
-                  <input
-                    type="text"
-                    value={item.notes}
-                    onChange={(e) => handleUpdateItem(item.id, { notes: e.target.value })}
-                    placeholder="notes"
-                    className="w-full text-xs text-stone-400 italic bg-transparent border-none outline-none placeholder:text-stone-200 mt-0.5"
-                  />
-                )}
+                <input
+                  id={`item-notes-${item.id}`}
+                  type="text"
+                  value={item.notes}
+                  onChange={(e) => handleUpdateItem(item.id, { notes: e.target.value })}
+                  placeholder="notes"
+                  className="w-full text-xs text-stone-400 italic bg-transparent border-none outline-none placeholder:text-stone-200 mt-0.5"
+                />
               </div>
               <button
                 onClick={() => handleRemoveItem(item.id)}
-                className="text-xs text-stone-200 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0 mt-0.5"
+                className="text-xs text-red-300 hover:text-red-500 transition-colors shrink-0 mt-0.5"
+                title="delete entry"
               >
-                ×
+                delete
               </button>
             </div>
           ))}
@@ -178,35 +222,55 @@ export default function ListDetailPage() {
         {/* add entry */}
         {showDraftForm ? (
           <div className="border border-stone-200 rounded-lg p-4 mb-8 space-y-2">
-            <input
-              ref={titleInputRef}
-              type="text"
-              value={draft.title}
-              onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
-              onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
-              placeholder="book title"
-              autoFocus
-              className="w-full text-sm text-stone-800 bg-transparent border-none outline-none placeholder:text-stone-300 font-medium"
-            />
+            <div className="relative">
+              <input
+                id="draft-title"
+                ref={titleInputRef}
+                type="text"
+                value={draft.title}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                onKeyDown={handleTitleKeyDown}
+                onBlur={() => setTimeout(() => setSuggestions([]), 150)}
+                placeholder="book title"
+                autoFocus
+                className="w-full text-sm text-stone-800 bg-transparent border-none outline-none placeholder:text-stone-300 font-medium lowercase"
+              />
+              {suggestions.length > 0 && (
+                <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-stone-200 rounded-lg shadow-sm overflow-hidden z-10">
+                  {suggestions.map((s, i) => (
+                    <button
+                      key={s.id}
+                      onMouseDown={() => handleSelectSuggestion(s)}
+                      className={`w-full text-left px-3 py-2 flex items-baseline gap-3 transition-colors ${i === suggestionIdx ? "bg-stone-50" : "hover:bg-stone-50"}`}
+                    >
+                      <span className="text-sm text-stone-800 truncate">{s.title}</span>
+                      {s.author && <span className="text-xs text-stone-400 shrink-0">{s.author}</span>}
+                      {s.releaseDate && <span className="text-xs text-stone-300 shrink-0 ml-auto">{s.releaseDate}</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="flex gap-3">
               <input
+                id="draft-author"
                 type="text"
                 value={draft.author}
                 onChange={(e) => setDraft((d) => ({ ...d, author: e.target.value }))}
                 onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
                 placeholder="author"
-                className="flex-1 text-xs text-stone-500 bg-transparent border-none outline-none placeholder:text-stone-300"
+                className="flex-1 text-xs text-stone-500 bg-transparent border-none outline-none placeholder:text-stone-300 lowercase"
               />
               <input
-                type="text"
+                id="draft-release-date"
+                type="date"
                 value={draft.releaseDate}
                 onChange={(e) => setDraft((d) => ({ ...d, releaseDate: e.target.value }))}
-                onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
-                placeholder="release date (optional)"
-                className="w-36 text-xs text-stone-500 bg-transparent border-none outline-none placeholder:text-stone-300 text-right"
+                className="text-xs text-stone-500 bg-transparent border-none outline-none lowercase"
               />
             </div>
             <input
+              id="draft-notes"
               type="text"
               value={draft.notes}
               onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
@@ -223,7 +287,7 @@ export default function ListDetailPage() {
                 add entry ↵
               </button>
               <button
-                onClick={() => { setDraft(EMPTY_DRAFT); setShowDraftForm(false); }}
+                onClick={() => { setDraft(emptyDraft(year)); setSuggestions([]); setShowDraftForm(false); }}
                 className="text-xs text-stone-300 hover:text-stone-500 transition-colors"
               >
                 cancel

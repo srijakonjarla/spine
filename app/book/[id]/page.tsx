@@ -9,8 +9,11 @@ import {
   deleteEntry,
   addThought,
   removeThought,
+  startNewRead,
+  deleteBookRead,
 } from "../../lib/db";
-import type { BookEntry, ReadingStatus, Thought } from "../../types";
+import { BookmarkButton } from "../../components/BookmarkButton";
+import type { BookEntry, BookRead, ReadingStatus, Thought } from "../../types";
 
 const statuses: { value: ReadingStatus; label: string }[] = [
   { value: "reading", label: "reading" },
@@ -18,6 +21,16 @@ const statuses: { value: ReadingStatus; label: string }[] = [
   { value: "did-not-finish", label: "did not finish" },
   { value: "want-to-read", label: "want to read" },
 ];
+
+function formatReadRange(read: { dateStarted: string; dateFinished: string; dateShelved: string }) {
+  const start = read.dateStarted ? new Date(read.dateStarted).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "?";
+  const end = read.dateFinished
+    ? new Date(read.dateFinished).toLocaleDateString("en-US", { month: "short", year: "numeric" })
+    : read.dateShelved
+    ? new Date(read.dateShelved).toLocaleDateString("en-US", { month: "short", year: "numeric" })
+    : null;
+  return end && end !== start ? `${start} – ${end}` : start;
+}
 
 function formatThoughtTime(iso: string) {
   const d = new Date(iso);
@@ -39,6 +52,7 @@ export default function BookPage() {
   const [entry, setEntry] = useState<BookEntry | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [thoughtInput, setThoughtInput] = useState("");
+  const [rereadLoading, setRereadLoading] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingPatch = useRef<Partial<BookEntry>>({});
   const feelingRef = useRef<HTMLTextAreaElement | null>(null);
@@ -118,6 +132,24 @@ export default function BookPage() {
     update(patch);
   };
 
+  const handleReread = async () => {
+    if (!entry || rereadLoading) return;
+    setRereadLoading(true);
+    try {
+      await startNewRead(entry);
+      const refreshed = await getEntry(id);
+      if (refreshed) setEntry(refreshed);
+    } finally {
+      setRereadLoading(false);
+    }
+  };
+
+  const handleDeleteRead = async (readId: string) => {
+    if (!entry) return;
+    await deleteBookRead(readId);
+    setEntry((prev) => prev ? { ...prev, reads: prev.reads.filter((r) => r.id !== readId) } : prev);
+  };
+
   if (!entry) return (
     <div className="page">
       <div className="max-w-3xl mx-auto px-6 py-10 animate-pulse">
@@ -142,27 +174,35 @@ export default function BookPage() {
           <Link href="/" className="text-sm text-stone-400 hover:text-stone-700 transition-colors">
             ← shelf
           </Link>
-          <span className="text-xs text-stone-300">
-            {saveState === "saving" ? "saving..." : saveState === "saved" ? "saved" : ""}
-          </span>
+          <div className="flex items-center gap-4">
+            <BookmarkButton
+              bookmarked={entry.bookmarked}
+              onToggle={() => update({ bookmarked: !entry.bookmarked })}
+            />
+            <span className="text-xs text-stone-300">
+              {saveState === "saving" ? "saving..." : saveState === "saved" ? "saved" : ""}
+            </span>
+          </div>
         </div>
 
         {/* title */}
         <input
+          id="book-title"
           type="text"
           value={entry.title}
           onChange={(e) => update({ title: e.target.value })}
           placeholder="book title"
-          className="w-full text-2xl font-semibold text-stone-900 bg-transparent border-none outline-none placeholder:text-stone-300 mb-1"
+          className="w-full text-2xl font-semibold text-stone-900 bg-transparent border-none outline-none placeholder:text-stone-300 mb-1 lowercase"
         />
 
         {/* author */}
         <input
+          id="book-author"
           type="text"
           value={entry.author}
           onChange={(e) => update({ author: e.target.value })}
           placeholder="author"
-          className="w-full text-sm text-stone-400 bg-transparent border-none outline-none placeholder:text-stone-300 mb-6"
+          className="w-full text-sm text-stone-400 bg-transparent border-none outline-none placeholder:text-stone-300 mb-6 lowercase"
         />
 
         {/* status pills */}
@@ -187,6 +227,7 @@ export default function BookPage() {
           <div className="flex items-center gap-1.5 text-stone-400">
             <span className="text-xs">started</span>
             <input
+              id="date-started"
               type="date"
               value={entry.dateStarted}
               onChange={(e) => update({ dateStarted: e.target.value })}
@@ -197,6 +238,7 @@ export default function BookPage() {
             <div className="flex items-center gap-1.5 text-stone-400">
               <span className="text-xs">finished</span>
               <input
+                id="date-finished"
                 type="date"
                 value={entry.dateFinished}
                 onChange={(e) => update({ dateFinished: e.target.value })}
@@ -208,6 +250,7 @@ export default function BookPage() {
             <div className="flex items-center gap-1.5 text-stone-400">
               <span className="text-xs">shelved</span>
               <input
+                id="date-shelved"
                 type="date"
                 value={entry.dateShelved}
                 onChange={(e) => update({ dateShelved: e.target.value })}
@@ -241,6 +284,62 @@ export default function BookPage() {
             rows={1}
             className="w-full text-sm italic text-stone-500 bg-transparent border-none outline-none resize-none placeholder:text-stone-300 mb-6 leading-relaxed overflow-hidden"
           />
+        )}
+
+        {/* re-read button */}
+        {(entry.status === "finished" || entry.status === "did-not-finish") && (
+          <div className="mb-6">
+            <button
+              onClick={handleReread}
+              disabled={rereadLoading}
+              className="text-xs text-stone-400 hover:text-stone-700 transition-colors disabled:opacity-50"
+            >
+              {rereadLoading ? "starting..." : "↺ re-read"}
+            </button>
+          </div>
+        )}
+
+        {/* past reads */}
+        {entry.reads.length > 0 && (
+          <div className="mb-6">
+            <p className="section-label mb-3">read history</p>
+            <div className="space-y-3">
+              {/* current read */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-stone-500">{formatReadRange(entry)}</span>
+                <span className="text-xs text-stone-300">·</span>
+                <span className="text-xs text-stone-400 capitalize">{entry.status.replace(/-/g, " ")}</span>
+                {entry.rating > 0 && (
+                  <span className="text-xs text-amber-400">{"★".repeat(entry.rating)}</span>
+                )}
+                <span className="text-xs text-emerald-500">← current</span>
+              </div>
+              {/* archived past reads, most recent first */}
+              {[...entry.reads].reverse().map((read) => (
+                <div key={read.id} className="group flex items-start justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-stone-500">{formatReadRange(read)}</span>
+                      <span className="text-xs text-stone-300">·</span>
+                      <span className="text-xs text-stone-400 capitalize">{read.status.replace(/-/g, " ")}</span>
+                      {read.rating > 0 && (
+                        <span className="text-xs text-amber-400">{"★".repeat(read.rating)}</span>
+                      )}
+                    </div>
+                    {read.feeling && (
+                      <p className="text-xs text-stone-400 italic mt-0.5">{read.feeling}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleDeleteRead(read.id)}
+                    className="text-xs text-stone-200 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                  >
+                    delete
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         <hr className="border-stone-200 mb-6" />
@@ -304,7 +403,7 @@ export default function BookPage() {
           <button
             onClick={async () => {
               await deleteEntry(entry.id);
-              router.push("/");
+              router.back();
             }}
             className="btn-delete"
           >

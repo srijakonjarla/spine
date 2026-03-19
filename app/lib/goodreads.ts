@@ -103,6 +103,7 @@ export function parseGoodreadsCSV(text: string): GoodreadsPreview[] {
       rating,
       feeling: row["My Review"] ?? "",
       thoughts: [],
+      reads: [],
       createdAt: dateAdded ? `${dateAdded}T00:00:00.000Z` : now,
       updatedAt: dateAdded ? `${dateAdded}T00:00:00.000Z` : now,
     };

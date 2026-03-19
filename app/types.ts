@@ -6,6 +6,19 @@ export interface Thought {
   createdAt: string;
 }
 
+export interface BookRead {
+  id: string;
+  bookId: string;
+  status: ReadingStatus;
+  dateStarted: string;
+  dateFinished: string;
+  dateShelved: string;
+  rating: number;
+  feeling: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface BookEntry {
   id: string;
   title: string;
@@ -17,6 +30,8 @@ export interface BookEntry {
   rating: number;
   feeling: string;
   thoughts: Thought[];
+  reads: BookRead[];
+  bookmarked: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -24,8 +39,9 @@ export interface BookEntry {
 export interface ListItem {
   id: string;
   listId: string;
-  title: string;
-  author: string;
+  catalogId: string;
+  title: string;   // from book_catalog join
+  author: string;  // from book_catalog join
   releaseDate: string;
   notes: string;
   sortOrder: number;
@@ -39,6 +55,7 @@ export interface BookList {
   description: string;
   sortOrder: number;
   items: ListItem[];
+  bookmarked: boolean;
   createdAt: string;
   updatedAt: string;
 }

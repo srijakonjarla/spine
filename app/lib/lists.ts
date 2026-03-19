@@ -15,20 +15,21 @@ interface ListRow {
 interface ListItemRow {
   id: string;
   list_id: string;
-  title: string;
-  author: string;
+  catalog_id: string;
   release_date: string;
   notes: string;
   sort_order: number;
   created_at: string;
+  book_catalog: { title: string; author: string } | null;
 }
 
 function mapItem(row: ListItemRow): ListItem {
   return {
     id: row.id,
     listId: row.list_id,
-    title: row.title,
-    author: row.author,
+    catalogId: row.catalog_id,
+    title: row.book_catalog?.title ?? "",
+    author: row.book_catalog?.author ?? "",
     releaseDate: row.release_date,
     notes: row.notes,
     sortOrder: row.sort_order,
@@ -46,15 +47,21 @@ function mapList(row: ListRow): BookList {
     items: (row.list_items ?? [])
       .map(mapItem)
       .sort((a, b) => a.sortOrder - b.sortOrder),
+    bookmarked: (row as any).bookmarked ?? false,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
 
+export async function toggleListBookmark(id: string, bookmarked: boolean): Promise<void> {
+  const { error } = await supabase.from("lists").update({ bookmarked }).eq("id", id);
+  if (error) throw error;
+}
+
 export async function getLists(year: number): Promise<BookList[]> {
   const { data, error } = await supabase
     .from("lists")
-    .select("*, list_items(*)")
+    .select("*, list_items(*, book_catalog(title, author))")
     .eq("year", year)
     .order("sort_order", { ascending: true });
   if (error) throw error;
@@ -64,7 +71,7 @@ export async function getLists(year: number): Promise<BookList[]> {
 export async function getList(id: string): Promise<BookList | null> {
   const { data, error } = await supabase
     .from("lists")
-    .select("*, list_items(*)")
+    .select("*, list_items(*, book_catalog(title, author))")
     .eq("id", id)
     .single();
   if (error) return null;
@@ -75,7 +82,7 @@ export async function createList(year: number, title: string): Promise<BookList>
   const { data, error } = await supabase
     .from("lists")
     .insert({ year, title })
-    .select("*, list_items(*)")
+    .select("*, list_items(*, book_catalog(title, author))")
     .single();
   if (error) throw error;
   return mapList(data as ListRow);
@@ -99,18 +106,17 @@ export async function deleteList(id: string): Promise<void> {
 
 export async function addListItem(
   listId: string,
-  fields: { title: string; author?: string; releaseDate?: string; notes?: string }
+  fields: { catalogId: string; releaseDate?: string; notes?: string }
 ): Promise<ListItem> {
   const { data, error } = await supabase
     .from("list_items")
     .insert({
       list_id: listId,
-      title: fields.title,
-      author: fields.author ?? "",
+      catalog_id: fields.catalogId,
       release_date: fields.releaseDate ?? "",
       notes: fields.notes ?? "",
     })
-    .select()
+    .select("*, book_catalog(title, author)")
     .single();
   if (error) throw error;
   await supabase
@@ -122,13 +128,12 @@ export async function addListItem(
 
 export async function updateListItem(
   id: string,
-  patch: { title?: string; author?: string; releaseDate?: string; notes?: string }
+  patch: { releaseDate?: string; notes?: string }
 ): Promise<void> {
   const row: Record<string, string> = {};
-  if (patch.title !== undefined) row.title = patch.title;
-  if (patch.author !== undefined) row.author = patch.author;
   if (patch.releaseDate !== undefined) row.release_date = patch.releaseDate;
   if (patch.notes !== undefined) row.notes = patch.notes;
+  if (Object.keys(row).length === 0) return;
   const { error } = await supabase.from("list_items").update(row).eq("id", id);
   if (error) throw error;
 }
