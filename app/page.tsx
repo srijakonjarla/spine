@@ -95,6 +95,7 @@ export default function Home() {
       id: crypto.randomUUID(),
       title,
       author: catalog?.author ?? "",
+      genres: catalog?.genres ?? [],
       status: "reading",
       dateStarted: now.toISOString().split("T")[0],
       dateFinished: "",
@@ -136,7 +137,7 @@ export default function Home() {
             <h1 className="text-lg font-semibold tracking-tight text-stone-900">spine</h1>
             {user && <p className="text-xs text-stone-400 mt-0.5">welcome back, {getDisplayName(user)}</p>}
           </div>
-          <button onClick={() => signOut()} className="text-xs text-stone-300 hover:text-stone-600 transition-colors mt-1">
+          <button onClick={() => signOut()} className="lg:hidden text-xs text-stone-300 hover:text-stone-600 transition-colors mt-1">
             sign out
           </button>
         </div>

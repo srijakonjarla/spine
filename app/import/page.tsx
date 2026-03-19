@@ -58,7 +58,7 @@ export default function ImportPage() {
     let done = 0;
     for (const { entry } of previews) {
       try {
-        const catalogEntry = await findOrCreateCatalogEntry(entry.title, entry.author);
+        const catalogEntry = await findOrCreateCatalogEntry(entry.title, entry.author, undefined, entry.genres);
         const existing = await getBookByCatalogId(catalogEntry.id);
 
         if (!existing) {

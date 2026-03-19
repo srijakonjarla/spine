@@ -46,6 +46,54 @@ function formatThoughtTime(iso: string) {
   );
 }
 
+function GenreTags({ genres, onChange }: { genres: string[]; onChange: (g: string[]) => void }) {
+  const [adding, setAdding] = useState(false);
+  const [input, setInput] = useState("");
+
+  const commit = () => {
+    const val = input.trim().toLowerCase();
+    if (val && !genres.includes(val)) onChange([...genres, val]);
+    setInput("");
+    setAdding(false);
+  };
+
+  return (
+    <div className="flex flex-wrap gap-1.5 mb-5">
+      {genres.map((g) => (
+        <button
+          key={g}
+          onClick={() => onChange(genres.filter((x) => x !== g))}
+          className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-500 hover:bg-red-50 hover:text-red-400 transition-colors"
+        >
+          {g} ×
+        </button>
+      ))}
+      {adding ? (
+        <input
+          autoFocus
+          id="genre-input"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") { e.preventDefault(); commit(); }
+            if (e.key === "Escape") { setInput(""); setAdding(false); }
+          }}
+          onBlur={commit}
+          placeholder="genre..."
+          className="text-xs px-2 py-0.5 rounded-full border border-stone-300 outline-none bg-transparent text-stone-600 placeholder:text-stone-300 w-20"
+        />
+      ) : (
+        <button
+          onClick={() => setAdding(true)}
+          className="text-xs px-2 py-0.5 rounded-full border border-dashed border-stone-200 text-stone-300 hover:text-stone-500 hover:border-stone-400 transition-colors"
+        >
+          + genre
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function BookPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -202,7 +250,13 @@ export default function BookPage() {
           value={entry.author}
           onChange={(e) => update({ author: e.target.value })}
           placeholder="author"
-          className="w-full text-sm text-stone-400 bg-transparent border-none outline-none placeholder:text-stone-300 mb-6 lowercase"
+          className="w-full text-sm text-stone-400 bg-transparent border-none outline-none placeholder:text-stone-300 mb-4 lowercase"
+        />
+
+        {/* genres */}
+        <GenreTags
+          genres={entry.genres}
+          onChange={(genres) => update({ genres })}
         />
 
         {/* status pills */}

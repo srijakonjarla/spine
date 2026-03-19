@@ -67,6 +67,13 @@ export default function YearPage() {
             <span className="dot-leader" />
             <span className="text-xs text-stone-400">{stats ? `${stats.days} days` : "—"}</span>
           </Link>
+
+          {/* stats */}
+          <Link href={`/${year}/stats`} className="row-item group">
+            <span className="text-xs text-stone-300">○</span>
+            <span className="text-sm text-stone-700 group-hover:text-stone-900 transition-colors">year in review</span>
+            <span className="dot-leader" />
+          </Link>
         </div>
 
         <BookmarkSection books={bookmarkedBooks} lists={lists} year={year} />

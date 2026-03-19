@@ -23,6 +23,7 @@ export interface BookEntry {
   id: string;
   title: string;
   author: string;
+  genres: string[];
   status: ReadingStatus;
   dateStarted: string;
   dateFinished: string;

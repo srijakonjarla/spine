@@ -77,6 +77,17 @@ function mapStatus(shelf: string): BookEntry["status"] {
   return "want-to-read";
 }
 
+// Goodreads system shelves that are status, not genres
+const SYSTEM_SHELVES = new Set(["read", "currently-reading", "to-read", "reading"]);
+
+function parseGenres(bookshelves: string): string[] {
+  if (!bookshelves.trim()) return [];
+  return bookshelves
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter((s) => s && !SYSTEM_SHELVES.has(s));
+}
+
 export interface GoodreadsPreview {
   entry: BookEntry;
   originalShelf: string;
@@ -96,6 +107,7 @@ export function parseGoodreadsCSV(text: string): GoodreadsPreview[] {
       id: crypto.randomUUID(),
       title: row["Title"] ?? "",
       author: row["Author"] ?? "",
+      genres: parseGenres(row["Bookshelves"] ?? ""),
       status: mapStatus(shelf),
       dateStarted: dateAdded,
       dateFinished: dateRead,
@@ -104,6 +116,7 @@ export function parseGoodreadsCSV(text: string): GoodreadsPreview[] {
       feeling: row["My Review"] ?? "",
       thoughts: [],
       reads: [],
+      bookmarked: false,
       createdAt: dateAdded ? `${dateAdded}T00:00:00.000Z` : now,
       updatedAt: dateAdded ? `${dateAdded}T00:00:00.000Z` : now,
     };

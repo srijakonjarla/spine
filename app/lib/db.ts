@@ -19,7 +19,7 @@ interface BookReadRow {
 interface BookRow {
   id: string;
   catalog_id: string;
-  book_catalog: { title: string; author: string };
+  book_catalog: { title: string; author: string; genres: string[] };
   status: string;
   date_started: string | null;
   date_finished: string | null;
@@ -62,6 +62,7 @@ function mapBook(row: BookRow): BookEntry {
     id: row.id,
     title: row.book_catalog?.title ?? "",
     author: row.book_catalog?.author ?? "",
+    genres: row.book_catalog?.genres ?? [],
     status: row.status as BookEntry["status"],
     dateStarted: row.date_started ?? "",
     dateFinished: row.date_finished ?? "",
@@ -85,7 +86,7 @@ function mapBook(row: BookRow): BookEntry {
 export async function getEntries(year?: number): Promise<BookEntry[]> {
   let query = supabase
     .from("books")
-    .select("*, book_catalog(title, author), thoughts(*), book_reads(*)")
+    .select("*, book_catalog(title, author, genres), thoughts(*), book_reads(*)")
     .order("updated_at", { ascending: false });
   if (year !== undefined) {
     const start = `${year}-01-01`;
@@ -104,7 +105,7 @@ export async function getEntries(year?: number): Promise<BookEntry[]> {
 export async function getBookByCatalogId(catalogId: string): Promise<BookEntry | null> {
   const { data } = await supabase
     .from("books")
-    .select("*, book_catalog(title, author), thoughts(*), book_reads(*)")
+    .select("*, book_catalog(title, author, genres), thoughts(*), book_reads(*)")
     .eq("catalog_id", catalogId)
     .maybeSingle();
   if (!data) return null;
@@ -114,7 +115,7 @@ export async function getBookByCatalogId(catalogId: string): Promise<BookEntry |
 export async function getEntry(id: string): Promise<BookEntry | null> {
   const { data, error } = await supabase
     .from("books")
-    .select("*, book_catalog(title, author), thoughts(*), book_reads(*)")
+    .select("*, book_catalog(title, author, genres), thoughts(*), book_reads(*)")
     .eq("id", id)
     .single();
   if (error) return null;
@@ -143,17 +144,18 @@ export async function updateEntry(
   id: string,
   patch: Partial<BookEntry>
 ): Promise<void> {
-  // title/author edits go to book_catalog, not books
-  if ("title" in patch || "author" in patch) {
+  // title/author/genres edits go to book_catalog, not books
+  if ("title" in patch || "author" in patch || "genres" in patch) {
     const { data: book } = await supabase
       .from("books")
       .select("catalog_id")
       .eq("id", id)
       .single();
     if (book?.catalog_id) {
-      const catalogPatch: Record<string, string> = {};
+      const catalogPatch: Record<string, unknown> = {};
       if ("title" in patch) catalogPatch.title = patch.title!;
       if ("author" in patch) catalogPatch.author = patch.author!;
+      if ("genres" in patch) catalogPatch.genres = patch.genres!;
       await supabase.from("book_catalog").update(catalogPatch).eq("id", book.catalog_id);
     }
   }

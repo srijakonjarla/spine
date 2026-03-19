@@ -10,6 +10,7 @@ export default function ShelfPage() {
   const [entries, setEntries] = useState<BookEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [activeGenre, setActiveGenre] = useState<string | null>(null);
 
   useEffect(() => {
     getEntries()
@@ -18,13 +19,15 @@ export default function ShelfPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = search.trim()
-    ? entries.filter(
-        (e) =>
-          e.title.toLowerCase().includes(search.toLowerCase()) ||
-          e.author.toLowerCase().includes(search.toLowerCase())
-      )
-    : entries;
+  const allGenres = Array.from(new Set(entries.flatMap((e) => e.genres))).sort();
+
+  const filtered = entries.filter((e) => {
+    const matchesSearch = !search.trim() ||
+      e.title.toLowerCase().includes(search.toLowerCase()) ||
+      e.author.toLowerCase().includes(search.toLowerCase());
+    const matchesGenre = !activeGenre || e.genres.includes(activeGenre);
+    return matchesSearch && matchesGenre;
+  });
 
   const grouped = STATUS_ORDER.reduce<Record<string, BookEntry[]>>((acc, status) => {
     acc[status] = filtered.filter((e) => e.status === status);
@@ -42,7 +45,7 @@ export default function ShelfPage() {
         <p className="text-xs text-stone-400 mb-8">{entries.length} books total</p>
 
         {/* search */}
-        <div className="mb-10">
+        <div className="mb-4">
           <input
             id="shelf-search"
             type="text"
@@ -53,6 +56,25 @@ export default function ShelfPage() {
             disabled={loading}
           />
         </div>
+
+        {/* genre filter */}
+        {allGenres.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-8">
+            {allGenres.map((g) => (
+              <button
+                key={g}
+                onClick={() => setActiveGenre(activeGenre === g ? null : g)}
+                className={`text-xs px-2.5 py-0.5 rounded-full border transition-colors ${
+                  activeGenre === g
+                    ? "bg-stone-800 text-white border-stone-800"
+                    : "border-stone-200 text-stone-400 hover:border-stone-400 hover:text-stone-600"
+                }`}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* loading skeleton */}
         {loading && (
@@ -95,6 +117,9 @@ export default function ShelfPage() {
                     {visible.map((e) => (
                       <Link key={e.id} href={`/book/${e.id}`} className="row-item group font-mono">
                         <span className="text-sm text-stone-800 group-hover:text-stone-600 truncate">{e.title || "untitled"}</span>
+                        {e.genres.slice(0, 2).map((g) => (
+                          <span key={g} className="text-xs px-1.5 py-0 rounded-full bg-stone-100 text-stone-400 shrink-0">{g}</span>
+                        ))}
                         {e.author && <span className="text-xs text-stone-400 shrink-0">{e.author}</span>}
                         <span className="dot-leader" />
                         {e.rating > 0 && <span className="text-xs text-amber-400 shrink-0">{"★".repeat(e.rating)}</span>}
