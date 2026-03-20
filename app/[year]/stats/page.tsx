@@ -50,7 +50,7 @@ export default function StatsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getEntries(year).then(setEntries).catch(console.error).finally(() => setLoading(false));
+    getEntries({ year }).then(setEntries).catch(console.error).finally(() => setLoading(false));
   }, [year]);
 
   const finished = entries.filter((e) => e.status === "finished");

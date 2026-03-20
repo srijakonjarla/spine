@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { apiFetch } from "./api";
 import type { BookList, ListItem } from "../types";
 
 interface ListRow {
@@ -10,6 +10,7 @@ interface ListRow {
   date_label: string;
   notes_label: string;
   sort_order: number;
+  bookmarked: boolean;
   created_at: string;
   updated_at: string;
   list_items?: ListItemRow[];
@@ -53,34 +54,22 @@ function mapList(row: ListRow): BookList {
     items: (row.list_items ?? [])
       .map(mapItem)
       .sort((a, b) => a.sortOrder - b.sortOrder),
-    bookmarked: (row as any).bookmarked ?? false,
+    bookmarked: row.bookmarked ?? false,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
 
-export async function toggleListBookmark(id: string, bookmarked: boolean): Promise<void> {
-  const { error } = await supabase.from("lists").update({ bookmarked }).eq("id", id);
-  if (error) throw error;
-}
-
 export async function getLists(year: number): Promise<BookList[]> {
-  const { data, error } = await supabase
-    .from("lists")
-    .select("*, list_items(*, book_catalog(title, author))")
-    .eq("year", year)
-    .order("sort_order", { ascending: true });
-  if (error) throw error;
+  const res = await apiFetch(`/api/lists?year=${year}`);
+  const data = await res.json();
   return (data as ListRow[]).map(mapList);
 }
 
 export async function getList(id: string): Promise<BookList | null> {
-  const { data, error } = await supabase
-    .from("lists")
-    .select("*, list_items(*, book_catalog(title, author))")
-    .eq("id", id)
-    .single();
-  if (error) return null;
+  const res = await apiFetch(`/api/lists/${id}`);
+  const data = await res.json();
+  if (!data) return null;
   return mapList(data as ListRow);
 }
 
@@ -89,18 +78,11 @@ export async function createList(
   title: string,
   opts?: { listType?: string; dateLabel?: string; notesLabel?: string }
 ): Promise<BookList> {
-  const { data, error } = await supabase
-    .from("lists")
-    .insert({
-      year,
-      title,
-      list_type: opts?.listType ?? "general",
-      date_label: opts?.dateLabel ?? "",
-      notes_label: opts?.notesLabel ?? "notes",
-    })
-    .select("*, list_items(*, book_catalog(title, author))")
-    .single();
-  if (error) throw error;
+  const res = await apiFetch("/api/lists", {
+    method: "POST",
+    body: JSON.stringify({ year, title, ...opts }),
+  });
+  const data = await res.json();
   return mapList(data as ListRow);
 }
 
@@ -108,39 +90,32 @@ export async function updateList(
   id: string,
   patch: { title?: string; description?: string; dateLabel?: string; notesLabel?: string }
 ): Promise<void> {
-  const row: Record<string, string> = { updated_at: new Date().toISOString() };
-  if (patch.title !== undefined) row.title = patch.title;
-  if (patch.description !== undefined) row.description = patch.description;
-  if (patch.dateLabel !== undefined) row.date_label = patch.dateLabel;
-  if (patch.notesLabel !== undefined) row.notes_label = patch.notesLabel;
-  const { error } = await supabase.from("lists").update(row).eq("id", id);
-  if (error) throw error;
+  await apiFetch(`/api/lists/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
+export async function toggleListBookmark(id: string, bookmarked: boolean): Promise<void> {
+  await apiFetch(`/api/lists/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ bookmarked }),
+  });
 }
 
 export async function deleteList(id: string): Promise<void> {
-  const { error } = await supabase.from("lists").delete().eq("id", id);
-  if (error) throw error;
+  await apiFetch(`/api/lists/${id}`, { method: "DELETE" });
 }
 
 export async function addListItem(
   listId: string,
   fields: { catalogId: string; releaseDate?: string; notes?: string }
 ): Promise<ListItem> {
-  const { data, error } = await supabase
-    .from("list_items")
-    .insert({
-      list_id: listId,
-      catalog_id: fields.catalogId,
-      release_date: fields.releaseDate ?? "",
-      notes: fields.notes ?? "",
-    })
-    .select("*, book_catalog(title, author)")
-    .single();
-  if (error) throw error;
-  await supabase
-    .from("lists")
-    .update({ updated_at: new Date().toISOString() })
-    .eq("id", listId);
+  const res = await apiFetch(`/api/lists/${listId}/items`, {
+    method: "POST",
+    body: JSON.stringify(fields),
+  });
+  const data = await res.json();
   return mapItem(data as ListItemRow);
 }
 
@@ -148,35 +123,26 @@ export async function updateListItem(
   id: string,
   patch: { releaseDate?: string; notes?: string }
 ): Promise<void> {
-  const row: Record<string, string> = {};
-  if (patch.releaseDate !== undefined) row.release_date = patch.releaseDate;
-  if (patch.notes !== undefined) row.notes = patch.notes;
-  if (Object.keys(row).length === 0) return;
-  const { error } = await supabase.from("list_items").update(row).eq("id", id);
-  if (error) throw error;
-}
-
-export async function reorderListItems(orderedIds: string[]): Promise<void> {
-  await Promise.all(
-    orderedIds.map((id, i) =>
-      supabase.from("list_items").update({ sort_order: i }).eq("id", id)
-    )
-  );
-}
-
-export async function reorderLists(orderedIds: string[]): Promise<void> {
-  await Promise.all(
-    orderedIds.map((id, i) =>
-      supabase.from("lists").update({ sort_order: i }).eq("id", id)
-    )
-  );
+  await apiFetch(`/api/items/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
 }
 
 export async function removeListItem(id: string, listId: string): Promise<void> {
-  const { error } = await supabase.from("list_items").delete().eq("id", id);
-  if (error) throw error;
-  await supabase
-    .from("lists")
-    .update({ updated_at: new Date().toISOString() })
-    .eq("id", listId);
+  await apiFetch(`/api/lists/${listId}/items/${id}`, { method: "DELETE" });
+}
+
+export async function reorderListItems(orderedIds: string[]): Promise<void> {
+  await apiFetch("/api/items/reorder", {
+    method: "POST",
+    body: JSON.stringify({ orderedIds }),
+  });
+}
+
+export async function reorderLists(orderedIds: string[]): Promise<void> {
+  await apiFetch("/api/lists/reorder", {
+    method: "POST",
+    body: JSON.stringify({ orderedIds }),
+  });
 }

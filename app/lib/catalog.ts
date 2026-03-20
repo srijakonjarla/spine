@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { apiFetch } from "./api";
 
 export interface CatalogEntry {
   id: string;
@@ -22,49 +22,21 @@ function mapCatalog(row: CatalogRow): CatalogEntry {
 
 export async function searchCatalog(query: string): Promise<CatalogEntry[]> {
   if (!query.trim()) return [];
-  const { data, error } = await supabase
-    .from("book_catalog")
-    .select("*")
-    .or(`title.ilike.%${query}%,author.ilike.%${query}%`)
-    .order("title")
-    .limit(6);
-  if (error) throw error;
+  const res = await apiFetch(`/api/catalog?q=${encodeURIComponent(query)}`);
+  const data = await res.json();
   return (data as CatalogRow[]).map(mapCatalog);
 }
 
-// Find existing catalog entry or create a new one
 export async function findOrCreateCatalogEntry(
   title: string,
   author: string,
   releaseDate?: string,
   genres?: string[]
 ): Promise<CatalogEntry> {
-  // Try exact match first
-  const { data: existing } = await supabase
-    .from("book_catalog")
-    .select("*")
-    .ilike("title", title)
-    .ilike("author", author || "%")
-    .limit(1)
-    .maybeSingle();
-
-  if (existing) {
-    // Merge in any new genres
-    if (genres?.length) {
-      const merged = Array.from(new Set([...(existing.genres ?? []), ...genres]));
-      if (merged.length > (existing.genres ?? []).length) {
-        await supabase.from("book_catalog").update({ genres: merged }).eq("id", existing.id);
-        return mapCatalog({ ...existing, genres: merged } as CatalogRow);
-      }
-    }
-    return mapCatalog(existing as CatalogRow);
-  }
-
-  const { data, error } = await supabase
-    .from("book_catalog")
-    .insert({ title, author: author ?? "", release_date: releaseDate ?? "", genres: genres ?? [] })
-    .select()
-    .single();
-  if (error) throw error;
+  const res = await apiFetch("/api/catalog", {
+    method: "POST",
+    body: JSON.stringify({ title, author, releaseDate, genres }),
+  });
+  const data = await res.json();
   return mapCatalog(data as CatalogRow);
 }

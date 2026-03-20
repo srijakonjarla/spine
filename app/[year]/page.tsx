@@ -18,7 +18,7 @@ export default function YearPage() {
   if (!/^\d{4}$/.test(yearParam)) notFound();
 
   useEffect(() => {
-    Promise.all([getEntries(year), getLists(year), getReadingLog(year)])
+    Promise.all([getEntries({ year }), getLists(year), getReadingLog(year)])
       .then(([books, fetchedLists, log]) => {
         setStats({
           books: books.length,

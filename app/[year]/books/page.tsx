@@ -37,7 +37,7 @@ export default function BooksPage() {
 
   useEffect(() => {
     Promise.all([
-      getEntries(year),
+      getEntries({ year }),
       getEntries(), // unfiltered — to catch currently-reading books started in prior years
     ]).then(([yearEntries, allEntries]) => {
       setEntries(yearEntries);
