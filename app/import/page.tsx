@@ -4,11 +4,10 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { parseGoodreadsCSV, type GoodreadsPreview } from "../lib/goodreads";
-import { createEntry, getBookByCatalogId, addImportedRead } from "../lib/db";
-import { findOrCreateCatalogEntry } from "../lib/catalog";
-import { hasImportedGoodreads, markGoodreadsImported } from "../lib/auth";
+import { hasImportedGoodreads } from "../lib/auth";
+import { supabase } from "../lib/supabase";
 
-type ImportState = "idle" | "preview" | "importing" | "done";
+type ImportState = "idle" | "preview" | "importing" | "done" | "error";
 
 const statusLabel: Record<string, string> = {
   "reading": "reading",
@@ -20,7 +19,6 @@ const statusLabel: Record<string, string> = {
 export default function ImportPage() {
   const [state, setState] = useState<ImportState>("idle");
   const [previews, setPreviews] = useState<GoodreadsPreview[]>([]);
-  const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
   const [alreadyImported, setAlreadyImported] = useState<boolean | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -54,46 +52,43 @@ export default function ImportPage() {
 
   const handleImport = async () => {
     setState("importing");
-    setProgress(0);
-    let done = 0;
-    for (const { entry } of previews) {
-      try {
-        const catalogEntry = await findOrCreateCatalogEntry(entry.title, entry.author, undefined, entry.genres);
-        const existing = await getBookByCatalogId(catalogEntry.id);
 
-        if (!existing) {
-          // Brand new book — create it
-          await createEntry(entry, catalogEntry.id);
-        } else if (
-          existing.status === "want-to-read" &&
-          (entry.status === "finished" || entry.status === "reading" || entry.status === "did-not-finish")
-        ) {
-          // Upgrade: was want-to-read, now has actual read data — not a re-read, just an update
-          // (already handled by the current books row; skip to avoid overwriting active state)
-        } else if (
-          (entry.status === "finished" || entry.status === "did-not-finish") &&
-          entry.dateFinished !== existing.dateFinished
-        ) {
-          // Different finish date = a separate read — log it as a past read
-          const alreadyLogged = existing.reads.some(
-            (r) => r.dateFinished === entry.dateFinished && r.status === entry.status
-          );
-          if (!alreadyLogged) {
-            await addImportedRead(existing.id, entry);
-          }
-        }
-        // Otherwise same state — skip
-      } catch {
-        // skip errors silently
-      }
-      done++;
-      setProgress(done);
-    }
-    await markGoodreadsImported();
+    const entries = previews.map(({ entry }) => ({
+      title: entry.title,
+      author: entry.author,
+      genres: entry.genres,
+      status: entry.status,
+      dateStarted: entry.dateStarted,
+      dateFinished: entry.dateFinished,
+      dateShelved: entry.dateShelved,
+      rating: entry.rating,
+      feeling: entry.feeling,
+      createdAt: entry.createdAt,
+      updatedAt: entry.updatedAt,
+    }));
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) { setState("error"); setError("not signed in"); return; }
+
+    const fnUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/import-goodreads`;
+
+    // fire and forget — keepalive lets it finish even if user navigates away
+    fetch(fnUrl, {
+      method: "POST",
+      keepalive: true,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ entries }),
+    }).catch(() => {/* silent — background */});
+
     setState("done");
   };
 
   const finishedCount = previews.filter((p) => p.entry.status === "finished").length;
+  const dnfCount = previews.filter((p) => p.entry.status === "did-not-finish").length;
   const readingCount = previews.filter((p) => p.entry.status === "reading").length;
   const wantCount = previews.filter((p) => p.entry.status === "want-to-read").length;
 
@@ -101,14 +96,12 @@ export default function ImportPage() {
     <div className="page">
       <div className="page-content">
         <div className="mb-8">
-          <Link href="/" className="back-link">
-            ← index
-          </Link>
+          <Link href="/" className="back-link">← index</Link>
         </div>
 
         <h1 className="page-title mb-1">import from goodreads</h1>
         <p className="text-xs text-stone-400 mb-8">
-          export your library from goodreads (My Books → Export Library) and upload the CSV here.
+          export your library from goodreads (my books → export library) and upload the csv here.
         </p>
 
         {alreadyImported === false && state === "idle" && (
@@ -138,11 +131,11 @@ export default function ImportPage() {
                 <span className="text-stone-800 font-semibold">{previews.length}</span> books found
               </p>
               <p className="text-xs text-stone-400">· {finishedCount} finished</p>
+              {dnfCount > 0 && <p className="text-xs text-stone-400">· {dnfCount} did not finish</p>}
               <p className="text-xs text-stone-400">· {readingCount} currently reading</p>
               <p className="text-xs text-stone-400">· {wantCount} want to read</p>
             </div>
 
-            {/* preview list */}
             <div className="space-y-0.5 mb-8 max-h-80 overflow-y-auto">
               {previews.map(({ entry }) => (
                 <div key={entry.id} className="flex items-baseline gap-3 py-1">
@@ -155,10 +148,7 @@ export default function ImportPage() {
             </div>
 
             <div className="flex gap-3">
-              <button
-                onClick={handleImport}
-                className="btn-primary"
-              >
+              <button onClick={handleImport} className="btn-primary">
                 import all
               </button>
               <button
@@ -171,32 +161,27 @@ export default function ImportPage() {
           </div>
         )}
 
-        {alreadyImported === false && state === "importing" && (
-          <div>
-            <p className="text-sm text-stone-600 mb-3">
-              importing {progress} / {previews.length}...
-            </p>
-            <div className="w-full bg-stone-100 rounded-full h-1">
-              <div
-                className="bg-stone-700 h-1 rounded-full transition-all"
-                style={{ width: `${(progress / previews.length) * 100}%` }}
-              />
-            </div>
-          </div>
+        {state === "importing" && (
+          <p className="text-sm text-stone-500">starting import...</p>
         )}
 
-        {state === "done" && alreadyImported === false && (
-          <div>
-            <p className="text-sm text-stone-700 mb-4">
-              ✓ imported {previews.length} books
+        {state === "done" && (
+          <div className="space-y-3">
+            <p className="text-sm text-stone-700">
+              import started — {previews.length} books are being imported in the background.
             </p>
+            <p className="text-xs text-stone-400">you can navigate away. books will appear shortly.</p>
             <button
               onClick={() => router.push("/")}
-              className="text-sm text-stone-500 hover:text-stone-800 transition-colors"
+              className="back-link block"
             >
               go to index →
             </button>
           </div>
+        )}
+
+        {state === "error" && (
+          <p className="text-xs text-red-400">{error || "something went wrong"}</p>
         )}
       </div>
     </div>

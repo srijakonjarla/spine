@@ -6,6 +6,9 @@ interface ListRow {
   year: number;
   title: string;
   description: string;
+  list_type: string;
+  date_label: string;
+  notes_label: string;
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -43,6 +46,9 @@ function mapList(row: ListRow): BookList {
     year: row.year,
     title: row.title,
     description: row.description,
+    listType: row.list_type ?? "general",
+    dateLabel: row.date_label ?? "",
+    notesLabel: row.notes_label ?? "notes",
     sortOrder: row.sort_order,
     items: (row.list_items ?? [])
       .map(mapItem)
@@ -78,10 +84,20 @@ export async function getList(id: string): Promise<BookList | null> {
   return mapList(data as ListRow);
 }
 
-export async function createList(year: number, title: string): Promise<BookList> {
+export async function createList(
+  year: number,
+  title: string,
+  opts?: { listType?: string; dateLabel?: string; notesLabel?: string }
+): Promise<BookList> {
   const { data, error } = await supabase
     .from("lists")
-    .insert({ year, title })
+    .insert({
+      year,
+      title,
+      list_type: opts?.listType ?? "general",
+      date_label: opts?.dateLabel ?? "",
+      notes_label: opts?.notesLabel ?? "notes",
+    })
     .select("*, list_items(*, book_catalog(title, author))")
     .single();
   if (error) throw error;
@@ -90,12 +106,14 @@ export async function createList(year: number, title: string): Promise<BookList>
 
 export async function updateList(
   id: string,
-  patch: { title?: string; description?: string }
+  patch: { title?: string; description?: string; dateLabel?: string; notesLabel?: string }
 ): Promise<void> {
-  const { error } = await supabase
-    .from("lists")
-    .update({ ...patch, updated_at: new Date().toISOString() })
-    .eq("id", id);
+  const row: Record<string, string> = { updated_at: new Date().toISOString() };
+  if (patch.title !== undefined) row.title = patch.title;
+  if (patch.description !== undefined) row.description = patch.description;
+  if (patch.dateLabel !== undefined) row.date_label = patch.dateLabel;
+  if (patch.notesLabel !== undefined) row.notes_label = patch.notesLabel;
+  const { error } = await supabase.from("lists").update(row).eq("id", id);
   if (error) throw error;
 }
 
@@ -136,6 +154,22 @@ export async function updateListItem(
   if (Object.keys(row).length === 0) return;
   const { error } = await supabase.from("list_items").update(row).eq("id", id);
   if (error) throw error;
+}
+
+export async function reorderListItems(orderedIds: string[]): Promise<void> {
+  await Promise.all(
+    orderedIds.map((id, i) =>
+      supabase.from("list_items").update({ sort_order: i }).eq("id", id)
+    )
+  );
+}
+
+export async function reorderLists(orderedIds: string[]): Promise<void> {
+  await Promise.all(
+    orderedIds.map((id, i) =>
+      supabase.from("lists").update({ sort_order: i }).eq("id", id)
+    )
+  );
 }
 
 export async function removeListItem(id: string, listId: string): Promise<void> {

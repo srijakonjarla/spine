@@ -54,6 +54,9 @@ export interface BookList {
   year: number;
   title: string;
   description: string;
+  listType: string;
+  dateLabel: string;   // empty = date field hidden
+  notesLabel: string;  // label for the notes/annotation field
   sortOrder: number;
   items: ListItem[];
   bookmarked: boolean;

@@ -3,21 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { updateEntry } from "../lib/db";
+import { STATUS_SYMBOL, STATUS_COLOR } from "../lib/statusMeta";
 import type { BookEntry } from "../types";
-
-const statusSymbol: Record<BookEntry["status"], string> = {
-  reading: "○",
-  finished: "●",
-  "want-to-read": "◌",
-  "did-not-finish": "×",
-};
-
-const statusColor: Record<BookEntry["status"], string> = {
-  reading: "text-emerald-600",
-  finished: "text-stone-400",
-  "want-to-read": "text-amber-500",
-  "did-not-finish": "text-red-400",
-};
 
 export default function BookCard({ entry }: { entry: BookEntry }) {
   const [bookmarked, setBookmarked] = useState(entry.bookmarked);
@@ -32,8 +19,8 @@ export default function BookCard({ entry }: { entry: BookEntry }) {
   return (
     <Link href={`/book/${entry.id}`} className="block group font-mono">
       <div className="row-item">
-        <span className={`text-xs shrink-0 ${statusColor[entry.status]}`}>
-          {statusSymbol[entry.status]}
+        <span className={`text-xs shrink-0 ${STATUS_COLOR[entry.status]}`}>
+          {STATUS_SYMBOL[entry.status]}
         </span>
         <span className="text-sm text-stone-800 group-hover:text-stone-600 truncate">
           {entry.title || "untitled"}
@@ -47,10 +34,10 @@ export default function BookCard({ entry }: { entry: BookEntry }) {
         )}
         <button
           onClick={toggleBookmark}
-          title={bookmarked ? "remove bookmark" : "bookmark"}
+          title={bookmarked ? "remove tab" : "tab this"}
           className={`shrink-0 text-xs transition-colors ${bookmarked ? "text-stone-600" : "text-stone-200 opacity-0 group-hover:opacity-100"}`}
         >
-          {bookmarked ? "⌖" : "⌖"}
+          ⌖
         </button>
       </div>
     </Link>

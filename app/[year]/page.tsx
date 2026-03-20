@@ -6,8 +6,6 @@ import Link from "next/link";
 import { getEntries } from "../lib/db";
 import { getLists } from "../lib/lists";
 import { getReadingLog } from "../lib/habits";
-import { StatBlock } from "../components/StatBlock";
-import { BookmarkSection } from "../components/BookmarkSection";
 import type { BookList } from "../types";
 
 export default function YearPage() {
@@ -16,7 +14,6 @@ export default function YearPage() {
 
   const [stats, setStats] = useState<{ books: number; finished: number; days: number } | null>(null);
   const [lists, setLists] = useState<BookList[]>([]);
-  const [bookmarkedBooks, setBookmarkedBooks] = useState<{ id: string; title: string }[]>([]);
 
   if (!/^\d{4}$/.test(yearParam)) notFound();
 
@@ -29,65 +26,73 @@ export default function YearPage() {
           days: log.length,
         });
         setLists(fetchedLists);
-        setBookmarkedBooks(books.filter((b) => b.bookmarked).map((b) => ({ id: b.id, title: b.title })));
       })
       .catch(console.error);
   }, [year]);
 
+  const chapters = [
+    {
+      num: "01",
+      label: "reading log",
+      href: `/${year}/books`,
+      detail: stats ? `${stats.books} books` : null,
+    },
+    {
+      num: "02",
+      label: "habit tracker",
+      href: `/${year}/habits`,
+      detail: stats ? `${stats.days} days` : null,
+    },
+    {
+      num: "03",
+      label: "lists",
+      href: `/${year}/lists`,
+      detail: lists.length > 0 ? `${lists.length}` : null,
+    },
+    {
+      num: "04",
+      label: "year in review",
+      href: `/${year}/stats`,
+      detail: stats ? `${stats.finished} finished` : null,
+    },
+  ];
+
   return (
     <div className="page">
       <div className="page-content">
+
+        {/* back */}
+        <div className="mb-10">
+          <Link href="/" className="back-link">← journals</Link>
+        </div>
+
+        {/* journal cover */}
+        <div className="mb-10 pb-8 border-b border-stone-200">
+          <p className="text-xs text-stone-300 mb-2 tracking-widest uppercase">reading journal</p>
+          <h1 className="text-4xl font-semibold text-stone-900 tracking-tight">{year}</h1>
+          {stats && (
+            <p className="text-xs text-stone-400 mt-3">
+              {stats.books} books tracked · {stats.finished} finished · {stats.days} days read
+            </p>
+          )}
+        </div>
+
+        {/* table of contents */}
         <div className="mb-8">
-          <Link href="/" className="back-link">← home</Link>
-        </div>
-
-        <h1 className="page-title mb-8">{year}</h1>
-
-        <div className="space-y-1 mb-8">
-          {/* reading log */}
-          <Link href={`/${year}/books`} className="row-item group">
-            <span className="text-xs text-stone-300">○</span>
-            <span className="text-sm text-stone-700 group-hover:text-stone-900 transition-colors">reading log</span>
-            <span className="dot-leader" />
-            <span className="text-xs text-stone-400">{stats ? `${stats.books} books` : "—"}</span>
-          </Link>
-
-          {/* lists */}
-          <Link href={`/${year}/lists`} className="row-item group">
-            <span className="text-xs text-stone-300">○</span>
-            <span className="text-sm text-stone-700 group-hover:text-stone-900 transition-colors">lists</span>
-            <span className="dot-leader" />
-            <span className="text-xs text-stone-400">{lists.length}</span>
-          </Link>
-
-          {/* habit tracker */}
-          <Link href={`/${year}/habits`} className="row-item group">
-            <span className="text-xs text-stone-300">○</span>
-            <span className="text-sm text-stone-700 group-hover:text-stone-900 transition-colors">habit tracker</span>
-            <span className="dot-leader" />
-            <span className="text-xs text-stone-400">{stats ? `${stats.days} days` : "—"}</span>
-          </Link>
-
-          {/* stats */}
-          <Link href={`/${year}/stats`} className="row-item group">
-            <span className="text-xs text-stone-300">○</span>
-            <span className="text-sm text-stone-700 group-hover:text-stone-900 transition-colors">year in review</span>
-            <span className="dot-leader" />
-          </Link>
-        </div>
-
-        <BookmarkSection books={bookmarkedBooks} lists={lists} year={year} />
-
-        {stats && (
-          <div className="border-t border-stone-200 pt-6">
-            <p className="section-label mb-3">at a glance</p>
-            <div className="grid grid-cols-3 gap-4">
-              <StatBlock value={stats.books} label="books tracked" />
-              <StatBlock value={stats.finished} label="finished" />
-              <StatBlock value={stats.days} label="days read" />
-            </div>
+          <p className="section-label mb-5">contents</p>
+          <div className="space-y-1">
+            {chapters.map((ch) => (
+              <Link key={ch.num} href={ch.href} className="flex items-baseline gap-3 py-2 -mx-3 px-3 rounded hover:bg-stone-100/60 transition-colors group">
+                <span className="text-xs text-stone-300 w-6 shrink-0 font-mono">{ch.num}</span>
+                <span className="text-sm text-stone-700 group-hover:text-stone-900 transition-colors">{ch.label}</span>
+                <span className="dot-leader" />
+                <span className="text-xs text-stone-300 shrink-0">{ch.detail ?? "—"}</span>
+                <span className="text-xs text-stone-200 group-hover:text-stone-400 transition-colors">→</span>
+              </Link>
+            ))}
           </div>
-        )}
+        </div>
+
       </div>
     </div>
   );

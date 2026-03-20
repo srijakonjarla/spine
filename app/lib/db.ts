@@ -94,7 +94,8 @@ export async function getEntries(year?: number): Promise<BookEntry[]> {
     query = query.or(
       `and(created_at.gte.${start},created_at.lt.${end}),` +
       `and(date_finished.gte.${start},date_finished.lt.${end}),` +
-      `and(date_started.gte.${start},date_started.lt.${end})`
+      `and(date_started.gte.${start},date_started.lt.${end}),` +
+      `and(date_shelved.gte.${start},date_shelved.lt.${end})`
     );
   }
   const { data, error } = await query;

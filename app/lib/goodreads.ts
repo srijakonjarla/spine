@@ -77,8 +77,10 @@ function mapStatus(shelf: string): BookEntry["status"] {
   return "want-to-read";
 }
 
+const DNF_SHELVES = new Set(["did-not-finish", "dnf", "abandoned", "gave-up", "could-not-finish", "stopped", "unfinished"]);
+
 // Goodreads system shelves that are status, not genres
-const SYSTEM_SHELVES = new Set(["read", "currently-reading", "to-read", "reading"]);
+const SYSTEM_SHELVES = new Set(["read", "currently-reading", "to-read", "reading", ...DNF_SHELVES]);
 
 function parseGenres(bookshelves: string): string[] {
   if (!bookshelves.trim()) return [];
@@ -86,6 +88,10 @@ function parseGenres(bookshelves: string): string[] {
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter((s) => s && !SYSTEM_SHELVES.has(s));
+}
+
+function detectDNF(bookshelves: string): boolean {
+  return bookshelves.split(",").map((s) => s.trim().toLowerCase()).some((s) => DNF_SHELVES.has(s));
 }
 
 export interface GoodreadsPreview {
@@ -100,25 +106,28 @@ export function parseGoodreadsCSV(text: string): GoodreadsPreview[] {
   return rows.map((row) => {
     const rating = parseInt(row["My Rating"] ?? "0", 10) || 0;
     const shelf = row["Exclusive Shelf"] ?? "to-read";
+    const bookshelves = row["Bookshelves"] ?? "";
     const dateRead = goodreadsDateToISO(row["Date Read"] ?? "");
     const dateAdded = goodreadsDateToISO(row["Date Added"] ?? "");
+    const isDNF = detectDNF(bookshelves);
+    const status = isDNF ? "did-not-finish" : mapStatus(shelf);
 
     const entry: BookEntry = {
       id: crypto.randomUUID(),
       title: row["Title"] ?? "",
       author: row["Author"] ?? "",
-      genres: parseGenres(row["Bookshelves"] ?? ""),
-      status: mapStatus(shelf),
-      dateStarted: dateAdded,
-      dateFinished: dateRead,
-      dateShelved: "",
+      genres: parseGenres(bookshelves),
+      status,
+      dateStarted: "",
+      dateFinished: isDNF ? "" : dateRead,
+      dateShelved: isDNF ? dateRead : "",
       rating,
       feeling: row["My Review"] ?? "",
       thoughts: [],
       reads: [],
       bookmarked: false,
       createdAt: dateAdded ? `${dateAdded}T00:00:00.000Z` : now,
-      updatedAt: dateAdded ? `${dateAdded}T00:00:00.000Z` : now,
+      updatedAt: now,
     };
 
     return { entry, originalShelf: shelf };

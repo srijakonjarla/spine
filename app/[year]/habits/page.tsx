@@ -48,16 +48,17 @@ export default function HabitsPage() {
   return (
     <div className="page">
       <div className="page-content">
-        <div className="mb-8">
-          <Link href={`/${year}`} className="back-link">
-            ← {year}
-          </Link>
+        <div className="mb-10">
+          <Link href={`/${year}`} className="back-link">← {year}</Link>
         </div>
 
-        <h1 className="page-title mb-2">habit tracker · {year}</h1>
-        <p className="text-xs text-stone-400 mb-8">click a day to mark it as read</p>
+        <div className="mb-10 pb-8 border-b border-stone-200">
+          <p className="text-xs text-stone-300 mb-2 tracking-widest uppercase">reading journal · {year}</p>
+          <h1 className="text-3xl font-semibold text-stone-900 tracking-tight">habit tracker</h1>
+          <p className="text-xs text-stone-400 mt-3">click a day to mark it as read</p>
+        </div>
 
-        <div className="mb-8">
+        <div className="mb-10">
           <HabitGrid year={year} loggedDates={loggedDates} onToggle={handleToggle} />
         </div>
 
