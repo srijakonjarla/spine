@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
-import { getEntries } from "../../lib/db";
-import { STATUS_LABEL, STATUS_SYMBOL, STATUS_COLOR } from "../../lib/statusMeta";
-import type { BookEntry } from "../../types";
+import { getEntries } from "@/lib/db";
+import { STATUS_LABEL, STATUS_SYMBOL, STATUS_COLOR } from "@/lib/statusMeta";
+import type { BookEntry } from "@/types";
 
 const VALID_STATUSES = new Set(["reading", "finished", "want-to-read", "did-not-finish"]);
 

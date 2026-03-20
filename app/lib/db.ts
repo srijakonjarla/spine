@@ -1,5 +1,5 @@
 import { apiFetch } from "./api";
-import type { BookEntry, BookRead, Thought } from "../types";
+import type { BookEntry, BookRead, Thought } from "@/types";
 
 // ---- mapping ----
 

@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getEntries } from "./lib/db";
-import { getLists } from "./lib/lists";
-import { getReadingLog } from "./lib/habits";
-import { signOut, getDisplayName, hasImportedGoodreads } from "./lib/auth";
-import { useAuth } from "./components/AuthProvider";
-import type { BookEntry, BookList } from "./types";
+import { getEntries } from "@/lib/db";
+import { getLists } from "@/lib/lists";
+import { getReadingLog } from "@/lib/habits";
+import { signOut, getDisplayName, hasImportedGoodreads } from "@/lib/auth";
+import { useAuth } from "@/components/AuthProvider";
+import type { BookEntry, BookList } from "@/types";
 
 const CURRENT_YEAR = new Date().getFullYear();
 

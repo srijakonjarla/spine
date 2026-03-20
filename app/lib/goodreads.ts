@@ -1,4 +1,4 @@
-import type { BookEntry } from "../types";
+import type { BookEntry } from "@/types";
 
 // Minimal RFC-4180 CSV parser that handles quoted fields with embedded commas/newlines
 function parseCSV(text: string): Record<string, string>[] {

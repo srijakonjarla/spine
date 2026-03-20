@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { searchCatalog, type CatalogEntry } from "../lib/catalog";
+import { searchCatalog, type CatalogEntry } from "@/lib/catalog";
 
 interface Props {
   value: string;

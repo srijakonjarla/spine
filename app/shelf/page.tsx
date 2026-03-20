@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getEntries, createEntry } from "../lib/db";
-import { findOrCreateCatalogEntry, type CatalogEntry } from "../lib/catalog";
-import { CatalogSearch } from "../components/CatalogSearch";
-import { STATUS_LABEL, STATUS_SYMBOL, STATUS_COLOR, TRUNCATED_STATUSES, TRUNCATE_LIMIT } from "../lib/statusMeta";
-import type { BookEntry } from "../types";
+import { getEntries, createEntry } from "@/lib/db";
+import { findOrCreateCatalogEntry, type CatalogEntry } from "@/lib/catalog";
+import { CatalogSearch } from "@/components/CatalogSearch";
+import { STATUS_LABEL, STATUS_SYMBOL, STATUS_COLOR, TRUNCATED_STATUSES, TRUNCATE_LIMIT } from "@/lib/statusMeta";
+import type { BookEntry } from "@/types";
 
 const ARCHIVED_STATUSES = ["finished", "did-not-finish"] as const;
 

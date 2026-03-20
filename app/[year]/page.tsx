@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
-import { getEntries } from "../lib/db";
-import { getLists } from "../lib/lists";
-import { getReadingLog } from "../lib/habits";
-import type { BookList } from "../types";
+import { getEntries } from "@/lib/db";
+import { getLists } from "@/lib/lists";
+import { getReadingLog } from "@/lib/habits";
+import type { BookList } from "@/types";
 
 export default function YearPage() {
   const { year: yearParam } = useParams<{ year: string }>();

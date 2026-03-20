@@ -7,12 +7,12 @@ import {
   getList, updateList, deleteList,
   addListItem, updateListItem, removeListItem,
   reorderListItems, toggleListBookmark,
-} from "../../../lib/lists";
-import { BookmarkButton } from "../../../components/BookmarkButton";
-import { CatalogSearch } from "../../../components/CatalogSearch";
-import { useDraggableList } from "../../../hooks/useDraggableList";
-import { findOrCreateCatalogEntry, type CatalogEntry } from "../../../lib/catalog";
-import type { BookList, ListItem } from "../../../types";
+} from "@/lib/lists";
+import { BookmarkButton } from "@/components/BookmarkButton";
+import { CatalogSearch } from "@/components/CatalogSearch";
+import { useDraggableList } from "@/hooks/useDraggableList";
+import { findOrCreateCatalogEntry, type CatalogEntry } from "@/lib/catalog";
+import type { BookList, ListItem } from "@/types";
 
 interface NewItemDraft {
   title: string;

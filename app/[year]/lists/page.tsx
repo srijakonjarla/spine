@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { getLists, createList, reorderLists } from "../../lib/lists";
-import { useDraggableList } from "../../hooks/useDraggableList";
-import type { BookList } from "../../types";
+import { getLists, createList, reorderLists } from "@/lib/lists";
+import { useDraggableList } from "@/hooks/useDraggableList";
+import type { BookList } from "@/types";
 
 interface Template {
   listType: string;

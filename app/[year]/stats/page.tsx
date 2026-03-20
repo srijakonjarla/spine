@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { getEntries } from "../../lib/db";
-import type { BookEntry } from "../../types";
+import { getEntries } from "@/lib/db";
+import type { BookEntry } from "@/types";
 
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 

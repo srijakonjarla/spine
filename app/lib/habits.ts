@@ -1,5 +1,5 @@
-import { apiFetch } from "./api";
-import type { ReadingLogEntry } from "../types";
+import { apiFetch } from "@/lib/api";
+import type { ReadingLogEntry } from "@/types";
 
 export async function getReadingLog(year: number): Promise<ReadingLogEntry[]> {
   const res = await apiFetch(`/api/habits?year=${year}`);

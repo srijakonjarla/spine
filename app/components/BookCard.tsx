@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { updateEntry } from "../lib/db";
-import { STATUS_SYMBOL, STATUS_COLOR } from "../lib/statusMeta";
-import type { BookEntry } from "../types";
+import { updateEntry } from "@/lib/db";
+import { STATUS_SYMBOL, STATUS_COLOR } from "@/lib/statusMeta";
+import type { BookEntry } from "@/types";
 
 export default function BookCard({ entry }: { entry: BookEntry }) {
   const [bookmarked, setBookmarked] = useState(entry.bookmarked);

@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import BookCard from "../../components/BookCard";
-import { getEntries } from "../../lib/db";
-import type { BookEntry } from "../../types";
+import BookCard from "@/components/BookCard";
+import { getEntries } from "@/lib/db";
+import type { BookEntry } from "@/types";
 
 function effectiveDate(e: BookEntry): string {
   if (e.status === "finished" && e.dateFinished) return e.dateFinished;

@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import HabitGrid from "../../components/HabitGrid";
-import { StatBlock } from "../../components/StatBlock";
-import { getReadingLog, toggleDay } from "../../lib/habits";
+import HabitGrid from "@/components/HabitGrid";
+import { StatBlock } from "@/components/StatBlock";
+import { getReadingLog, toggleDay } from "@/lib/habits";
 
 export default function HabitsPage() {
   const { year: yearParam } = useParams<{ year: string }>();

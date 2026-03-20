@@ -3,9 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { parseGoodreadsCSV, type GoodreadsPreview } from "../lib/goodreads";
-import { hasImportedGoodreads } from "../lib/auth";
-import { supabase } from "../lib/supabase";
+import { parseGoodreadsCSV, type GoodreadsPreview } from "@/lib/goodreads";
+import { hasImportedGoodreads } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 type ImportState = "idle" | "preview" | "importing" | "done" | "error";
 

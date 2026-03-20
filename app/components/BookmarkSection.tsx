@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { BookList } from "../types";
+import type { BookList } from "@/types";
 
 interface BookmarkSectionProps {
   books: { id: string; title: string }[];

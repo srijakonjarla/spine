@@ -11,9 +11,9 @@ import {
   removeThought,
   startNewRead,
   deleteBookRead,
-} from "../../lib/db";
-import { BookmarkButton } from "../../components/BookmarkButton";
-import type { BookEntry, BookRead, ReadingStatus, Thought } from "../../types";
+} from "@/lib/db";
+import { BookmarkButton } from "@/components/BookmarkButton";
+import type { BookEntry, BookRead, ReadingStatus, Thought } from "@/types";
 
 const statuses: { value: ReadingStatus; label: string }[] = [
   { value: "reading", label: "reading" },

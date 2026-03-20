@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn, signUp } from "../lib/auth";
+import { signIn, signUp } from "@/lib/auth";
 
 type Mode = "signin" | "signup";
 

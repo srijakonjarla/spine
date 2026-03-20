@@ -1,5 +1,5 @@
-import { apiFetch } from "./api";
-import type { BookList, ListItem } from "../types";
+import { apiFetch } from "@/lib/api";
+import type { BookList, ListItem } from "@/types";
 
 interface ListRow {
   id: string;

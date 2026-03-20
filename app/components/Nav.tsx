@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "./AuthProvider";
-import { signOut } from "../lib/auth";
-import { supabase } from "../lib/supabase";
+import { signOut } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
