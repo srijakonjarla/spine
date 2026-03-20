@@ -30,7 +30,7 @@ export default function BookCard({ entry }: { entry: BookEntry }) {
         )}
         <span className="dot-leader" />
         {entry.rating > 0 && (
-          <span className="text-xs text-amber-400 shrink-0">{"★".repeat(entry.rating)}</span>
+          <span className="text-xs text-amber-900 shrink-0">{"★".repeat(entry.rating)}</span>
         )}
         <button
           onClick={toggleBookmark}

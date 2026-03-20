@@ -162,7 +162,7 @@ export default function ShelfPage() {
           <div className="space-y-0.5">
             {currentlyReading.map((e) => (
               <Link key={e.id} href={`/book/${e.id}`} className="row-item group font-mono">
-                <span className="text-xs text-emerald-600">○</span>
+                <span className="text-xs text-amber-700">○</span>
                 <span className="text-sm text-stone-800 group-hover:text-stone-600 truncate">{e.title}</span>
                 {e.author && <span className="text-xs text-stone-400 shrink-0">{e.author}</span>}
               </Link>
@@ -180,7 +180,7 @@ export default function ShelfPage() {
           <div className="space-y-0.5">
             {wantToRead.slice(0, 8).map((e) => (
               <Link key={e.id} href={`/book/${e.id}`} className="row-item group font-mono">
-                <span className="text-xs text-amber-500">◌</span>
+                <span className="text-xs text-amber-600">◌</span>
                 <span className="text-sm text-stone-800 group-hover:text-stone-600 truncate">{e.title}</span>
                 {e.author && <span className="text-xs text-stone-400 shrink-0">{e.author}</span>}
               </Link>
@@ -241,7 +241,7 @@ export default function ShelfPage() {
                         ))}
                         {e.author && <span className="text-xs text-stone-400 shrink-0">{e.author}</span>}
                         <span className="dot-leader" />
-                        {e.rating > 0 && <span className="text-xs text-amber-400 shrink-0">{"★".repeat(e.rating)}</span>}
+                        {e.rating > 0 && <span className="text-xs text-amber-900 shrink-0">{"★".repeat(e.rating)}</span>}
                         {e.bookmarked && <span className="text-xs text-stone-400 shrink-0">⌖</span>}
                       </Link>
                     ))}

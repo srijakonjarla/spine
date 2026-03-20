@@ -61,9 +61,9 @@ body {
 
   /* buttons */
   .btn-primary {
-    @apply text-sm text-white bg-stone-800 hover:bg-stone-700 transition-colors px-4 py-2 rounded-lg disabled:opacity-50;
+    @apply text-sm text-white bg-amber-900 hover:bg-amber-800 transition-colors px-4 py-2 rounded-lg disabled:opacity-50;
   }
   .btn-delete {
-    @apply text-xs text-stone-300 hover:text-red-400 transition-colors;
+    @apply text-xs text-stone-300 hover:text-red-700 transition-colors;
   }
 }

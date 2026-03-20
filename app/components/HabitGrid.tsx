@@ -99,8 +99,8 @@ function MonthCalendar({
               cls = "bg-stone-100 opacity-20 cursor-not-allowed";
             } else if (isLogged) {
               cls = isToday
-                ? "bg-stone-600 ring-2 ring-offset-1 ring-stone-400 hover:bg-stone-500 cursor-pointer"
-                : "bg-stone-600 hover:bg-stone-500 cursor-pointer";
+                ? "bg-amber-900 ring-2 ring-offset-1 ring-amber-700 hover:bg-amber-800 cursor-pointer"
+                : "bg-amber-900 hover:bg-amber-800 cursor-pointer";
             } else {
               cls = isToday
                 ? "bg-white ring-2 ring-stone-300 hover:bg-stone-50 cursor-pointer"

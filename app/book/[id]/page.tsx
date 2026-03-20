@@ -51,7 +51,7 @@ function GenreTags({ genres, onChange }: { genres: string[]; onChange: (g: strin
   const [input, setInput] = useState("");
 
   const commit = () => {
-    const val = input.trim().toLowerCase();
+    const val = input.trim();
     if (val && !genres.includes(val)) onChange([...genres, val]);
     setInput("");
     setAdding(false);
@@ -63,7 +63,7 @@ function GenreTags({ genres, onChange }: { genres: string[]; onChange: (g: strin
         <button
           key={g}
           onClick={() => onChange(genres.filter((x) => x !== g))}
-          className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-500 hover:bg-red-50 hover:text-red-400 transition-colors"
+          className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-500 hover:bg-red-50 hover:text-red-700 transition-colors"
         >
           {g} ×
         </button>
@@ -319,7 +319,7 @@ export default function BookPage() {
                 type="button"
                 onClick={() => update({ rating: entry.rating === s ? 0 : s })}
                 className={`text-base leading-none transition-colors ${
-                  s <= entry.rating ? "text-amber-400" : "text-stone-200 hover:text-amber-200"
+                  s <= entry.rating ? "text-amber-900" : "text-stone-200 hover:text-amber-600"
                 }`}
               >
                 ★
@@ -364,9 +364,9 @@ export default function BookPage() {
                 <span className="text-xs text-stone-300">·</span>
                 <span className="text-xs text-stone-400 capitalize">{entry.status.replace(/-/g, " ")}</span>
                 {entry.rating > 0 && (
-                  <span className="text-xs text-amber-400">{"★".repeat(entry.rating)}</span>
+                  <span className="text-xs text-amber-900">{"★".repeat(entry.rating)}</span>
                 )}
-                <span className="text-xs text-emerald-500">← current</span>
+                <span className="text-xs text-amber-700">← current</span>
               </div>
               {/* archived past reads, most recent first */}
               {[...entry.reads].reverse().map((read) => (
@@ -377,7 +377,7 @@ export default function BookPage() {
                       <span className="text-xs text-stone-300">·</span>
                       <span className="text-xs text-stone-400 capitalize">{read.status.replace(/-/g, " ")}</span>
                       {read.rating > 0 && (
-                        <span className="text-xs text-amber-400">{"★".repeat(read.rating)}</span>
+                        <span className="text-xs text-amber-900">{"★".repeat(read.rating)}</span>
                       )}
                     </div>
                     {read.feeling && (
@@ -386,7 +386,7 @@ export default function BookPage() {
                   </div>
                   <button
                     onClick={() => handleDeleteRead(read.id)}
-                    className="text-xs text-stone-200 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                    className="text-xs text-stone-200 hover:text-red-700 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
                   >
                     delete
                   </button>
@@ -405,7 +405,7 @@ export default function BookPage() {
           )}
           {entry.thoughts.map((thought) => (
             <div key={thought.id} className="group">
-              <p className="text-sm text-stone-700 leading-relaxed whitespace-pre-wrap">
+              <p className="text-sm text-stone-700 leading-relaxed whitespace-pre-wrap normal-case">
                 {thought.text}
               </p>
               <div className="flex items-center gap-3 mt-1">
@@ -414,7 +414,7 @@ export default function BookPage() {
                 </span>
                 <button
                   onClick={() => handleDeleteThought(thought.id)}
-                  className="text-xs text-stone-200 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                  className="text-xs text-stone-200 hover:text-red-700 transition-colors opacity-0 group-hover:opacity-100"
                 >
                   delete
                 </button>

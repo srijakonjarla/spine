@@ -156,7 +156,7 @@ export default function StatsPage() {
             <div className="space-y-3">
               {highlights.map((e) => (
                 <Link key={e.id} href={`/book/${e.id}`} className="flex items-baseline gap-3 group">
-                  <span className="text-xs text-amber-400 shrink-0">{"★".repeat(e.rating)}</span>
+                  <span className="text-xs text-amber-900 shrink-0">{"★".repeat(e.rating)}</span>
                   <span className="text-sm text-stone-800 group-hover:text-stone-600 transition-colors truncate">{e.title}</span>
                   {e.author && <span className="text-xs text-stone-400 shrink-0">{e.author}</span>}
                 </Link>

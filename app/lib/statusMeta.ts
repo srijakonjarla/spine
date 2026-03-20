@@ -13,10 +13,10 @@ export const STATUS_SYMBOL: Record<string, string> = {
 };
 
 export const STATUS_COLOR: Record<string, string> = {
-  reading: "text-emerald-600",
-  finished: "text-stone-400",
-  "want-to-read": "text-amber-500",
-  "did-not-finish": "text-red-400",
+  reading: "text-amber-700",
+  finished: "text-amber-900",
+  "want-to-read": "text-amber-600",
+  "did-not-finish": "text-red-700",
 };
 
 export const STATUS_ORDER = ["reading", "want-to-read", "finished", "did-not-finish"] as const;
