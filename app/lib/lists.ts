@@ -20,8 +20,10 @@ interface ListItemRow {
   id: string;
   list_id: string;
   catalog_id: string;
-  release_date: string;
+  item_date: string;
   notes: string;
+  price: string;
+  type: string;
   sort_order: number;
   created_at: string;
   book_catalog: { title: string; author: string } | null;
@@ -34,8 +36,10 @@ function mapItem(row: ListItemRow): ListItem {
     catalogId: row.catalog_id,
     title: row.book_catalog?.title ?? "",
     author: row.book_catalog?.author ?? "",
-    releaseDate: row.release_date,
+    releaseDate: row.item_date,
     notes: row.notes,
+    price: row.price ?? "",
+    type: row.type ?? "",
     sortOrder: row.sort_order,
     createdAt: row.created_at,
   };
@@ -109,7 +113,7 @@ export async function deleteList(id: string): Promise<void> {
 
 export async function addListItem(
   listId: string,
-  fields: { catalogId: string; releaseDate?: string; notes?: string }
+  fields: { catalogId: string; releaseDate?: string; notes?: string; price?: string; type?: string }
 ): Promise<ListItem> {
   const res = await apiFetch(`/api/lists/${listId}/items`, {
     method: "POST",
@@ -121,7 +125,7 @@ export async function addListItem(
 
 export async function updateListItem(
   id: string,
-  patch: { releaseDate?: string; notes?: string }
+  patch: { releaseDate?: string; notes?: string; price?: string; type?: string }
 ): Promise<void> {
   await apiFetch(`/api/items/${id}`, {
     method: "PATCH",

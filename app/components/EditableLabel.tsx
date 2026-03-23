@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 
 interface Props {
+  id?: string;
   value: string;
   placeholder: string;
   onSave: (v: string) => void;
   className?: string;
 }
 
-export function EditableLabel({ value, placeholder, onSave, className = "" }: Props) {
+export function EditableLabel({ id, value, placeholder, onSave, className = "" }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
 
@@ -18,6 +19,7 @@ export function EditableLabel({ value, placeholder, onSave, className = "" }: Pr
   if (editing) {
     return (
       <input
+        id={id}
         autoFocus
         value={draft}
         onChange={(e) => setDraft(e.target.value)}

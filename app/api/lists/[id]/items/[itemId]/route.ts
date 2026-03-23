@@ -7,7 +7,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ it
   const patch = await req.json();
 
   const row: Record<string, string> = {};
-  if (patch.releaseDate !== undefined) row.release_date = patch.releaseDate;
+  if (patch.releaseDate !== undefined) row.item_date = patch.releaseDate;
   if (patch.notes !== undefined) row.notes = patch.notes;
   if (Object.keys(row).length === 0) return NextResponse.json({ ok: true });
 

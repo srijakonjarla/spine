@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getEntries, createEntry } from "@/lib/db";
 import { findOrCreateCatalogEntry, type CatalogEntry } from "@/lib/catalog";
 import { CatalogSearch } from "@/components/CatalogSearch";
+import { StarDisplay } from "@/components/StarDisplay";
 import { STATUS_LABEL, STATUS_SYMBOL, STATUS_COLOR, TRUNCATED_STATUSES, TRUNCATE_LIMIT } from "@/lib/statusMeta";
 import type { BookEntry } from "@/types";
 
@@ -241,7 +242,7 @@ export default function ShelfPage() {
                         ))}
                         {e.author && <span className="text-xs text-stone-400 shrink-0">{e.author}</span>}
                         <span className="dot-leader" />
-                        {e.rating > 0 && <span className="text-xs text-amber-900 shrink-0">{"★".repeat(e.rating)}</span>}
+                        {e.rating > 0 && <StarDisplay rating={e.rating} size={11} />}
                         {e.bookmarked && <span className="text-xs text-stone-400 shrink-0">⌖</span>}
                       </Link>
                     ))}

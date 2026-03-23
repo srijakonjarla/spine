@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { getEntries } from "@/lib/db";
-import type { BookEntry } from "@/types";
+import { getLists } from "@/lib/lists";
+import { StarDisplay } from "@/components/StarDisplay";
+import type { BookEntry, ListItem } from "@/types";
 
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 
@@ -47,10 +49,18 @@ export default function StatsPage() {
   const { year: yearParam } = useParams<{ year: string }>();
   const year = Number(yearParam);
   const [entries, setEntries] = useState<BookEntry[]>([]);
+  const [collectionItems, setCollectionItems] = useState<ListItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getEntries({ year }).then(setEntries).catch(console.error).finally(() => setLoading(false));
+    Promise.all([
+      getEntries({ year }),
+      getLists(year),
+    ]).then(([e, lists]) => {
+      setEntries(e);
+      const collection = lists.filter((l) => l.listType === "collection").flatMap((l) => l.items);
+      setCollectionItems(collection);
+    }).catch(console.error).finally(() => setLoading(false));
   }, [year]);
 
   const finished = entries.filter((e) => e.status === "finished");
@@ -75,6 +85,16 @@ export default function StatsPage() {
   const allAuthors = finished.filter((e) => e.author).map((e) => e.author);
   const topAuthors = topN(allAuthors, 5);
   const maxAuthor = topAuthors[0]?.count ?? 1;
+
+  // physical collection stats
+  function parsePrice(item: ListItem): number {
+    return parseFloat(item.price.replace(/[^0-9.]/g, "")) || 0;
+  }
+  const bought  = collectionItems.filter((i) => i.type === "bought");
+  const sold    = collectionItems.filter((i) => i.type === "sold");
+  const donated = collectionItems.filter((i) => i.type === "donated");
+  const totalSpent  = bought.reduce((sum, i) => sum + parsePrice(i), 0);
+  const totalGained = sold.reduce((sum, i) => sum + parsePrice(i), 0);
 
   // highlights: top rated finished books
   const highlights = [...finished]
@@ -156,11 +176,46 @@ export default function StatsPage() {
             <div className="space-y-3">
               {highlights.map((e) => (
                 <Link key={e.id} href={`/book/${e.id}`} className="flex items-baseline gap-3 group">
-                  <span className="text-xs text-amber-900 shrink-0">{"★".repeat(e.rating)}</span>
+                  <StarDisplay rating={e.rating} size={11} />
                   <span className="text-sm text-stone-800 group-hover:text-stone-600 transition-colors truncate">{e.title}</span>
                   {e.author && <span className="text-xs text-stone-400 shrink-0">{e.author}</span>}
                 </Link>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* physical collection */}
+        {collectionItems.length > 0 && (
+          <div className="mb-10">
+            <p className="section-label mb-4">physical collection</p>
+            <div className="grid grid-cols-2 gap-6 mb-4">
+              <div>
+                <p className="text-2xl font-semibold text-stone-900">{bought.length}</p>
+                <p className="text-xs text-stone-400 mt-0.5">books bought</p>
+              </div>
+              <div>
+                <p className="text-2xl font-semibold text-stone-900">{sold.length}</p>
+                <p className="text-xs text-stone-400 mt-0.5">books sold</p>
+              </div>
+              {donated.length > 0 && (
+                <div>
+                  <p className="text-2xl font-semibold text-stone-900">{donated.length}</p>
+                  <p className="text-xs text-stone-400 mt-0.5">books donated</p>
+                </div>
+              )}
+              {totalSpent > 0 && (
+                <div>
+                  <p className="text-2xl font-semibold text-stone-900">${totalSpent.toFixed(2)}</p>
+                  <p className="text-xs text-stone-400 mt-0.5">spent</p>
+                </div>
+              )}
+              {totalGained > 0 && (
+                <div>
+                  <p className="text-2xl font-semibold text-stone-900">${totalGained.toFixed(2)}</p>
+                  <p className="text-xs text-stone-400 mt-0.5">gained back</p>
+                </div>
+              )}
             </div>
           </div>
         )}

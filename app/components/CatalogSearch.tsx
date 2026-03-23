@@ -4,6 +4,7 @@ import { useState, useCallback, useRef } from "react";
 import { searchCatalog, type CatalogEntry } from "@/lib/catalog";
 
 interface Props {
+  id?: string;
   value: string;
   onChange: (value: string) => void;
   onSelect: (entry: CatalogEntry) => void;
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function CatalogSearch({
+  id,
   value,
   onChange,
   onSelect,
@@ -46,6 +48,7 @@ export function CatalogSearch({
   return (
     <div className={`relative ${className}`}>
       <input
+        id={id}
         type="text"
         value={value}
         onChange={(e) => handleChange(e.target.value)}

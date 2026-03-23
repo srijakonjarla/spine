@@ -5,6 +5,7 @@ import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
 import { getEntries } from "@/lib/db";
 import { STATUS_LABEL, STATUS_SYMBOL, STATUS_COLOR } from "@/lib/statusMeta";
+import { StarDisplay } from "@/components/StarDisplay";
 import type { BookEntry } from "@/types";
 
 const VALID_STATUSES = new Set(["reading", "finished", "want-to-read", "did-not-finish"]);
@@ -80,7 +81,7 @@ export default function StatusCatalogPage() {
                 <span className="text-sm text-stone-800 group-hover:text-stone-600 truncate">{e.title || "untitled"}</span>
                 {e.author && <span className="text-xs text-stone-400 shrink-0">{e.author}</span>}
                 <span className="dot-leader" />
-                {e.rating > 0 && <span className="text-xs text-amber-900 shrink-0">{"★".repeat(e.rating)}</span>}
+                {e.rating > 0 && <StarDisplay rating={e.rating} size={11} />}
                 {e.bookmarked && <span className="text-xs text-stone-400 shrink-0">⌖</span>}
               </Link>
             ))}

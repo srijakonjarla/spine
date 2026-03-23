@@ -19,9 +19,11 @@ interface NewItemDraft {
   author: string;
   releaseDate: string;
   notes: string;
+  price: string;
+  type: string;
 }
 
-const emptyDraft = (): NewItemDraft => ({ title: "", author: "", releaseDate: "", notes: "" });
+const emptyDraft = (): NewItemDraft => ({ title: "", author: "", releaseDate: "", notes: "", price: "", type: "" });
 
 export default function ListDetailPage() {
   const { year, listId } = useParams<{ year: string; listId: string }>();
@@ -65,11 +67,16 @@ export default function ListDetailPage() {
     if (!title || adding) return;
     setAdding(true);
     try {
-      const catalog = await findOrCreateCatalogEntry(title, draft.author.trim(), draft.releaseDate.trim() || undefined);
+      // Only pass the date to the catalog entry for anticipated lists — for other list types
+      // the date field means something else (e.g. date bought/sold) and shouldn't touch book_catalog.
+      const catalogReleaseDate = list?.listType === "anticipated" ? draft.releaseDate.trim() || undefined : undefined;
+      const catalog = await findOrCreateCatalogEntry(title, draft.author.trim(), catalogReleaseDate);
       const item = await addListItem(listId, {
         catalogId: catalog.id,
         releaseDate: draft.releaseDate.trim(),
         notes: draft.notes.trim(),
+        price: draft.price.trim(),
+        type: draft.type,
       });
       setList((prev) => prev ? { ...prev, items: [...prev.items, item] } : prev);
       setDraft(emptyDraft());
@@ -81,7 +88,7 @@ export default function ListDetailPage() {
     }
   };
 
-  const handleUpdateItem = (id: string, patch: { releaseDate?: string; notes?: string }) => {
+  const handleUpdateItem = (id: string, patch: { releaseDate?: string; notes?: string; price?: string; type?: string }) => {
     setList((prev) =>
       prev ? { ...prev, items: prev.items.map((i) => i.id === id ? { ...i, ...patch } : i) } : prev
     );
@@ -106,6 +113,9 @@ export default function ListDetailPage() {
   if (!list) return <div className="page" />;
 
   const showDate = !!list.dateLabel;
+  const showPrice = list.listType === "collection";
+  const showType = list.listType === "collection";
+  const TYPE_OPTIONS = ["bought", "sold", "donated"] as const;
 
   return (
     <div className="page">
@@ -125,6 +135,7 @@ export default function ListDetailPage() {
 
         {/* title */}
         <input
+          id="list-title"
           type="text"
           value={list.title}
           onChange={(e) => {
@@ -138,6 +149,7 @@ export default function ListDetailPage() {
 
         {/* description */}
         <input
+          id="list-description"
           type="text"
           value={list.description}
           onChange={(e) => {
@@ -156,7 +168,7 @@ export default function ListDetailPage() {
           )}
           {list.items.map((item: ListItem, i: number) => (
             <div key={item.id} {...dragProps(item.id)} className="group flex gap-3 cursor-default">
-              <span className="text-xs text-stone-200 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5 cursor-grab active:cursor-grabbing select-none">⠿</span>
+              <span className="text-xs text-stone-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5 cursor-grab active:cursor-grabbing select-none">⠿</span>
               <span className="text-xs text-stone-300 shrink-0 mt-0.5">{i + 1}.</span>
               <div className="flex-1 min-w-0 border-b border-stone-100 pb-3">
                 <p className="text-sm text-stone-800 font-medium lowercase">{item.title}</p>
@@ -166,6 +178,7 @@ export default function ListDetailPage() {
                     <div className="flex items-baseline gap-1 shrink-0">
                       <span className="text-xs text-stone-300">{list.dateLabel}:</span>
                       <input
+                        id={`item-date-${item.id}`}
                         type="date"
                         value={item.releaseDate}
                         onChange={(e) => handleUpdateItem(item.id, { releaseDate: e.target.value })}
@@ -175,16 +188,47 @@ export default function ListDetailPage() {
                   )}
                 </div>
                 <input
+                  id={`item-notes-${item.id}`}
                   type="text"
                   value={item.notes}
                   onChange={(e) => handleUpdateItem(item.id, { notes: e.target.value })}
                   placeholder={list.notesLabel}
                   className="w-full text-xs text-stone-400 italic bg-transparent border-none outline-none placeholder:text-stone-200 mt-0.5"
                 />
+                {showType && (
+                  <div className="flex gap-2 mt-1.5">
+                    {TYPE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt}
+                        onClick={() => handleUpdateItem(item.id, { type: item.type === opt ? "" : opt })}
+                        className={`text-xs px-1.5 py-0.5 rounded transition-colors ${
+                          item.type === opt
+                            ? "bg-stone-200 text-stone-700"
+                            : "text-stone-300 hover:text-stone-500"
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {showPrice && (
+                  <div className="flex items-baseline gap-1 mt-0.5">
+                    <span className="text-xs text-stone-300">$</span>
+                    <input
+                      id={`item-price-${item.id}`}
+                      type="text"
+                      value={item.price}
+                      onChange={(e) => handleUpdateItem(item.id, { price: e.target.value })}
+                      placeholder="0.00"
+                      className="w-20 text-xs text-stone-500 bg-transparent border-none outline-none placeholder:text-stone-200"
+                    />
+                  </div>
+                )}
               </div>
               <button
                 onClick={() => handleRemoveItem(item.id)}
-                className="text-xs text-stone-200 hover:text-red-400 transition-colors shrink-0 mt-0.5 opacity-0 group-hover:opacity-100"
+                className="text-md text-stone-200 hover:text-red-400 transition-colors shrink-0 mt-0.5 opacity-0 group-hover:opacity-100"
                 title="remove"
               >
                 ×
@@ -212,6 +256,7 @@ export default function ListDetailPage() {
             />
             <div className="flex gap-3 flex-wrap">
               <input
+                id="draft-author"
                 type="text"
                 value={draft.author}
                 onChange={(e) => setDraft((d) => ({ ...d, author: e.target.value }))}
@@ -223,6 +268,7 @@ export default function ListDetailPage() {
                 <div className="flex items-baseline gap-1 shrink-0">
                   <span className="text-xs text-stone-300">{list.dateLabel}:</span>
                   <input
+                    id="draft-release-date"
                     type="date"
                     value={draft.releaseDate}
                     onChange={(e) => setDraft((d) => ({ ...d, releaseDate: e.target.value }))}
@@ -232,6 +278,7 @@ export default function ListDetailPage() {
               )}
             </div>
             <input
+              id="draft-notes"
               type="text"
               value={draft.notes}
               onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
@@ -239,6 +286,38 @@ export default function ListDetailPage() {
               placeholder={list.notesLabel}
               className="w-full text-xs text-stone-400 italic bg-transparent border-none outline-none placeholder:text-stone-300"
             />
+            {showType && (
+              <div className="flex gap-2">
+                {TYPE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setDraft((d) => ({ ...d, type: d.type === opt ? "" : opt }))}
+                    className={`text-xs px-1.5 py-0.5 rounded transition-colors ${
+                      draft.type === opt
+                        ? "bg-stone-200 text-stone-700"
+                        : "text-stone-300 hover:text-stone-500"
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            )}
+            {showPrice && (
+              <div className="flex items-baseline gap-1">
+                <span className="text-xs text-stone-300">$</span>
+                <input
+                  id="draft-price"
+                  type="text"
+                  value={draft.price}
+                  onChange={(e) => setDraft((d) => ({ ...d, price: e.target.value }))}
+                  onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
+                  placeholder="0.00"
+                  className="w-20 text-xs text-stone-500 bg-transparent border-none outline-none placeholder:text-stone-300"
+                />
+              </div>
+            )}
             <div className="flex gap-3 pt-1 border-t border-stone-100 mt-2">
               <button
                 onClick={handleAddItem}

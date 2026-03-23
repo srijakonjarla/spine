@@ -45,6 +45,8 @@ export interface ListItem {
   author: string;  // from book_catalog join
   releaseDate: string;
   notes: string;
+  price: string;
+  type: string; // "bought" | "sold" | "donated" | ""
   sortOrder: number;
   createdAt: string;
 }

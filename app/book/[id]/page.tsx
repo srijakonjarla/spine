@@ -13,6 +13,7 @@ import {
   deleteBookRead,
 } from "@/lib/db";
 import { BookmarkButton } from "@/components/BookmarkButton";
+import { StarDisplay } from "@/components/StarDisplay";
 import type { BookEntry, BookRead, ReadingStatus, Thought } from "@/types";
 
 const statuses: { value: ReadingStatus; label: string }[] = [
@@ -21,6 +22,36 @@ const statuses: { value: ReadingStatus; label: string }[] = [
   { value: "did-not-finish", label: "did not finish" },
   { value: "want-to-read", label: "want to read" },
 ];
+
+function StarRating({ rating, onChange }: { rating: number; onChange: (r: number) => void }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [hover, setHover] = useState<number | null>(null);
+
+  const getRating = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+    const x = e.clientX - rect.left;
+    const raw = (x / rect.width) * 5;
+    return Math.max(0.25, Math.min(5, Math.round(raw * 4) / 4));
+  };
+
+  const display = hover ?? rating;
+
+  return (
+    <div
+      ref={containerRef}
+      className="cursor-pointer"
+      onMouseMove={(e) => setHover(getRating(e))}
+      onMouseLeave={() => setHover(null)}
+      onClick={(e) => {
+        const r = getRating(e);
+        if (r !== null) onChange(rating === r ? 0 : r);
+      }}
+    >
+      <StarDisplay rating={display} />
+    </div>
+  );
+}
 
 function formatReadRange(read: { dateStarted: string; dateFinished: string; dateShelved: string }) {
   const start = read.dateStarted ? new Date(read.dateStarted).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "?";
@@ -219,7 +250,7 @@ export default function BookPage() {
 
         {/* top bar */}
         <div className="flex items-center justify-between mb-8">
-          <Link href="/" className="text-sm text-stone-400 hover:text-stone-700 transition-colors">
+          <Link href="/shelf" className="text-sm text-stone-400 hover:text-stone-700 transition-colors">
             ← shelf
           </Link>
           <div className="flex items-center gap-4">
@@ -312,20 +343,7 @@ export default function BookPage() {
               />
             </div>
           )}
-          <div className="flex gap-0.5">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => update({ rating: entry.rating === s ? 0 : s })}
-                className={`text-base leading-none transition-colors ${
-                  s <= entry.rating ? "text-amber-900" : "text-stone-200 hover:text-amber-600"
-                }`}
-              >
-                ★
-              </button>
-            ))}
-          </div>
+          <StarRating rating={entry.rating} onChange={(r) => update({ rating: r })} />
         </div>
 
         {/* feeling */}
@@ -363,9 +381,7 @@ export default function BookPage() {
                 <span className="text-xs text-stone-500">{formatReadRange(entry)}</span>
                 <span className="text-xs text-stone-300">·</span>
                 <span className="text-xs text-stone-400 capitalize">{entry.status.replace(/-/g, " ")}</span>
-                {entry.rating > 0 && (
-                  <span className="text-xs text-amber-900">{"★".repeat(entry.rating)}</span>
-                )}
+                {entry.rating > 0 && <StarDisplay rating={entry.rating} size={11} />}
                 <span className="text-xs text-amber-700">← current</span>
               </div>
               {/* archived past reads, most recent first */}
@@ -376,9 +392,7 @@ export default function BookPage() {
                       <span className="text-xs text-stone-500">{formatReadRange(read)}</span>
                       <span className="text-xs text-stone-300">·</span>
                       <span className="text-xs text-stone-400 capitalize">{read.status.replace(/-/g, " ")}</span>
-                      {read.rating > 0 && (
-                        <span className="text-xs text-amber-900">{"★".repeat(read.rating)}</span>
-                      )}
+                      {read.rating > 0 && <StarDisplay rating={read.rating} size={11} />}
                     </div>
                     {read.feeling && (
                       <p className="text-xs text-stone-400 italic mt-0.5">{read.feeling}</p>

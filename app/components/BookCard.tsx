@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { updateEntry } from "@/lib/db";
 import { STATUS_SYMBOL, STATUS_COLOR } from "@/lib/statusMeta";
+import { StarDisplay } from "@/components/StarDisplay";
 import type { BookEntry } from "@/types";
 
 export default function BookCard({ entry }: { entry: BookEntry }) {
@@ -30,7 +31,7 @@ export default function BookCard({ entry }: { entry: BookEntry }) {
         )}
         <span className="dot-leader" />
         {entry.rating > 0 && (
-          <span className="text-xs text-amber-900 shrink-0">{"★".repeat(entry.rating)}</span>
+          <StarDisplay rating={entry.rating} size={11} />
         )}
         <button
           onClick={toggleBookmark}

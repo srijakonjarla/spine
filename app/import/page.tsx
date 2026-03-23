@@ -96,7 +96,7 @@ export default function ImportPage() {
     <div className="page">
       <div className="page-content">
         <div className="mb-8">
-          <Link href="/" className="back-link">← index</Link>
+          <Link href="/" className="back-link">← journals</Link>
         </div>
 
         <h1 className="page-title mb-1">import from goodreads</h1>
@@ -175,7 +175,7 @@ export default function ImportPage() {
               onClick={() => router.push("/")}
               className="back-link block"
             >
-              go to index →
+              go to journals →
             </button>
           </div>
         )}

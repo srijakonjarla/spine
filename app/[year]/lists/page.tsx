@@ -49,7 +49,7 @@ const TEMPLATES: Template[] = [
     label: "physical collection",
     description: "books in, books out",
     dateLabel: "date",
-    notesLabel: "in / out · where / price",
+    notesLabel: "where",
   },
 ];
 
@@ -95,8 +95,6 @@ export default function ListsPage() {
     }
   };
 
-  const existingTypes = new Set(lists.map((l) => l.listType));
-
   return (
     <div className="page">
       <div className="page-content">
@@ -120,7 +118,7 @@ export default function ListsPage() {
                   {...dragProps(list.id)}
                   className="group flex items-baseline gap-2"
                 >
-                  <span className="text-xs text-stone-200 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing select-none shrink-0">⠿</span>
+                  <span className="text-xs text-stone-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing select-none shrink-0">⠿</span>
                   <Link href={`/${year}/lists/${list.id}`} className="row-item group flex-1">
                     <span className="text-sm text-stone-800 group-hover:text-stone-600 truncate">{list.title}</span>
                     <span className="dot-leader" />
@@ -137,7 +135,23 @@ export default function ListsPage() {
           <p className="section-label mb-4">start from a template</p>
           <div className="space-y-1">
             {TEMPLATES.map((t) => {
-              const exists = existingTypes.has(t.listType);
+              const existingList = lists.find((l) => l.listType === t.listType);
+              if (existingList) {
+                return (
+                  <Link
+                    key={t.listType}
+                    href={`/${year}/lists/${existingList.id}`}
+                    className="w-full flex items-baseline gap-3 py-2.5 px-3 -mx-3 rounded hover:bg-stone-100/60 transition-colors group"
+                  >
+                    <span className="text-xs text-stone-300 shrink-0">✓</span>
+                    <span className="text-sm text-stone-400 group-hover:text-stone-600 transition-colors">
+                      {t.label}
+                    </span>
+                    <span className="dot-leader" />
+                    <span className="text-xs text-stone-300 shrink-0 italic">created</span>
+                  </Link>
+                );
+              }
               return (
                 <button
                   key={t.listType}
@@ -151,7 +165,6 @@ export default function ListsPage() {
                   </span>
                   <span className="dot-leader" />
                   <span className="text-xs text-stone-300 shrink-0 italic">{t.description}</span>
-                  {exists && <span className="text-xs text-stone-200 shrink-0">·</span>}
                 </button>
               );
             })}
@@ -162,6 +175,7 @@ export default function ListsPage() {
         <div>
           <p className="section-label mb-3">custom list</p>
           <input
+            id="custom-list-name"
             type="text"
             value={customInput}
             onChange={(e) => setCustomInput(e.target.value)}
