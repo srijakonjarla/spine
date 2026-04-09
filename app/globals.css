@@ -3,6 +3,13 @@
 :root {
   --background: #faf8f5;
   --foreground: #1c1917;
+
+  /* spine design tokens */
+  --plum: #2D1B2E;
+  --plum-dark: #1C0E1E;
+  --terra: #C97B5A;
+  --gold: #D4A843;
+  --ink-light: #5A5060;
 }
 
 @theme inline {

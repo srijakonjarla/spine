@@ -15,18 +15,54 @@ interface TabItem {
   href: string;
 }
 
-function NavLink({ href, label }: { href: string; label: string }) {
+function TopNavLink({ href, label }: { href: string; label: string }) {
   const pathname = usePathname();
-  const active = href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
+  const active =
+    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
   return (
     <Link
       href={href}
-      className={`block text-xs transition-colors ${
-        active ? "text-stone-900 font-semibold" : "text-stone-400 hover:text-stone-700"
+      className={`text-[13px] font-medium transition-colors ${
+        active ? "text-white" : "text-white/60 hover:text-white"
       }`}
     >
       {label}
     </Link>
+  );
+}
+
+function SidebarLink({ href, label }: { href: string; label: string }) {
+  const pathname = usePathname();
+  const active =
+    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
+  return (
+    <Link
+      href={href}
+      className={`flex items-center px-2.5 py-[7px] rounded-[10px] text-[13px] transition-colors ${
+        active
+          ? "bg-[rgba(45,27,46,0.1)] text-[#2D1B2E] font-semibold"
+          : "text-[#1A1A1A] font-medium hover:bg-[rgba(45,27,46,0.08)]"
+      }`}
+    >
+      {label}
+    </Link>
+  );
+}
+
+function SidebarSection({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mb-7">
+      <p className="text-[10px] font-bold text-[#5A5060] uppercase tracking-[0.12em] mb-2 px-2.5">
+        {label}
+      </p>
+      <div className="space-y-0.5">{children}</div>
+    </div>
   );
 }
 
@@ -68,57 +104,79 @@ export default function Nav() {
     loadTabs().catch(console.error);
   }, [user]);
 
-  if (!user) return null;
-
   return (
-    <nav className="hidden lg:flex flex-col fixed top-0 left-0 h-full w-40 border-r border-stone-100 bg-[#faf8f5] px-5 py-10 font-mono z-20 overflow-y-auto">
-      <Link href="/" className="text-sm font-semibold text-stone-900 mb-8 block hover:opacity-60 transition-opacity">
-        spine
-      </Link>
-
-      <div className="space-y-2">
-        <NavLink href="/" label="home" />
-        <NavLink href="/shelf" label="shelf" />
-      </div>
-
-      <div className="border-t border-stone-100 mt-5 pt-4">
-        <NavLink href={`/${CURRENT_YEAR}`} label={String(CURRENT_YEAR)} />
-        <div className="space-y-2 ml-2 mt-2">
-          <NavLink href={`/${CURRENT_YEAR}/books`} label="log" />
-          <NavLink href={`/${CURRENT_YEAR}/lists`} label="lists" />
-          <NavLink href={`/${CURRENT_YEAR}/habits`} label="habits" />
-          <NavLink href={`/${CURRENT_YEAR}/stats`} label="year in review" />
-        </div>
-      </div>
-
-      {tabs.length > 0 && (
-        <div className="border-t border-stone-100 mt-5 pt-4">
-          <p className="text-[10px] font-semibold text-stone-300 tracking-widest uppercase mb-2">tabs</p>
-          <div className="space-y-2">
-            {tabs.map((t) => (
-              <Link
-                key={t.id}
-                href={t.href}
-                className="flex items-baseline gap-1.5 group"
-              >
-                <span className="text-[10px] text-stone-300 shrink-0">⌖</span>
-                <span className="text-xs text-stone-400 group-hover:text-stone-700 transition-colors truncate">
-                  {t.title}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="mt-auto pt-6">
-        <button
-          onClick={() => signOut()}
-          className="text-xs text-stone-300 hover:text-stone-600 transition-colors"
+    <>
+      {/* Topbar — always visible */}
+      <header className="fixed top-0 left-0 right-0 z-30 h-14 bg-[#1C0E1E] flex items-center justify-between px-6">
+        <Link
+          href="/"
+          className="font-[family-name:var(--font-playfair)] text-[22px] font-bold text-white tracking-tight leading-none"
         >
-          sign out
-        </button>
-      </div>
-    </nav>
+          spine<span className="text-[#D4A843] italic">.</span>
+        </Link>
+
+        {user && (
+          <>
+            <nav className="hidden lg:flex items-center gap-6">
+              <TopNavLink href="/" label="journal" />
+              <TopNavLink href="/shelf" label="library" />
+              <TopNavLink href={`/${CURRENT_YEAR}/stats`} label="stats" />
+            </nav>
+            <Link
+              href={`/${CURRENT_YEAR}/books`}
+              className="hidden lg:inline-block text-[13px] font-semibold text-white bg-[#C97B5A] px-4 py-1.5 rounded-full hover:bg-[#b3694a] transition-colors"
+            >
+              + log
+            </Link>
+          </>
+        )}
+      </header>
+
+      {/* Desktop sidebar */}
+      {user && (
+        <nav className="hidden lg:flex flex-col fixed top-14 left-0 h-[calc(100vh-3.5rem)] w-[220px] border-r border-[rgba(45,27,46,0.08)] bg-[rgba(45,27,46,0.02)] px-4 py-6 overflow-y-auto z-20">
+          <SidebarSection label={String(CURRENT_YEAR)}>
+            <SidebarLink href="/" label="home" />
+            <SidebarLink href={`/${CURRENT_YEAR}/books`} label="log" />
+            <SidebarLink href={`/${CURRENT_YEAR}/lists`} label="lists" />
+            <SidebarLink href={`/${CURRENT_YEAR}/habits`} label="habits" />
+          </SidebarSection>
+
+          <SidebarSection label="shelves">
+            <SidebarLink href="/shelf" label="all books" />
+            <SidebarLink href="/shelf/reading" label="reading" />
+            <SidebarLink href="/shelf/finished" label="finished" />
+            <SidebarLink href="/shelf/want-to-read" label="want to read" />
+          </SidebarSection>
+
+          <SidebarSection label="milestones">
+            <SidebarLink href={`/${CURRENT_YEAR}/stats`} label="year in review" />
+          </SidebarSection>
+
+          {tabs.length > 0 && (
+            <SidebarSection label="tabs">
+              {tabs.map((t) => (
+                <Link
+                  key={t.id}
+                  href={t.href}
+                  className="flex items-center px-2.5 py-[7px] rounded-[10px] text-[12px] text-[#5A5060] hover:bg-[rgba(45,27,46,0.08)] hover:text-[#1A1A1A] transition-colors truncate"
+                >
+                  {t.title}
+                </Link>
+              ))}
+            </SidebarSection>
+          )}
+
+          <div className="mt-auto">
+            <button
+              onClick={() => signOut()}
+              className="text-[11px] text-[rgba(90,80,96,0.45)] hover:text-[#5A5060] transition-colors px-2.5"
+            >
+              sign out
+            </button>
+          </div>
+        </nav>
+      )}
+    </>
   );
 }
