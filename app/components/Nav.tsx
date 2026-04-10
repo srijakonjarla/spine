@@ -167,6 +167,7 @@ export default function Nav() {
       {user && (
         <nav className="hidden lg:flex flex-col fixed top-14 left-0 h-[calc(100vh-3.5rem)] w-[220px] px-4 py-6 overflow-y-auto z-20 border-r transition-colors" style={{ background: "var(--bg-page)", borderColor: "var(--border-light)" }}>
           <SidebarSection label={CURRENT_MONTH_LABEL}>
+            <SidebarLink href={`/${CURRENT_YEAR}`} label="index" />
             <SidebarLink href={`/${CURRENT_YEAR}/${CURRENT_MONTH}`} label="monthly spread" />
             <SidebarLink href={`/${CURRENT_YEAR}/quotes`} label="quote collection" />
           </SidebarSection>

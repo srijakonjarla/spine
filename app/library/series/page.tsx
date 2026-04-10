@@ -219,7 +219,7 @@ export default function SeriesPage() {
         </div>
 
         <div className="mb-10 pb-8 border-b border-stone-200">
-          <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold text-[#2D1B2E] tracking-tight">series tracker</h1>
+          <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold page-title tracking-tight">series tracker</h1>
           {!loading && seriesList.length > 0 && (
             <p className="text-xs text-stone-400 mt-3">{seriesList.length} series</p>
           )}
