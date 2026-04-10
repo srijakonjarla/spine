@@ -6,8 +6,11 @@ import Link from "next/link";
 import { parseGoodreadsCSV, type GoodreadsPreview } from "@/lib/goodreads";
 import { hasImportedGoodreads } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { lookupBook } from "@/lib/catalog";
 
 type ImportState = "idle" | "preview" | "importing" | "done" | "error";
+
+const BATCH = 5;
 
 const statusLabel: Record<string, string> = {
   "reading": "reading",
@@ -19,6 +22,7 @@ const statusLabel: Record<string, string> = {
 export default function ImportPage() {
   const [state, setState] = useState<ImportState>("idle");
   const [previews, setPreviews] = useState<GoodreadsPreview[]>([]);
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
   const [alreadyImported, setAlreadyImported] = useState<boolean | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -52,40 +56,113 @@ export default function ImportPage() {
 
   const handleImport = async () => {
     setState("importing");
+    setProgress(0);
 
-    const entries = previews.map(({ entry }) => ({
-      title: entry.title,
-      author: entry.author,
-      genres: entry.genres,
-      status: entry.status,
-      dateStarted: entry.dateStarted,
-      dateFinished: entry.dateFinished,
-      dateShelved: entry.dateShelved,
-      rating: entry.rating,
-      feeling: entry.feeling,
-      createdAt: entry.createdAt,
-      updatedAt: entry.updatedAt,
-    }));
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setState("error"); setError("not signed in"); return; }
 
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
-    if (!token) { setState("error"); setError("not signed in"); return; }
+    let done = 0;
 
-    const fnUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/import-goodreads`;
+    try {
+      for (let i = 0; i < previews.length; i += BATCH) {
+        const batch = previews.slice(i, i + BATCH).map(({ entry }) => ({
+          title: entry.title,
+          author: entry.author,
+          genres: entry.genres,
+          status: entry.status,
+          dateStarted: entry.dateStarted,
+          dateFinished: entry.dateFinished,
+          dateShelved: entry.dateShelved,
+          rating: entry.rating,
+          feeling: entry.feeling,
+          createdAt: entry.createdAt,
+          updatedAt: entry.updatedAt,
+        }));
 
-    // fire and forget — keepalive lets it finish even if user navigates away
-    fetch(fnUrl, {
-      method: "POST",
-      keepalive: true,
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-      },
-      body: JSON.stringify({ entries }),
-    }).catch(() => {/* silent — background */});
+        await Promise.allSettled(
+          batch.map((entry) => processEntry(entry, user.id))
+        );
 
-    setState("done");
+        done += batch.length;
+        setProgress(done);
+        // Small pause between batches to avoid Google Books rate limits
+        if (i + BATCH < previews.length) await new Promise((r) => setTimeout(r, 300));
+      }
+
+      await supabase.auth.updateUser({ data: { goodreads_imported: true } });
+      setState("done");
+    } catch (err) {
+      setState("error");
+      setError(String(err));
+    }
   };
+
+  async function processEntry(entry: {
+    title: string; author: string; genres: string[]; status: string;
+    dateStarted: string; dateFinished: string; dateShelved: string;
+    rating: number; feeling: string; createdAt: string; updatedAt: string;
+  }, userId: string) {
+    // Enrich with Google Books data (genres, release date)
+    const googleBook = await lookupBook(entry.title, entry.author);
+    const genres = googleBook?.genres?.length
+      ? Array.from(new Set([...entry.genres, ...googleBook.genres]))
+      : entry.genres;
+    const releaseDate = googleBook?.releaseDate ?? "";
+    const author = entry.author || googleBook?.author || "";
+
+    // Find existing book by title + author in user's personal library
+    const { data: book } = await supabase
+      .from("books")
+      .select("id, status, date_finished, date_shelved, book_reads(id, status, date_finished, date_shelved)")
+      .eq("user_id", userId)
+      .ilike("title", entry.title)
+      .ilike("author", author || "%")
+      .maybeSingle();
+
+    if (!book) {
+      await supabase.from("books").insert({
+        id: crypto.randomUUID(),
+        user_id: userId,
+        title: entry.title,
+        author,
+        release_date: releaseDate,
+        genres,
+        status: entry.status,
+        date_started: entry.dateStarted || null,
+        date_finished: entry.dateFinished || null,
+        date_shelved: entry.dateShelved || null,
+        rating: entry.rating,
+        feeling: entry.feeling,
+        bookmarked: false,
+        created_at: entry.createdAt,
+        updated_at: entry.updatedAt,
+      });
+      return;
+    }
+
+    // Re-read detection
+    if (entry.status === "finished" && entry.dateFinished !== book.date_finished) {
+      const reads = (book.book_reads ?? []) as { status: string; date_finished: string | null }[];
+      if (!reads.some((r) => r.status === "finished" && r.date_finished === entry.dateFinished)) {
+        await supabase.from("book_reads").insert({
+          book_id: book.id, status: entry.status,
+          date_started: entry.dateStarted || null, date_finished: entry.dateFinished || null,
+          date_shelved: null, rating: entry.rating, feeling: entry.feeling,
+          created_at: entry.createdAt, updated_at: entry.updatedAt,
+        });
+      }
+    } else if (entry.status === "did-not-finish" && entry.dateShelved !== book.date_shelved) {
+      const reads = (book.book_reads ?? []) as { status: string; date_shelved: string | null }[];
+      if (!reads.some((r) => r.status === "did-not-finish" && r.date_shelved === entry.dateShelved)) {
+        await supabase.from("book_reads").insert({
+          book_id: book.id, status: entry.status,
+          date_started: entry.dateStarted || null, date_finished: null,
+          date_shelved: entry.dateShelved || null, rating: entry.rating, feeling: entry.feeling,
+          created_at: entry.createdAt, updated_at: entry.updatedAt,
+        });
+      }
+    }
+  }
 
   const finishedCount = previews.filter((p) => p.entry.status === "finished").length;
   const dnfCount = previews.filter((p) => p.entry.status === "did-not-finish").length;
@@ -162,7 +239,17 @@ export default function ImportPage() {
         )}
 
         {state === "importing" && (
-          <p className="text-sm text-stone-500">starting import...</p>
+          <div className="space-y-2">
+            <p className="text-sm text-stone-500">
+              importing... {progress} / {previews.length}
+            </p>
+            <div className="w-full h-0.5 bg-stone-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-stone-400 transition-all duration-300"
+                style={{ width: `${(progress / previews.length) * 100}%` }}
+              />
+            </div>
+          </div>
         )}
 
         {state === "done" && (

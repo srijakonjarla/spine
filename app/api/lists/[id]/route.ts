@@ -6,7 +6,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id } = await params;
   const { data, error } = await supabase
     .from("lists")
-    .select("*, list_items(*, book_catalog(title, author))")
+    .select("*, list_items(*)")
     .eq("id", id)
     .single();
   if (error) return NextResponse.json(null, { status: 404 });

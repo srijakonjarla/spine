@@ -1,24 +1,34 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
+import { DM_Sans, Playfair_Display, Caveat, Geist_Mono } from "next/font/google";
 import "@/globals.css";
 import AuthProvider from "@/components/AuthProvider";
 import Nav from "@/components/Nav";
+import { NavigationProvider } from "@/components/NavigationProvider";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
 });
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
   subsets: ["latin"],
-  weight: ["400", "600", "700"],
+  weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
+});
+
+const caveat = Caveat({
+  variable: "--font-caveat",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
@@ -32,16 +42,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{__html: `(function(){var t=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.setAttribute('data-theme',t||(d?'dark':'light'));})()`}} />
+      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} antialiased`}
+        className={`${dmSans.variable} ${playfair.variable} ${caveat.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          <Nav />
-          <div className="pt-14 lg:pl-[220px]">
-            {children}
-          </div>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <NavigationProvider>
+              <Nav />
+              <div className="pt-14 lg:pl-[220px]">
+                {children}
+              </div>
+            </NavigationProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -5,8 +5,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const DNF_SHELVES = new Set(["did-not-finish", "dnf", "abandoned", "gave-up", "could-not-finish", "stopped", "unfinished"]);
-const SYSTEM_SHELVES = new Set(["read", "currently-reading", "to-read", "reading", ...DNF_SHELVES]);
+const DNF_SHELVES = new Set([
+  "did-not-finish", "dnf", "abandoned", "gave-up",
+  "could-not-finish", "stopped", "unfinished",
+]);
 
 interface ImportEntry {
   title: string;
@@ -22,58 +24,28 @@ interface ImportEntry {
   updatedAt: string;
 }
 
-async function findOrCreateCatalog(
-  supabase: ReturnType<typeof createClient>,
-  title: string,
-  author: string,
-  genres: string[]
-): Promise<string> {
-  const { data: existing } = await supabase
-    .from("book_catalog")
-    .select("id, genres")
-    .ilike("title", title)
-    .ilike("author", author || "%")
-    .limit(1)
-    .maybeSingle();
-
-  if (existing) {
-    if (genres.length) {
-      const merged = Array.from(new Set([...(existing.genres ?? []), ...genres]));
-      if (merged.length > (existing.genres ?? []).length) {
-        await supabase.from("book_catalog").update({ genres: merged }).eq("id", existing.id);
-      }
-    }
-    return existing.id;
-  }
-
-  const { data, error } = await supabase
-    .from("book_catalog")
-    .insert({ title, author: author ?? "", release_date: "", genres })
-    .select("id")
-    .single();
-  if (error) throw error;
-  return data.id;
-}
-
 async function processEntry(
   supabase: ReturnType<typeof createClient>,
   userId: string,
   entry: ImportEntry
 ): Promise<void> {
-  const catalogId = await findOrCreateCatalog(supabase, entry.title, entry.author, entry.genres);
-
+  // Look for an existing book row by title + author
   const { data: existing } = await supabase
     .from("books")
     .select("id, status, date_finished, date_shelved, book_reads(id, status, date_finished, date_shelved)")
-    .eq("catalog_id", catalogId)
     .eq("user_id", userId)
+    .ilike("title", entry.title)
+    .ilike("author", entry.author || "%")
     .maybeSingle();
 
   if (!existing) {
     await supabase.from("books").insert({
       id: crypto.randomUUID(),
-      catalog_id: catalogId,
       user_id: userId,
+      title: entry.title,
+      author: entry.author ?? "",
+      release_date: "",
+      genres: entry.genres ?? [],
       status: entry.status,
       date_started: entry.dateStarted || null,
       date_finished: entry.dateFinished || null,
@@ -87,7 +59,7 @@ async function processEntry(
     return;
   }
 
-  // finished re-read
+  // Finished re-read
   if (entry.status === "finished" && entry.dateFinished !== existing.date_finished) {
     const reads = (existing.book_reads ?? []) as { status: string; date_finished: string | null }[];
     const alreadyLogged = reads.some((r) => r.status === "finished" && r.date_finished === entry.dateFinished);
@@ -107,7 +79,7 @@ async function processEntry(
     return;
   }
 
-  // DNF re-read
+  // DNF re-shelve
   if (entry.status === "did-not-finish" && entry.dateShelved !== existing.date_shelved) {
     const reads = (existing.book_reads ?? []) as { status: string; date_shelved: string | null }[];
     const alreadyLogged = reads.some((r) => r.status === "did-not-finish" && r.date_shelved === entry.dateShelved);
@@ -151,15 +123,17 @@ Deno.serve(async (req) => {
 
     const { entries }: { entries: ImportEntry[] } = await req.json();
 
-    // Process in parallel batches of 5
     const BATCH = 5;
     for (let i = 0; i < entries.length; i += BATCH) {
       await Promise.allSettled(
         entries.slice(i, i + BATCH).map((e) => processEntry(supabase, user.id, e))
       );
+      // Pause between batches to stay within rate limits
+      if (i + BATCH < entries.length) {
+        await new Promise((r) => setTimeout(r, 200));
+      }
     }
 
-    // Mark as imported
     await supabase.auth.updateUser({ data: { goodreads_imported: true } });
 
     return new Response(JSON.stringify({ ok: true, count: entries.length }), {

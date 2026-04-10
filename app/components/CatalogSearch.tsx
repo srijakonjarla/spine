@@ -67,16 +67,16 @@ export function CatalogSearch({
         className="underline-input"
       />
       {suggestions.length > 0 && (
-        <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-stone-200 rounded-lg shadow-sm overflow-hidden z-10">
+        <div className="absolute left-0 right-0 top-full mt-1.5 bg-[#FDFAF5] border border-[rgba(45,27,46,0.1)] rounded-xl shadow-md overflow-hidden z-10">
           {suggestions.map((s, i) => (
             <button
               key={s.id}
               onMouseDown={() => commit(s)}
-              className={`w-full text-left px-4 py-2.5 flex items-baseline gap-3 transition-colors ${i === idx ? "bg-stone-50" : "hover:bg-stone-50"}`}
+              className={`w-full text-left px-4 py-2.5 flex items-baseline gap-3 transition-colors ${i === idx ? "bg-[rgba(45,27,46,0.05)]" : "hover:bg-[rgba(45,27,46,0.04)]"}`}
             >
-              <span className="text-sm text-stone-800 truncate">{s.title}</span>
-              {s.author && <span className="text-xs text-stone-400 shrink-0">{s.author}</span>}
-              {showReleaseDate && s.releaseDate && <span className="text-xs text-stone-300 shrink-0 ml-auto">{s.releaseDate}</span>}
+              <span className="text-sm text-[#1A1A1A] truncate">{s.title}</span>
+              {s.author && <span className="text-xs text-[#5A5060] shrink-0">{s.author}</span>}
+              {showReleaseDate && s.releaseDate && <span className="text-xs text-[#c4bfba] shrink-0 ml-auto">{s.releaseDate}</span>}
             </button>
           ))}
         </div>

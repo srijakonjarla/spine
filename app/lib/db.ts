@@ -18,8 +18,11 @@ interface BookReadRow {
 
 interface BookRow {
   id: string;
-  catalog_id: string;
-  book_catalog: { title: string; author: string; genres: string[] };
+  title: string;
+  author: string;
+  release_date: string;
+  genres: string[];
+  mood_tags: string[];
   status: string;
   date_started: string | null;
   date_finished: string | null;
@@ -58,9 +61,10 @@ function mapBookRead(row: BookReadRow): BookRead {
 function mapBook(row: BookRow): BookEntry {
   return {
     id: row.id,
-    title: row.book_catalog?.title ?? "",
-    author: row.book_catalog?.author ?? "",
-    genres: row.book_catalog?.genres ?? [],
+    title: row.title ?? "",
+    author: row.author ?? "",
+    genres: row.genres ?? [],
+    moodTags: row.mood_tags ?? [],
     status: row.status as BookEntry["status"],
     dateStarted: row.date_started ?? "",
     dateFinished: row.date_finished ?? "",
@@ -93,16 +97,8 @@ export async function getEntries(opts?: {
   const qs = params.toString();
   const res = await apiFetch(qs ? `/api/books?${qs}` : "/api/books");
   const data = await res.json();
-  // Paginated response wraps data; unpaginated returns array directly
   const rows = Array.isArray(data) ? data : data.data;
   return (rows as BookRow[]).map(mapBook);
-}
-
-export async function getBookByCatalogId(catalogId: string): Promise<BookEntry | null> {
-  const res = await apiFetch(`/api/books?catalogId=${catalogId}`);
-  const data = await res.json();
-  if (!data) return null;
-  return mapBook(data as BookRow);
 }
 
 export async function getEntry(id: string): Promise<BookEntry | null> {
@@ -112,10 +108,10 @@ export async function getEntry(id: string): Promise<BookEntry | null> {
   return mapBook(data as BookRow);
 }
 
-export async function createEntry(entry: BookEntry, catalogId: string): Promise<void> {
+export async function createEntry(entry: BookEntry): Promise<void> {
   await apiFetch("/api/books", {
     method: "POST",
-    body: JSON.stringify({ entry, catalogId }),
+    body: JSON.stringify({ entry }),
   });
 }
 
@@ -162,7 +158,6 @@ export async function deleteBookRead(id: string): Promise<void> {
 // ---- import helper (used during Goodreads import — calls Supabase directly) ----
 
 export async function addImportedRead(bookId: string, entry: BookEntry): Promise<void> {
-  // Goodreads import is a client-side batch operation; keep direct Supabase call here
   const { supabase } = await import("./supabase");
   const { error } = await supabase.from("book_reads").insert({
     book_id: bookId,

@@ -1,76 +1,327 @@
 @import "tailwindcss";
 
+/* ─── Design tokens ─────────────────────────────────────────── */
 :root {
-  --background: #faf8f5;
-  --foreground: #1c1917;
+  /* Raw palette */
+  --plum:           #2D1B2E;
+  --plum-light:     #4A2B5A;
+  --plum-dark:      #1C0E1E;
+  --terra:          #C97B5A;
+  --terra-light:    #E09070;
+  --sage:           #7B9E87;
+  --sage-light:     #A4C0AF;
+  --lavender:       #C4B5D4;
+  --lavender-light: #DDD3EA;
+  --gold:           #D4A843;
+  --gold-light:     #E8C468;
+  --cream:          #FAF6F0;
+  --cream-dark:     #F0EAE0;
+  --ink:            #1A1A1A;
+  --ink-light:      #5A5060;
+  --white:          #FDFAF5;
 
-  /* spine design tokens */
-  --plum: #2D1B2E;
-  --plum-dark: #1C0E1E;
-  --terra: #C97B5A;
-  --gold: #D4A843;
-  --ink-light: #5A5060;
+  /* Semantic tokens — light mode */
+  --bg-page:      #FAF6F0;
+  --bg-surface:   #FDFAF5;
+  --bg-hover:     rgba(90, 80, 96, 0.05);
+  --fg:           #1A1A1A;
+  --fg-muted:     #5A5060;
+  --fg-faint:     #c4bfba;
+  --fg-heading:   #2D1B2E;
+  --border:       #e7e5e4;
+  --border-light: rgba(45, 27, 46, 0.08);
+  --dot-color:    rgba(45, 27, 46, 0.07);
+
+  --background: var(--bg-page);
+  --foreground: var(--fg);
 }
 
+/* ─── Dark mode — lamplight ──────────────────────────────────── */
+[data-theme="dark"] {
+  --bg-page:      #1C1612;
+  --bg-surface:   #2A201A;
+  --bg-hover:     rgba(255, 255, 255, 0.05);
+  --fg:           #EDE8DF;
+  --fg-muted:     rgba(237, 232, 223, 0.50);
+  --fg-faint:     rgba(237, 232, 223, 0.28);
+  --fg-heading:   #E8C468;
+  --border:       rgba(255, 255, 255, 0.09);
+  --border-light: rgba(255, 255, 255, 0.06);
+  --dot-color:    rgba(237, 232, 223, 0.055);
+
+  --background: var(--bg-page);
+  --foreground: var(--fg);
+}
+
+/* System preference (when no manual override) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg-page:      #1C1612;
+    --bg-surface:   #2A201A;
+    --bg-hover:     rgba(255, 255, 255, 0.05);
+    --fg:           #EDE8DF;
+    --fg-muted:     rgba(237, 232, 223, 0.50);
+    --fg-faint:     rgba(237, 232, 223, 0.28);
+    --fg-heading:   #E8C468;
+    --border:       rgba(255, 255, 255, 0.09);
+    --border-light: rgba(255, 255, 255, 0.06);
+    --dot-color:    rgba(237, 232, 223, 0.055);
+  }
+}
+
+/* ─── Tailwind theme ─────────────────────────────────────────── */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans:  var(--font-dm-sans);
+  --font-serif: var(--font-playfair);
+  --font-hand:  var(--font-caveat);
+  --font-mono:  var(--font-geist-mono);
 }
 
+/* ─── Base ───────────────────────────────────────────────────── */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  text-transform: lowercase;
+  background: var(--bg-page);
+  color: var(--fg);
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  transition: background 0.2s, color 0.2s;
 }
 
+h1, h2, h3 {
+  font-family: var(--font-playfair), Georgia, serif;
+  letter-spacing: -0.02em;
+}
+
+/* ─── Dark mode overrides for common Tailwind patterns ───────── */
+
+/* Stone text colours */
+[data-theme="dark"] .text-stone-900,
+[data-theme="dark"] .text-stone-800 { color: var(--fg); }
+[data-theme="dark"] .text-stone-700 { color: rgba(237,232,223,0.82); }
+[data-theme="dark"] .text-stone-600,
+[data-theme="dark"] .text-stone-500 { color: var(--fg-muted); }
+[data-theme="dark"] .text-stone-400,
+[data-theme="dark"] .text-stone-300 { color: var(--fg-faint); }
+
+/* White/surface backgrounds */
+[data-theme="dark"] .bg-white { background: var(--bg-surface) !important; }
+[data-theme="dark"] .bg-\[#FDFAF5\] { background: var(--bg-surface) !important; }
+
+/* Stone backgrounds */
+[data-theme="dark"] .bg-stone-100 { background: rgba(255,255,255,0.07); }
+[data-theme="dark"] .bg-stone-50  { background: rgba(255,255,255,0.04); }
+
+/* Hover backgrounds */
+[data-theme="dark"] .hover\:bg-stone-50:hover,
+[data-theme="dark"] .hover\:bg-stone-100\/60:hover { background: var(--bg-hover); }
+
+/* Borders */
+[data-theme="dark"] .border-stone-200 { border-color: var(--border); }
+[data-theme="dark"] .border-stone-100 { border-color: var(--border-light); }
+
+/* Active status pills */
+[data-theme="dark"] .bg-stone-900 { background: rgba(237,232,223,0.12) !important; }
+[data-theme="dark"] .bg-stone-900.text-white { color: var(--fg) !important; }
+
+/* Hover text */
+[data-theme="dark"] .hover\:text-stone-900:hover,
+[data-theme="dark"] .hover\:text-stone-700:hover,
+[data-theme="dark"] .hover\:text-stone-600:hover { color: var(--fg); }
+[data-theme="dark"] .hover\:text-stone-500:hover { color: var(--fg-muted); }
+
+/* Plum-tinted backgrounds used in sidebar links */
+[data-theme="dark"] .bg-\[rgba\(45\2c27\2c46\2c0\.1\)\] {
+  background: rgba(255,255,255,0.08) !important;
+}
+
+/* Animate pulse skeletons */
+[data-theme="dark"] .bg-stone-200 { background: rgba(255,255,255,0.1); }
+
+/* Catalogue search dropdown */
+[data-theme="dark"] .bg-\[rgba\(45\2c27\2c46\2c0\.05\)\],
+[data-theme="dark"] .hover\:bg-\[rgba\(45\2c27\2c46\2c0\.04\)\]:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+/* ─── Components ─────────────────────────────────────────────── */
 @layer components {
-  /* layout */
+
+  /* Layout */
   .page {
-    @apply min-h-screen bg-[#faf8f5];
+    min-height: 100vh;
+    background: var(--bg-page);
+    transition: background 0.2s;
   }
+
   .page-content {
-    @apply max-w-3xl mx-auto px-6 py-12 font-mono;
+    max-width: 48rem;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
   }
+
   .page-content-sm {
-    @apply max-w-3xl mx-auto px-6 py-10 font-mono;
+    max-width: 48rem;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
   }
 
-  /* navigation */
+  /* Navigation */
   .back-link {
-    @apply text-xs text-stone-400 hover:text-stone-700 transition-colors;
+    font-size: 0.75rem;
+    color: var(--fg-muted);
+    transition: color 0.15s;
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
   }
+  .back-link:hover { color: var(--fg); }
 
-  /* typography */
+  /* Typography */
   .section-label {
-    @apply text-xs font-semibold text-stone-400 tracking-widest;
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
   }
+
   .page-title {
-    @apply text-lg font-semibold text-stone-900;
+    font-family: var(--font-playfair), Georgia, serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--fg-heading);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
   }
+
+  .serif-heading {
+    font-family: var(--font-playfair), Georgia, serif;
+    letter-spacing: -0.01em;
+  }
+
   .hint-text {
-    @apply text-xs text-stone-300 mt-1.5;
+    font-size: 0.7rem;
+    color: var(--fg-faint);
+    margin-top: 0.375rem;
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
   }
 
-  /* inputs */
+  /* Journal surfaces — dotted grid + Caveat font */
+  .journal-surface {
+    background-image: radial-gradient(
+      circle,
+      var(--dot-color) 1px,
+      transparent 1px
+    );
+    background-size: 22px 22px;
+    border-radius: 12px;
+    background-color: var(--bg-surface);
+    transition: background-color 0.2s;
+  }
+
+  .journal-text {
+    font-family: var(--font-caveat), cursive;
+    font-size: 1.05rem;
+    line-height: 1.85;
+    color: var(--fg);
+  }
+
+  /* Inputs */
   .underline-input {
-    @apply w-full bg-transparent border-b border-stone-300 pb-1.5 text-sm text-stone-900 placeholder:text-stone-300 focus:outline-none focus:border-stone-600 transition-colors disabled:opacity-50;
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.375rem;
+    font-size: 0.875rem;
+    color: var(--fg);
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+    outline: none;
+    transition: border-color 0.15s;
   }
+  .underline-input::placeholder { color: var(--fg-faint); }
+  .underline-input:focus { border-color: var(--fg-muted); }
+  .underline-input:disabled { opacity: 0.5; }
 
-  /* list rows */
+  /* List rows */
   .row-item {
-    @apply flex items-baseline gap-3 py-1.5 -mx-3 px-3 hover:bg-stone-100/60 rounded transition-colors;
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.375rem 0.75rem;
+    margin: 0 -0.75rem;
+    border-radius: 0.375rem;
+    transition: background 0.15s;
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
   }
+  .row-item:hover { background: var(--bg-hover); }
+
   .dot-leader {
-    @apply flex-1 border-b border-dotted border-stone-200 mb-0.5;
+    flex: 1;
+    border-bottom: 1px dotted var(--border);
+    margin-bottom: 0.125rem;
   }
 
-  /* buttons */
+  /* Buttons */
   .btn-primary {
-    @apply text-sm text-white bg-amber-900 hover:bg-amber-800 transition-colors px-4 py-2 rounded-lg disabled:opacity-50;
+    font-size: 0.875rem;
+    color: #fff;
+    background: var(--plum);
+    border-radius: 9999px;
+    padding: 0.5rem 1.25rem;
+    transition: background 0.15s;
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+    font-weight: 500;
   }
+  .btn-primary:hover { background: var(--plum-light); }
+  .btn-primary:disabled { opacity: 0.5; }
+
   .btn-delete {
-    @apply text-xs text-stone-300 hover:text-red-700 transition-colors;
+    font-size: 0.7rem;
+    color: var(--fg-faint);
+    transition: color 0.15s;
+  }
+  .btn-delete:hover { color: #b91c1c; }
+
+  /* Sidebar — dark mode aware */
+  .sidebar-nav {
+    background: rgba(45, 27, 46, 0.02);
+    border-right: 1px solid rgba(45, 27, 46, 0.08);
+    transition: background 0.2s, border-color 0.2s;
+  }
+  [data-theme="dark"] .sidebar-nav {
+    background: rgba(255, 255, 255, 0.02);
+    border-right-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .sidebar-link {
+    display: flex;
+    align-items: center;
+    padding: 7px 10px;
+    border-radius: 10px;
+    font-size: 13px;
+    transition: background 0.15s, color 0.15s;
+    color: var(--fg);
+    font-weight: 500;
+  }
+  .sidebar-link:hover { background: var(--bg-hover); }
+  .sidebar-link.active {
+    background: rgba(45, 27, 46, 0.1);
+    color: var(--fg-heading);
+    font-weight: 600;
+  }
+  [data-theme="dark"] .sidebar-link.active {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .sidebar-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 10px;
+    padding: 0 10px;
   }
 }

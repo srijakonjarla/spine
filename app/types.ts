@@ -24,6 +24,7 @@ export interface BookEntry {
   title: string;
   author: string;
   genres: string[];
+  moodTags: string[];
   status: ReadingStatus;
   dateStarted: string;
   dateFinished: string;
@@ -37,12 +38,31 @@ export interface BookEntry {
   updatedAt: string;
 }
 
+export interface Quote {
+  id: string;
+  bookId: string | null;
+  bookTitle?: string;
+  text: string;
+  pageNumber: string;
+  createdAt: string;
+}
+
+export interface ReadingGoal {
+  id: string;
+  year: number;
+  target: number;
+  name: string;
+  isAuto: boolean;
+  bookIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ListItem {
   id: string;
   listId: string;
-  catalogId: string;
-  title: string;   // from book_catalog join
-  author: string;  // from book_catalog join
+  title: string;
+  author: string;
   releaseDate: string;
   notes: string;
   price: string;

@@ -8,7 +8,7 @@ export interface CatalogEntry {
   genres: string[];
 }
 
-interface CatalogRow {
+interface BookRow {
   id: string;
   title: string;
   author: string;
@@ -16,27 +16,24 @@ interface CatalogRow {
   genres: string[];
 }
 
-function mapCatalog(row: CatalogRow): CatalogEntry {
+function mapEntry(row: BookRow): CatalogEntry {
   return { id: row.id, title: row.title, author: row.author, releaseDate: row.release_date, genres: row.genres ?? [] };
 }
 
+// Searches Google Books
 export async function searchCatalog(query: string): Promise<CatalogEntry[]> {
   if (!query.trim()) return [];
   const res = await apiFetch(`/api/catalog?q=${encodeURIComponent(query)}`);
   const data = await res.json();
-  return (data as CatalogRow[]).map(mapCatalog);
+  return (data as BookRow[]).map(mapEntry);
 }
 
-export async function findOrCreateCatalogEntry(
-  title: string,
-  author: string,
-  releaseDate?: string,
-  genres?: string[]
-): Promise<CatalogEntry> {
-  const res = await apiFetch("/api/catalog", {
-    method: "POST",
-    body: JSON.stringify({ title, author, releaseDate, genres }),
-  });
-  const data = await res.json();
-  return mapCatalog(data as CatalogRow);
+// Fetch the best-matching Google Books entry for a given title + author.
+// Used to enrich book data when creating entries without a catalog selection.
+export async function lookupBook(title: string, author?: string): Promise<CatalogEntry | null> {
+  const q = [title, author].filter(Boolean).join(" ");
+  const results = await searchCatalog(q);
+  if (!results.length) return null;
+  // Prefer an exact title match; fall back to first result
+  return results.find((r) => r.title.toLowerCase() === title.toLowerCase()) ?? results[0];
 }

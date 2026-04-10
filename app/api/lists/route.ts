@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("lists")
-    .select("*, list_items(*, book_catalog(title, author))")
+    .select("*, list_items(*)")
     .eq("year", Number(year))
     .order("sort_order", { ascending: true });
 
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       date_label: dateLabel ?? "",
       notes_label: notesLabel ?? "notes",
     })
-    .select("*, list_items(*, book_catalog(title, author))")
+    .select("*, list_items(*)")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

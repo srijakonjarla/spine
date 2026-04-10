@@ -1,0 +1,88 @@
+import { apiFetch } from "@/lib/api";
+
+export interface SeriesBook {
+  id: string;
+  title: string;
+  position: number;
+  status: "read" | "reading" | "unread" | "skipped";
+  bookId: string | null;
+}
+
+export interface Series {
+  id: string;
+  name: string;
+  author: string;
+  books: SeriesBook[];
+  createdAt: string;
+}
+
+interface SeriesRow {
+  id: string;
+  name: string;
+  author: string;
+  created_at: string;
+  series_books: {
+    id: string;
+    title: string;
+    position: number;
+    status: string;
+    book_id: string | null;
+  }[];
+}
+
+function mapSeries(row: SeriesRow): Series {
+  return {
+    id: row.id,
+    name: row.name,
+    author: row.author,
+    createdAt: row.created_at,
+    books: (row.series_books ?? [])
+      .sort((a, b) => a.position - b.position)
+      .map((b) => ({
+        id: b.id,
+        title: b.title,
+        position: b.position,
+        status: b.status as SeriesBook["status"],
+        bookId: b.book_id,
+      })),
+  };
+}
+
+export async function getSeries(): Promise<Series[]> {
+  const res = await apiFetch("/api/series");
+  const data = await res.json();
+  if (!Array.isArray(data)) return [];
+  return (data as SeriesRow[]).map(mapSeries);
+}
+
+export async function createSeries(name: string, author: string): Promise<Series> {
+  const res = await apiFetch("/api/series", {
+    method: "POST",
+    body: JSON.stringify({ name, author }),
+  });
+  return mapSeries(await res.json());
+}
+
+export async function deleteSeries(id: string): Promise<void> {
+  await apiFetch(`/api/series/${id}`, { method: "DELETE" });
+}
+
+export async function addSeriesBook(seriesId: string, title: string, position: number): Promise<SeriesBook> {
+  const res = await apiFetch(`/api/series/${seriesId}/books`, {
+    method: "POST",
+    body: JSON.stringify({ title, position }),
+  });
+  const b = await res.json();
+  return { id: b.id, title: b.title, position: b.position, status: b.status, bookId: b.book_id };
+}
+
+export async function updateSeriesBook(seriesId: string, bookId: string, status: SeriesBook["status"]): Promise<void> {
+  await apiFetch(`/api/series/${seriesId}/books/${bookId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
+
+export async function deleteSeriesBook(seriesId: string, bookId: string): Promise<void> {
+  await apiFetch(`/api/series/${seriesId}/books/${bookId}`, { method: "DELETE" });
+}

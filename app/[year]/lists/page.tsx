@@ -99,12 +99,12 @@ export default function ListsPage() {
     <div className="page">
       <div className="page-content">
         <div className="mb-10">
-          <Link href={`/${year}`} className="back-link">← {year}</Link>
+          <Link href="/" className="back-link">← home</Link>
         </div>
 
         <div className="mb-10 pb-8 border-b border-stone-200">
           <p className="text-xs text-stone-300 mb-2 tracking-widest uppercase">reading journal · {year}</p>
-          <h1 className="text-3xl font-semibold text-stone-900 tracking-tight">lists</h1>
+          <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold text-[#2D1B2E] tracking-tight">lists</h1>
         </div>
 
         {/* existing lists */}

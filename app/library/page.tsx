@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getEntries, createEntry } from "@/lib/db";
-import { findOrCreateCatalogEntry, type CatalogEntry } from "@/lib/catalog";
+import { type CatalogEntry, lookupBook } from "@/lib/catalog";
 import { CatalogSearch } from "@/components/CatalogSearch";
 import { StarDisplay } from "@/components/StarDisplay";
 import { STATUS_LABEL, STATUS_SYMBOL, STATUS_COLOR, TRUNCATED_STATUSES, TRUNCATE_LIMIT } from "@/lib/statusMeta";
@@ -61,7 +61,7 @@ function InlineAdd({
   );
 }
 
-export default function ShelfPage() {
+export default function LibraryPage() {
   const router = useRouter();
   const [entries, setEntries] = useState<BookEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,12 +93,14 @@ export default function ShelfPage() {
   const addBook = async (status: "reading" | "want-to-read", catalog?: CatalogEntry, raw?: string) => {
     const title = (catalog?.title ?? raw ?? "").trim();
     if (!title) return;
+    const enriched = catalog ?? await lookupBook(title);
     const now = new Date();
     const entry: BookEntry = {
       id: crypto.randomUUID(),
-      title,
-      author: catalog?.author ?? "",
-      genres: catalog?.genres ?? [],
+      title: enriched?.title ?? title,
+      author: enriched?.author ?? "",
+      genres: enriched?.genres ?? [],
+      moodTags: [],
       status,
       dateStarted: status === "reading" ? now.toISOString().split("T")[0] : "",
       dateFinished: "",
@@ -111,8 +113,7 @@ export default function ShelfPage() {
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     };
-    const catalogEntry = catalog ?? await findOrCreateCatalogEntry(title, "");
-    await createEntry(entry, catalogEntry.id);
+    await createEntry(entry);
     if (status === "reading") {
       router.push(`/book/${entry.id}`);
     } else {
@@ -130,7 +131,7 @@ export default function ShelfPage() {
         </div>
 
         <div className="flex items-baseline justify-between mb-10">
-          <h1 className="page-title">shelf</h1>
+          <h1 className="page-title">library</h1>
           <span className="text-xs text-stone-300">{entries.length} books</span>
         </div>
 
@@ -187,7 +188,7 @@ export default function ShelfPage() {
               </Link>
             ))}
             {allWantToRead.length > 8 && !activeGenre && !search && (
-              <Link href="/shelf/want-to-read" className="text-xs text-stone-300 hover:text-stone-500 transition-colors py-1 block">
+              <Link href="/library/want-to-read" className="text-xs text-stone-300 hover:text-stone-500 transition-colors py-1 block">
                 +{allWantToRead.length - 8} more →
               </Link>
             )}
@@ -248,7 +249,7 @@ export default function ShelfPage() {
                     ))}
                   </div>
                   {hidden > 0 && (
-                    <Link href={`/shelf/${status}`} className="mt-3 inline-block text-xs text-stone-400 hover:text-stone-700 transition-colors">
+                    <Link href={`/library/${status}`} className="mt-3 inline-block text-xs text-stone-400 hover:text-stone-700 transition-colors">
                       see {hidden} more →
                     </Link>
                   )}

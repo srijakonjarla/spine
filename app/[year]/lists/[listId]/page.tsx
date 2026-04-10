@@ -11,7 +11,7 @@ import {
 import { BookmarkButton } from "@/components/BookmarkButton";
 import { CatalogSearch } from "@/components/CatalogSearch";
 import { useDraggableList } from "@/hooks/useDraggableList";
-import { findOrCreateCatalogEntry, type CatalogEntry } from "@/lib/catalog";
+import { type CatalogEntry } from "@/lib/catalog";
 import type { BookList, ListItem } from "@/types";
 
 interface NewItemDraft {
@@ -67,12 +67,9 @@ export default function ListDetailPage() {
     if (!title || adding) return;
     setAdding(true);
     try {
-      // Only pass the date to the catalog entry for anticipated lists — for other list types
-      // the date field means something else (e.g. date bought/sold) and shouldn't touch book_catalog.
-      const catalogReleaseDate = list?.listType === "anticipated" ? draft.releaseDate.trim() || undefined : undefined;
-      const catalog = await findOrCreateCatalogEntry(title, draft.author.trim(), catalogReleaseDate);
       const item = await addListItem(listId, {
-        catalogId: catalog.id,
+        title,
+        author: draft.author.trim(),
         releaseDate: draft.releaseDate.trim(),
         notes: draft.notes.trim(),
         price: draft.price.trim(),
@@ -144,7 +141,7 @@ export default function ListDetailPage() {
             saveListField({ title });
           }}
           placeholder="list title"
-          className="w-full text-lg font-semibold text-stone-900 bg-transparent border-none outline-none placeholder:text-stone-300 mb-1 lowercase"
+          className="w-full text-lg font-semibold text-stone-900 bg-transparent border-none outline-none placeholder:text-stone-300 mb-1"
         />
 
         {/* description */}
@@ -171,9 +168,9 @@ export default function ListDetailPage() {
               <span className="text-xs text-stone-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5 cursor-grab active:cursor-grabbing select-none">⠿</span>
               <span className="text-xs text-stone-300 shrink-0 mt-0.5">{i + 1}.</span>
               <div className="flex-1 min-w-0 border-b border-stone-100 pb-3">
-                <p className="text-sm text-stone-800 font-medium lowercase">{item.title}</p>
+                <p className="text-sm text-stone-800 font-medium">{item.title}</p>
                 <div className="flex gap-3 mt-0.5 items-baseline">
-                  {item.author && <p className="flex-1 text-xs text-stone-500 lowercase truncate">{item.author}</p>}
+                  {item.author && <p className="flex-1 text-xs text-stone-500 truncate">{item.author}</p>}
                   {showDate && (
                     <div className="flex items-baseline gap-1 shrink-0">
                       <span className="text-xs text-stone-300">{list.dateLabel}:</span>
@@ -262,7 +259,7 @@ export default function ListDetailPage() {
                 onChange={(e) => setDraft((d) => ({ ...d, author: e.target.value }))}
                 onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
                 placeholder="author"
-                className="flex-1 min-w-0 text-xs text-stone-500 bg-transparent border-none outline-none placeholder:text-stone-300 lowercase"
+                className="flex-1 min-w-0 text-xs text-stone-500 bg-transparent border-none outline-none placeholder:text-stone-300"
               />
               {showDate && (
                 <div className="flex items-baseline gap-1 shrink-0">

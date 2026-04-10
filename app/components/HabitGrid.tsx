@@ -94,17 +94,22 @@ function MonthCalendar({
             const date = new Date(year, month, day);
             const isFuture = date > now;
 
+            let style: React.CSSProperties = { width: CELL, height: CELL, fontSize: 10 };
             let cls = "";
+
             if (isFuture && isCurrentYear) {
-              cls = "bg-stone-100 opacity-20 cursor-not-allowed";
+              cls = "bg-stone-100 opacity-20 cursor-not-allowed text-stone-400";
+            } else if (isLogged && isToday) {
+              cls = "cursor-pointer font-semibold ring-2 ring-offset-1";
+              style = { ...style, background: "rgba(122,158,126,0.25)", color: "#7B9E87", ringColor: "#7B9E87" };
             } else if (isLogged) {
-              cls = isToday
-                ? "bg-amber-900 ring-2 ring-offset-1 ring-amber-700 hover:bg-amber-800 cursor-pointer"
-                : "bg-amber-900 hover:bg-amber-800 cursor-pointer";
+              cls = "cursor-pointer font-semibold";
+              style = { ...style, background: "rgba(122,158,126,0.18)", color: "#7B9E87" };
+            } else if (isToday) {
+              cls = "cursor-pointer font-bold text-white";
+              style = { ...style, background: "#2D1B2E", boxShadow: "0 1px 4px rgba(45,27,46,0.3)" };
             } else {
-              cls = isToday
-                ? "bg-white ring-2 ring-stone-300 hover:bg-stone-50 cursor-pointer"
-                : "bg-stone-100 hover:bg-stone-200 cursor-pointer";
+              cls = "cursor-pointer text-stone-400 bg-stone-100 hover:bg-stone-200";
             }
 
             return (
@@ -113,8 +118,8 @@ function MonthCalendar({
                 title={date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
                 disabled={isFuture && isCurrentYear}
                 onClick={() => !(isFuture && isCurrentYear) && onToggle(dateStr)}
-                style={{ width: CELL, height: CELL, fontSize: 10 }}
-                className={`rounded flex items-center justify-center text-stone-400 transition-colors ${cls}`}
+                style={style}
+                className={`rounded flex items-center justify-center transition-colors ${cls}`}
               >
                 {day}
               </button>

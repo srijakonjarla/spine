@@ -15,3 +15,10 @@ export async function toggleDay(date: string): Promise<"added" | "removed"> {
   const { result } = await res.json();
   return result;
 }
+
+export async function saveLogNote(date: string, note: string): Promise<void> {
+  await apiFetch("/api/habits", {
+    method: "PATCH",
+    body: JSON.stringify({ date, note }),
+  });
+}

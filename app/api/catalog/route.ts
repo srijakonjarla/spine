@@ -1,51 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase-server";
+
+interface GoogleVolume {
+  id: string;
+  volumeInfo: {
+    title?: string;
+    authors?: string[];
+    publishedDate?: string;
+    categories?: string[];
+  };
+}
 
 export async function GET(req: NextRequest) {
-  const supabase = createServerClient(req);
   const q = req.nextUrl.searchParams.get("q") ?? "";
   if (!q.trim()) return NextResponse.json([]);
 
-  const { data, error } = await supabase
-    .from("book_catalog")
-    .select("*")
-    .or(`title.ilike.%${q}%,author.ilike.%${q}%`)
-    .order("title")
-    .limit(6);
+  const key = process.env.GOOGLE_BOOKS_API_KEY;
+  const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=6&printType=books${key ? `&key=${key}` : ""}`;
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
-}
+  const res = await fetch(url, { next: { revalidate: 60 } });
+  if (!res.ok) return NextResponse.json([]);
 
-export async function POST(req: NextRequest) {
-  const supabase = createServerClient(req);
-  const { title, author, releaseDate, genres } = await req.json();
+  const json = await res.json();
+  const items: GoogleVolume[] = json.items ?? [];
 
-  const { data: existing } = await supabase
-    .from("book_catalog")
-    .select("*")
-    .ilike("title", title)
-    .ilike("author", author || "%")
-    .limit(1)
-    .maybeSingle();
+  const results = items.map((item) => ({
+    id: item.id,
+    title: item.volumeInfo.title ?? "",
+    author: (item.volumeInfo.authors ?? []).join(", "),
+    release_date: item.volumeInfo.publishedDate ?? "",
+    genres: item.volumeInfo.categories ?? [],
+  }));
 
-  if (existing) {
-    if (genres?.length) {
-      const merged = Array.from(new Set([...(existing.genres ?? []), ...genres]));
-      if (merged.length > (existing.genres ?? []).length) {
-        await supabase.from("book_catalog").update({ genres: merged }).eq("id", existing.id);
-        return NextResponse.json({ ...existing, genres: merged });
-      }
-    }
-    return NextResponse.json(existing);
-  }
-
-  const { data, error } = await supabase
-    .from("book_catalog")
-    .insert({ title, author: author ?? "", release_date: releaseDate ?? "", genres: genres ?? [] })
-    .select()
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data, { status: 201 });
+  return NextResponse.json(results);
 }

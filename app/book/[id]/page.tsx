@@ -12,9 +12,16 @@ import {
   startNewRead,
   deleteBookRead,
 } from "@/lib/db";
+import { getQuotes, addQuote, deleteQuote } from "@/lib/quotes";
 import { BookmarkButton } from "@/components/BookmarkButton";
 import { StarDisplay } from "@/components/StarDisplay";
-import type { BookEntry, BookRead, ReadingStatus, Thought } from "@/types";
+import { usePreviousRoute } from "@/components/NavigationProvider";
+import type { BookEntry, BookRead, ReadingStatus, Thought, Quote } from "@/types";
+
+const MOOD_TAGS = [
+  "cozy", "dark", "hopeful", "funny", "slow-burn",
+  "heart-wrenching", "whimsical", "thought-provoking", "escapist",
+] as const;
 
 const statuses: { value: ReadingStatus; label: string }[] = [
   { value: "reading", label: "reading" },
@@ -125,9 +132,138 @@ function GenreTags({ genres, onChange }: { genres: string[]; onChange: (g: strin
   );
 }
 
+function MoodTags({ tags, onChange }: { tags: string[]; onChange: (t: string[]) => void }) {
+  const toggle = (tag: string) => {
+    onChange(tags.includes(tag) ? tags.filter((t) => t !== tag) : [...tags, tag]);
+  };
+  return (
+    <div className="flex flex-wrap gap-1.5 mb-5">
+      {MOOD_TAGS.map((tag) => (
+        <button
+          key={tag}
+          onClick={() => toggle(tag)}
+          className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+            tags.includes(tag)
+              ? "bg-stone-800 text-white border-stone-800"
+              : "border-stone-200 text-stone-400 hover:border-stone-400 hover:text-stone-600"
+          }`}
+        >
+          {tag}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function QuoteSection({ bookId }: { bookId: string }) {
+  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [input, setInput] = useState("");
+  const [page, setPage] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    getQuotes(bookId).then(setQuotes).catch(console.error);
+  }, [bookId]);
+
+  const handleAdd = async () => {
+    const text = input.trim();
+    if (!text || adding) return;
+    setAdding(true);
+    try {
+      const q = await addQuote(text, bookId, page.trim());
+      setQuotes((prev) => [q, ...prev]);
+      setInput("");
+      setPage("");
+      setOpen(false);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  return (
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-3">
+        <p className="section-label">quotes</p>
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="text-xs text-stone-400 hover:text-stone-700 transition-colors"
+        >
+          {open ? "cancel" : "+ add quote"}
+        </button>
+      </div>
+
+      {open && (
+        <div className="mb-4 space-y-2">
+          <textarea
+            autoFocus
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAdd(); }
+              if (e.key === "Escape") setOpen(false);
+            }}
+            placeholder="paste the quote..."
+            rows={3}
+            className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm text-stone-900 placeholder:text-stone-300 focus:outline-none focus:ring-2 focus:ring-stone-200 resize-none leading-relaxed"
+          />
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              value={page}
+              onChange={(e) => setPage(e.target.value)}
+              placeholder="p. 42 (optional)"
+              className="text-xs bg-transparent border-b border-stone-200 pb-1 focus:outline-none focus:border-stone-500 transition-colors text-stone-600 placeholder:text-stone-300 w-28"
+            />
+            <button
+              onClick={handleAdd}
+              disabled={!input.trim() || adding}
+              className="text-xs text-white bg-stone-900 px-3 py-1.5 rounded-full hover:bg-stone-700 transition-colors disabled:opacity-50"
+            >
+              save
+            </button>
+          </div>
+          <p className="hint-text">↵ to save · esc to cancel</p>
+        </div>
+      )}
+
+      {quotes.length === 0 && !open && (
+        <p className="text-xs text-stone-300">no quotes saved yet</p>
+      )}
+
+      <div className="space-y-4">
+        {quotes.map((q) => (
+          <div key={q.id} className="group border-l-2 border-stone-200 pl-3 hover:border-stone-400 transition-colors">
+            <p className="text-sm text-stone-700 italic leading-relaxed">&ldquo;{q.text}&rdquo;</p>
+            <div className="flex items-center gap-2 mt-1">
+              {q.pageNumber && <span className="text-xs text-stone-400">p. {q.pageNumber}</span>}
+              <button
+                onClick={() => {
+                  deleteQuote(q.id);
+                  setQuotes((prev) => prev.filter((x) => x.id !== q.id));
+                }}
+                className="text-xs text-stone-200 hover:text-red-700 transition-colors opacity-0 group-hover:opacity-100 ml-auto"
+              >
+                delete
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function useBackLink(): { label: string; href: string } {
+  const previous = usePreviousRoute();
+  if (previous) return { label: previous.label, href: previous.pathname };
+  return { label: "library", href: "/library" };
+}
+
 export default function BookPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const backLink = useBackLink();
   const [entry, setEntry] = useState<BookEntry | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [thoughtInput, setThoughtInput] = useState("");
@@ -250,8 +386,8 @@ export default function BookPage() {
 
         {/* top bar */}
         <div className="flex items-center justify-between mb-8">
-          <Link href="/shelf" className="text-sm text-stone-400 hover:text-stone-700 transition-colors">
-            ← shelf
+          <Link href={backLink.href} className="text-sm text-stone-400 hover:text-stone-700 transition-colors">
+            ← {backLink.label}
           </Link>
           <div className="flex items-center gap-4">
             <BookmarkButton
@@ -271,7 +407,7 @@ export default function BookPage() {
           value={entry.title}
           onChange={(e) => update({ title: e.target.value })}
           placeholder="book title"
-          className="w-full text-2xl font-semibold text-stone-900 bg-transparent border-none outline-none placeholder:text-stone-300 mb-1 lowercase"
+          className="w-full text-2xl font-[family-name:var(--font-playfair)] font-semibold text-[#2D1B2E] bg-transparent border-none outline-none placeholder:text-[#c4bfba] mb-1 tracking-tight"
         />
 
         {/* author */}
@@ -281,13 +417,19 @@ export default function BookPage() {
           value={entry.author}
           onChange={(e) => update({ author: e.target.value })}
           placeholder="author"
-          className="w-full text-sm text-stone-400 bg-transparent border-none outline-none placeholder:text-stone-300 mb-4 lowercase"
+          className="w-full text-sm text-stone-400 bg-transparent border-none outline-none placeholder:text-stone-300 mb-4"
         />
 
         {/* genres */}
         <GenreTags
           genres={entry.genres}
           onChange={(genres) => update({ genres })}
+        />
+
+        {/* mood tags */}
+        <MoodTags
+          tags={entry.moodTags}
+          onChange={(moodTags) => update({ moodTags })}
         />
 
         {/* status pills */}
@@ -354,7 +496,7 @@ export default function BookPage() {
             onChange={(e) => update({ feeling: e.target.value })}
             placeholder="how does it make you feel?"
             rows={1}
-            className="w-full text-sm italic text-stone-500 bg-transparent border-none outline-none resize-none placeholder:text-stone-300 mb-6 leading-relaxed overflow-hidden"
+            className="journal-text w-full bg-transparent border-none outline-none resize-none placeholder:text-[#c4bfba] mb-6 overflow-hidden"
           />
         )}
 
@@ -412,6 +554,11 @@ export default function BookPage() {
 
         <hr className="border-stone-200 mb-6" />
 
+        {/* quotes */}
+        <QuoteSection bookId={entry.id} />
+
+        <hr className="border-stone-200 mb-6" />
+
         {/* thoughts log */}
         <div className="space-y-4 mb-6">
           {entry.thoughts.length === 0 && (
@@ -455,7 +602,7 @@ export default function BookPage() {
           }}
           placeholder="add a thought... (enter to post, shift+enter for newline)"
           rows={1}
-          className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm text-stone-900 placeholder:text-stone-300 focus:outline-none focus:ring-2 focus:ring-stone-200 resize-none transition-shadow leading-relaxed"
+          className="journal-surface journal-text w-full border border-[rgba(45,27,46,0.1)] px-5 py-3 focus:outline-none focus:ring-2 focus:ring-[rgba(45,27,46,0.12)] resize-none transition-shadow placeholder:text-[#c4bfba]"
         />
 
         {/* footer */}

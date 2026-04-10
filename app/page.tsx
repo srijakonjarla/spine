@@ -3,123 +3,131 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getEntries } from "@/lib/db";
-import { getLists } from "@/lib/lists";
 import { getReadingLog } from "@/lib/habits";
-import { signOut, getDisplayName, hasImportedGoodreads } from "@/lib/auth";
+import { getDisplayName, hasImportedGoodreads } from "@/lib/auth";
 import { useAuth } from "@/components/AuthProvider";
-import type { BookEntry, BookList } from "@/types";
+import { BookCover } from "@/components/BookCover";
+import { StarDisplay } from "@/components/StarDisplay";
+import type { BookEntry } from "@/types";
 
 const CURRENT_YEAR = new Date().getFullYear();
+const CURRENT_MONTH = `${CURRENT_YEAR}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
 
-interface JournalData {
-  year: number;
-  books: number;
-  finished: number;
-  lists: BookList[];
-  days: number;
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "good morning";
+  if (h < 17) return "good afternoon";
+  return "good evening";
 }
 
 export default function Home() {
-  const [journals, setJournals] = useState<JournalData[]>([]);
-  const [goodreadsImported, setGoodreadsImported] = useState(true);
   const { user } = useAuth();
+  const [reading, setReading] = useState<BookEntry[]>([]);
+  const [recentlyFinished, setRecentlyFinished] = useState<BookEntry[]>([]);
+  const [daysThisMonth, setDaysThisMonth] = useState(0);
+  const [archivedYears, setArchivedYears] = useState<{ year: number; books: number; days: number }[]>([]);
+  const [goodreadsImported, setGoodreadsImported] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const allBooks = await getEntries();
+      const [allBooks, log] = await Promise.all([
+        getEntries(),
+        getReadingLog(CURRENT_YEAR),
+      ]);
 
-      const bookYear = (b: BookEntry) => {
-        const d =
-          b.status === "finished" && b.dateFinished
-            ? b.dateFinished
-            : b.status === "did-not-finish" && b.dateShelved
-            ? b.dateShelved
-            : b.dateStarted || b.createdAt;
-        return new Date(d).getFullYear();
-      };
+      setReading(allBooks.filter((b) => b.status === "reading"));
 
-      const yearSet = new Set<number>([CURRENT_YEAR]);
-      allBooks.forEach((b) => yearSet.add(bookYear(b)));
-      const years = Array.from(yearSet).sort((a, b) => b - a);
+      const finished = allBooks
+        .filter((b) => b.status === "finished" && b.dateFinished)
+        .sort((a, b) => b.dateFinished!.localeCompare(a.dateFinished!));
+      setRecentlyFinished(finished.slice(0, 4));
 
-      const data = await Promise.all(
-        years.map(async (year) => {
-          const [lists, log] = await Promise.all([getLists(year), getReadingLog(year)]);
-          const books = allBooks.filter((b) => bookYear(b) === year);
-          return {
-            year,
-            books: books.length,
-            finished: books.filter((b) => b.status === "finished").length,
-            lists,
-            days: log.length,
-          };
-        })
-      );
-      setJournals(data);
+      const monthDays = log.filter((e) => e.logDate.startsWith(CURRENT_MONTH)).length;
+      setDaysThisMonth(monthDays);
+
+      // Build archive years
+      const yearSet = new Set<number>();
+      allBooks.forEach((b) => {
+        const d = b.dateFinished || b.dateStarted || b.createdAt;
+        yearSet.add(new Date(d).getFullYear());
+      });
+      const years = Array.from(yearSet).filter((y) => y !== CURRENT_YEAR).sort((a, b) => b - a);
+      const archive = years.map((year) => ({
+        year,
+        books: allBooks.filter((b) => {
+          const d = b.dateFinished || b.dateStarted || b.createdAt;
+          return new Date(d).getFullYear() === year;
+        }).length,
+        days: log.filter((e) => e.logDate.startsWith(`${year}-`)).length,
+      }));
+      setArchivedYears(archive);
     }
     load().catch(console.error);
     hasImportedGoodreads().then(setGoodreadsImported);
   }, []);
 
-  const currentJournal = journals.find((j) => j.year === CURRENT_YEAR);
-  const archivedJournals = journals.filter((j) => j.year !== CURRENT_YEAR);
+  const name = user ? getDisplayName(user) : "";
+  const finishedThisYear = recentlyFinished.filter((b) =>
+    b.dateFinished?.startsWith(`${CURRENT_YEAR}`)
+  ).length;
 
   return (
     <div className="page">
       <div className="page-content">
 
-        {/* header */}
-        <div className="mb-12 flex items-start justify-between">
-          <div>
-            <h1 className="text-lg font-semibold tracking-tight text-stone-900">spine</h1>
-            {user && (
-              <p className="text-xs text-stone-400 mt-0.5">
-                {getDisplayName(user)}&apos;s reading journals
-              </p>
-            )}
-          </div>
-          <button onClick={() => signOut()} className="lg:hidden text-xs text-stone-300 hover:text-stone-600 transition-colors mt-1">
-            sign out
-          </button>
+        {/* Greeting */}
+        <div className="mb-10">
+          <p className="font-[family-name:var(--font-caveat)] text-xl" style={{ color: "var(--fg-muted)" }}>
+            {greeting()}{name ? `, ${name}` : ""} ✦
+          </p>
+          <Link
+            href={`/${CURRENT_YEAR}/spread`}
+            className="font-[family-name:var(--font-playfair)] text-3xl font-semibold tracking-tight mt-1 block hover:opacity-80 transition-opacity"
+            style={{ color: "var(--fg-heading)" }}
+          >
+            {new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+          </Link>
+          <p className="text-xs mt-2" style={{ color: "var(--fg-faint)" }}>
+            {finishedThisYear} books finished this year
+            {daysThisMonth > 0 && ` · ${daysThisMonth} days read this month`}
+          </p>
         </div>
 
-        {/* current journal */}
-        {currentJournal && (
+        {/* Currently reading */}
+        {reading.length > 0 && (
           <div className="mb-10">
-            <p className="section-label mb-4">this year</p>
-            <Link href={`/${currentJournal.year}`} className="block group">
-              <div className="border border-stone-200 rounded-lg px-5 py-4 hover:border-stone-400 transition-colors bg-white">
-                <div className="flex items-baseline justify-between mb-3">
-                  <span className="text-base font-semibold text-stone-900">{currentJournal.year}</span>
-                  <span className="text-xs text-stone-300">active</span>
-                </div>
-                <div className="flex gap-5 text-xs text-stone-400">
-                  <span>{currentJournal.books} tracked</span>
-                  <span>{currentJournal.finished} finished</span>
-                  <span>{currentJournal.days} days read</span>
-                </div>
-              </div>
-            </Link>
-          </div>
-        )}
-
-        {/* archived journals */}
-        {archivedJournals.length > 0 && (
-          <div>
-            <p className="section-label mb-4">archive</p>
-            <div className="space-y-2">
-              {archivedJournals.map((j) => (
-                <Link key={j.year} href={`/${j.year}`} className="block group">
-                  <div className="flex items-baseline gap-4 py-2.5 px-3 -mx-3 rounded hover:bg-stone-100/60 transition-colors">
-                    <span className="text-sm font-semibold text-stone-500 group-hover:text-stone-800 transition-colors w-12 shrink-0">
-                      {j.year}
-                    </span>
-                    <span className="dot-leader" />
-                    <div className="flex gap-4 text-xs text-stone-300 shrink-0">
-                      <span>{j.books} books</span>
-                      <span>{j.days}d</span>
+            <p className="section-label mb-4">on the nightstand</p>
+            <div className="space-y-3">
+              {reading.map((book) => (
+                <Link key={book.id} href={`/book/${book.id}`} className="block group">
+                  <div
+                    className="flex gap-4 p-4 rounded-2xl transition-opacity group-hover:opacity-90"
+                    style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)" }}
+                  >
+                    <BookCover title={book.title} width={48} height={68} />
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      <p className="text-sm font-semibold truncate" style={{ color: "var(--fg-heading)" }}>
+                        {book.title}
+                      </p>
+                      {book.author && (
+                        <p className="text-xs mt-0.5 truncate" style={{ color: "var(--fg-muted)" }}>
+                          {book.author}
+                        </p>
+                      )}
+                      {book.moodTags.length > 0 && (
+                        <div className="flex gap-1.5 mt-2 flex-wrap">
+                          {book.moodTags.slice(0, 3).map((tag) => (
+                            <span
+                              key={tag}
+                              className="text-[10px] px-2 py-0.5 rounded-full"
+                              style={{ background: "var(--bg-hover)", color: "var(--fg-muted)" }}
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <span className="text-xs text-stone-300 group-hover:text-stone-500 transition-colors">→</span>
                   </div>
                 </Link>
               ))}
@@ -127,11 +135,70 @@ export default function Home() {
           </div>
         )}
 
-        <div className="mt-12 pt-6 border-t border-stone-100 space-y-2">
-          <div><Link href="/shelf" className="back-link">shelf →</Link></div>
-          {!goodreadsImported && <div><Link href="/import" className="back-link">import from goodreads →</Link></div>}
+        {/* Quick links */}
+        <div className="mb-10 grid grid-cols-2 gap-3">
+          <Link
+            href={`/${CURRENT_YEAR}/spread`}
+            className="p-4 rounded-2xl transition-colors hover:opacity-90"
+            style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)" }}
+          >
+            <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--fg-faint)" }}>spread</p>
+            <p className="text-sm font-medium" style={{ color: "var(--fg)" }}>this month →</p>
+          </Link>
+          <Link
+            href={`/${CURRENT_YEAR}/stats`}
+            className="p-4 rounded-2xl transition-colors hover:opacity-90"
+            style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)" }}
+          >
+            <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "var(--fg-faint)" }}>year</p>
+            <p className="text-sm font-medium" style={{ color: "var(--fg)" }}>{CURRENT_YEAR} in review →</p>
+          </Link>
         </div>
 
+        {/* Recently finished */}
+        {recentlyFinished.length > 0 && (
+          <div className="mb-10">
+            <p className="section-label mb-4">recently finished</p>
+            <div className="space-y-2">
+              {recentlyFinished.map((book) => (
+                <Link key={book.id} href={`/book/${book.id}`} className="flex items-center gap-3 group py-1.5 -mx-1 px-1 rounded-lg hover:bg-[rgba(45,27,46,0.04)] transition-colors">
+                  <BookCover title={book.title} width={28} height={40} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate" style={{ color: "var(--fg)" }}>{book.title}</p>
+                    {book.author && <p className="text-xs truncate" style={{ color: "var(--fg-faint)" }}>{book.author}</p>}
+                  </div>
+                  {book.rating > 0 && <StarDisplay rating={book.rating} />}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Archive */}
+        {archivedYears.length > 0 && (
+          <div className="mb-10">
+            <p className="section-label mb-4">archive</p>
+            <div className="space-y-0.5">
+              {archivedYears.map((j) => (
+                <Link
+                  key={j.year}
+                  href={`/${j.year}`}
+                  className="flex items-baseline gap-3 py-2 px-2.5 -mx-2.5 rounded-lg hover:bg-[rgba(45,27,46,0.04)] transition-colors group"
+                >
+                  <span className="text-sm font-semibold w-12 shrink-0" style={{ color: "var(--fg-muted)" }}>{j.year}</span>
+                  <span className="dot-leader" />
+                  <span className="text-xs shrink-0" style={{ color: "var(--fg-faint)" }}>{j.books} books · {j.days}d</span>
+                  <span className="text-xs" style={{ color: "var(--fg-faint)" }}>→</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="pt-4 border-t space-y-2" style={{ borderColor: "var(--border-light)" }}>
+          <div><Link href="/library" className="back-link">library →</Link></div>
+          {!goodreadsImported && <div><Link href="/import" className="back-link">import from goodreads →</Link></div>}
+        </div>
       </div>
     </div>
   );

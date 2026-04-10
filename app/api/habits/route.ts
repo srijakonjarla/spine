@@ -35,3 +35,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ result: "added" }, { status: 201 });
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  const supabase = createServerClient(req);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  const { date, note } = await req.json();
+  if (!date) return NextResponse.json({ error: "date required" }, { status: 400 });
+
+  // Ensure the row exists (upsert), then set the note
+  const { error } = await supabase
+    .from("reading_log")
+    .upsert({ user_id: user.id, log_date: date, note: note ?? "" }, { onConflict: "user_id,log_date" });
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}

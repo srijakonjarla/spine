@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import BookCard from "@/components/BookCard";
-import { getEntries } from "@/lib/db";
+import { CatalogSearch } from "@/components/CatalogSearch";
+import { getEntries, createEntry } from "@/lib/db";
+import { type CatalogEntry, lookupBook } from "@/lib/catalog";
 import type { BookEntry } from "@/types";
 
 function effectiveDate(e: BookEntry): string {
@@ -32,8 +34,11 @@ function sectionId(key: string) {
 export default function BooksPage() {
   const { year: yearParam } = useParams<{ year: string }>();
   const year = Number(yearParam);
+  const router = useRouter();
   const [entries, setEntries] = useState<BookEntry[]>([]);
   const [activeBooks, setActiveBooks] = useState<BookEntry[]>([]);
+  const [addValue, setAddValue] = useState("");
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -44,6 +49,40 @@ export default function BooksPage() {
       setActiveBooks(allEntries.filter((e) => e.status === "reading"));
     }).catch(console.error);
   }, [year]);
+
+  const addBook = async (catalog?: CatalogEntry) => {
+    const title = (catalog?.title ?? addValue).trim();
+    if (!title || adding) return;
+    setAdding(true);
+    try {
+      // If user typed without selecting a suggestion, look up Google Books
+      const enriched = catalog ?? await lookupBook(title);
+      const now = new Date();
+      const entry: BookEntry = {
+        id: crypto.randomUUID(),
+        title: enriched?.title ?? title,
+        author: enriched?.author ?? "",
+        genres: enriched?.genres ?? [],
+        moodTags: [],
+        status: "reading",
+        dateStarted: now.toISOString().split("T")[0],
+        dateFinished: "",
+        dateShelved: "",
+        rating: 0,
+        feeling: "",
+        thoughts: [],
+        reads: [],
+        bookmarked: false,
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+      };
+      await createEntry(entry);
+      router.push(`/book/${entry.id}`);
+    } catch (err) {
+      console.error(err);
+      setAdding(false);
+    }
+  };
 
   const loggable = entries.filter((e) => e.status !== "want-to-read");
 
@@ -59,28 +98,39 @@ export default function BooksPage() {
     <div className="page">
       <div className="page-content">
         <div className="mb-10">
-          <Link href={`/${year}`} className="back-link">← {year}</Link>
+          <Link href="/" className="back-link">← home</Link>
         </div>
 
         <div className="mb-10 pb-8 border-b border-stone-200">
           <p className="text-xs text-stone-300 mb-2 tracking-widest uppercase">reading journal · {year}</p>
-          <h1 className="text-3xl font-semibold text-stone-900 tracking-tight">reading log</h1>
+          <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold text-[#2D1B2E] tracking-tight">reading log</h1>
           {loggable.length > 0 && (
             <p className="text-xs text-stone-400 mt-3">{loggable.length} books · {months.length} months</p>
           )}
         </div>
 
         {/* currently reading */}
-        {activeBooks.length > 0 && (
-          <div className="mb-10">
-            <p className="section-label mb-3">currently reading</p>
-            <div className="space-y-0.5">
+        <div className="mb-10">
+          <p className="section-label mb-3">currently reading</p>
+          {activeBooks.length > 0 && (
+            <div className="space-y-0.5 mb-1">
               {activeBooks.map((e) => (
                 <BookCard key={e.id} entry={e} />
               ))}
             </div>
-          </div>
-        )}
+          )}
+          <CatalogSearch
+            value={addValue}
+            onChange={setAddValue}
+            onSelect={(s) => addBook(s)}
+            onSubmit={() => addBook()}
+            placeholder="start reading..."
+            disabled={adding}
+          />
+          {addValue.trim() && !adding && (
+            <p className="hint-text">↵ to add · esc to cancel</p>
+          )}
+        </div>
 
         {loggable.length === 0 ? (
           <p className="text-xs text-stone-400">nothing logged yet.</p>

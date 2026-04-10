@@ -6,13 +6,24 @@ import { useEffect, useState } from "react";
 import { useAuth } from "./AuthProvider";
 import { signOut } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { ThemeToggle } from "./ThemeToggle";
 
 const CURRENT_YEAR = new Date().getFullYear();
+const CURRENT_MONTH_LABEL = new Date().toLocaleDateString("en-US", {
+  month: "long",
+  year: "numeric",
+});
 
 interface TabItem {
   id: string;
   title: string;
   href: string;
+}
+
+interface ShelfCounts {
+  reading: number;
+  finished: number;
+  wantToRead: number;
 }
 
 function TopNavLink({ href, label }: { href: string; label: string }) {
@@ -38,11 +49,11 @@ function SidebarLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className={`flex items-center px-2.5 py-[7px] rounded-[10px] text-[13px] transition-colors ${
-        active
-          ? "bg-[rgba(45,27,46,0.1)] text-[#2D1B2E] font-semibold"
-          : "text-[#1A1A1A] font-medium hover:bg-[rgba(45,27,46,0.08)]"
-      }`}
+      className={`flex items-center px-2.5 py-[7px] rounded-[10px] text-[13px] transition-colors ${active ? "font-semibold" : "font-medium hover:bg-[rgba(45,27,46,0.08)]"}`}
+      style={{
+        background: active ? "var(--bg-hover)" : undefined,
+        color: active ? "var(--fg-heading)" : "var(--fg)",
+      }}
     >
       {label}
     </Link>
@@ -58,9 +69,7 @@ function SidebarSection({
 }) {
   return (
     <div className="mb-7">
-      <p className="text-[10px] font-bold text-[#5A5060] uppercase tracking-[0.12em] mb-2 px-2.5">
-        {label}
-      </p>
+      <p className="text-[10px] font-bold uppercase tracking-[0.12em] mb-2.5 px-2.5" style={{ color: "var(--fg-muted)" }}>{label}</p>
       <div className="space-y-0.5">{children}</div>
     </div>
   );
@@ -69,14 +78,15 @@ function SidebarSection({
 export default function Nav() {
   const { user } = useAuth();
   const [tabs, setTabs] = useState<TabItem[]>([]);
+  const [shelfCounts, setShelfCounts] = useState<ShelfCounts>({ reading: 0, finished: 0, wantToRead: 0 });
 
   useEffect(() => {
     if (!user) return;
-    async function loadTabs() {
-      const [booksRes, listsRes] = await Promise.all([
+    async function loadNav() {
+      const [booksRes, listsRes, readingRes, finishedRes, wantRes] = await Promise.all([
         supabase
           .from("books")
-          .select("id, book_catalog(title)")
+          .select("id, title")
           .eq("bookmarked", true)
           .order("updated_at", { ascending: false })
           .limit(8),
@@ -86,11 +96,14 @@ export default function Nav() {
           .eq("bookmarked", true)
           .order("updated_at", { ascending: false })
           .limit(8),
+        supabase.from("books").select("id", { count: "exact", head: true }).eq("status", "reading"),
+        supabase.from("books").select("id", { count: "exact", head: true }).eq("status", "finished"),
+        supabase.from("books").select("id", { count: "exact", head: true }).eq("status", "want-to-read"),
       ]);
 
       const bookTabs: TabItem[] = (booksRes.data ?? []).map((b: any) => ({
         id: b.id,
-        title: b.book_catalog?.title ?? "untitled",
+        title: b.title ?? "untitled",
         href: `/book/${b.id}`,
       }));
       const listTabs: TabItem[] = (listsRes.data ?? []).map((l: any) => ({
@@ -100,8 +113,13 @@ export default function Nav() {
       }));
 
       setTabs([...bookTabs, ...listTabs]);
+      setShelfCounts({
+        reading: readingRes.count ?? 0,
+        finished: finishedRes.count ?? 0,
+        wantToRead: wantRes.count ?? 0,
+      });
     }
-    loadTabs().catch(console.error);
+    loadNav().catch(console.error);
   }, [user]);
 
   return (
@@ -115,41 +133,45 @@ export default function Nav() {
           spine<span className="text-[#D4A843] italic">.</span>
         </Link>
 
-        {user && (
-          <>
-            <nav className="hidden lg:flex items-center gap-6">
-              <TopNavLink href="/" label="journal" />
-              <TopNavLink href="/shelf" label="library" />
-              <TopNavLink href={`/${CURRENT_YEAR}/stats`} label="stats" />
-            </nav>
-            <Link
-              href={`/${CURRENT_YEAR}/books`}
-              className="hidden lg:inline-block text-[13px] font-semibold text-white bg-[#C97B5A] px-4 py-1.5 rounded-full hover:bg-[#b3694a] transition-colors"
-            >
-              + log
-            </Link>
-          </>
-        )}
+        <div className="flex items-center gap-4">
+          {user && (
+            <>
+              <nav className="hidden lg:flex items-center gap-6">
+                <TopNavLink href="/" label="journal" />
+                <TopNavLink href="/library" label="library" />
+                <TopNavLink href={`/${CURRENT_YEAR}/stats`} label="stats" />
+              </nav>
+              <Link
+                href={`/${CURRENT_YEAR}/books`}
+                className="hidden lg:inline-block text-[13px] font-semibold text-white bg-[#C97B5A] px-4 py-1.5 rounded-full hover:bg-[#b3694a] transition-colors"
+              >
+                + log
+              </Link>
+            </>
+          )}
+          <ThemeToggle />
+        </div>
       </header>
 
       {/* Desktop sidebar */}
       {user && (
-        <nav className="hidden lg:flex flex-col fixed top-14 left-0 h-[calc(100vh-3.5rem)] w-[220px] border-r border-[rgba(45,27,46,0.08)] bg-[rgba(45,27,46,0.02)] px-4 py-6 overflow-y-auto z-20">
-          <SidebarSection label={String(CURRENT_YEAR)}>
-            <SidebarLink href="/" label="home" />
-            <SidebarLink href={`/${CURRENT_YEAR}/books`} label="log" />
-            <SidebarLink href={`/${CURRENT_YEAR}/lists`} label="lists" />
-            <SidebarLink href={`/${CURRENT_YEAR}/habits`} label="habits" />
+        <nav className="hidden lg:flex flex-col fixed top-14 left-0 h-[calc(100vh-3.5rem)] w-[220px] px-4 py-6 overflow-y-auto z-20 border-r transition-colors" style={{ background: "var(--bg-page)", borderColor: "var(--border-light)" }}>
+          <SidebarSection label={CURRENT_MONTH_LABEL}>
+            <SidebarLink href={`/${CURRENT_YEAR}/spread`} label="monthly spread" />
+            <SidebarLink href={`/${CURRENT_YEAR}/habits`} label="habit tracker" />
+            <SidebarLink href={`/${CURRENT_YEAR}/quotes`} label="quote collection" />
           </SidebarSection>
 
-          <SidebarSection label="shelves">
-            <SidebarLink href="/shelf" label="all books" />
-            <SidebarLink href="/shelf/reading" label="reading" />
-            <SidebarLink href="/shelf/finished" label="finished" />
-            <SidebarLink href="/shelf/want-to-read" label="want to read" />
+          <SidebarSection label="my shelves">
+            <SidebarLink href="/library/reading" label={`reading${shelfCounts.reading > 0 ? ` · ${shelfCounts.reading}` : ""}`} />
+            <SidebarLink href="/library/finished" label={`read${shelfCounts.finished > 0 ? ` · ${shelfCounts.finished}` : ""}`} />
+            <SidebarLink href="/library/want-to-read" label={`want to read${shelfCounts.wantToRead > 0 ? ` · ${shelfCounts.wantToRead}` : ""}`} />
+            <SidebarLink href="/library/series" label="series tracker" />
+            <SidebarLink href="/library/recommendations" label="recommendations" />
           </SidebarSection>
 
           <SidebarSection label="milestones">
+            <SidebarLink href={`/${CURRENT_YEAR}/goal`} label={`${CURRENT_YEAR} goals`} />
             <SidebarLink href={`/${CURRENT_YEAR}/stats`} label="year in review" />
           </SidebarSection>
 
@@ -159,7 +181,8 @@ export default function Nav() {
                 <Link
                   key={t.id}
                   href={t.href}
-                  className="flex items-center px-2.5 py-[7px] rounded-[10px] text-[12px] text-[#5A5060] hover:bg-[rgba(45,27,46,0.08)] hover:text-[#1A1A1A] transition-colors truncate"
+                  className="flex items-center px-2.5 py-[7px] rounded-[10px] text-[12px] font-medium transition-colors truncate hover:bg-[rgba(45,27,46,0.08)]"
+                  style={{ color: "var(--fg-muted)" }}
                 >
                   {t.title}
                 </Link>
@@ -167,10 +190,13 @@ export default function Nav() {
             </SidebarSection>
           )}
 
-          <div className="mt-auto">
+          <div className="mt-auto px-2.5">
             <button
               onClick={() => signOut()}
-              className="text-[11px] text-[rgba(90,80,96,0.45)] hover:text-[#5A5060] transition-colors px-2.5"
+              className="text-[11px] transition-colors"
+              style={{ color: "var(--fg-faint)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--fg-muted)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--fg-faint)")}
             >
               sign out
             </button>
