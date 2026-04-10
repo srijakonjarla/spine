@@ -29,7 +29,7 @@ function AutoGoalCard({
   return (
     <div className="border border-stone-200 rounded-xl p-6 space-y-5">
       <div className="flex items-center justify-between">
-        <p className="text-xs text-stone-400 uppercase tracking-widest">yearly goal</p>
+        <p className="text-xs text-stone-400 uppercase tracking-widest">2026 reading goal</p>
         <span className="text-xs text-stone-300">auto-tracked</span>
       </div>
 

@@ -25,7 +25,7 @@ const MOOD_TAGS = [
 
 const statuses: { value: ReadingStatus; label: string }[] = [
   { value: "reading", label: "reading" },
-  { value: "finished", label: "finished" },
+  { value: "finished", label: "read" },
   { value: "did-not-finish", label: "did not finish" },
   { value: "want-to-read", label: "want to read" },
 ];

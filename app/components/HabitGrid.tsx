@@ -100,8 +100,8 @@ function MonthCalendar({
             if (isFuture && isCurrentYear) {
               cls = "bg-stone-100 opacity-20 cursor-not-allowed text-stone-400";
             } else if (isLogged && isToday) {
-              cls = "cursor-pointer font-semibold ring-2 ring-offset-1";
-              style = { ...style, background: "rgba(122,158,126,0.25)", color: "#7B9E87", ringColor: "#7B9E87" };
+              cls = "cursor-pointer font-semibold ring-2 ring-offset-1 ring-[#7B9E87]";
+              style = { ...style, background: "rgba(122,158,126,0.25)", color: "#7B9E87" };
             } else if (isLogged) {
               cls = "cursor-pointer font-semibold";
               style = { ...style, background: "rgba(122,158,126,0.18)", color: "#7B9E87" };

@@ -1,6 +1,6 @@
 export const STATUS_LABEL: Record<string, string> = {
   reading: "currently reading",
-  finished: "finished",
+  finished: "read",
   "want-to-read": "want to read",
   "did-not-finish": "did not finish",
 };

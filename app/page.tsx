@@ -6,7 +6,6 @@ import { getEntries } from "@/lib/db";
 import { getReadingLog } from "@/lib/habits";
 import { getDisplayName, hasImportedGoodreads } from "@/lib/auth";
 import { useAuth } from "@/components/AuthProvider";
-import { BookCover } from "@/components/BookCover";
 import { StarDisplay } from "@/components/StarDisplay";
 import type { BookEntry } from "@/types";
 
@@ -104,7 +103,6 @@ export default function Home() {
                     className="flex gap-4 p-4 rounded-2xl transition-opacity group-hover:opacity-90"
                     style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)" }}
                   >
-                    <BookCover title={book.title} width={48} height={68} />
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                       <p className="text-sm font-semibold truncate" style={{ color: "var(--fg-heading)" }}>
                         {book.title}
@@ -162,7 +160,6 @@ export default function Home() {
             <div className="space-y-2">
               {recentlyFinished.map((book) => (
                 <Link key={book.id} href={`/book/${book.id}`} className="flex items-center gap-3 group py-1.5 -mx-1 px-1 rounded-lg hover:bg-[rgba(45,27,46,0.04)] transition-colors">
-                  <BookCover title={book.title} width={28} height={40} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate" style={{ color: "var(--fg)" }}>{book.title}</p>
                     {book.author && <p className="text-xs truncate" style={{ color: "var(--fg-faint)" }}>{book.author}</p>}

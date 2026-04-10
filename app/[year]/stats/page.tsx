@@ -6,7 +6,6 @@ import Link from "next/link";
 import { getEntries } from "@/lib/db";
 import { getReadingLog } from "@/lib/habits";
 import { getQuotes } from "@/lib/quotes";
-import { BookCover } from "@/components/BookCover";
 import type { BookEntry } from "@/types";
 
 const MOOD_COLORS: Record<string, string> = {
@@ -166,12 +165,12 @@ export default function StatsPage() {
         {topBooks.length > 0 && (
           <div className="mb-12">
             <p className="section-label mb-6">favorites</p>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
+            <div className="space-y-1">
               {topBooks.map((b) => (
-                <Link key={b.id} href={`/book/${b.id}`} className="group">
-                  <BookCover title={b.title} width={80} height={112} className="mb-2 group-hover:opacity-80 transition-opacity" />
-                  <p className="text-[11px] leading-tight truncate" style={{ color: "var(--fg)" }}>{b.title}</p>
-                  <p className="text-[10px] mt-0.5" style={{ color: "#D4A843" }}>{"★".repeat(Math.round(b.rating))}</p>
+                <Link key={b.id} href={`/book/${b.id}`} className="flex items-baseline gap-3 py-1.5 group">
+                  <p className="text-sm font-medium flex-1 truncate group-hover:opacity-70 transition-opacity" style={{ color: "var(--fg)" }}>{b.title}</p>
+                  {b.author && <p className="text-xs shrink-0 hidden sm:block truncate" style={{ color: "var(--fg-faint)" }}>{b.author}</p>}
+                  {b.rating > 0 && <p className="text-[11px] shrink-0" style={{ color: "#D4A843" }}>{"★".repeat(Math.round(b.rating))}</p>}
                 </Link>
               ))}
             </div>

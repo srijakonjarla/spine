@@ -6,7 +6,6 @@ import Link from "next/link";
 import { getEntries } from "@/lib/db";
 import { STATUS_LABEL } from "@/lib/statusMeta";
 import { StarDisplay } from "@/components/StarDisplay";
-import { BookCover } from "@/components/BookCover";
 import type { BookEntry } from "@/types";
 
 const VALID_STATUSES = new Set(["reading", "finished", "want-to-read", "did-not-finish"]);
@@ -140,18 +139,20 @@ export default function StatusCatalogPage() {
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4">
             {filtered.map((e) => (
               <Link key={e.id} href={`/book/${e.id}`} className="group relative">
-                <div className="relative mb-2">
-                  <BookCover title={e.title} width="100%" height={130} className="!w-full rounded-lg group-hover:opacity-85 transition-opacity" />
+                <div
+                  className="relative mb-2 rounded-lg flex flex-col justify-between p-2.5 group-hover:opacity-85 transition-opacity"
+                  style={{ height: 130, background: "var(--bg-hover)", border: "1px solid var(--border-light)" }}
+                >
                   {e.moodTags.length > 0 && (
                     <span
-                      className="absolute top-1.5 left-1.5 text-[9px] px-1.5 py-0.5 rounded-full"
+                      className="self-start text-[9px] px-1.5 py-0.5 rounded-full"
                       style={{ background: `${MOOD_COLORS[e.moodTags[0]] ?? "#2D1B2E"}cc`, color: "#fff" }}
                     >
                       {e.moodTags[0]}
                     </span>
                   )}
                   {e.rating > 0 && (
-                    <span className="absolute top-1.5 right-1.5 text-[10px]" style={{ color: "#D4A843", textShadow: "0 1px 2px rgba(0,0,0,0.4)" }}>
+                    <span className="self-end text-[10px]" style={{ color: "#D4A843" }}>
                       {"★".repeat(Math.round(e.rating))}
                     </span>
                   )}
@@ -167,7 +168,6 @@ export default function StatusCatalogPage() {
           <div className="space-y-0.5">
             {filtered.map((e) => (
               <Link key={e.id} href={`/book/${e.id}`} className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-lg hover:bg-[rgba(45,27,46,0.04)] transition-colors group">
-                <BookCover title={e.title} width={28} height={40} className="shrink-0 rounded" />
                 <span className="text-sm truncate flex-1" style={{ color: "var(--fg)" }}>{e.title || "untitled"}</span>
                 {e.author && <span className="text-xs shrink-0 hidden sm:block" style={{ color: "var(--fg-faint)" }}>{e.author}</span>}
                 <span className="dot-leader hidden sm:block" />

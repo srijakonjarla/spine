@@ -8,7 +8,9 @@ import { signOut } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { ThemeToggle } from "./ThemeToggle";
 
+const MONTH_ABBRS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 const CURRENT_YEAR = new Date().getFullYear();
+const CURRENT_MONTH = MONTH_ABBRS[new Date().getMonth()];
 const CURRENT_MONTH_LABEL = new Date().toLocaleDateString("en-US", {
   month: "long",
   year: "numeric",
@@ -149,6 +151,14 @@ export default function Nav() {
               </Link>
             </>
           )}
+          {user && (
+            <button
+              onClick={() => signOut()}
+              className="hidden lg:block text-[12px] text-white/40 hover:text-white/80 transition-colors"
+            >
+              sign out
+            </button>
+          )}
           <ThemeToggle />
         </div>
       </header>
@@ -157,8 +167,7 @@ export default function Nav() {
       {user && (
         <nav className="hidden lg:flex flex-col fixed top-14 left-0 h-[calc(100vh-3.5rem)] w-[220px] px-4 py-6 overflow-y-auto z-20 border-r transition-colors" style={{ background: "var(--bg-page)", borderColor: "var(--border-light)" }}>
           <SidebarSection label={CURRENT_MONTH_LABEL}>
-            <SidebarLink href={`/${CURRENT_YEAR}/spread`} label="monthly spread" />
-            <SidebarLink href={`/${CURRENT_YEAR}/habits`} label="habit tracker" />
+            <SidebarLink href={`/${CURRENT_YEAR}/${CURRENT_MONTH}`} label="monthly spread" />
             <SidebarLink href={`/${CURRENT_YEAR}/quotes`} label="quote collection" />
           </SidebarSection>
 
@@ -190,16 +199,8 @@ export default function Nav() {
             </SidebarSection>
           )}
 
-          <div className="mt-auto px-2.5">
-            <button
-              onClick={() => signOut()}
-              className="text-[11px] transition-colors"
-              style={{ color: "var(--fg-faint)" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--fg-muted)")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--fg-faint)")}
-            >
-              sign out
-            </button>
+          <div className="mt-auto px-2.5 space-y-2">
+            <SidebarLink href="/profile" label="profile & settings" />
           </div>
         </nav>
       )}
