@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { signIn, signUp } from "@/lib/auth";
+import { signIn, signUp, resetPassword } from "@/lib/auth";
 
-type Mode = "signin" | "signup";
+type Mode = "signin" | "signup" | "forgot";
 
 export default function LoginPage() {
   const [mode, setMode] = useState<Mode>("signin");
@@ -24,6 +24,9 @@ export default function LoginPage() {
       if (mode === "signup") {
         await signUp(email, password, name);
         setMessage("check your email to confirm your account.");
+      } else if (mode === "forgot") {
+        await resetPassword(email);
+        setMessage("check your email for a password reset link.");
       } else {
         await signIn(email, password);
         // AuthProvider handles redirect
@@ -34,6 +37,8 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  const switchMode = (next: Mode) => { setMode(next); setError(""); setMessage(""); };
 
   return (
     <div className="page flex items-center justify-center px-6">
@@ -69,43 +74,48 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              autoFocus={mode === "signin"}
+              autoFocus={mode !== "signup"}
               className="underline-input"
             />
           </div>
 
-          <div>
-            <label htmlFor="password" className="text-xs text-stone-400 block mb-1">password</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              className="underline-input"
-            />
-          </div>
+          {mode !== "forgot" && (
+            <div>
+              <label htmlFor="password" className="text-xs text-stone-400 block mb-1">password</label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                className="underline-input"
+              />
+            </div>
+          )}
 
           {error && <p className="text-xs text-red-400">{error}</p>}
           {message && <p className="text-xs text-stone-500">{message}</p>}
 
           <div className="pt-2 flex items-center gap-4">
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary"
-            >
-              {loading ? "..." : mode === "signin" ? "sign in" : "create account"}
+            <button type="submit" disabled={loading} className="btn-primary">
+              {loading ? "..." : mode === "signin" ? "sign in" : mode === "signup" ? "create account" : "send reset link"}
             </button>
-            <button
-              type="button"
-              onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setError(""); setMessage(""); }}
-              className="back-link"
-            >
-              {mode === "signin" ? "create account →" : "← sign in"}
+            <button type="button" onClick={() => switchMode(mode === "signup" ? "signin" : "signup")} className="back-link">
+              {mode === "signup" ? "← sign in" : "create account →"}
             </button>
           </div>
+
+          {mode === "signin" && (
+            <button type="button" onClick={() => switchMode("forgot")} className="text-xs text-stone-400 hover:text-stone-600 transition-colors">
+              forgot password?
+            </button>
+          )}
+          {mode === "forgot" && (
+            <button type="button" onClick={() => switchMode("signin")} className="back-link">
+              ← back to sign in
+            </button>
+          )}
         </form>
       </div>
     </div>
