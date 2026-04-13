@@ -8,6 +8,7 @@ import { useTheme } from "@/components/ThemeProvider";
 import { parseGoodreadsCSV, type GoodreadsPreview } from "@/lib/goodreads";
 import { lookupBook } from "@/lib/catalog";
 import type { User } from "@supabase/supabase-js";
+import { TW_WIDTH_PCT } from "@/lib/twClassMaps";
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -181,8 +182,11 @@ function GoodreadsImport({ userId }: { userId: string }) {
       <div className="space-y-2 max-w-sm">
         <p className="text-sm text-stone-500">Importing... {progress} / {previews.length}</p>
         <div className="w-full h-0.5 bg-stone-100 rounded-full overflow-hidden">
-          <div className="h-full bg-stone-400 transition-all duration-300"
-            style={{ width: `${(progress / previews.length) * 100}%` }} />
+          <div
+            className={`h-full bg-stone-400 transition-all duration-300 ${
+              TW_WIDTH_PCT[previews.length ? Math.round((progress / previews.length) * 100) : 0] ?? "w-0"
+            }`}
+          />
         </div>
       </div>
     );
@@ -330,7 +334,7 @@ export default function ProfilePage() {
     <div className="page">
       <div className="page-content">
         <div className="mb-10 pb-8 border-b border-stone-200">
-          <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold text-[#2D1B2E] tracking-tight">
+          <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold text-[var(--fg-heading)] tracking-tight">
             profile & settings
           </h1>
           {user?.email && <p className="text-xs text-stone-400 mt-2">{user.email}</p>}
@@ -402,7 +406,7 @@ export default function ProfilePage() {
                     onClick={() => { if (theme !== t) toggle(); }}
                     className={`text-xs px-4 py-2 rounded-full border transition-colors ${
                       theme === t
-                        ? "bg-[#2D1B2E] text-white border-[#2D1B2E]"
+                        ? "bg-plum text-white border-plum"
                         : "text-stone-500 border-stone-200 hover:border-stone-400"
                     }`}
                   >

@@ -17,14 +17,8 @@ interface MonthCalendarProps {
 }
 
 export function MonthCalendar({
-  cells,
-  todayStr,
-  selectedDate,
-  loggedDates,
-  streakDates,
-  finishedByDate,
-  quoteDateSet,
-  onSelectDate,
+  cells, todayStr, selectedDate, loggedDates, streakDates,
+  finishedByDate, quoteDateSet, onSelectDate,
 }: MonthCalendarProps) {
   return (
     <div className="mb-10 rounded-2xl overflow-hidden border border-[var(--border-light)]">
@@ -43,20 +37,21 @@ export function MonthCalendar({
           }
 
           const { dateStr } = cell;
-          const isToday = dateStr === todayStr;
-          const isFuture = dateStr > todayStr;
-          const isLogged = loggedDates.has(dateStr);
-          const isStreak = streakDates.has(dateStr);
-          const finished = finishedByDate.get(dateStr);
-          const hasQuote = quoteDateSet.has(dateStr);
+          const isToday    = dateStr === todayStr;
+          const isFuture   = dateStr > todayStr;
+          const isLogged   = loggedDates.has(dateStr);
+          const isStreak   = streakDates.has(dateStr);
+          const finished   = finishedByDate.get(dateStr);
+          const hasQuote   = quoteDateSet.has(dateStr);
           const isSelected = selectedDate === dateStr;
 
-          let bg = "transparent";
-          if (isSelected) bg = "var(--bg-selected)";
-          else if (isToday) bg = "var(--plum)";
-          else if (finished) bg = "var(--bg-finished-day)";
-          else if (isStreak && isLogged) bg = "var(--bg-streak)";
-          else if (isLogged) bg = "var(--bg-logged)";
+          const bgClass =
+            isSelected            ? "bg-[var(--bg-selected)]" :
+            isToday               ? "bg-plum" :
+            finished              ? "bg-[var(--bg-finished-day)]" :
+            (isStreak && isLogged)? "bg-[var(--bg-streak)]" :
+            isLogged              ? "bg-[var(--bg-logged)]" :
+                                    "bg-transparent";
 
           const dayNumColor = isFuture ? "text-[var(--fg-faint)]" : isToday ? "text-white" : "text-[var(--fg)]";
 
@@ -66,18 +61,15 @@ export function MonthCalendar({
                 {cell.day}
               </span>
               {finished && (
-                <span className="text-[8px] leading-tight truncate w-full text-[var(--terra)]">
+                <span className="text-[8px] leading-tight truncate w-full text-terra">
                   {finished.title.slice(0, 10)}{finished.title.length > 10 ? "…" : ""}
                 </span>
               )}
               {isLogged && !finished && (
-                <span
-                  className="w-1 h-1 rounded-full absolute bottom-1.5 left-1/2 -translate-x-1/2"
-                  style={{ background: isStreak ? "var(--sage)" : "var(--fg-faint)" }}
-                />
+                <span className={`w-1 h-1 rounded-full absolute bottom-1.5 left-1/2 -translate-x-1/2 ${isStreak ? "bg-sage" : "bg-[var(--fg-faint)]"}`} />
               )}
               {hasQuote && (
-                <span className="text-[8px] absolute top-1 right-1 text-[var(--gold)]">✦</span>
+                <span className="text-[8px] absolute top-1 right-1 text-gold">✦</span>
               )}
             </>
           );
@@ -86,8 +78,7 @@ export function MonthCalendar({
             return (
               <div
                 key={i}
-                className="aspect-square border-r border-b border-[var(--border-light)] flex flex-col items-start justify-start p-1.5 relative opacity-45 cursor-default"
-                style={{ background: bg }}
+                className={`aspect-square border-r border-b border-[var(--border-light)] flex flex-col items-start justify-start p-1.5 relative opacity-45 cursor-default ${bgClass}`}
               >
                 {inner}
               </div>
@@ -98,8 +89,7 @@ export function MonthCalendar({
             <button
               key={i}
               onClick={() => onSelectDate(dateStr)}
-              className="aspect-square border-r border-b border-[var(--border-light)] flex flex-col items-start justify-start p-1.5 transition-colors hover:bg-[var(--bg-subtle)] relative text-left"
-              style={{ background: bg }}
+              className={`aspect-square border-r border-b border-[var(--border-light)] flex flex-col items-start justify-start p-1.5 transition-colors hover:bg-[var(--bg-subtle)] relative text-left ${bgClass}`}
             >
               {inner}
             </button>

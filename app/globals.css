@@ -20,43 +20,121 @@
   --ink-light:      #5A5060;
   --white:          #FDFAF5;
 
+  /* Color channels — for rgb(var(--ch-X) / alpha) opacity variants */
+  --ch-plum:  45 27 46;
+  --ch-ink:   90 80 96;
+  --ch-sage:  123 158 135;
+  --ch-terra: 201 123 90;
+  --ch-gold:  212 168 67;
+  --ch-lavender: 196 181 212;
+  --ch-mood-dark: 55 65 81;
+  --ch-mood-heart: 190 24 93;
+  --ch-mood-whimsical: 139 92 246;
+  --ch-mood-escapist: 21 101 192;
+
   /* Semantic tokens — light mode */
-  --bg-page:      #FAF6F0;
-  --bg-surface:   #FDFAF5;
-  --bg-hover:     rgba(90, 80, 96, 0.05);
+  --bg-page:    #FAF6F0;
+  --bg-surface: #FDFAF5;
   --fg:           #1A1A1A;
   --fg-muted:     #5A5060;
   --fg-faint:     #c4bfba;
   --fg-heading:   #2D1B2E;
   --border:       #e7e5e4;
-  --border-light: rgba(45, 27, 46, 0.08);
-  --dot-color:    rgba(45, 27, 46, 0.07);
 
-  /* Opacity surface variants */
-  --bg-subtle:       rgba(45, 27, 46, 0.06);   /* button hover */
-  --bg-faintest:     rgba(45, 27, 46, 0.03);   /* note hover */
-  --bg-muted-tag:    rgba(45, 27, 46, 0.07);   /* mood tags, ruled lines */
-  --bg-selected:     rgba(45, 27, 46, 0.12);   /* selected calendar cell */
-  --bg-logged:       rgba(123, 158, 135, 0.10);/* logged reading day */
-  --bg-streak:       rgba(123, 158, 135, 0.18);/* streak reading day */
-  --bg-finished-day: rgba(201, 123, 90, 0.15); /* finished-book day in calendar */
-  --bg-overlay:      rgba(0, 0, 0, 0.08);      /* panel backdrop */
-  --bg-sage-pill:    rgba(123, 158, 135, 0.18);/* logged toggle bg */
-  --bg-gold-pill:    rgba(212, 168, 67, 0.15); /* quote save button */
-  --border-sage:     rgba(123, 158, 135, 0.30);/* logged toggle border */
-  --border-gold:     rgba(212, 168, 67, 0.30); /* quote save border */
+  /* Opacity surface variants — all derived from channel vars */
+  --bg-hover:        rgb(var(--ch-ink)  / 0.05); /* button hover */
+  --border-light:    rgb(var(--ch-plum) / 0.08);
+  --dot-color:       rgb(var(--ch-plum) / 0.07);
+  --bg-subtle:       rgb(var(--ch-plum) / 0.06); /* icon button hover */
+  --bg-faintest:     rgb(var(--ch-plum) / 0.03); /* note hover */
+  --bg-muted-tag:    rgb(var(--ch-plum) / 0.07); /* mood tags, ruled lines */
+  --bg-selected:     rgb(var(--ch-plum) / 0.12); /* selected calendar cell */
+  --bg-logged:       rgb(var(--ch-sage) / 0.10); /* logged reading day */
+  --bg-streak:       rgb(var(--ch-sage) / 0.18); /* streak reading day */
+  --bg-finished-day: rgb(var(--ch-terra)/ 0.15); /* finished-book day in calendar */
+  --bg-overlay:      rgb(0 0 0 / 0.08);          /* panel backdrop */
+  --bg-sage-pill:    rgb(var(--ch-sage) / 0.18); /* logged toggle bg */
+  --bg-gold-pill:    rgb(var(--ch-gold) / 0.15); /* quote save button */
+  --border-sage:     rgb(var(--ch-sage) / 0.30); /* logged toggle border */
+  --border-gold:     rgb(var(--ch-gold) / 0.30); /* quote save border */
+
+  /* Surfaces & shadows — referenced from components (no raw hex in TS) */
+  --bg-plum-trace: rgb(var(--ch-plum) / 0.04);
+  --bg-plum-soft:      rgb(var(--ch-plum) / 0.06);
+  --bg-plum-mid:       rgb(var(--ch-plum) / 0.08);
+  --bg-nav-hover:      rgb(var(--ch-plum) / 0.08);
+  --border-terra-soft: rgb(var(--ch-terra) / 0.40);
+  --bg-sage-60:        rgb(var(--ch-sage) / 0.60);
+  --bg-sage-50:        rgb(var(--ch-sage) / 0.50);
+  --bg-sage-25:        rgb(var(--ch-sage) / 0.25);
+  --bg-sage-18:        rgb(var(--ch-sage) / 0.18);
+  --bg-terra-70:       rgb(var(--ch-terra) / 0.70);
+  --bg-terra-15:       rgb(var(--ch-terra) / 0.15);
+  --bg-gold-15:        rgb(var(--ch-gold) / 0.15);
+  --bg-lavender-20:    rgb(var(--ch-lavender) / 0.20);
+  --shadow-today-cell: 0 1px 4px rgb(var(--ch-plum) / 0.30);
+  --shadow-spine-card: 0 3px 8px rgb(var(--ch-plum) / 0.18);
+  --cover-glow-orb: radial-gradient(circle, rgb(255 255 255 / 0.10), transparent 70%);
+  --spine-gloss-line: rgb(255 255 255 / 0.30);
+  --ruled-note-line: repeating-linear-gradient(
+    transparent,
+    transparent calc(1.75em - 1px),
+    var(--bg-muted-tag) calc(1.75em - 1px),
+    var(--bg-muted-tag) 1.75em
+  );
+  --ruled-list-notes: repeating-linear-gradient(
+    transparent,
+    transparent 28px,
+    var(--bg-muted-tag) 29px
+  );
+
+  /* Year bookshelf spine swatches */
+  --year-shelf-0: #C96A45;  --year-shelf-1: #2D3561;  --year-shelf-2: #7B9E87;  --year-shelf-3: #C4B5D4;  --year-shelf-4: #D4A843;
+  --year-shelf-5: #8E4B2E;  --year-shelf-6: #3D6F57;  --year-shelf-7: #6B3A4A;  --year-shelf-8: #0F2C5C;  --year-shelf-9: #4A2B5A;
+  --year-shelf-10: #C97B5A; --year-shelf-11: #1E3A2E; --year-shelf-12: #9C5C6F; --year-shelf-13: #5B3A2E; --year-shelf-14: #7B4A8D;
+  --year-shelf-15: #2A4D8F; --year-shelf-16: #C04848; --year-shelf-17: #3A2D5C; --year-shelf-18: #4A6741;
+
+  /* Mood labels (library filters, tags, stats cloud) */
+  --mood-default: var(--plum);
+  --mood-cozy: var(--terra);
+  --mood-dark: #374151;
+  --mood-hopeful: var(--sage);
+  --mood-funny: var(--gold);
+  --mood-slow-burn: var(--lavender);
+  --mood-heart-wrenching: #BE185D;
+  --mood-whimsical: #8B5CF6;
+  --mood-thought-provoking: var(--plum);
+  --mood-escapist: #1565C0;
+
+  /* Stats & charts */
+  --stat-border-books: var(--terra);
+  --stat-border-days: var(--sage);
+  --stat-border-rating: var(--lavender);
+  --stat-border-quotes: var(--gold);
+  --gradient-chart-month: linear-gradient(to top, var(--sage), var(--terra));
+  --gradient-goal-horizontal: linear-gradient(90deg, var(--sage), var(--terra));
+
+  /* Rating stars (SVG) */
+  --star-filled: #78350f;
+  --star-empty: #d6d3d1;
+
+  /* Misc UI */
+  --border-stone-300: #d6d3d1;
+  --auth-loading-bg: #faf8f5;
+  --lavender-muted: #b5a9c9;
+  --danger-hover: #b91c1c;
 
   /* Cover palette — gradient pairs for list covers */
-  --cover-plum-from:     #2D1B2E; --cover-plum-to:      #4A2B5A;
-  --cover-navy-from:     #2D3561; --cover-navy-to:      #4A5795;
-  --cover-forest-from:   #1E3A2E; --cover-forest-to:    #3D6F57;
-  --cover-terra-from:    #C97B5A; --cover-terra-to:     #E09973;
-  --cover-ruby-from:     #8E2C2C; --cover-ruby-to:      #B54040;
-  --cover-violet-from:   #7B4A8D; --cover-violet-to:    #A86BC2;
-  --cover-gold-from:     #D4A843; --cover-gold-to:      #E8C468;
-  --cover-sage-from:     #7B9E87; --cover-sage-to:      #A4C0AF;
-  --cover-lavender-from: #C4B5D4; --cover-lavender-to:  #DDD3EA;
-  --cover-bark-from:     #5B3A2E; --cover-bark-to:      #8A5A46;
+  --cover-plum-from:     var(--plum);       --cover-plum-to:      var(--plum-light);
+  --cover-navy-from:     #2D3561;           --cover-navy-to:      #4A5795;
+  --cover-forest-from:   #1E3A2E;           --cover-forest-to:    #3D6F57;
+  --cover-terra-from:    var(--terra);      --cover-terra-to:     #E09973;
+  --cover-ruby-from:     #8E2C2C;           --cover-ruby-to:      #B54040;
+  --cover-violet-from:   #7B4A8D;           --cover-violet-to:    #A86BC2;
+  --cover-gold-from:     var(--gold);       --cover-gold-to:      var(--gold-light);
+  --cover-sage-from:     var(--sage);       --cover-sage-to:      var(--sage-light);
+  --cover-lavender-from: var(--lavender);   --cover-lavender-to:  var(--lavender-light);
+  --cover-bark-from:     #5B3A2E;           --cover-bark-to:      #8A5A46;
 
   /* Spine palette — deterministic book spine colors */
   --spine-1: #4A2B5A; --spine-2: #8E4A1A; --spine-3: #2A4D8F; --spine-4: #1E3A2E; --spine-5: #C97B5A;
@@ -67,47 +145,28 @@
 }
 
 /* ─── Dark mode — lamplight ──────────────────────────────────── */
+/* layout.tsx sets data-theme synchronously before paint, so this
+   is the single source of truth for dark mode. No @media needed. */
 [data-theme="dark"] {
-  --bg-page:      #1C1612;
-  --bg-surface:   #2A201A;
+  --bg-page:    #1C1612;
+  --bg-surface: #2A201A;
+  --fg:         #EDE8DF;
+  --fg-muted:   rgba(237, 232, 223, 0.50);
+  --fg-faint:   rgba(237, 232, 223, 0.28);
+  --fg-heading: #E8C468;
+  --border:     rgba(255, 255, 255, 0.09);
+
+  /* Opacity variants override — white-tinted in dark mode */
   --bg-hover:     rgba(255, 255, 255, 0.05);
-  --fg:           #EDE8DF;
-  --fg-muted:     rgba(237, 232, 223, 0.50);
-  --fg-faint:     rgba(237, 232, 223, 0.28);
-  --fg-heading:   #E8C468;
-  --border:       rgba(255, 255, 255, 0.09);
   --border-light: rgba(255, 255, 255, 0.06);
   --dot-color:    rgba(237, 232, 223, 0.055);
-
-  /* Opacity surface variants — dark mode */
-  --bg-subtle:       rgba(255, 255, 255, 0.05);
-  --bg-faintest:     rgba(255, 255, 255, 0.02);
-  --bg-muted-tag:    rgba(255, 255, 255, 0.07);
-  --bg-selected:     rgba(255, 255, 255, 0.10);
+  --bg-subtle:    rgba(255, 255, 255, 0.05);
+  --bg-faintest:  rgba(255, 255, 255, 0.02);
+  --bg-muted-tag: rgba(255, 255, 255, 0.07);
+  --bg-selected:  rgba(255, 255, 255, 0.10);
 
   --background: var(--bg-page);
   --foreground: var(--fg);
-}
-
-/* System preference (when no manual override) */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg-page:      #1C1612;
-    --bg-surface:   #2A201A;
-    --bg-hover:     rgba(255, 255, 255, 0.05);
-    --fg:           #EDE8DF;
-    --fg-muted:     rgba(237, 232, 223, 0.50);
-    --fg-faint:     rgba(237, 232, 223, 0.28);
-    --fg-heading:   #E8C468;
-    --border:       rgba(255, 255, 255, 0.09);
-    --border-light: rgba(255, 255, 255, 0.06);
-    --dot-color:    rgba(237, 232, 223, 0.055);
-
-    --bg-subtle:    rgba(255, 255, 255, 0.05);
-    --bg-faintest:  rgba(255, 255, 255, 0.02);
-    --bg-muted-tag: rgba(255, 255, 255, 0.07);
-    --bg-selected:  rgba(255, 255, 255, 0.10);
-  }
 }
 
 /* ─── Tailwind theme ─────────────────────────────────────────── */
@@ -120,19 +179,19 @@
   --font-mono:  var(--font-geist-mono);
 
   /* Palette — enables bg-plum, text-terra, border-sage, etc. */
-  --color-plum:      var(--plum);
-  --color-plum-light: var(--plum-light);
-  --color-plum-dark: var(--plum-dark);
-  --color-terra:     var(--terra);
-  --color-terra-light: var(--terra-light);
-  --color-sage:      var(--sage);
-  --color-sage-light: var(--sage-light);
-  --color-lavender:  var(--lavender);
+  --color-plum:           var(--plum);
+  --color-plum-light:     var(--plum-light);
+  --color-plum-dark:      var(--plum-dark);
+  --color-terra:          var(--terra);
+  --color-terra-light:    var(--terra-light);
+  --color-sage:           var(--sage);
+  --color-sage-light:     var(--sage-light);
+  --color-lavender:       var(--lavender);
   --color-lavender-light: var(--lavender-light);
-  --color-gold:      var(--gold);
-  --color-gold-light: var(--gold-light);
-  --color-cream:     var(--cream);
-  --color-ink:       var(--ink);
+  --color-gold:           var(--gold);
+  --color-gold-light:     var(--gold-light);
+  --color-cream:          var(--cream);
+  --color-ink:            var(--ink);
 }
 
 /* ─── Base ───────────────────────────────────────────────────── */
@@ -265,11 +324,7 @@ h1, h2, h3 {
 
   /* Journal surfaces — dotted grid + Caveat font */
   .journal-surface {
-    background-image: radial-gradient(
-      circle,
-      var(--dot-color) 1px,
-      transparent 1px
-    );
+    background-image: radial-gradient(circle, var(--dot-color) 1px, transparent 1px);
     background-size: 22px 22px;
     border-radius: 12px;
     background-color: var(--bg-surface);
@@ -322,7 +377,7 @@ h1, h2, h3 {
   /* Buttons */
   .btn-primary {
     font-size: 0.875rem;
-    color: #fff;
+    color: var(--white);
     background: var(--plum);
     border-radius: 9999px;
     padding: 0.5rem 1.25rem;
@@ -338,12 +393,12 @@ h1, h2, h3 {
     color: var(--fg-faint);
     transition: color 0.15s;
   }
-  .btn-delete:hover { color: #b91c1c; }
+  .btn-delete:hover { color: var(--danger-hover); }
 
   /* Sidebar — dark mode aware */
   .sidebar-nav {
-    background: rgba(45, 27, 46, 0.02);
-    border-right: 1px solid rgba(45, 27, 46, 0.08);
+    background: rgb(var(--ch-plum) / 0.02);
+    border-right: 1px solid rgb(var(--ch-plum) / 0.08);
     transition: background 0.2s, border-color 0.2s;
   }
   [data-theme="dark"] .sidebar-nav {
@@ -363,7 +418,7 @@ h1, h2, h3 {
   }
   .sidebar-link:hover { background: var(--bg-hover); }
   .sidebar-link.active {
-    background: rgba(45, 27, 46, 0.1);
+    background: rgb(var(--ch-plum) / 0.10);
     color: var(--fg-heading);
     font-weight: 600;
   }
@@ -379,5 +434,55 @@ h1, h2, h3 {
     letter-spacing: 0.12em;
     margin-bottom: 10px;
     padding: 0 10px;
+  }
+
+  /* ── Mood theming ────────────────────────────────────────────
+     Each .mood-{name} sets two custom props consumed by the
+     component classes below. Default fallback = plum.          */
+  .mood-cozy              { --mood-c: var(--mood-cozy);              --mood-ch: var(--ch-terra); }
+  .mood-dark              { --mood-c: var(--mood-dark);              --mood-ch: var(--ch-mood-dark); }
+  .mood-hopeful           { --mood-c: var(--mood-hopeful);           --mood-ch: var(--ch-sage); }
+  .mood-funny             { --mood-c: var(--mood-funny);             --mood-ch: var(--ch-gold); }
+  .mood-slow-burn         { --mood-c: var(--mood-slow-burn);         --mood-ch: var(--ch-lavender); }
+  .mood-heart-wrenching   { --mood-c: var(--mood-heart-wrenching);   --mood-ch: var(--ch-mood-heart); }
+  .mood-whimsical         { --mood-c: var(--mood-whimsical);         --mood-ch: var(--ch-mood-whimsical); }
+  .mood-thought-provoking { --mood-c: var(--mood-thought-provoking); --mood-ch: var(--ch-plum); }
+  .mood-escapist          { --mood-c: var(--mood-escapist);          --mood-ch: var(--ch-mood-escapist); }
+
+  /* Filter chip — library shelf mood filter bar */
+  .mood-filter-chip {
+    --mood-c: var(--mood-default);
+    --mood-ch: var(--ch-plum);
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-surface);
+    color: var(--fg-muted);
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .mood-filter-chip.active {
+    background: rgb(var(--mood-ch) / 0.13);
+    color: var(--mood-c);
+    border-color: var(--mood-c);
+  }
+
+  /* Grid tag — small badge on library grid cards */
+  .mood-grid-tag {
+    --mood-c: var(--mood-default);
+    --mood-ch: var(--ch-plum);
+    background: rgb(var(--mood-ch) / 0.8);
+    color: #fff;
+  }
+
+  /* Cloud pill — mood cloud on year stats page */
+  .mood-cloud-pill {
+    --mood-c: var(--mood-default);
+    --mood-ch: var(--ch-plum);
+    padding: 0.375rem 0.75rem;
+    border-radius: 9999px;
+    border: 1px solid rgb(var(--mood-ch) / 0.2);
+    background: rgb(var(--mood-ch) / 0.1);
+    color: var(--mood-c);
   }
 }

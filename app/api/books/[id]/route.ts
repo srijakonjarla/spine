@@ -4,11 +4,15 @@ import { autoLogToday } from "@/lib/autoLog";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = createServerClient(req);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json(null, { status: 401 });
+
   const { id } = await params;
   const { data, error } = await supabase
     .from("books")
     .select("*, thoughts(*), book_reads(*)")
     .eq("id", id)
+    .eq("user_id", user.id)
     .single();
   if (error) return NextResponse.json(null, { status: 404 });
   return NextResponse.json(data);

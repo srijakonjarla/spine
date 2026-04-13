@@ -208,7 +208,7 @@ export default function LibraryPage() {
                 <div className="space-y-2">
                   {Array.from({ length: count }).map((_, j) => (
                     <div key={j} className="flex gap-3 items-baseline">
-                      <div className="h-3 bg-stone-100 rounded" style={{ width: `${40 + Math.random() * 40}%` }} />
+                      <div className={`h-3 bg-stone-100 rounded ${["w-1/2", "w-3/5", "w-2/3"][j % 3]}`} />
                       <div className="flex-1 border-b border-dotted border-stone-100" />
                       <div className="h-3 w-16 bg-stone-100 rounded" />
                     </div>

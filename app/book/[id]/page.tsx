@@ -407,7 +407,7 @@ export default function BookPage() {
           value={entry.title}
           onChange={(e) => update({ title: e.target.value })}
           placeholder="book title"
-          className="w-full text-2xl font-[family-name:var(--font-playfair)] font-semibold text-[#2D1B2E] bg-transparent border-none outline-none placeholder:text-[#c4bfba] mb-1 tracking-tight"
+          className="w-full text-2xl font-[family-name:var(--font-playfair)] font-semibold text-[var(--fg-heading)] bg-transparent border-none outline-none placeholder:text-[var(--fg-faint)] mb-1 tracking-tight"
         />
 
         {/* author */}
@@ -496,7 +496,7 @@ export default function BookPage() {
             onChange={(e) => update({ feeling: e.target.value })}
             placeholder="how does it make you feel?"
             rows={1}
-            className="journal-text w-full bg-transparent border-none outline-none resize-none placeholder:text-[#c4bfba] mb-6 overflow-hidden"
+            className="journal-text w-full bg-transparent border-none outline-none resize-none placeholder:text-[var(--fg-faint)] mb-6 overflow-hidden"
           />
         )}
 
@@ -602,7 +602,7 @@ export default function BookPage() {
           }}
           placeholder="add a thought... (enter to post, shift+enter for newline)"
           rows={1}
-          className="journal-surface journal-text w-full border border-[rgba(45,27,46,0.1)] px-5 py-3 focus:outline-none focus:ring-2 focus:ring-[rgba(45,27,46,0.12)] resize-none transition-shadow placeholder:text-[#c4bfba]"
+          className="journal-surface journal-text w-full border border-[var(--border-light)] px-5 py-3 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ch-plum)/0.12)] resize-none transition-shadow placeholder:text-[var(--fg-faint)]"
         />
 
         {/* footer */}

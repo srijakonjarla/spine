@@ -9,6 +9,7 @@ import { getGoals } from "@/lib/goals";
 import { getQuotes } from "@/lib/quotes";
 import { getLists } from "@/lib/lists";
 import type { BookEntry, BookList, ReadingLogEntry, ReadingGoal } from "@/types";
+import { TW_WIDTH_PCT } from "@/lib/twClassMaps";
 
 const MONTH_ABBRS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -19,14 +20,16 @@ function hashStr(s: string): number {
   return Math.abs(s.split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0));
 }
 
-const SPINE_COLORS = [
-  "#C96A45", "#2D3561", "#7B9E87", "#C4B5D4", "#D4A843",
-  "#8E4B2E", "#3D6F57", "#6B3A4A", "#0F2C5C", "#4A2B5A",
-  "#C97B5A", "#1E3A2E", "#9C5C6F", "#5B3A2E", "#7B4A8D",
-  "#2A4D8F", "#C04848", "#3A2D5C", "#4A6741",
-];
-
-function spineColor(title: string) { return SPINE_COLORS[hashStr(title) % SPINE_COLORS.length]; }
+const SPINE_COLOR_CLASSES = [
+  "bg-[var(--year-shelf-0)]", "bg-[var(--year-shelf-1)]", "bg-[var(--year-shelf-2)]", "bg-[var(--year-shelf-3)]", "bg-[var(--year-shelf-4)]",
+  "bg-[var(--year-shelf-5)]", "bg-[var(--year-shelf-6)]", "bg-[var(--year-shelf-7)]", "bg-[var(--year-shelf-8)]", "bg-[var(--year-shelf-9)]",
+  "bg-[var(--year-shelf-10)]", "bg-[var(--year-shelf-11)]", "bg-[var(--year-shelf-12)]", "bg-[var(--year-shelf-13)]", "bg-[var(--year-shelf-14)]",
+  "bg-[var(--year-shelf-15)]", "bg-[var(--year-shelf-16)]", "bg-[var(--year-shelf-17)]", "bg-[var(--year-shelf-18)]",
+] as const;
+const SPINE_HEIGHT_CLASSES: Record<number, string> = Object.fromEntries(
+  Array.from({ length: 26 }, (_, i) => [50 + i, `h-[${50 + i}px]`]),
+) as Record<number, string>;
+function spineColorClass(title: string) { return SPINE_COLOR_CLASSES[hashStr(title) % SPINE_COLOR_CLASSES.length]; }
 function spineHeight(title: string) { return 50 + (hashStr(title) % 26); }
 
 function MiniMonthCal({
@@ -53,29 +56,23 @@ function MiniMonthCal({
   return (
     <Link
       href={`/${year}/${MONTH_ABBRS[monthIndex]}`}
-      className="block rounded-xl p-3 transition-opacity hover:opacity-80"
-      style={{
-        background: "var(--bg-surface)",
-        border: isThisMonth
-          ? "1.5px solid rgba(201,123,90,0.4)"
-          : "1px solid var(--border-light)",
-        opacity: isFutureMonth ? 0.45 : 1,
-      }}
+      className={`block rounded-xl p-3 transition-opacity hover:opacity-80 bg-[var(--bg-surface)] ${
+        isThisMonth
+          ? "border-[1.5px] border-[var(--border-terra-soft)]"
+          : "border border-[var(--border-light)]"
+      } ${isFutureMonth ? "opacity-45" : ""}`}
     >
       <div className="flex items-baseline justify-between mb-2">
-        <p className="text-[11px] font-semibold" style={{ color: "var(--fg-muted)" }}>
+        <p className="text-[11px] font-semibold text-[var(--fg-muted)]">
           {MONTH_NAMES[monthIndex]}
         </p>
         {booksThisMonth > 0 && (
-          <p className="text-[9px]" style={{ color: "#7B9E87" }}>
+          <p className="text-[9px] text-sage">
             {booksThisMonth} {booksThisMonth === 1 ? "book" : "books"}
           </p>
         )}
         {isFutureMonth && (
-          <p
-            className="text-[9px] font-[family-name:var(--font-caveat)]"
-            style={{ color: "var(--fg-faint)" }}
-          >
+          <p className="text-[9px] font-[family-name:var(--font-caveat)] text-[var(--fg-faint)]">
             not yet written
           </p>
         )}
@@ -90,18 +87,17 @@ function MiniMonthCal({
             const isLogged = loggedDates.has(dateStr);
             const isToday = dateStr === todayStr;
 
-            let bg = "transparent";
-            if (isToday) bg = "var(--plum, #2D1B2E)";
-            else if (isFinish) bg = "rgba(201,123,90,0.7)";
-            else if (isLogged) bg = "rgba(123,158,135,0.5)";
-            else if (isFuture) bg = "rgba(45,27,46,0.04)";
-            else bg = "rgba(45,27,46,0.06)";
+            const bgClass =
+              isToday  ? "bg-plum" :
+              isFinish ? "bg-[var(--bg-terra-70)]" :
+              isLogged ? "bg-[var(--bg-sage-50)]" :
+              isFuture ? "bg-[var(--bg-plum-trace)]" :
+                         "bg-[var(--bg-plum-soft)]";
 
             return (
               <div
                 key={i}
-                className="rounded-[2px]"
-                style={{ height: 5, background: bg, opacity: isFuture ? 0.4 : 1 }}
+                className={`rounded-[2px] h-[5px] ${isFuture ? "opacity-40" : ""} ${bgClass}`}
               />
             );
           })}
@@ -109,10 +105,7 @@ function MiniMonthCal({
       )}
 
       {!isFutureMonth && !monthHasActivity && (
-        <p
-          className="text-[9px] font-[family-name:var(--font-caveat)] mt-1"
-          style={{ color: "var(--fg-faint)" }}
-        >
+        <p className="text-[9px] font-[family-name:var(--font-caveat)] mt-1 text-[var(--fg-faint)]">
           no days logged
         </p>
       )}
@@ -132,7 +125,6 @@ export default function YearPage() {
   const [goals, setGoals] = useState<ReadingGoal[]>([]);
   const [quoteCount, setQuoteCount] = useState(0);
   const [lists, setLists] = useState<BookList[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([getEntries(), getReadingLog(year), getGoals(year), getQuotes(), getLists(year)])
@@ -143,8 +135,7 @@ export default function YearPage() {
         setQuoteCount(quotes.filter(q => q.createdAt.startsWith(`${year}`)).length);
         setLists(ls);
       })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .catch(console.error);
   }, [year]);
 
   const loggedDates = new Set(logEntries.map(e => e.logDate));
@@ -168,7 +159,6 @@ export default function YearPage() {
     ? Math.min(1, finishedBooks.length / autoGoal.target)
     : null;
 
-  // Group finished books by month for bookshelf
   const booksByMonth: BookEntry[][] = Array.from({ length: 12 }, () => []);
   finishedBooks.forEach(b => {
     if (b.dateFinished) {
@@ -188,63 +178,34 @@ export default function YearPage() {
   return (
     <div className="page">
       {/* Hero */}
-      <div
-        className="-mt-6 -mx-6 mb-10 px-8 py-10 lg:px-12 lg:py-14 bg-plum"
-      > 
+      <div className="-mt-6 -mx-6 mb-10 px-8 py-10 lg:px-12 lg:py-14 bg-plum">
         <div className="max-w-3xl mx-auto lg:ml-0">
-          <p
-            className="font-[family-name:var(--font-caveat)] text-lg mb-1"
-            style={{ color: "#D4A843", letterSpacing: "0.06em" }}
-          >
+          <p className="font-[family-name:var(--font-caveat)] text-lg mb-1 text-gold tracking-[0.06em]">
             your reading year
           </p>
-          <h1
-            className="font-[family-name:var(--font-playfair)] font-bold italic leading-none mb-2"
-            style={{ fontSize: "clamp(52px, 8vw, 80px)", color: "#FDFAF5" }}
-          >
+          <h1 className="font-[family-name:var(--font-playfair)] font-bold italic leading-none mb-2 text-[clamp(52px,8vw,80px)] text-white">
             {year}
           </h1>
-          <p className="text-[13px] mb-8" style={{ color: "rgba(253,250,245,0.45)" }}>
+          <p className="text-[13px] mb-8 text-white/45">
             {statusLabel}
           </p>
 
           {/* Stat grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
             {[
-              {
-                val: finishedBooks.length,
-                label: "Books read",
-                sub: autoGoal ? `goal: ${autoGoal.target}` : null,
-              },
-              {
-                val: loggedDates.size,
-                label: "Days read",
-                sub: null,
-              },
-              {
-                val: avgRating ? `${avgRating}★` : "—",
-                label: "Avg rating",
-                sub: null,
-              },
-              {
-                val: quoteCount,
-                label: "Quotes saved",
-                sub: null,
-              },
+              { val: finishedBooks.length, label: "Books read", sub: autoGoal ? `goal: ${autoGoal.target}` : null },
+              { val: loggedDates.size,     label: "Days read",  sub: null },
+              { val: avgRating ? `${avgRating}★` : "—", label: "Avg rating", sub: null },
+              { val: quoteCount,           label: "Quotes saved", sub: null },
             ].map(({ val, label, sub }) => (
               <div key={label}>
-                <p
-                  className="font-[family-name:var(--font-playfair)] font-bold leading-none mb-1"
-                  style={{ fontSize: "clamp(22px, 4vw, 32px)", color: "#FDFAF5" }}
-                >
+                <p className="font-[family-name:var(--font-playfair)] font-bold leading-none mb-1 text-[clamp(22px,4vw,32px)] text-white">
                   {val}
                 </p>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.1em]" style={{ color: "rgba(253,250,245,0.55)" }}>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/55">
                   {label}
                 </p>
-                {sub && (
-                  <p className="text-[10px] mt-0.5" style={{ color: "rgba(253,250,245,0.3)" }}>{sub}</p>
-                )}
+                {sub && <p className="text-[10px] mt-0.5 text-white/30">{sub}</p>}
               </div>
             ))}
           </div>
@@ -253,20 +214,18 @@ export default function YearPage() {
           {(autoGoal || customGoals.length > 0) && (
             <div className="flex flex-wrap gap-3">
               {autoGoal && goalProgress !== null && (
-                <div
-                  className="rounded-xl px-4 py-3 min-w-[200px]"
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
-                >
-                  <p className="text-[9px] uppercase tracking-[0.12em] font-semibold mb-1" style={{ color: "rgba(212,168,67,0.7)" }}>
+                <div className="rounded-xl px-4 py-3 min-w-[200px] bg-white/[7%] border border-white/10">
+                  <p className="text-[9px] uppercase tracking-[0.12em] font-semibold mb-1 text-gold/70">
                     {autoGoal.name || "reading goal"}
                   </p>
-                  <p className="font-[family-name:var(--font-playfair)] text-[15px] font-semibold mb-2" style={{ color: "#FDFAF5" }}>
+                  <p className="font-[family-name:var(--font-playfair)] text-[15px] font-semibold mb-2 text-white">
                     {finishedBooks.length} of {autoGoal.target} books · {Math.round(goalProgress * 100)}%
                   </p>
-                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
+                  <div className="h-1.5 rounded-full overflow-hidden bg-white/10">
                     <div
-                      className="h-full rounded-full"
-                      style={{ width: `${Math.round(goalProgress * 100)}%`, background: "linear-gradient(90deg, #7B9E87, #C97B5A)" }}
+                      className={`h-full rounded-full [background-image:var(--gradient-goal-horizontal)] ${
+                        TW_WIDTH_PCT[Math.round(goalProgress * 100)] ?? "w-0"
+                      }`}
                     />
                   </div>
                 </div>
@@ -274,19 +233,19 @@ export default function YearPage() {
               {customGoals.map(g => {
                 const p = g.target > 0 ? Math.min(1, g.bookIds.length / g.target) : 0;
                 return (
-                  <div
-                    key={g.id}
-                    className="rounded-xl px-4 py-3 min-w-[180px]"
-                    style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
-                  >
-                    <p className="text-[9px] uppercase tracking-[0.12em] font-semibold mb-1" style={{ color: "rgba(212,168,67,0.7)" }}>
+                  <div key={g.id} className="rounded-xl px-4 py-3 min-w-[180px] bg-white/[7%] border border-white/10">
+                    <p className="text-[9px] uppercase tracking-[0.12em] font-semibold mb-1 text-gold/70">
                       {g.name}
                     </p>
-                    <p className="font-[family-name:var(--font-playfair)] text-[15px] font-semibold mb-2" style={{ color: "#FDFAF5" }}>
+                    <p className="font-[family-name:var(--font-playfair)] text-[15px] font-semibold mb-2 text-white">
                       {g.bookIds.length} of {g.target} · {Math.round(p * 100)}%
                     </p>
-                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
-                      <div className="h-full rounded-full" style={{ width: `${Math.round(p * 100)}%`, background: "#7B9E87" }} />
+                    <div className="h-1.5 rounded-full overflow-hidden bg-white/10">
+                      <div
+                        className={`h-full rounded-full bg-sage ${
+                          TW_WIDTH_PCT[Math.round(p * 100)] ?? "w-0"
+                        }`}
+                      />
                     </div>
                   </div>
                 );
@@ -296,14 +255,11 @@ export default function YearPage() {
         </div>
       </div>
 
-      <div className="page-content" style={{ maxWidth: "56rem" }}>
+      <div className="page-content max-w-[56rem]">
 
         {/* 12 mini month calendars */}
         <div className="mb-12">
-          <p
-            className="font-[family-name:var(--font-playfair)] text-[17px] italic mb-5"
-            style={{ color: "var(--fg-heading)" }}
-          >
+          <p className="font-[family-name:var(--font-playfair)] text-[17px] italic mb-5 text-[var(--fg-heading)]">
             {year} at a glance
           </p>
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
@@ -324,32 +280,20 @@ export default function YearPage() {
         {/* Bookshelf */}
         {shelfMonths.length > 0 && (
           <div className="mb-12">
-            <p
-              className="font-[family-name:var(--font-playfair)] text-[17px] italic mb-5"
-              style={{ color: "var(--fg-heading)" }}
-            >
+            <p className="font-[family-name:var(--font-playfair)] text-[17px] italic mb-5 text-[var(--fg-heading)]">
               your {year} bookshelf
             </p>
-            <div
-              className="rounded-2xl p-5 overflow-x-auto"
-              style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)" }}
-            >
+            <div className="rounded-2xl p-5 overflow-x-auto bg-[var(--bg-surface)] border border-[var(--border-light)]">
               <div className="flex items-end gap-1 min-w-0">
                 {shelfMonths.map(({ monthIndex, books }, si) => (
                   <div key={monthIndex} className="flex items-end gap-0.5 shrink-0">
                     {si > 0 && (
-                      <span
-                        className="text-[8px] uppercase font-bold mx-2 self-end pb-1"
-                        style={{ color: "var(--fg-faint)", letterSpacing: "0.1em" }}
-                      >
+                      <span className="text-[8px] uppercase font-bold mx-2 self-end pb-1 text-[var(--fg-faint)] tracking-[0.1em]">
                         {MONTH_NAMES[monthIndex].slice(0, 3)}
                       </span>
                     )}
                     {si === 0 && (
-                      <span
-                        className="text-[8px] uppercase font-bold mr-2 self-end pb-1"
-                        style={{ color: "var(--fg-faint)", letterSpacing: "0.1em" }}
-                      >
+                      <span className="text-[8px] uppercase font-bold mr-2 self-end pb-1 text-[var(--fg-faint)] tracking-[0.1em]">
                         {MONTH_NAMES[monthIndex].slice(0, 3)}
                       </span>
                     )}
@@ -358,12 +302,9 @@ export default function YearPage() {
                         key={b.id}
                         href={`/book/${b.id}`}
                         title={b.title}
-                        className="rounded-sm shrink-0 hover:brightness-110 transition-all hover:-translate-y-1"
-                        style={{
-                          width: 14,
-                          height: spineHeight(b.title),
-                          background: spineColor(b.title),
-                        }}
+                        className={`rounded-sm shrink-0 hover:brightness-110 transition-all hover:-translate-y-1 w-[14px] ${
+                          SPINE_HEIGHT_CLASSES[spineHeight(b.title)] ?? "h-[50px]"
+                        } ${spineColorClass(b.title)}`}
                       />
                     ))}
                   </div>
@@ -377,7 +318,7 @@ export default function YearPage() {
         {lists.length > 0 && (
           <div className="mb-12">
             <div className="flex items-baseline justify-between mb-5">
-              <p className="font-[family-name:var(--font-playfair)] text-[17px] italic" style={{ color: "var(--fg-heading)" }}>
+              <p className="font-[family-name:var(--font-playfair)] text-[17px] italic text-[var(--fg-heading)]">
                 {year} lists
               </p>
               <Link href={`/${year}/lists`} className="back-link">all lists →</Link>
@@ -387,35 +328,31 @@ export default function YearPage() {
                 <Link
                   key={list.id}
                   href={`/${year}/lists/${list.id}`}
-                  className="block rounded-xl p-4 transition-colors hover:bg-[var(--bg-subtle)]"
-                  style={{ border: "1px solid var(--border-light)" }}
+                  className="block rounded-xl p-4 transition-colors hover:bg-[var(--bg-subtle)] border border-[var(--border-light)]"
                 >
                   <div className="flex items-start justify-between gap-2 mb-3">
-                    <p className="text-[13px] font-semibold leading-snug" style={{ color: "var(--fg-heading)" }}>
+                    <p className="text-[13px] font-semibold leading-snug text-[var(--fg-heading)]">
                       {list.title}
                     </p>
-                    <span
-                      className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                      style={{ background: "var(--bg-muted-tag)", color: "var(--fg-muted)" }}
-                    >
+                    <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[var(--bg-muted-tag)] text-[var(--fg-muted)]">
                       {list.items.length}
                     </span>
                   </div>
                   {list.items.length === 0 ? (
-                    <p className="text-[11px] italic" style={{ color: "var(--fg-faint)" }}>empty</p>
+                    <p className="text-[11px] italic text-[var(--fg-faint)]">empty</p>
                   ) : (
                     <ol className="space-y-1">
                       {list.items.slice(0, 4).map((item, i) => (
                         <li key={item.id} className="flex items-baseline gap-2">
-                          <span className="text-[10px] w-4 shrink-0 tabular-nums" style={{ color: "var(--fg-faint)" }}>{i + 1}.</span>
-                          <span className="text-[12px] truncate" style={{ color: "var(--fg)" }}>{item.title}</span>
+                          <span className="text-[10px] w-4 shrink-0 tabular-nums text-[var(--fg-faint)]">{i + 1}.</span>
+                          <span className="text-[12px] truncate text-[var(--fg)]">{item.title}</span>
                           {item.author && (
-                            <span className="text-[11px] shrink-0 hidden sm:block" style={{ color: "var(--fg-muted)" }}>{item.author}</span>
+                            <span className="text-[11px] shrink-0 hidden sm:block text-[var(--fg-muted)]">{item.author}</span>
                           )}
                         </li>
                       ))}
                       {list.items.length > 4 && (
-                        <li className="text-[11px] pl-6" style={{ color: "var(--fg-faint)" }}>
+                        <li className="text-[11px] pl-6 text-[var(--fg-faint)]">
                           +{list.items.length - 4} more
                         </li>
                       )}
@@ -428,7 +365,7 @@ export default function YearPage() {
         )}
 
         {/* Footer nav */}
-        <div className="pt-5 border-t flex flex-wrap gap-x-5 gap-y-1.5" style={{ borderColor: "var(--border-light)" }}>
+        <div className="pt-5 border-t border-[var(--border-light)] flex flex-wrap gap-x-5 gap-y-1.5">
           <Link href="/" className="back-link">← home</Link>
           <Link href={`/${year}/${MONTH_ABBRS[now.getMonth()]}`} className="back-link">this month →</Link>
           <Link href={`/${year}/stats`} className="back-link">year stats →</Link>

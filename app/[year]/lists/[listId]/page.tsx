@@ -15,7 +15,7 @@ import {
   BooksIcon, LightbulbIcon, CheckSquareIcon, ListBulletsIcon, PaletteIcon, TrashIcon,
 } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
-import { coverGradient } from "@/components/lists/coverConstants";
+import { coverGradientClass } from "@/components/lists/coverConstants";
 
 const BULLET_SYMBOLS = ["→", "●", "✦", "◆", "○", "—", "✓", "★"];
 const SPINE_COUNT = 10;
@@ -150,20 +150,15 @@ export default function ListDetailPage() {
 
       {/* Gradient header */}
       <div
-        className="relative overflow-hidden px-9 py-8 mt-3"
-        style={{ background: coverGradient(list.color) }}
+        className={`relative overflow-hidden px-9 py-8 mt-3 ${coverGradientClass(list.color)}`}
       >
         {/* Glow orb */}
-        <div
-          className="absolute -bottom-10 -right-10 w-44 h-44 rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(circle, rgba(255,255,255,0.1), transparent 70%)" }}
-        />
+        <div className="absolute -bottom-10 -right-10 w-44 h-44 rounded-full pointer-events-none [background-image:var(--cover-glow-orb)]" />
         {(() => {
           const TypeIcon = LIST_TYPE_ICONS[list.listType] ?? BooksIcon;
           return (
             <p
-              className="flex items-center gap-1.5 font-[family-name:var(--font-caveat)] text-[14px] mb-1 relative z-10"
-              style={{ color: "rgba(255,255,255,0.55)" }}
+              className="flex items-center gap-1.5 font-[family-name:var(--font-caveat)] text-[14px] mb-1 relative z-10 text-white/55"
             >
               <TypeIcon size={14} />
               {LIST_TYPE_LABELS[list.listType] ?? "list"}
@@ -182,8 +177,7 @@ export default function ListDetailPage() {
           className="w-full font-serif text-[30px] font-bold italic text-white bg-transparent border-none outline-none mb-1 relative z-10 placeholder:text-white/40 leading-snug"
         />
         <p
-          className="font-[family-name:var(--font-caveat)] text-[14px] relative z-10"
-          style={{ color: "rgba(255,255,255,0.6)" }}
+          className="font-[family-name:var(--font-caveat)] text-[14px] relative z-10 text-white/60"
         >
           {list.items.length} {itemLabel}
           {list.description ? ` · ${list.description}` : ""}
@@ -191,7 +185,7 @@ export default function ListDetailPage() {
       </div>
 
       {/* 2-column body */}
-      <div className="grid" style={{ gridTemplateColumns: "1fr 280px" }}>
+      <div className="grid grid-cols-[1fr_280px]">
 
         {/* ── Left: items ── */}
         <div className="px-7 py-6">
@@ -226,13 +220,7 @@ export default function ListDetailPage() {
 
               {/* Dotted grid */}
               <div
-                className="rounded-xl px-7 py-6 min-h-[280px]"
-                style={{
-                  backgroundColor: "var(--bg-surface)",
-                  backgroundImage: "radial-gradient(circle, var(--bg-muted-tag) 1px, transparent 1px)",
-                  backgroundSize: "18px 18px",
-                  border: "1px solid var(--border-light)",
-                }}
+                className="rounded-xl px-7 py-6 min-h-[280px] bg-[var(--bg-surface)] border border-[var(--border-light)] bg-[size:18px_18px] bg-[radial-gradient(circle,_var(--bg-muted-tag)_1px,_transparent_1px)]"
               >
                 {list.items.map((item: ListItem) => (
                   <div
@@ -302,11 +290,10 @@ export default function ListDetailPage() {
                     {/* Colored spine */}
                     <svg
                       viewBox="0 0 38 54"
-                      className="shrink-0 rounded-sm"
-                      style={{ width: 38, height: 54, boxShadow: "0 3px 8px rgba(45,27,46,0.18)" }}
+                      className="shrink-0 rounded-sm w-[38px] h-[54px] shadow-[var(--shadow-spine-card)]"
                     >
-                      <rect width="38" height="54" rx="3" style={{ fill: spineColor(item.title) }} />
-                      <rect x="4" y="8" width="30" height="1.5" rx="0.75" fill="rgba(255,255,255,0.3)" />
+                      <rect width="38" height="54" rx="3" fill={spineColor(item.title)} />
+                      <rect x="4" y="8" width="30" height="1.5" rx="0.75" fill="var(--spine-gloss-line)" />
                     </svg>
 
                     {/* Info */}
@@ -340,8 +327,7 @@ export default function ListDetailPage() {
               {/* Add book row */}
               {showAddBook ? (
                 <div
-                  className="rounded-xl px-4 py-3 border border-dashed border-[var(--border-light)]"
-                  style={{ background: "var(--bg-surface)" }}
+                  className="rounded-xl px-4 py-3 border border-dashed border-[var(--border-light)] bg-[var(--bg-surface)]"
                 >
                   <CatalogSearch
                     value={draftTitle}
@@ -397,8 +383,7 @@ export default function ListDetailPage() {
           {/* Item count */}
           <p className="section-label mb-2">{isIdeaType ? "Ideas" : "Books"}</p>
           <div
-            className="rounded-xl px-4 py-3 text-center mb-5 border border-[var(--border-light)]"
-            style={{ background: "var(--bg-surface)" }}
+            className="rounded-xl px-4 py-3 text-center mb-5 border border-[var(--border-light)] bg-[var(--bg-surface)]"
           >
             <p className="font-serif text-[28px] font-bold text-[var(--plum)] leading-none">
               {list.items.length}
@@ -421,12 +406,7 @@ export default function ListDetailPage() {
                 }}
                 placeholder="notes about this list…"
                 rows={5}
-                className="w-full font-[family-name:var(--font-caveat)] text-[14px] text-[var(--fg-muted)] rounded-xl px-3 py-3 border border-[var(--border-light)] outline-none resize-none placeholder:text-[var(--fg-faint)] mb-5"
-                style={{
-                  background: "var(--bg-surface)",
-                  lineHeight: "2.0",
-                  backgroundImage: "repeating-linear-gradient(transparent, transparent 28px, var(--bg-muted-tag) 29px)",
-                }}
+                className="w-full font-[family-name:var(--font-caveat)] text-[14px] text-[var(--fg-muted)] rounded-xl px-3 py-3 border border-[var(--border-light)] outline-none resize-none placeholder:text-[var(--fg-faint)] mb-5 bg-[var(--bg-surface)] leading-[2] bg-[repeating-linear-gradient(transparent,_transparent_28px,_var(--bg-muted-tag)_29px)]"
               />
             </>
           )}
@@ -436,15 +416,13 @@ export default function ListDetailPage() {
           <div className="flex flex-col gap-1.5">
             <button
               onClick={() => setShowCoverModal(true)}
-              className="flex items-center gap-2 text-[12px] text-[var(--fg-muted)] px-3 py-2 rounded-lg border border-[var(--border-light)] hover:border-[var(--fg-muted)] transition-colors text-left"
-              style={{ background: "var(--bg-surface)" }}
+              className="flex items-center gap-2 text-[12px] text-[var(--fg-muted)] px-3 py-2 rounded-lg border border-[var(--border-light)] hover:border-[var(--fg-muted)] transition-colors text-left bg-[var(--bg-surface)]"
             >
               <PaletteIcon size={13} /> Change cover
             </button>
             <button
               onClick={handleDelete}
-              className="flex items-center gap-2 text-[12px] text-red-500/70 px-3 py-2 rounded-lg border border-[var(--border-light)] hover:border-red-300 transition-colors text-left"
-              style={{ background: "var(--bg-surface)" }}
+              className="flex items-center gap-2 text-[12px] text-red-500/70 px-3 py-2 rounded-lg border border-[var(--border-light)] hover:border-red-300 transition-colors text-left bg-[var(--bg-surface)]"
             >
               <TrashIcon size={13} /> Delete list
             </button>

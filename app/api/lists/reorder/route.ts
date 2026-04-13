@@ -3,6 +3,8 @@ import { createServerClient } from "@/lib/supabase-server";
 
 export async function POST(req: NextRequest) {
   const supabase = createServerClient(req);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { orderedIds } = await req.json();
 
   const { error } = await supabase.rpc("reorder_lists", {

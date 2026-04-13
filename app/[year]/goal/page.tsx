@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getGoals, setGoal, updateGoal, deleteGoal, addBookToGoal, removeBookFromGoal } from "@/lib/goals";
 import { getEntries } from "@/lib/db";
 import type { ReadingGoal, BookEntry } from "@/types";
+import { TW_WIDTH_PCT } from "@/lib/twClassMaps";
 
 // ─── Auto goal card ───────────────────────────────────────────────────────────
 function AutoGoalCard({
@@ -40,8 +41,7 @@ function AutoGoalCard({
         </div>
         <div className="w-full h-1.5 bg-stone-100 rounded-full overflow-hidden">
           <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${percent}%`, background: "#2D1B2E" }}
+            className={`h-full rounded-full transition-all duration-500 bg-plum ${TW_WIDTH_PCT[percent] ?? "w-0"}`}
           />
         </div>
       </div>
@@ -51,8 +51,7 @@ function AutoGoalCard({
           const reached = percent >= m;
           return (
             <div key={m} className={`flex items-center gap-1.5 text-xs ${reached ? "text-stone-700" : "text-stone-300"}`}>
-              <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center text-[9px] shrink-0 ${reached ? "text-white" : "border-stone-200"}`}
-                style={reached ? { background: "#2D1B2E", borderColor: "#2D1B2E" } : {}}>
+              <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center text-[9px] shrink-0 ${reached ? "text-white bg-plum border-plum" : "border-stone-200"}`}>
                 {reached ? "✓" : ""}
               </span>
               {m}%
@@ -182,8 +181,7 @@ function CustomGoalCard({
         </div>
         <div className="w-full h-1.5 bg-stone-100 rounded-full overflow-hidden">
           <div
-            className="h-full bg-stone-600 rounded-full transition-all duration-500"
-            style={{ width: `${percent}%` }}
+            className={`h-full bg-stone-600 rounded-full transition-all duration-500 ${TW_WIDTH_PCT[percent] ?? "w-0"}`}
           />
         </div>
       </div>
@@ -371,7 +369,7 @@ export default function GoalPage() {
 
         <div className="mb-10 pb-8 border-b border-stone-200">
           <p className="text-xs text-stone-300 mb-2 tracking-widest uppercase">reading journal · {year}</p>
-          <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold text-[#2D1B2E] tracking-tight">
+          <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold text-[var(--fg-heading)] tracking-tight">
             reading goals
           </h1>
         </div>

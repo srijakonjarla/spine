@@ -3,6 +3,8 @@ import { createServerClient } from "@/lib/supabase-server";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = createServerClient(req);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id: listId } = await params;
   const { title, author, releaseDate, notes, price, type } = await req.json();
 

@@ -3,6 +3,8 @@ import { createServerClient } from "@/lib/supabase-server";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ itemId: string }> }) {
   const supabase = createServerClient(req);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { itemId } = await params;
   const patch = await req.json();
 
@@ -18,6 +20,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ it
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string; itemId: string }> }) {
   const supabase = createServerClient(req);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id: listId, itemId } = await params;
 
   const { error } = await supabase.from("list_items").delete().eq("id", itemId);

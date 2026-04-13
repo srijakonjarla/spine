@@ -10,12 +10,6 @@ import type { BookEntry } from "@/types";
 
 const VALID_STATUSES = new Set(["reading", "finished", "want-to-read", "did-not-finish"]);
 
-const MOOD_COLORS: Record<string, string> = {
-  cozy: "#C97B5A", dark: "#374151", hopeful: "#7B9E87", funny: "#D4A843",
-  "slow-burn": "#C4B5D4", "heart-wrenching": "#BE185D", whimsical: "#8B5CF6",
-  "thought-provoking": "#2D1B2E", escapist: "#1565C0",
-};
-
 export default function StatusCatalogPage() {
   const { status } = useParams<{ status: string }>();
   const [entries, setEntries] = useState<BookEntry[]>([]);
@@ -55,21 +49,19 @@ export default function StatusCatalogPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setView("grid")}
-              className="text-xs px-2 py-1 rounded transition-colors"
-              style={{ background: view === "grid" ? "var(--bg-hover)" : "transparent", color: view === "grid" ? "var(--fg)" : "var(--fg-faint)" }}
+              className={`text-xs px-2 py-1 rounded transition-colors ${view === "grid" ? "bg-[var(--bg-hover)] text-[var(--fg)]" : "bg-transparent text-[var(--fg-faint)]"}`}
             >
               ▦
             </button>
             <button
               onClick={() => setView("list")}
-              className="text-xs px-2 py-1 rounded transition-colors"
-              style={{ background: view === "list" ? "var(--bg-hover)" : "transparent", color: view === "list" ? "var(--fg)" : "var(--fg-faint)" }}
+              className={`text-xs px-2 py-1 rounded transition-colors ${view === "list" ? "bg-[var(--bg-hover)] text-[var(--fg)]" : "bg-transparent text-[var(--fg-faint)]"}`}
             >
               ☰
             </button>
           </div>
         </div>
-        <p className="text-xs mb-8" style={{ color: "var(--fg-faint)" }}>{entries.length} books</p>
+        <p className="text-xs mb-8 text-[var(--fg-faint)]">{entries.length} books</p>
 
         {/* Search */}
         <div className="mb-6">
@@ -89,28 +81,17 @@ export default function StatusCatalogPage() {
           <div className="flex flex-wrap gap-2 mb-8">
             <button
               onClick={() => setActiveMood(null)}
-              className="text-xs px-3 py-1 rounded-full transition-colors"
-              style={{
-                background: !activeMood ? "var(--plum)" : "var(--bg-surface)",
-                color: !activeMood ? "#fff" : "var(--fg-muted)",
-                border: "1px solid var(--border-light)",
-              }}
+              className={`text-xs px-3 py-1 rounded-full transition-colors border border-[var(--border-light)] ${!activeMood ? "bg-plum text-white" : "bg-[var(--bg-surface)] text-[var(--fg-muted)]"}`}
             >
               all
             </button>
             {allMoods.map((mood) => {
-              const color = MOOD_COLORS[mood] ?? "#2D1B2E";
               const active = activeMood === mood;
               return (
                 <button
                   key={mood}
                   onClick={() => setActiveMood(active ? null : mood)}
-                  className="text-xs px-3 py-1 rounded-full transition-colors"
-                  style={{
-                    background: active ? `${color}22` : "var(--bg-surface)",
-                    color: active ? color : "var(--fg-muted)",
-                    border: `1px solid ${active ? color : "var(--border-light)"}`,
-                  }}
+                  className={`mood-filter-chip mood-${mood.replace(/\s+/g, "-")}${active ? " active" : ""}`}
                 >
                   {mood}
                 </button>
@@ -123,16 +104,16 @@ export default function StatusCatalogPage() {
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4 animate-pulse">
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i}>
-                <div className="rounded-lg mb-2" style={{ aspectRatio: "2/3", background: "var(--border)" }} />
-                <div className="h-2.5 rounded mb-1" style={{ background: "var(--border)", width: "80%" }} />
-                <div className="h-2 rounded" style={{ background: "var(--border)", width: "50%" }} />
+                <div className="rounded-lg mb-2 aspect-[2/3] bg-[var(--border)]" />
+                <div className="h-2.5 rounded mb-1 w-4/5 bg-[var(--border)]" />
+                <div className="h-2 rounded w-1/2 bg-[var(--border)]" />
               </div>
             ))}
           </div>
         )}
 
         {!loading && filtered.length === 0 && (
-          <p className="text-xs" style={{ color: "var(--fg-faint)" }}>no books found.</p>
+          <p className="text-xs text-[var(--fg-faint)]">no books found.</p>
         )}
 
         {!loading && filtered.length > 0 && view === "grid" && (
@@ -140,25 +121,23 @@ export default function StatusCatalogPage() {
             {filtered.map((e) => (
               <Link key={e.id} href={`/book/${e.id}`} className="group relative">
                 <div
-                  className="relative mb-2 rounded-lg flex flex-col justify-between p-2.5 group-hover:opacity-85 transition-opacity"
-                  style={{ height: 130, background: "var(--bg-hover)", border: "1px solid var(--border-light)" }}
+                  className="relative mb-2 rounded-lg flex flex-col justify-between p-2.5 group-hover:opacity-85 transition-opacity h-[130px] bg-[var(--bg-hover)] border border-[var(--border-light)]"
                 >
                   {e.moodTags.length > 0 && (
                     <span
-                      className="self-start text-[9px] px-1.5 py-0.5 rounded-full"
-                      style={{ background: `${MOOD_COLORS[e.moodTags[0]] ?? "#2D1B2E"}cc`, color: "#fff" }}
+                      className={`self-start text-[9px] px-1.5 py-0.5 rounded-full mood-grid-tag mood-${e.moodTags[0].replace(/\s+/g, "-")}`}
                     >
                       {e.moodTags[0]}
                     </span>
                   )}
                   {e.rating > 0 && (
-                    <span className="self-end text-[10px]" style={{ color: "#D4A843" }}>
+                    <span className="self-end text-[10px] text-gold">
                       {"★".repeat(Math.round(e.rating))}
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] font-medium leading-tight truncate" style={{ color: "var(--fg)" }}>{e.title || "untitled"}</p>
-                {e.author && <p className="text-[10px] mt-0.5 truncate" style={{ color: "var(--fg-faint)" }}>{e.author}</p>}
+                <p className="text-[11px] font-medium leading-tight truncate text-[var(--fg)]">{e.title || "untitled"}</p>
+                {e.author && <p className="text-[10px] mt-0.5 truncate text-[var(--fg-faint)]">{e.author}</p>}
               </Link>
             ))}
           </div>
@@ -167,9 +146,9 @@ export default function StatusCatalogPage() {
         {!loading && filtered.length > 0 && view === "list" && (
           <div className="space-y-0.5">
             {filtered.map((e) => (
-              <Link key={e.id} href={`/book/${e.id}`} className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-lg hover:bg-[rgba(45,27,46,0.04)] transition-colors group">
-                <span className="text-sm truncate flex-1" style={{ color: "var(--fg)" }}>{e.title || "untitled"}</span>
-                {e.author && <span className="text-xs shrink-0 hidden sm:block" style={{ color: "var(--fg-faint)" }}>{e.author}</span>}
+              <Link key={e.id} href={`/book/${e.id}`} className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-lg hover:bg-[var(--bg-plum-trace)] transition-colors group">
+                <span className="text-sm truncate flex-1 text-[var(--fg)]">{e.title || "untitled"}</span>
+                {e.author && <span className="text-xs shrink-0 hidden sm:block text-[var(--fg-faint)]">{e.author}</span>}
                 <span className="dot-leader hidden sm:block" />
                 {e.rating > 0 && <StarDisplay rating={e.rating} size={11} />}
               </Link>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 
 interface Props {
   year: number;
@@ -14,8 +14,6 @@ const MONTH_NAMES = [
 ];
 const DOW_LABELS = ["su", "mo", "tu", "we", "th", "fr", "sa"];
 
-const CELL = 36;
-const GAP = 5;
 
 function toDateStr(year: number, month: number, day: number) {
   return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -69,13 +67,12 @@ function MonthCalendar({
       </div>
 
       {/* calendar grid */}
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(7, ${CELL}px)`, gap: GAP }}>
+      <div className="grid grid-cols-7 gap-[5px]">
         {/* day-of-week header */}
         {DOW_LABELS.map((d) => (
           <div
             key={d}
-            style={{ fontSize: 9, height: 14, width: CELL }}
-            className="text-stone-300 text-center flex items-center justify-center font-mono"
+            className="text-[9px] h-[14px] w-9 text-stone-300 text-center flex items-center justify-center font-mono"
           >
             {d}
           </div>
@@ -85,7 +82,7 @@ function MonthCalendar({
         {weeks.map((week, wi) =>
           week.map((day, di) => {
             if (!day) {
-              return <div key={`${wi}-${di}`} style={{ width: CELL, height: CELL }} />;
+              return <div key={`${wi}-${di}`} className="w-9 h-9" />;
             }
 
             const dateStr = toDateStr(year, month, day);
@@ -94,23 +91,12 @@ function MonthCalendar({
             const date = new Date(year, month, day);
             const isFuture = date > now;
 
-            let style: React.CSSProperties = { width: CELL, height: CELL, fontSize: 10 };
-            let cls = "";
-
-            if (isFuture && isCurrentYear) {
-              cls = "bg-stone-100 opacity-20 cursor-not-allowed text-stone-400";
-            } else if (isLogged && isToday) {
-              cls = "cursor-pointer font-semibold ring-2 ring-offset-1 ring-[#7B9E87]";
-              style = { ...style, background: "rgba(122,158,126,0.25)", color: "#7B9E87" };
-            } else if (isLogged) {
-              cls = "cursor-pointer font-semibold";
-              style = { ...style, background: "rgba(122,158,126,0.18)", color: "#7B9E87" };
-            } else if (isToday) {
-              cls = "cursor-pointer font-bold text-white";
-              style = { ...style, background: "#2D1B2E", boxShadow: "0 1px 4px rgba(45,27,46,0.3)" };
-            } else {
-              cls = "cursor-pointer text-stone-400 bg-stone-100 hover:bg-stone-200";
-            }
+            const cls =
+              isFuture && isCurrentYear ? "bg-stone-100 opacity-20 cursor-not-allowed text-stone-400" :
+              isLogged && isToday       ? "cursor-pointer font-semibold ring-2 ring-offset-1 ring-sage bg-[var(--bg-sage-25)] text-sage" :
+              isLogged                  ? "cursor-pointer font-semibold bg-[var(--bg-sage-18)] text-sage" :
+              isToday                   ? "cursor-pointer font-bold text-white bg-plum shadow-[var(--shadow-today-cell)]" :
+                                          "cursor-pointer text-stone-400 bg-stone-100 hover:bg-stone-200";
 
             return (
               <button
@@ -118,8 +104,7 @@ function MonthCalendar({
                 title={date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
                 disabled={isFuture && isCurrentYear}
                 onClick={() => !(isFuture && isCurrentYear) && onToggle(dateStr)}
-                style={style}
-                className={`rounded flex items-center justify-center transition-colors ${cls}`}
+                className={`w-9 h-9 text-[10px] rounded flex items-center justify-center transition-colors ${cls}`}
               >
                 {day}
               </button>

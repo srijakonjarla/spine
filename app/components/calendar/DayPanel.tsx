@@ -188,12 +188,7 @@ export function DayPanel({
               onKeyDown={(e) => { if (e.key === "Escape" && !isToday) setEditMode(false); }}
               onBlur={() => { if (!isToday) setEditMode(false); }}
               placeholder={hasActivity ? "add a note for this day..." : "Nothing logged this day — want to add a note?"}
-              className="w-full resize-none focus:outline-none text-[13px] leading-[1.75em] bg-transparent text-[var(--fg)] font-serif pb-[1.75em]"
-              style={{
-                caretColor: "var(--plum)",
-                backgroundImage: "repeating-linear-gradient(transparent, transparent calc(1.75em - 1px), var(--bg-muted-tag) calc(1.75em - 1px), var(--bg-muted-tag) 1.75em)",
-                backgroundAttachment: "local",
-              }}
+              className="w-full resize-none focus:outline-none text-[13px] leading-[1.75em] bg-transparent text-[var(--fg)] font-serif pb-[1.75em] caret-plum bg-local [background-image:var(--ruled-note-line)]"
             />
           ) : draft ? (
             <div

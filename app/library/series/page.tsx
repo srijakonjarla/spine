@@ -7,6 +7,7 @@ import {
   addSeriesBook, updateSeriesBook, deleteSeriesBook,
   type Series, type SeriesBook,
 } from "@/lib/series";
+import { TW_WIDTH_PCT } from "@/lib/twClassMaps";
 
 const STATUS_LABEL: Record<SeriesBook["status"], string> = {
   read: "read",
@@ -15,11 +16,18 @@ const STATUS_LABEL: Record<SeriesBook["status"], string> = {
   skipped: "skipped",
 };
 
-const STATUS_COLOR: Record<SeriesBook["status"], string> = {
-  read: "#7B9E87",
-  reading: "#C97B5A",
-  unread: "",
-  skipped: "",
+const STATUS_BG_CLS: Record<SeriesBook["status"], string> = {
+  read: "bg-sage border-sage",
+  reading: "bg-terra border-terra",
+  unread: "bg-transparent border-[var(--border-stone-300)]",
+  skipped: "bg-transparent border-[var(--border-stone-300)]",
+};
+
+const STATUS_TEXT_CLS: Record<SeriesBook["status"], string> = {
+  read: "text-sage",
+  reading: "text-terra",
+  unread: "text-stone-400",
+  skipped: "text-stone-400",
 };
 
 const STATUS_CYCLE: Record<SeriesBook["status"], SeriesBook["status"]> = {
@@ -80,7 +88,7 @@ function SeriesCard({ series, onDelete, onBookStatusChange, onBookDelete }: {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
-          <h3 className="font-[family-name:var(--font-playfair)] text-lg font-semibold text-[#2D1B2E]">{series.name}</h3>
+          <h3 className="font-[family-name:var(--font-playfair)] text-lg font-semibold text-[var(--fg-heading)]">{series.name}</h3>
           {series.author && <p className="text-xs text-stone-400 mt-0.5">{series.author}</p>}
         </div>
         <div className="flex items-center gap-3 shrink-0">
@@ -95,8 +103,9 @@ function SeriesCard({ series, onDelete, onBookStatusChange, onBookDelete }: {
       {total > 0 && (
         <div className="w-full h-1 bg-stone-100 rounded-full overflow-hidden mb-4">
           <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${(readCount / total) * 100}%`, background: "#7B9E87" }}
+            className={`h-full rounded-full transition-all duration-500 bg-sage ${
+              TW_WIDTH_PCT[Math.round((readCount / total) * 100)] ?? "w-0"
+            }`}
           />
         </div>
       )}
@@ -108,26 +117,18 @@ function SeriesCard({ series, onDelete, onBookStatusChange, onBookDelete }: {
             <span className="text-xs text-stone-300 w-5 shrink-0 font-mono">{book.position}.</span>
             <button
               onClick={() => handleBookStatus(book)}
-              className="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors"
-              style={{
-                background: book.status === "read" || book.status === "reading" ? STATUS_COLOR[book.status] : "transparent",
-                borderColor: book.status === "read" || book.status === "reading" ? STATUS_COLOR[book.status] : "#d6d3d1",
-              }}
+              className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${STATUS_BG_CLS[book.status]}`}
               title={`Mark as ${STATUS_CYCLE[book.status]}`}
             >
               {book.status === "read" && <span className="text-white text-[8px]">✓</span>}
-              {book.status === "reading" && <span style={{ color: "white", fontSize: 8 }}>○</span>}
+              {book.status === "reading" && <span className="text-white text-[8px]">○</span>}
             </button>
             <span
-              className="flex-1 text-sm truncate"
-              style={{ color: book.status === "read" ? "#a8a29e" : "var(--fg)", textDecoration: book.status === "skipped" ? "line-through" : "none" }}
+              className={`flex-1 text-sm truncate ${book.status === "read" ? "text-stone-400" : "text-[var(--fg)]"} ${book.status === "skipped" ? "line-through" : ""}`}
             >
               {book.title}
             </span>
-            <span
-              className="text-xs shrink-0"
-              style={{ color: STATUS_COLOR[book.status] || "#a8a29e" }}
-            >
+            <span className={`text-xs shrink-0 ${STATUS_TEXT_CLS[book.status]}`}>
               {book.status !== "unread" ? STATUS_LABEL[book.status] : ""}
             </span>
             <button

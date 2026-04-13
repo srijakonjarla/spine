@@ -38,7 +38,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     if (loading) return;
     if (!user && pathname !== "/login") {
-      router.replace("/login");
+      // Hard redirect so all React state is cleared — prevents stale data
+      // from the previous session leaking into a subsequent login.
+      window.location.href = "/login";
     }
     if (user && pathname === "/login") {
       router.replace("/");
@@ -46,7 +48,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }, [user, loading, pathname, router]);
 
   if (loading) {
-    return <div className="min-h-screen bg-[#faf8f5]" />;
+    return <div className="min-h-screen bg-[var(--auth-loading-bg)]" />;
   }
 
   return (

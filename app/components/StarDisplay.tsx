@@ -6,11 +6,11 @@ function StarSvg({ fill, size = 14 }: { fill: number; size?: number }) {
   const id = useId();
   const pct = Math.round(Math.max(0, Math.min(1, fill)) * 100);
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" style={{ display: "inline-block", verticalAlign: "middle" }}>
+    <svg width={size} height={size} viewBox="0 0 24 24" className="inline-block align-middle">
       <defs>
         <linearGradient id={id} x1="0" x2="1" y1="0" y2="0">
-          <stop offset={`${pct}%`} stopColor="#78350f" />
-          <stop offset={`${pct}%`} stopColor="#d6d3d1" />
+          <stop offset={`${pct}%`} stopColor="var(--star-filled)" />
+          <stop offset={`${pct}%`} stopColor="var(--star-empty)" />
         </linearGradient>
       </defs>
       <path

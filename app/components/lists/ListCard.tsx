@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import type { BookList } from "@/types";
 import { BooksIcon, LightbulbIcon, CheckSquareIcon, ListBulletsIcon } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
-import { COVER_ICONS, coverGradient } from "./coverConstants";
+import { COVER_ICONS, coverGradientClass } from "./coverConstants";
 
 const LIST_TYPES: ReadonlyArray<{ value: string; icon: Icon; label: string }> = [
   { value: "book_list",   icon: BooksIcon,       label: "Book List" },
@@ -36,13 +36,11 @@ export function ListCard({ list, year }: ListCardProps) {
   return (
     <button
       onClick={() => router.push(`/${year}/lists/${list.id}`)}
-      className="w-full text-left rounded-2xl overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg"
-      style={{ border: "1px solid var(--border-light)", background: "var(--bg-surface)" }}
+      className="w-full text-left rounded-2xl overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg border border-[var(--border-light)] bg-[var(--bg-surface)]"
     >
       {/* Cover */}
       <div
-        className="h-24 px-4 py-3 flex flex-col justify-between relative"
-        style={{ background: coverGradient(list.color) }}
+        className={`h-24 px-4 py-3 flex flex-col justify-between relative ${coverGradientClass(list.color)}`}
       >
         <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.1em] px-2 py-0.5 rounded-full self-start text-white/80 bg-white/15">
           <TypeIcon size={10} />

@@ -11,12 +11,6 @@ export const COVER_COLORS = [
 
 export type CoverColor = (typeof COVER_COLORS)[number];
 
-export const COVER_HEX: Record<string, string> = {
-  plum: "#2D1B2E", navy: "#2D3561", forest: "#1E3A2E", terra: "#C97B5A",
-  ruby: "#8E2C2C", violet: "#7B4A8D", gold: "#D4A843", sage: "#7B9E87",
-  lavender: "#C4B5D4", bark: "#5B3A2E",
-};
-
 export const COVER_ICONS: Record<string, Icon> = {
   Books: BooksIcon, Lightbulb: LightbulbIcon, Waves: WavesIcon,
   Airplane: AirplaneInFlightIcon, Heart: HeartIcon, Leaf: LeafIcon,
@@ -27,7 +21,23 @@ export const COVER_ICONS: Record<string, Icon> = {
 
 export const COVER_ICON_NAMES = Object.keys(COVER_ICONS);
 
-export function coverGradient(color: string): string {
-  const hex = COVER_HEX[color] ?? "#2D1B2E";
-  return `linear-gradient(135deg, var(--cover-${color}-from, ${hex}), var(--cover-${color}-to, ${hex}))`;
+function coverColorKey(color: string): CoverColor {
+  return (COVER_COLORS as readonly string[]).includes(color) ? (color as CoverColor) : "plum";
+}
+
+const COVER_GRADIENT_CLASS: Record<CoverColor, string> = {
+  plum: "bg-[linear-gradient(135deg,var(--cover-plum-from),var(--cover-plum-to))]",
+  navy: "bg-[linear-gradient(135deg,var(--cover-navy-from),var(--cover-navy-to))]",
+  forest: "bg-[linear-gradient(135deg,var(--cover-forest-from),var(--cover-forest-to))]",
+  terra: "bg-[linear-gradient(135deg,var(--cover-terra-from),var(--cover-terra-to))]",
+  ruby: "bg-[linear-gradient(135deg,var(--cover-ruby-from),var(--cover-ruby-to))]",
+  violet: "bg-[linear-gradient(135deg,var(--cover-violet-from),var(--cover-violet-to))]",
+  gold: "bg-[linear-gradient(135deg,var(--cover-gold-from),var(--cover-gold-to))]",
+  sage: "bg-[linear-gradient(135deg,var(--cover-sage-from),var(--cover-sage-to))]",
+  lavender: "bg-[linear-gradient(135deg,var(--cover-lavender-from),var(--cover-lavender-to))]",
+  bark: "bg-[linear-gradient(135deg,var(--cover-bark-from),var(--cover-bark-to))]",
+};
+
+export function coverGradientClass(color: string): string {
+  return COVER_GRADIENT_CLASS[coverColorKey(color)];
 }

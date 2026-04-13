@@ -4,7 +4,7 @@ import { useState } from "react";
 import { BooksIcon } from "@phosphor-icons/react";
 import { ColorPicker } from "./ColorPicker";
 import { IconPicker } from "./IconPicker";
-import { COVER_ICONS, coverGradient } from "./coverConstants";
+import { COVER_ICONS, coverGradientClass } from "./coverConstants";
 
 interface CoverChangeModalProps {
   initialColor: string;
@@ -36,8 +36,7 @@ export function CoverChangeModal({ initialColor, initialEmoji, onClose, onSave }
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="w-full max-w-[400px] rounded-2xl p-6 shadow-2xl"
-        style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)" }}
+        className="w-full max-w-[400px] rounded-2xl p-6 shadow-2xl bg-[var(--bg-surface)] border border-[var(--border-light)]"
       >
         <h3 className="font-serif text-[18px] font-bold text-[var(--fg-heading)] mb-1">Change cover</h3>
         <p className="font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)] mb-5">
@@ -57,8 +56,7 @@ export function CoverChangeModal({ initialColor, initialEmoji, onClose, onSave }
 
           {/* Preview */}
           <div
-            className="h-14 rounded-xl overflow-hidden flex items-end px-3 pb-2 mb-5"
-            style={{ background: coverGradient(color) }}
+            className={`h-14 rounded-xl overflow-hidden flex items-end px-3 pb-2 mb-5 ${coverGradientClass(color)}`}
           >
             <PreviewIcon size={22} className="text-white/90" />
           </div>

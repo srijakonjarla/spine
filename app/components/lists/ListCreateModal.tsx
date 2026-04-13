@@ -45,8 +45,7 @@ export function ListCreateModal({ onClose, onCreate, saving }: ListCreateModalPr
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="w-full max-w-[480px] rounded-2xl p-7 shadow-2xl"
-        style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)" }}
+        className="w-full max-w-[480px] rounded-2xl p-7 shadow-2xl bg-[var(--bg-surface)] border border-[var(--border-light)]"
       >
         <h2 className="font-serif text-[22px] font-bold text-[var(--fg-heading)] mb-0.5">Create a new list</h2>
         <p className="font-[family-name:var(--font-caveat)] text-[14px] text-[var(--fg-muted)] mb-6">

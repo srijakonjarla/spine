@@ -3,6 +3,9 @@ import { createServerClient } from "@/lib/supabase-server";
 
 export async function GET(req: NextRequest) {
   const supabase = createServerClient(req);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
   const { searchParams } = req.nextUrl;
   const year   = searchParams.get("year");
   const limit  = searchParams.get("limit");
@@ -11,6 +14,7 @@ export async function GET(req: NextRequest) {
   let query = supabase
     .from("books")
     .select("*, thoughts(*), book_reads(*)")
+    .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
 
   if (year) {

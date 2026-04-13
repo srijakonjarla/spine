@@ -103,7 +103,7 @@ export default function BooksPage() {
 
         <div className="mb-10 pb-8 border-b border-stone-200">
           <p className="text-xs text-stone-300 mb-2 tracking-widest uppercase">reading journal · {year}</p>
-          <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold text-[#2D1B2E] tracking-tight">reading log</h1>
+          <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold text-[var(--fg-heading)] tracking-tight">reading log</h1>
           {loggable.length > 0 && (
             <p className="text-xs text-stone-400 mt-3">{loggable.length} books · {months.length} months</p>
           )}
