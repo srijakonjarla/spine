@@ -74,7 +74,7 @@ export default function ListsPage() {
           {/* New list CTA card */}
           <button
             onClick={() => setShowForm(true)}
-            className="rounded-2xl flex flex-col items-center justify-center gap-2 min-h-[180px] transition-all border-2 border-dashed border-[var(--border-light)] hover:border-[var(--terra)] hover:bg-[var(--terra)]/[4%]"
+            className="rounded-2xl flex flex-col items-center justify-center gap-2 min-h-[180px] transition-all border-2 border-dashed border-[var(--border-light)] hover:border-[var(--terra)] hover:bg-[var(--terra)]/4"
           >
             <span className="text-[28px] text-[var(--fg-faint)]">＋</span>
             <span className="font-[family-name:var(--font-caveat)] text-[14px] text-[var(--fg-muted)]">create a new list</span>

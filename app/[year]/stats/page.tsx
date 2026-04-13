@@ -8,7 +8,6 @@ import { getReadingLog } from "@/lib/habits";
 import { getQuotes } from "@/lib/quotes";
 import { StarIcon } from "@phosphor-icons/react";
 import type { BookEntry } from "@/types";
-import { TW_WIDTH_PCT, TW_HEIGHT_PCT } from "@/lib/twClassMaps";
 
 export default function StatsPage() {
   const { year: yearParam } = useParams<{ year: string }>();
@@ -101,11 +100,12 @@ export default function StatsPage() {
               {months.map((m) => (
                 <div key={m.key} className="flex-1 flex flex-col items-center gap-1">
                   <div
-                    className={`w-full rounded-t-sm transition-all ${
+                    style={m.count > 0 ? { height: `${Math.round((m.count / maxMonthly) * 100)}%` } : undefined}
+                    className={`w-full rounded-t-sm transition-all min-h-[2px] ${
                       m.count > 0
                         ? "[background-image:var(--gradient-chart-month)]"
-                        : "bg-[var(--border-light)]"
-                    } ${m.count > 0 ? `${TW_HEIGHT_PCT[Math.round((m.count / maxMonthly) * 100)] ?? "h-0"} min-h-[2px]` : "h-[2px] min-h-[2px]"}`}
+                        : "bg-[var(--border-light)] h-[2px]"
+                    }`}
                   />
                   <span className="text-[9px] text-[var(--fg-faint)]">{m.label}</span>
                 </div>
@@ -126,9 +126,8 @@ export default function StatsPage() {
                     </div>
                     <div className="h-1.5 rounded-full overflow-hidden bg-[var(--border)]">
                       <div
-                        className={`h-full rounded-full bg-[linear-gradient(to_right,var(--plum),var(--terra))] ${
-                          TW_WIDTH_PCT[Math.round((count / maxGenreCount) * 100)] ?? "w-0"
-                        }`}
+                        style={{ width: `${Math.round((count / maxGenreCount) * 100)}%` }}
+                        className="h-full rounded-full bg-[linear-gradient(to_right,var(--plum),var(--terra))]"
                       />
                     </div>
                   </div>

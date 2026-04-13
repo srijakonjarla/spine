@@ -7,7 +7,6 @@ import {
   addSeriesBook, updateSeriesBook, deleteSeriesBook,
   type Series, type SeriesBook,
 } from "@/lib/series";
-import { TW_WIDTH_PCT } from "@/lib/twClassMaps";
 
 const STATUS_LABEL: Record<SeriesBook["status"], string> = {
   read: "read",
@@ -103,9 +102,8 @@ function SeriesCard({ series, onDelete, onBookStatusChange, onBookDelete }: {
       {total > 0 && (
         <div className="w-full h-1 bg-stone-100 rounded-full overflow-hidden mb-4">
           <div
-            className={`h-full rounded-full transition-all duration-500 bg-sage ${
-              TW_WIDTH_PCT[Math.round((readCount / total) * 100)] ?? "w-0"
-            }`}
+            style={{ width: `${Math.round((readCount / total) * 100)}%` }}
+            className="h-full rounded-full transition-all duration-500 bg-sage"
           />
         </div>
       )}

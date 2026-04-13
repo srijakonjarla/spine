@@ -6,7 +6,6 @@ import Link from "next/link";
 import { getGoals, setGoal, updateGoal, deleteGoal, addBookToGoal, removeBookFromGoal } from "@/lib/goals";
 import { getEntries } from "@/lib/db";
 import type { ReadingGoal, BookEntry } from "@/types";
-import { TW_WIDTH_PCT } from "@/lib/twClassMaps";
 
 // ─── Auto goal card ───────────────────────────────────────────────────────────
 function AutoGoalCard({
@@ -41,7 +40,8 @@ function AutoGoalCard({
         </div>
         <div className="w-full h-1.5 bg-stone-100 rounded-full overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all duration-500 bg-plum ${TW_WIDTH_PCT[percent] ?? "w-0"}`}
+            style={{ width: `${percent}%` }}
+            className="h-full rounded-full transition-all duration-500 bg-plum"
           />
         </div>
       </div>
@@ -181,7 +181,8 @@ function CustomGoalCard({
         </div>
         <div className="w-full h-1.5 bg-stone-100 rounded-full overflow-hidden">
           <div
-            className={`h-full bg-stone-600 rounded-full transition-all duration-500 ${TW_WIDTH_PCT[percent] ?? "w-0"}`}
+            style={{ width: `${percent}%` }}
+            className="h-full bg-stone-600 rounded-full transition-all duration-500"
           />
         </div>
       </div>

@@ -367,7 +367,7 @@ export default function ListDetailPage() {
               ) : (
                 <button
                   onClick={() => setShowAddBook(true)}
-                  className="w-full flex gap-2.5 items-center px-4 py-3 rounded-xl border border-dashed border-[var(--border-light)] hover:border-[var(--terra)] hover:bg-[var(--terra)]/[4%] transition-all font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)] hover:text-[var(--terra)]"
+                  className="w-full flex gap-2.5 items-center px-4 py-3 rounded-xl border border-dashed border-[var(--border-light)] hover:border-[var(--terra)] hover:bg-[var(--terra)]/4 transition-all font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)] hover:text-[var(--terra)]"
                 >
                   <span className="text-[18px]">＋</span>
                   search for a book to add…

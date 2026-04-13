@@ -9,7 +9,6 @@ import { getDisplayName, hasImportedGoodreads } from "@/lib/auth";
 import { useAuth } from "@/components/AuthProvider";
 import type { BookEntry, ReadingLogEntry, ReadingGoal } from "@/types";
 import { FireIcon, LeafIcon, StarIcon } from "@phosphor-icons/react";
-import { TW_HEIGHT_PCT, TW_WIDTH_PCT } from "@/lib/twClassMaps";
 
 const CURRENT_YEAR = new Date().getFullYear();
 const MONTH_ABBRS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
@@ -42,9 +41,8 @@ function StreakBars({ loggedDates, days = 14 }: { loggedDates: Set<string>; days
       {bars.map(({ dateStr, logged, isToday }) => {
         const seed = dateStr.split("-").reduce((a, b) => a + Number(b), 0);
         const stableH = logged ? 14 + (seed % 16) : 5;
-        const heightClass = TW_HEIGHT_PCT[stableH] ?? "h-5";
         const bgClass = logged ? (isToday ? "bg-sage" : "bg-[var(--bg-sage-60)]") : "bg-[var(--bg-plum-mid)]";
-        return <div key={dateStr} className={`rounded-sm flex-1 ${bgClass} ${heightClass}`} />;
+        return <div key={dateStr} style={{ height: `${stableH}%` }} className={`rounded-sm flex-1 ${bgClass}`} />;
       })}
     </div>
   );
@@ -208,9 +206,8 @@ export default function Home() {
                 </p>
                 <div className="h-1.5 rounded-full overflow-hidden mb-2 bg-[var(--bg-muted-tag)]">
                   <div
-                    className={`h-full rounded-full transition-all duration-500 bg-sage ${
-                      TW_WIDTH_PCT[Math.round(goalProgress * 100)] ?? "w-0"
-                    }`}
+                    style={{ width: `${Math.round(goalProgress * 100)}%` }}
+                    className="h-full rounded-full transition-all duration-500 bg-sage"
                   />
                 </div>
                 <p className="font-[family-name:var(--font-caveat)] text-[13px] text-sage">

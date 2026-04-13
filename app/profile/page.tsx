@@ -8,7 +8,6 @@ import { useTheme } from "@/components/ThemeProvider";
 import { parseGoodreadsCSV, type GoodreadsPreview } from "@/lib/goodreads";
 import { lookupBook } from "@/lib/catalog";
 import type { User } from "@supabase/supabase-js";
-import { TW_WIDTH_PCT } from "@/lib/twClassMaps";
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -183,9 +182,8 @@ function GoodreadsImport({ userId }: { userId: string }) {
         <p className="text-sm text-stone-500">Importing... {progress} / {previews.length}</p>
         <div className="w-full h-0.5 bg-stone-100 rounded-full overflow-hidden">
           <div
-            className={`h-full bg-stone-400 transition-all duration-300 ${
-              TW_WIDTH_PCT[previews.length ? Math.round((progress / previews.length) * 100) : 0] ?? "w-0"
-            }`}
+            style={{ width: `${previews.length ? Math.round((progress / previews.length) * 100) : 0}%` }}
+            className="h-full bg-stone-400 transition-all duration-300"
           />
         </div>
       </div>

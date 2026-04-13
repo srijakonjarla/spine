@@ -9,7 +9,6 @@ import { getGoals } from "@/lib/goals";
 import { getQuotes } from "@/lib/quotes";
 import { getLists } from "@/lib/lists";
 import type { BookEntry, BookList, ReadingLogEntry, ReadingGoal } from "@/types";
-import { TW_WIDTH_PCT } from "@/lib/twClassMaps";
 
 const MONTH_ABBRS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -26,11 +25,8 @@ const SPINE_COLOR_CLASSES = [
   "bg-[var(--year-shelf-10)]", "bg-[var(--year-shelf-11)]", "bg-[var(--year-shelf-12)]", "bg-[var(--year-shelf-13)]", "bg-[var(--year-shelf-14)]",
   "bg-[var(--year-shelf-15)]", "bg-[var(--year-shelf-16)]", "bg-[var(--year-shelf-17)]", "bg-[var(--year-shelf-18)]",
 ] as const;
-const SPINE_HEIGHT_CLASSES: Record<number, string> = Object.fromEntries(
-  Array.from({ length: 26 }, (_, i) => [50 + i, `h-[${50 + i}px]`]),
-) as Record<number, string>;
 function spineColorClass(title: string) { return SPINE_COLOR_CLASSES[hashStr(title) % SPINE_COLOR_CLASSES.length]; }
-function spineHeight(title: string) { return 50 + (hashStr(title) % 26); }
+function spineHeightPx(title: string) { return 44 + (hashStr(title) % 26); }
 
 function MiniMonthCal({
   year, monthIndex, loggedDates, finishedDates, todayStr, isCurrentYear,
@@ -60,7 +56,7 @@ function MiniMonthCal({
         isThisMonth
           ? "border-[1.5px] border-[var(--border-terra-soft)]"
           : "border border-[var(--border-light)]"
-      } ${isFutureMonth ? "opacity-45" : ""}`}
+      } ${isFutureMonth ? "opacity-[0.45]" : ""}`}
     >
       <div className="flex items-baseline justify-between mb-2">
         <p className="text-[11px] font-semibold text-[var(--fg-muted)]">
@@ -214,7 +210,7 @@ export default function YearPage() {
           {(autoGoal || customGoals.length > 0) && (
             <div className="flex flex-wrap gap-3">
               {autoGoal && goalProgress !== null && (
-                <div className="rounded-xl px-4 py-3 min-w-[200px] bg-white/[7%] border border-white/10">
+                <div className="rounded-xl px-4 py-3 min-w-[200px] bg-white/7 border border-white/10">
                   <p className="text-[9px] uppercase tracking-[0.12em] font-semibold mb-1 text-gold/70">
                     {autoGoal.name || "reading goal"}
                   </p>
@@ -223,9 +219,8 @@ export default function YearPage() {
                   </p>
                   <div className="h-1.5 rounded-full overflow-hidden bg-white/10">
                     <div
-                      className={`h-full rounded-full [background-image:var(--gradient-goal-horizontal)] ${
-                        TW_WIDTH_PCT[Math.round(goalProgress * 100)] ?? "w-0"
-                      }`}
+                      style={{ width: `${Math.round(goalProgress * 100)}%` }}
+                      className="h-full rounded-full bg-[linear-gradient(90deg,#7B9E87,#C97B5A)]"
                     />
                   </div>
                 </div>
@@ -233,7 +228,7 @@ export default function YearPage() {
               {customGoals.map(g => {
                 const p = g.target > 0 ? Math.min(1, g.bookIds.length / g.target) : 0;
                 return (
-                  <div key={g.id} className="rounded-xl px-4 py-3 min-w-[180px] bg-white/[7%] border border-white/10">
+                  <div key={g.id} className="rounded-xl px-4 py-3 min-w-[180px] bg-white/7 border border-white/10">
                     <p className="text-[9px] uppercase tracking-[0.12em] font-semibold mb-1 text-gold/70">
                       {g.name}
                     </p>
@@ -242,9 +237,8 @@ export default function YearPage() {
                     </p>
                     <div className="h-1.5 rounded-full overflow-hidden bg-white/10">
                       <div
-                        className={`h-full rounded-full bg-sage ${
-                          TW_WIDTH_PCT[Math.round(p * 100)] ?? "w-0"
-                        }`}
+                        style={{ width: `${Math.round(p * 100)}%` }}
+                        className="h-full rounded-full bg-sage"
                       />
                     </div>
                   </div>
@@ -302,9 +296,8 @@ export default function YearPage() {
                         key={b.id}
                         href={`/book/${b.id}`}
                         title={b.title}
-                        className={`rounded-sm shrink-0 hover:brightness-110 transition-all hover:-translate-y-1 w-[14px] ${
-                          SPINE_HEIGHT_CLASSES[spineHeight(b.title)] ?? "h-[50px]"
-                        } ${spineColorClass(b.title)}`}
+                        style={{ height: spineHeightPx(b.title) }}
+                        className={`rounded-sm shrink-0 hover:brightness-110 transition-all hover:-translate-y-1 w-[14px] ${spineColorClass(b.title)}`}
                       />
                     ))}
                   </div>

@@ -110,7 +110,7 @@ export default function Nav() {
           {user && (
             <>
               <nav className="hidden lg:flex items-center gap-6">
-                <TopNavLink href="/" label="journal" />
+                <TopNavLink href="/" label="home" />
                 <TopNavLink href="/library" label="library" />
                 <TopNavLink href={`/${CURRENT_YEAR}/stats`} label="stats" />
               </nav>

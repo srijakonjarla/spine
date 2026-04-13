@@ -77,7 +77,7 @@ export function ListCreateModal({ onClose, onCreate, saving }: ListCreateModalPr
                   onClick={() => setListType(t.value)}
                   className={`flex flex-col items-center gap-1 py-2.5 px-2 rounded-xl border text-center transition-colors ${
                     listType === t.value
-                      ? "border-[var(--plum)] bg-[var(--plum)]/[6%]"
+                      ? "border-[var(--plum)] bg-[var(--plum)]/6"
                       : "border-[var(--border-light)] hover:border-[var(--fg-muted)]"
                   }`}
                 >
