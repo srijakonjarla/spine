@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase-server";
+import { autoLogToday } from "@/lib/autoLog";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = createServerClient(req);
@@ -12,6 +13,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (error) return NextResponse.json(null, { status: 404 });
   return NextResponse.json(data);
 }
+
+const READING_ACTIVITY_FIELDS = new Set(["status", "dateStarted", "dateFinished", "rating", "feeling", "moodTags"]);
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = createServerClient(req);
@@ -33,6 +36,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { error } = await supabase.from("books").update(row).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  const isReadingActivity = Object.keys(patch).some((k) => READING_ACTIVITY_FIELDS.has(k));
+  if (isReadingActivity) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) await autoLogToday(supabase, user.id);
+  }
+
   return NextResponse.json({ ok: true });
 }
 

@@ -21,6 +21,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const row: Record<string, string> = { updated_at: new Date().toISOString() };
   if (patch.title !== undefined) row.title = patch.title;
   if (patch.description !== undefined) row.description = patch.description;
+  if (patch.color !== undefined) row.color = patch.color;
+  if (patch.emoji !== undefined) row.emoji = patch.emoji;
+  if (patch.bulletSymbol !== undefined) row.bullet_symbol = patch.bulletSymbol;
   if (patch.dateLabel !== undefined) row.date_label = patch.dateLabel;
   if (patch.notesLabel !== undefined) row.notes_label = patch.notesLabel;
   if (patch.bookmarked !== undefined) row.bookmarked = patch.bookmarked;

@@ -32,6 +32,36 @@
   --border-light: rgba(45, 27, 46, 0.08);
   --dot-color:    rgba(45, 27, 46, 0.07);
 
+  /* Opacity surface variants */
+  --bg-subtle:       rgba(45, 27, 46, 0.06);   /* button hover */
+  --bg-faintest:     rgba(45, 27, 46, 0.03);   /* note hover */
+  --bg-muted-tag:    rgba(45, 27, 46, 0.07);   /* mood tags, ruled lines */
+  --bg-selected:     rgba(45, 27, 46, 0.12);   /* selected calendar cell */
+  --bg-logged:       rgba(123, 158, 135, 0.10);/* logged reading day */
+  --bg-streak:       rgba(123, 158, 135, 0.18);/* streak reading day */
+  --bg-finished-day: rgba(201, 123, 90, 0.15); /* finished-book day in calendar */
+  --bg-overlay:      rgba(0, 0, 0, 0.08);      /* panel backdrop */
+  --bg-sage-pill:    rgba(123, 158, 135, 0.18);/* logged toggle bg */
+  --bg-gold-pill:    rgba(212, 168, 67, 0.15); /* quote save button */
+  --border-sage:     rgba(123, 158, 135, 0.30);/* logged toggle border */
+  --border-gold:     rgba(212, 168, 67, 0.30); /* quote save border */
+
+  /* Cover palette — gradient pairs for list covers */
+  --cover-plum-from:     #2D1B2E; --cover-plum-to:      #4A2B5A;
+  --cover-navy-from:     #2D3561; --cover-navy-to:      #4A5795;
+  --cover-forest-from:   #1E3A2E; --cover-forest-to:    #3D6F57;
+  --cover-terra-from:    #C97B5A; --cover-terra-to:     #E09973;
+  --cover-ruby-from:     #8E2C2C; --cover-ruby-to:      #B54040;
+  --cover-violet-from:   #7B4A8D; --cover-violet-to:    #A86BC2;
+  --cover-gold-from:     #D4A843; --cover-gold-to:      #E8C468;
+  --cover-sage-from:     #7B9E87; --cover-sage-to:      #A4C0AF;
+  --cover-lavender-from: #C4B5D4; --cover-lavender-to:  #DDD3EA;
+  --cover-bark-from:     #5B3A2E; --cover-bark-to:      #8A5A46;
+
+  /* Spine palette — deterministic book spine colors */
+  --spine-1: #4A2B5A; --spine-2: #8E4A1A; --spine-3: #2A4D8F; --spine-4: #1E3A2E; --spine-5: #C97B5A;
+  --spine-6: #7B4A8D; --spine-7: #2D3561; --spine-8: #8E2C2C; --spine-9: #D4A843; --spine-10: #5B3A2E;
+
   --background: var(--bg-page);
   --foreground: var(--fg);
 }
@@ -48,6 +78,12 @@
   --border:       rgba(255, 255, 255, 0.09);
   --border-light: rgba(255, 255, 255, 0.06);
   --dot-color:    rgba(237, 232, 223, 0.055);
+
+  /* Opacity surface variants — dark mode */
+  --bg-subtle:       rgba(255, 255, 255, 0.05);
+  --bg-faintest:     rgba(255, 255, 255, 0.02);
+  --bg-muted-tag:    rgba(255, 255, 255, 0.07);
+  --bg-selected:     rgba(255, 255, 255, 0.10);
 
   --background: var(--bg-page);
   --foreground: var(--fg);
@@ -66,6 +102,11 @@
     --border:       rgba(255, 255, 255, 0.09);
     --border-light: rgba(255, 255, 255, 0.06);
     --dot-color:    rgba(237, 232, 223, 0.055);
+
+    --bg-subtle:    rgba(255, 255, 255, 0.05);
+    --bg-faintest:  rgba(255, 255, 255, 0.02);
+    --bg-muted-tag: rgba(255, 255, 255, 0.07);
+    --bg-selected:  rgba(255, 255, 255, 0.10);
   }
 }
 
@@ -77,6 +118,21 @@
   --font-serif: var(--font-playfair);
   --font-hand:  var(--font-caveat);
   --font-mono:  var(--font-geist-mono);
+
+  /* Palette — enables bg-plum, text-terra, border-sage, etc. */
+  --color-plum:      var(--plum);
+  --color-plum-light: var(--plum-light);
+  --color-plum-dark: var(--plum-dark);
+  --color-terra:     var(--terra);
+  --color-terra-light: var(--terra-light);
+  --color-sage:      var(--sage);
+  --color-sage-light: var(--sage-light);
+  --color-lavender:  var(--lavender);
+  --color-lavender-light: var(--lavender-light);
+  --color-gold:      var(--gold);
+  --color-gold-light: var(--gold-light);
+  --color-cream:     var(--cream);
+  --color-ink:       var(--ink);
 }
 
 /* ─── Base ───────────────────────────────────────────────────── */

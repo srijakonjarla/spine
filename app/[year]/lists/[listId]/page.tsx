@@ -6,46 +6,58 @@ import Link from "next/link";
 import {
   getList, updateList, deleteList,
   addListItem, updateListItem, removeListItem,
-  reorderListItems, toggleListBookmark,
 } from "@/lib/lists";
-import { BookmarkButton } from "@/components/BookmarkButton";
 import { CatalogSearch } from "@/components/CatalogSearch";
-import { useDraggableList } from "@/hooks/useDraggableList";
+import { CoverChangeModal } from "@/components/lists/CoverChangeModal";
 import { type CatalogEntry } from "@/lib/catalog";
 import type { BookList, ListItem } from "@/types";
+import {
+  BooksIcon, LightbulbIcon, CheckSquareIcon, ListBulletsIcon, PaletteIcon, TrashIcon,
+} from "@phosphor-icons/react";
+import type { Icon } from "@phosphor-icons/react";
+import { coverGradient } from "@/components/lists/coverConstants";
 
-interface NewItemDraft {
-  title: string;
-  author: string;
-  releaseDate: string;
-  notes: string;
-  price: string;
-  type: string;
+const BULLET_SYMBOLS = ["→", "●", "✦", "◆", "○", "—", "✓", "★"];
+const SPINE_COUNT = 10;
+
+function hashStr(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
 }
 
-const emptyDraft = (): NewItemDraft => ({ title: "", author: "", releaseDate: "", notes: "", price: "", type: "" });
+function spineColor(title: string): string {
+  return `var(--spine-${(hashStr(title) % SPINE_COUNT) + 1})`;
+}
+
+const LIST_TYPE_LABELS: Record<string, string> = {
+  book_list: "book list",
+  idea_list: "idea list",
+  checklist: "checklist",
+  bullet_list: "bullet points",
+};
+const LIST_TYPE_ICONS: Record<string, Icon> = {
+  book_list: BooksIcon,
+  idea_list: LightbulbIcon,
+  checklist: CheckSquareIcon,
+  bullet_list: ListBulletsIcon,
+};
 
 export default function ListDetailPage() {
   const { year, listId } = useParams<{ year: string; listId: string }>();
   const router = useRouter();
+
   const [list, setList] = useState<BookList | null>(null);
-  const [draft, setDraft] = useState<NewItemDraft>(emptyDraft);
+  const [showAddBook, setShowAddBook] = useState(false);
+  const [draftTitle, setDraftTitle] = useState("");
+  const [draftAuthor, setDraftAuthor] = useState("");
+  const [inlineText, setInlineText] = useState("");
   const [adding, setAdding] = useState(false);
-  const [showDraftForm, setShowDraftForm] = useState(false);
-  const titleInputRef = useRef<HTMLInputElement>(null);
+  const [showCoverModal, setShowCoverModal] = useState(false);
+
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const itemSaveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
-
-  const setItems = useCallback(
-    (updater: React.SetStateAction<ListItem[]>) =>
-      setList((prev) => {
-        if (!prev) return prev;
-        const next = typeof updater === "function" ? updater(prev.items) : updater;
-        return { ...prev, items: next };
-      }),
-    []
-  );
-  const { dragProps } = useDraggableList(setItems, reorderListItems);
+  const inlineRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     getList(listId).then((l) => {
@@ -54,45 +66,48 @@ export default function ListDetailPage() {
     });
   }, [listId, year, router]);
 
-  const saveListField = useCallback(
-    (patch: Parameters<typeof updateList>[1]) => {
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => updateList(listId, patch), 600);
-    },
-    [listId]
-  );
+  const saveListField = useCallback((patch: Parameters<typeof updateList>[1]) => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => updateList(listId, patch), 600);
+  }, [listId]);
 
-  const handleAddItem = async () => {
-    const title = draft.title.trim();
+  const handleAddBook = async () => {
+    const title = draftTitle.trim();
     if (!title || adding) return;
     setAdding(true);
     try {
-      const item = await addListItem(listId, {
-        title,
-        author: draft.author.trim(),
-        releaseDate: draft.releaseDate.trim(),
-        notes: draft.notes.trim(),
-        price: draft.price.trim(),
-        type: draft.type,
-      });
+      const item = await addListItem(listId, { title, author: draftAuthor.trim() });
       setList((prev) => prev ? { ...prev, items: [...prev.items, item] } : prev);
-      setDraft(emptyDraft());
-      setShowDraftForm(false);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setAdding(false);
-    }
+      setDraftTitle(""); setDraftAuthor(""); setShowAddBook(false);
+    } catch (err) { console.error(err); }
+    finally { setAdding(false); }
   };
 
-  const handleUpdateItem = (id: string, patch: { releaseDate?: string; notes?: string; price?: string; type?: string }) => {
-    setList((prev) =>
-      prev ? { ...prev, items: prev.items.map((i) => i.id === id ? { ...i, ...patch } : i) } : prev
-    );
-    const existing = itemSaveTimers.current.get(id);
-    if (existing) clearTimeout(existing);
+  const handleAddIdea = async () => {
+    const title = inlineText.trim();
+    if (!title || adding) return;
+    setAdding(true);
+    try {
+      const item = await addListItem(listId, { title });
+      setList((prev) => prev ? { ...prev, items: [...prev.items, item] } : prev);
+      setInlineText("");
+      setTimeout(() => inlineRef.current?.focus(), 50);
+    } catch (err) { console.error(err); }
+    finally { setAdding(false); }
+  };
+
+  const handleToggleCheck = (id: string, currentType: string) => {
+    const next = currentType === "done" ? "" : "done";
+    setList((prev) => prev ? { ...prev, items: prev.items.map((i) => i.id === id ? { ...i, type: next } : i) } : prev);
+    updateListItem(id, { type: next });
+  };
+
+  const handleUpdateItemNotes = (id: string, notes: string) => {
+    setList((prev) => prev ? { ...prev, items: prev.items.map((i) => i.id === id ? { ...i, notes } : i) } : prev);
+    const t = itemSaveTimers.current.get(id);
+    if (t) clearTimeout(t);
     itemSaveTimers.current.set(id, setTimeout(() => {
-      updateListItem(id, patch);
+      updateListItem(id, { notes });
       itemSaveTimers.current.delete(id);
     }, 600));
   };
@@ -103,36 +118,59 @@ export default function ListDetailPage() {
   };
 
   const handleDelete = async () => {
+    if (!confirm("Delete this list? This can't be undone.")) return;
     await deleteList(listId);
     router.push(`/${year}/lists`);
   };
 
+  const handleSaveCover = async (color: string, emoji: string) => {
+    setList((prev) => prev ? { ...prev, color, emoji } : prev);
+    await updateList(listId, { color, emoji });
+    setShowCoverModal(false);
+  };
+
   if (!list) return <div className="page" />;
 
-  const showDate = !!list.dateLabel;
-  const showPrice = list.listType === "collection";
-  const showType = list.listType === "collection";
-  const TYPE_OPTIONS = ["bought", "sold", "donated"] as const;
+  const isIdeaType = ["idea_list", "bullet_list", "checklist"].includes(list.listType);
+  const isChecklist = list.listType === "checklist";
+  const bullet = list.bulletSymbol || "→";
+  const itemLabel = isIdeaType ? "ideas" : "books";
 
   return (
     <div className="page">
-      <div className="page-content">
-        <div className="mb-8 flex items-center justify-between">
-          <Link href={`/${year}/lists`} className="back-link">← lists</Link>
-          <BookmarkButton
-            bookmarked={list.bookmarked}
-            onToggle={async () => {
-              const next = !list.bookmarked;
-              setList((prev) => prev ? { ...prev, bookmarked: next } : prev);
-              await toggleListBookmark(listId, next);
-            }}
-            size="sm"
-          />
-        </div>
+      {/* Back link */}
+      <div className="px-8 pt-5">
+        <Link
+          href={`/${year}/lists`}
+          className="text-[12px] text-[var(--fg-muted)] hover:text-[var(--fg-heading)] transition-colors"
+        >
+          ← lists
+        </Link>
+      </div>
 
-        {/* title */}
+      {/* Gradient header */}
+      <div
+        className="relative overflow-hidden px-9 py-8 mt-3"
+        style={{ background: coverGradient(list.color) }}
+      >
+        {/* Glow orb */}
+        <div
+          className="absolute -bottom-10 -right-10 w-44 h-44 rounded-full pointer-events-none"
+          style={{ background: "radial-gradient(circle, rgba(255,255,255,0.1), transparent 70%)" }}
+        />
+        {(() => {
+          const TypeIcon = LIST_TYPE_ICONS[list.listType] ?? BooksIcon;
+          return (
+            <p
+              className="flex items-center gap-1.5 font-[family-name:var(--font-caveat)] text-[14px] mb-1 relative z-10"
+              style={{ color: "rgba(255,255,255,0.55)" }}
+            >
+              <TypeIcon size={14} />
+              {LIST_TYPE_LABELS[list.listType] ?? "list"}
+            </p>
+          );
+        })()}
         <input
-          id="list-title"
           type="text"
           value={list.title}
           onChange={(e) => {
@@ -141,211 +179,287 @@ export default function ListDetailPage() {
             saveListField({ title });
           }}
           placeholder="list title"
-          className="w-full text-lg font-semibold text-stone-900 bg-transparent border-none outline-none placeholder:text-stone-300 mb-1"
+          className="w-full font-serif text-[30px] font-bold italic text-white bg-transparent border-none outline-none mb-1 relative z-10 placeholder:text-white/40 leading-snug"
         />
+        <p
+          className="font-[family-name:var(--font-caveat)] text-[14px] relative z-10"
+          style={{ color: "rgba(255,255,255,0.6)" }}
+        >
+          {list.items.length} {itemLabel}
+          {list.description ? ` · ${list.description}` : ""}
+        </p>
+      </div>
 
-        {/* description */}
-        <input
-          id="list-description"
-          type="text"
-          value={list.description}
-          onChange={(e) => {
-            const description = e.target.value;
-            setList((prev) => prev ? { ...prev, description } : prev);
-            saveListField({ description });
-          }}
-          placeholder="description (optional)"
-          className="w-full text-xs text-stone-400 bg-transparent border-none outline-none placeholder:text-stone-300 mb-6"
-        />
+      {/* 2-column body */}
+      <div className="grid" style={{ gridTemplateColumns: "1fr 280px" }}>
 
-        {/* items */}
-        <div className="space-y-5 mb-8">
-          {list.items.length === 0 && !showDraftForm && (
-            <p className="text-xs text-stone-300">no entries yet.</p>
-          )}
-          {list.items.map((item: ListItem, i: number) => (
-            <div key={item.id} {...dragProps(item.id)} className="group flex gap-3 cursor-default">
-              <span className="text-xs text-stone-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5 cursor-grab active:cursor-grabbing select-none">⠿</span>
-              <span className="text-xs text-stone-300 shrink-0 mt-0.5">{i + 1}.</span>
-              <div className="flex-1 min-w-0 border-b border-stone-100 pb-3">
-                <p className="text-sm text-stone-800 font-medium">{item.title}</p>
-                <div className="flex gap-3 mt-0.5 items-baseline">
-                  {item.author && <p className="flex-1 text-xs text-stone-500 truncate">{item.author}</p>}
-                  {showDate && (
-                    <div className="flex items-baseline gap-1 shrink-0">
-                      <span className="text-xs text-stone-300">{list.dateLabel}:</span>
-                      <input
-                        id={`item-date-${item.id}`}
-                        type="date"
-                        value={item.releaseDate}
-                        onChange={(e) => handleUpdateItem(item.id, { releaseDate: e.target.value })}
-                        className="text-xs text-stone-500 bg-transparent border-none outline-none"
-                      />
-                    </div>
-                  )}
-                </div>
-                <input
-                  id={`item-notes-${item.id}`}
-                  type="text"
-                  value={item.notes}
-                  onChange={(e) => handleUpdateItem(item.id, { notes: e.target.value })}
-                  placeholder={list.notesLabel}
-                  className="w-full text-xs text-stone-400 italic bg-transparent border-none outline-none placeholder:text-stone-200 mt-0.5"
-                />
-                {showType && (
-                  <div className="flex gap-2 mt-1.5">
-                    {TYPE_OPTIONS.map((opt) => (
+        {/* ── Left: items ── */}
+        <div className="px-7 py-6">
+
+          {isIdeaType ? (
+            /* Idea / bullet / checklist */
+            <>
+              {/* Bullet symbol picker (not for checklist) */}
+              {!isChecklist && (
+                <div className="flex items-center gap-3 mb-5 font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)]">
+                  symbol
+                  <div className="flex gap-1.5">
+                    {BULLET_SYMBOLS.map((sym) => (
                       <button
-                        key={opt}
-                        onClick={() => handleUpdateItem(item.id, { type: item.type === opt ? "" : opt })}
-                        className={`text-xs px-1.5 py-0.5 rounded transition-colors ${
-                          item.type === opt
-                            ? "bg-stone-200 text-stone-700"
-                            : "text-stone-300 hover:text-stone-500"
+                        key={sym}
+                        onClick={() => {
+                          setList((prev) => prev ? { ...prev, bulletSymbol: sym } : prev);
+                          saveListField({ bulletSymbol: sym });
+                        }}
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-[14px] transition-all font-[family-name:var(--font-caveat)] ${
+                          bullet === sym
+                            ? "text-white bg-[var(--terra)]"
+                            : "text-[var(--terra)] bg-[var(--bg-surface)] border border-[var(--border-light)] hover:border-[var(--terra)]"
                         }`}
                       >
-                        {opt}
+                        {sym}
                       </button>
                     ))}
                   </div>
-                )}
-                {showPrice && (
-                  <div className="flex items-baseline gap-1 mt-0.5">
-                    <span className="text-xs text-stone-300">$</span>
-                    <input
-                      id={`item-price-${item.id}`}
-                      type="text"
-                      value={item.price}
-                      onChange={(e) => handleUpdateItem(item.id, { price: e.target.value })}
-                      placeholder="0.00"
-                      className="w-20 text-xs text-stone-500 bg-transparent border-none outline-none placeholder:text-stone-200"
-                    />
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={() => handleRemoveItem(item.id)}
-                className="text-md text-stone-200 hover:text-red-400 transition-colors shrink-0 mt-0.5 opacity-0 group-hover:opacity-100"
-                title="remove"
-              >
-                ×
-              </button>
-            </div>
-          ))}
-        </div>
-
-        {/* add entry */}
-        {showDraftForm ? (
-          <div className="border border-stone-200 rounded-lg p-4 mb-8 space-y-2">
-            <CatalogSearch
-              value={draft.title}
-              onChange={(v) => setDraft((d) => ({ ...d, title: v }))}
-              onSelect={(s: CatalogEntry) => setDraft((d) => ({
-                ...d,
-                title: s.title,
-                author: s.author,
-                releaseDate: s.releaseDate || d.releaseDate,
-              }))}
-              onSubmit={handleAddItem}
-              placeholder="book title"
-              showReleaseDate
-              className="mb-0"
-            />
-            <div className="flex gap-3 flex-wrap">
-              <input
-                id="draft-author"
-                type="text"
-                value={draft.author}
-                onChange={(e) => setDraft((d) => ({ ...d, author: e.target.value }))}
-                onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
-                placeholder="author"
-                className="flex-1 min-w-0 text-xs text-stone-500 bg-transparent border-none outline-none placeholder:text-stone-300"
-              />
-              {showDate && (
-                <div className="flex items-baseline gap-1 shrink-0">
-                  <span className="text-xs text-stone-300">{list.dateLabel}:</span>
-                  <input
-                    id="draft-release-date"
-                    type="date"
-                    value={draft.releaseDate}
-                    onChange={(e) => setDraft((d) => ({ ...d, releaseDate: e.target.value }))}
-                    className="text-xs text-stone-500 bg-transparent border-none outline-none"
-                  />
                 </div>
               )}
-            </div>
-            <input
-              id="draft-notes"
-              type="text"
-              value={draft.notes}
-              onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
-              onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
-              placeholder={list.notesLabel}
-              className="w-full text-xs text-stone-400 italic bg-transparent border-none outline-none placeholder:text-stone-300"
-            />
-            {showType && (
-              <div className="flex gap-2">
-                {TYPE_OPTIONS.map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => setDraft((d) => ({ ...d, type: d.type === opt ? "" : opt }))}
-                    className={`text-xs px-1.5 py-0.5 rounded transition-colors ${
-                      draft.type === opt
-                        ? "bg-stone-200 text-stone-700"
-                        : "text-stone-300 hover:text-stone-500"
-                    }`}
+
+              {/* Dotted grid */}
+              <div
+                className="rounded-xl px-7 py-6 min-h-[280px]"
+                style={{
+                  backgroundColor: "var(--bg-surface)",
+                  backgroundImage: "radial-gradient(circle, var(--bg-muted-tag) 1px, transparent 1px)",
+                  backgroundSize: "18px 18px",
+                  border: "1px solid var(--border-light)",
+                }}
+              >
+                {list.items.map((item: ListItem) => (
+                  <div
+                    key={item.id}
+                    className="group flex gap-3 items-start py-1.5 border-b border-[var(--border-light)] last:border-none"
                   >
-                    {opt}
-                  </button>
+                    {isChecklist ? (
+                      <button
+                        onClick={() => handleToggleCheck(item.id, item.type)}
+                        className={`shrink-0 mt-1 w-4 h-4 rounded border-[1.5px] flex items-center justify-center transition-colors ${
+                          item.type === "done"
+                            ? "bg-[var(--terra)] border-[var(--terra)]"
+                            : "border-[var(--terra)] bg-transparent"
+                        }`}
+                      >
+                        {item.type === "done" && (
+                          <span className="text-white text-[9px] leading-none">✓</span>
+                        )}
+                      </button>
+                    ) : (
+                      <span className="shrink-0 text-[15px] w-5 mt-0.5 text-[var(--terra)]">{bullet}</span>
+                    )}
+                    <span
+                      className={`font-[family-name:var(--font-caveat)] text-[16px] flex-1 leading-snug text-[var(--terra)] ${
+                        isChecklist && item.type === "done" ? "line-through opacity-45" : ""
+                      }`}
+                    >
+                      {item.title}
+                    </span>
+                    <button
+                      onClick={() => handleRemoveItem(item.id)}
+                      className="text-[16px] text-[var(--fg-faint)] hover:text-red-400 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+
+                {/* Inline add row */}
+                <div className="flex gap-3 items-start py-1.5 opacity-40 focus-within:opacity-100 transition-opacity">
+                  {isChecklist ? (
+                    <span className="shrink-0 mt-1 w-4 h-4 rounded border-[1.5px] border-[var(--terra)]" />
+                  ) : (
+                    <span className="shrink-0 text-[15px] w-5 mt-0.5 text-[var(--fg-faint)]">{bullet}</span>
+                  )}
+                  <input
+                    ref={inlineRef}
+                    type="text"
+                    value={inlineText}
+                    onChange={(e) => setInlineText(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleAddIdea()}
+                    placeholder={isChecklist ? "add an item…" : "add an idea…"}
+                    className="font-[family-name:var(--font-caveat)] text-[16px] flex-1 bg-transparent border-none outline-none text-[var(--terra)] placeholder:text-[var(--terra)]"
+                  />
+                </div>
+              </div>
+            </>
+          ) : (
+            /* Book list */
+            <>
+              <div className="space-y-2.5 mb-3">
+                {list.items.map((item: ListItem) => (
+                  <div
+                    key={item.id}
+                    className="group flex gap-3.5 items-center bg-[var(--bg-surface)] rounded-xl px-4 py-3 border border-[var(--border-light)] hover:translate-x-1 transition-transform"
+                  >
+                    {/* Colored spine */}
+                    <svg
+                      viewBox="0 0 38 54"
+                      className="shrink-0 rounded-sm"
+                      style={{ width: 38, height: 54, boxShadow: "0 3px 8px rgba(45,27,46,0.18)" }}
+                    >
+                      <rect width="38" height="54" rx="3" style={{ fill: spineColor(item.title) }} />
+                      <rect x="4" y="8" width="30" height="1.5" rx="0.75" fill="rgba(255,255,255,0.3)" />
+                    </svg>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-serif text-[13px] font-semibold text-[var(--fg-heading)] leading-snug">
+                        {item.title}
+                      </p>
+                      {item.author && (
+                        <p className="text-[11px] text-[var(--fg-muted)] mt-0.5">{item.author}</p>
+                      )}
+                      <input
+                        type="text"
+                        value={item.notes ?? ""}
+                        onChange={(e) => handleUpdateItemNotes(item.id, e.target.value)}
+                        placeholder="add a note…"
+                        className="font-[family-name:var(--font-caveat)] text-[12px] text-[var(--terra)] bg-transparent border-none outline-none w-full mt-1 placeholder:text-[var(--terra)]/40"
+                      />
+                    </div>
+
+                    {/* Remove */}
+                    <button
+                      onClick={() => handleRemoveItem(item.id)}
+                      className="text-[18px] text-[var(--fg-faint)] hover:text-red-400 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
+                    >
+                      ×
+                    </button>
+                  </div>
                 ))}
               </div>
-            )}
-            {showPrice && (
-              <div className="flex items-baseline gap-1">
-                <span className="text-xs text-stone-300">$</span>
-                <input
-                  id="draft-price"
-                  type="text"
-                  value={draft.price}
-                  onChange={(e) => setDraft((d) => ({ ...d, price: e.target.value }))}
-                  onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
-                  placeholder="0.00"
-                  className="w-20 text-xs text-stone-500 bg-transparent border-none outline-none placeholder:text-stone-300"
-                />
-              </div>
-            )}
-            <div className="flex gap-3 pt-1 border-t border-stone-100 mt-2">
-              <button
-                onClick={handleAddItem}
-                disabled={!draft.title.trim() || adding}
-                className="text-xs text-stone-700 hover:text-stone-900 transition-colors disabled:opacity-30"
-              >
-                add entry ↵
-              </button>
-              <button
-                onClick={() => { setDraft(emptyDraft()); setShowDraftForm(false); }}
-                className="text-xs text-stone-300 hover:text-stone-500 transition-colors"
-              >
-                cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            onClick={() => { setShowDraftForm(true); setTimeout(() => titleInputRef.current?.focus(), 0); }}
-            className="back-link mb-8"
-          >
-            + add entry
-          </button>
-        )}
 
-        {/* footer */}
-        <div className="border-t border-stone-100 pt-4 flex justify-between items-center">
-          <p className="text-xs text-stone-300">{list.items.length} {list.items.length === 1 ? "entry" : "entries"}</p>
-          <button onClick={handleDelete} className="btn-delete">delete list</button>
+              {/* Add book row */}
+              {showAddBook ? (
+                <div
+                  className="rounded-xl px-4 py-3 border border-dashed border-[var(--border-light)]"
+                  style={{ background: "var(--bg-surface)" }}
+                >
+                  <CatalogSearch
+                    value={draftTitle}
+                    onChange={(v) => setDraftTitle(v)}
+                    onSelect={(s: CatalogEntry) => {
+                      setDraftTitle(s.title);
+                      setDraftAuthor(s.author);
+                    }}
+                    onSubmit={handleAddBook}
+                    placeholder="search for a book to add…"
+                    className="mb-1"
+                  />
+                  <input
+                    type="text"
+                    value={draftAuthor}
+                    onChange={(e) => setDraftAuthor(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleAddBook()}
+                    placeholder="author"
+                    className="text-[12px] text-[var(--fg-muted)] bg-transparent border-none outline-none w-full placeholder:text-[var(--fg-faint)]"
+                  />
+                  <div className="flex gap-3 mt-2 pt-2 border-t border-[var(--border-light)]">
+                    <button
+                      onClick={handleAddBook}
+                      disabled={!draftTitle.trim() || adding}
+                      className="text-[12px] font-semibold text-[var(--plum)] hover:text-[var(--plum-light)] transition-colors disabled:opacity-30"
+                    >
+                      add ↵
+                    </button>
+                    <button
+                      onClick={() => { setShowAddBook(false); setDraftTitle(""); setDraftAuthor(""); }}
+                      className="text-[12px] text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
+                    >
+                      cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowAddBook(true)}
+                  className="w-full flex gap-2.5 items-center px-4 py-3 rounded-xl border border-dashed border-[var(--border-light)] hover:border-[var(--terra)] hover:bg-[var(--terra)]/[4%] transition-all font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)] hover:text-[var(--terra)]"
+                >
+                  <span className="text-[18px]">＋</span>
+                  search for a book to add…
+                </button>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* ── Right sidebar ── */}
+        <div className="border-l border-[var(--border-light)] px-5 py-6">
+
+          {/* Item count */}
+          <p className="section-label mb-2">{isIdeaType ? "Ideas" : "Books"}</p>
+          <div
+            className="rounded-xl px-4 py-3 text-center mb-5 border border-[var(--border-light)]"
+            style={{ background: "var(--bg-surface)" }}
+          >
+            <p className="font-serif text-[28px] font-bold text-[var(--plum)] leading-none">
+              {list.items.length}
+            </p>
+            <p className="text-[10px] uppercase tracking-widest text-[var(--fg-faint)] mt-1 font-semibold">
+              {itemLabel}
+            </p>
+          </div>
+
+          {/* Quick notes (book list only) */}
+          {!isIdeaType && (
+            <>
+              <p className="section-label mb-2">Quick notes</p>
+              <textarea
+                value={list.description}
+                onChange={(e) => {
+                  const description = e.target.value;
+                  setList((prev) => prev ? { ...prev, description } : prev);
+                  saveListField({ description });
+                }}
+                placeholder="notes about this list…"
+                rows={5}
+                className="w-full font-[family-name:var(--font-caveat)] text-[14px] text-[var(--fg-muted)] rounded-xl px-3 py-3 border border-[var(--border-light)] outline-none resize-none placeholder:text-[var(--fg-faint)] mb-5"
+                style={{
+                  background: "var(--bg-surface)",
+                  lineHeight: "2.0",
+                  backgroundImage: "repeating-linear-gradient(transparent, transparent 28px, var(--bg-muted-tag) 29px)",
+                }}
+              />
+            </>
+          )}
+
+          {/* Settings */}
+          <p className="section-label mb-2">Settings</p>
+          <div className="flex flex-col gap-1.5">
+            <button
+              onClick={() => setShowCoverModal(true)}
+              className="flex items-center gap-2 text-[12px] text-[var(--fg-muted)] px-3 py-2 rounded-lg border border-[var(--border-light)] hover:border-[var(--fg-muted)] transition-colors text-left"
+              style={{ background: "var(--bg-surface)" }}
+            >
+              <PaletteIcon size={13} /> Change cover
+            </button>
+            <button
+              onClick={handleDelete}
+              className="flex items-center gap-2 text-[12px] text-red-500/70 px-3 py-2 rounded-lg border border-[var(--border-light)] hover:border-red-300 transition-colors text-left"
+              style={{ background: "var(--bg-surface)" }}
+            >
+              <TrashIcon size={13} /> Delete list
+            </button>
+          </div>
         </div>
       </div>
+
+      {showCoverModal && (
+        <CoverChangeModal
+          initialColor={list.color}
+          initialEmoji={list.emoji}
+          onClose={() => setShowCoverModal(false)}
+          onSave={handleSaveCover}
+        />
+      )}
     </div>
   );
 }

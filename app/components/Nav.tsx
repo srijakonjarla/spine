@@ -7,6 +7,22 @@ import { useAuth } from "./AuthProvider";
 import { signOut } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { ThemeToggle } from "./ThemeToggle";
+import type { Icon } from "@phosphor-icons/react";
+import {
+  HouseIcon,
+  ListBulletsIcon,
+  CalendarBlankIcon,
+  QuotesIcon,
+  BookOpenIcon,
+  BookBookmarkIcon,
+  BookmarkSimpleIcon,
+  StackIcon,
+  StarIcon,
+  TargetIcon,
+  ChartBarIcon,
+  GearIcon,
+  BookmarkIcon,
+} from "@phosphor-icons/react";
 
 const MONTH_ABBRS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 const CURRENT_YEAR = new Date().getFullYear();
@@ -44,19 +60,39 @@ function TopNavLink({ href, label }: { href: string; label: string }) {
   );
 }
 
-function SidebarLink({ href, label }: { href: string; label: string }) {
+function SidebarLink({
+  href,
+  label,
+  exact,
+  icon: IconComp,
+}: {
+  href: string;
+  label: string;
+  exact?: boolean;
+  icon?: Icon;
+}) {
   const pathname = usePathname();
-  const active =
-    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
+  const active = exact
+    ? pathname === href
+    : href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
   return (
     <Link
       href={href}
-      className={`flex items-center px-2.5 py-[7px] rounded-[10px] text-[13px] transition-colors ${active ? "font-semibold" : "font-medium hover:bg-[rgba(45,27,46,0.08)]"}`}
+      className={`flex items-center gap-2 px-2.5 py-[7px] rounded-[10px] text-[13px] transition-colors ${
+        active ? "font-semibold" : "font-medium hover:bg-[rgba(45,27,46,0.08)]"
+      }`}
       style={{
         background: active ? "var(--bg-hover)" : undefined,
         color: active ? "var(--fg-heading)" : "var(--fg)",
       }}
     >
+      {IconComp && (
+        <IconComp
+          size={15}
+          weight={active ? "fill" : "regular"}
+          className="shrink-0 opacity-70"
+        />
+      )}
       {label}
     </Link>
   );
@@ -71,7 +107,12 @@ function SidebarSection({
 }) {
   return (
     <div className="mb-7">
-      <p className="text-[10px] font-bold uppercase tracking-[0.12em] mb-2.5 px-2.5" style={{ color: "var(--fg-muted)" }}>{label}</p>
+      <p
+        className="text-[10px] font-bold uppercase tracking-[0.12em] mb-2.5 px-2.5"
+        style={{ color: "var(--fg-muted)" }}
+      >
+        {label}
+      </p>
       <div className="space-y-0.5">{children}</div>
     </div>
   );
@@ -165,24 +206,40 @@ export default function Nav() {
 
       {/* Desktop sidebar */}
       {user && (
-        <nav className="hidden lg:flex flex-col fixed top-14 left-0 h-[calc(100vh-3.5rem)] w-[220px] px-4 py-6 overflow-y-auto z-20 border-r transition-colors" style={{ background: "var(--bg-page)", borderColor: "var(--border-light)" }}>
+        <nav
+          className="hidden lg:flex flex-col fixed top-14 left-0 h-[calc(100vh-3.5rem)] w-[220px] px-4 py-6 overflow-y-auto z-20 border-r transition-colors"
+          style={{ background: "var(--bg-page)", borderColor: "var(--border-light)" }}
+        >
           <SidebarSection label={CURRENT_MONTH_LABEL}>
-            <SidebarLink href={`/${CURRENT_YEAR}`} label="index" />
-            <SidebarLink href={`/${CURRENT_YEAR}/${CURRENT_MONTH}`} label="monthly spread" />
-            <SidebarLink href={`/${CURRENT_YEAR}/quotes`} label="quote collection" />
+            <SidebarLink href={`/${CURRENT_YEAR}`} label="index" exact icon={HouseIcon} />
+            <SidebarLink href={`/${CURRENT_YEAR}/lists`} label="lists" icon={ListBulletsIcon} />
+            <SidebarLink href={`/${CURRENT_YEAR}/${CURRENT_MONTH}`} label="monthly spread" icon={CalendarBlankIcon} />
+            <SidebarLink href={`/${CURRENT_YEAR}/quotes`} label="quote collection" icon={QuotesIcon} />
           </SidebarSection>
 
           <SidebarSection label="my shelves">
-            <SidebarLink href="/library/reading" label={`reading${shelfCounts.reading > 0 ? ` · ${shelfCounts.reading}` : ""}`} />
-            <SidebarLink href="/library/finished" label={`read${shelfCounts.finished > 0 ? ` · ${shelfCounts.finished}` : ""}`} />
-            <SidebarLink href="/library/want-to-read" label={`want to read${shelfCounts.wantToRead > 0 ? ` · ${shelfCounts.wantToRead}` : ""}`} />
-            <SidebarLink href="/library/series" label="series tracker" />
-            <SidebarLink href="/library/recommendations" label="recommendations" />
+            <SidebarLink
+              href="/library/reading"
+              label={`reading${shelfCounts.reading > 0 ? ` · ${shelfCounts.reading}` : ""}`}
+              icon={BookOpenIcon}
+            />
+            <SidebarLink
+              href="/library/finished"
+              label={`read${shelfCounts.finished > 0 ? ` · ${shelfCounts.finished}` : ""}`}
+              icon={BookBookmarkIcon}
+            />
+            <SidebarLink
+              href="/library/want-to-read"
+              label={`want to read${shelfCounts.wantToRead > 0 ? ` · ${shelfCounts.wantToRead}` : ""}`}
+              icon={BookmarkSimpleIcon}
+            />
+            <SidebarLink href="/library/series" label="series tracker" icon={StackIcon} />
+            <SidebarLink href="/library/recommendations" label="recommendations" icon={StarIcon} />
           </SidebarSection>
 
           <SidebarSection label="milestones">
-            <SidebarLink href={`/${CURRENT_YEAR}/goal`} label={`${CURRENT_YEAR} goals`} />
-            <SidebarLink href={`/${CURRENT_YEAR}/stats`} label="year in review" />
+            <SidebarLink href={`/${CURRENT_YEAR}/goal`} label={`${CURRENT_YEAR} goals`} icon={TargetIcon} />
+            <SidebarLink href={`/${CURRENT_YEAR}/stats`} label="year in review" icon={ChartBarIcon} />
           </SidebarSection>
 
           {tabs.length > 0 && (
@@ -191,17 +248,18 @@ export default function Nav() {
                 <Link
                   key={t.id}
                   href={t.href}
-                  className="flex items-center px-2.5 py-[7px] rounded-[10px] text-[12px] font-medium transition-colors truncate hover:bg-[rgba(45,27,46,0.08)]"
+                  className="flex items-center gap-2 px-2.5 py-[7px] rounded-[10px] text-[12px] font-medium transition-colors truncate hover:bg-[rgba(45,27,46,0.08)]"
                   style={{ color: "var(--fg-muted)" }}
                 >
-                  {t.title}
+                  <BookmarkIcon size={13} className="shrink-0 opacity-60" />
+                  <span className="truncate">{t.title}</span>
                 </Link>
               ))}
             </SidebarSection>
           )}
 
           <div className="mt-auto px-2.5 space-y-2">
-            <SidebarLink href="/profile" label="profile & settings" />
+            <SidebarLink href="/profile" label="profile & settings" icon={GearIcon} />
           </div>
         </nav>
       )}

@@ -7,6 +7,9 @@ interface ListRow {
   title: string;
   description: string;
   list_type: string;
+  color: string;
+  emoji: string;
+  bullet_symbol: string;
   date_label: string;
   notes_label: string;
   sort_order: number;
@@ -50,7 +53,10 @@ function mapList(row: ListRow): BookList {
     year: row.year,
     title: row.title,
     description: row.description,
-    listType: row.list_type ?? "general",
+    listType: row.list_type ?? "book_list",
+    color: row.color ?? "plum",
+    emoji: row.emoji ?? "Books",
+    bulletSymbol: row.bullet_symbol ?? "→",
     dateLabel: row.date_label ?? "",
     notesLabel: row.notes_label ?? "notes",
     sortOrder: row.sort_order,
@@ -79,7 +85,7 @@ export async function getList(id: string): Promise<BookList | null> {
 export async function createList(
   year: number,
   title: string,
-  opts?: { listType?: string; dateLabel?: string; notesLabel?: string }
+  opts?: { listType?: string; color?: string; emoji?: string; bulletSymbol?: string; description?: string; dateLabel?: string; notesLabel?: string }
 ): Promise<BookList> {
   const res = await apiFetch("/api/lists", {
     method: "POST",
@@ -91,7 +97,7 @@ export async function createList(
 
 export async function updateList(
   id: string,
-  patch: { title?: string; description?: string; dateLabel?: string; notesLabel?: string }
+  patch: { title?: string; description?: string; color?: string; emoji?: string; bulletSymbol?: string; dateLabel?: string; notesLabel?: string }
 ): Promise<void> {
   await apiFetch(`/api/lists/${id}`, {
     method: "PATCH",

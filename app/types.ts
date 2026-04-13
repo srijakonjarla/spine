@@ -77,8 +77,11 @@ export interface BookList {
   title: string;
   description: string;
   listType: string;
-  dateLabel: string;   // empty = date field hidden
-  notesLabel: string;  // label for the notes/annotation field
+  color: string;
+  emoji: string;
+  bulletSymbol: string;
+  dateLabel: string;
+  notesLabel: string;
   sortOrder: number;
   items: ListItem[];
   bookmarked: boolean;

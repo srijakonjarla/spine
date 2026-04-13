@@ -18,14 +18,18 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const supabase = createServerClient(req);
-  const { year, title, listType, dateLabel, notesLabel } = await req.json();
+  const { year, title, listType, color, emoji, bulletSymbol, description, dateLabel, notesLabel } = await req.json();
 
   const { data, error } = await supabase
     .from("lists")
     .insert({
       year,
       title,
-      list_type: listType ?? "general",
+      list_type: listType ?? "book_list",
+      color: color ?? "plum",
+      emoji: emoji ?? "Books",
+      bullet_symbol: bulletSymbol ?? "→",
+      description: description ?? "",
       date_label: dateLabel ?? "",
       notes_label: notesLabel ?? "notes",
     })

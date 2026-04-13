@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase-server";
+import { autoLogToday } from "@/lib/autoLog";
 
 export async function GET(req: NextRequest) {
   const supabase = createServerClient(req);
@@ -32,5 +33,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await autoLogToday(supabase, user.id);
   return NextResponse.json(data, { status: 201 });
 }

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getEntries } from "@/lib/db";
 import { getReadingLog } from "@/lib/habits";
 import { getQuotes } from "@/lib/quotes";
+import { StarIcon } from "@phosphor-icons/react";
 import type { BookEntry } from "@/types";
 
 const MOOD_COLORS: Record<string, string> = {
@@ -170,7 +171,13 @@ export default function StatsPage() {
                 <Link key={b.id} href={`/book/${b.id}`} className="flex items-baseline gap-3 py-1.5 group">
                   <p className="text-sm font-medium flex-1 truncate group-hover:opacity-70 transition-opacity" style={{ color: "var(--fg)" }}>{b.title}</p>
                   {b.author && <p className="text-xs shrink-0 hidden sm:block truncate" style={{ color: "var(--fg-faint)" }}>{b.author}</p>}
-                  {b.rating > 0 && <p className="text-[11px] shrink-0" style={{ color: "#D4A843" }}>{"★".repeat(Math.round(b.rating))}</p>}
+                  {b.rating > 0 && (
+                    <span className="flex items-center shrink-0" style={{ color: "#D4A843" }}>
+                      {Array.from({ length: Math.round(b.rating) }, (_, i) => (
+                        <StarIcon key={i} size={10} weight="fill" />
+                      ))}
+                    </span>
+                  )}
                 </Link>
               ))}
             </div>

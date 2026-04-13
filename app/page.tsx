@@ -8,6 +8,7 @@ import { getGoals } from "@/lib/goals";
 import { getDisplayName, hasImportedGoodreads } from "@/lib/auth";
 import { useAuth } from "@/components/AuthProvider";
 import type { BookEntry, ReadingLogEntry, ReadingGoal } from "@/types";
+import { FireIcon, LeafIcon, StarIcon } from "@phosphor-icons/react";
 
 const CURRENT_YEAR = new Date().getFullYear();
 const MONTH_ABBRS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
@@ -167,7 +168,7 @@ export default function Home() {
             className="font-[family-name:var(--font-caveat)] text-[17px] mt-1"
             style={{ color: "var(--terra, #C97B5A)" }}
           >
-            {todayLabel}{currentStreak >= 2 ? ` · ${currentStreak}-day streak 🔥` : ""}
+            {todayLabel}{currentStreak >= 2 && <> · {currentStreak}-day streak <FireIcon size={14} weight="fill" className="inline-block text-orange-400 ml-0.5 align-text-bottom" /></>}
           </p>
         </div>
 
@@ -258,13 +259,15 @@ export default function Home() {
                   className="font-[family-name:var(--font-caveat)] text-[13px]"
                   style={{ color: "#7B9E87" }}
                 >
-                  {goalProgress >= 1
-                    ? "goal reached 🌿"
-                    : goalProgress >= 0.75
-                    ? "almost there 🌿"
-                    : goalProgress >= 0.5
-                    ? "halfway there"
-                    : "keep reading"}
+                  {goalProgress >= 1 ? (
+                    <>goal reached <LeafIcon size={13} weight="fill" className="inline-block align-text-bottom ml-0.5" /></>
+                  ) : goalProgress >= 0.75 ? (
+                    <>almost there <LeafIcon size={13} weight="fill" className="inline-block align-text-bottom ml-0.5" /></>
+                  ) : goalProgress >= 0.5 ? (
+                    "halfway there"
+                  ) : (
+                    "keep reading"
+                  )}
                 </p>
               </>
             ) : (
@@ -372,9 +375,11 @@ export default function Home() {
                     </p>
                   )}
                   {book.rating > 0 && (
-                    <p className="text-[10px] shrink-0" style={{ color: "#D4A843" }}>
-                      {"★".repeat(Math.round(book.rating))}
-                    </p>
+                    <span className="flex items-center shrink-0" style={{ color: "#D4A843" }}>
+                      {Array.from({ length: Math.round(book.rating) }, (_, i) => (
+                        <StarIcon key={i} size={10} weight="fill" />
+                      ))}
+                    </span>
                   )}
                 </Link>
               ))}
