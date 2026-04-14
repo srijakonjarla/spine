@@ -25,8 +25,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = createServerClient(req);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
   const { id: bookId } = await params;
   const { thoughtId } = await req.json();
+
+  // Verify the book belongs to this user before removing the thought
+  const { data: book } = await supabase.from("books").select("id").eq("id", bookId).eq("user_id", user.id).single();
+  if (!book) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const { error } = await supabase.rpc("remove_thought", {
     p_thought_id: thoughtId,

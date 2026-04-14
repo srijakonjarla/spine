@@ -19,7 +19,7 @@ const CURRENT_YEAR = new Date().getFullYear();
 const CURRENT_MONTH = MONTH_ABBRS[new Date().getMonth()];
 const CURRENT_MONTH_LABEL = new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
-interface TabItem { id: string; title: string; href: string }
+interface BookmarkItem { id: string; title: string; href: string }
 interface ShelfCounts { reading: number; finished: number; wantToRead: number }
 
 function TopNavLink({ href, label }: { href: string; label: string }) {
@@ -72,7 +72,7 @@ function SidebarSection({ label, children }: { label: string; children: React.Re
 
 export default function Nav() {
   const { user } = useAuth();
-  const [tabs, setTabs] = useState<TabItem[]>([]);
+  const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
   const [shelfCounts, setShelfCounts] = useState<ShelfCounts>({ reading: 0, finished: 0, wantToRead: 0 });
 
   useEffect(() => {
@@ -86,7 +86,7 @@ export default function Nav() {
         supabase.from("books").select("id", { count: "exact", head: true }).eq("user_id", user!.id).eq("status", "want-to-read"),
       ]);
 
-      setTabs([
+      setBookmarks([
         ...(booksRes.data ?? []).map((b: any) => ({ id: b.id, title: b.title ?? "untitled", href: `/book/${b.id}` })),
         ...(listsRes.data ?? []).map((l: any) => ({ id: l.id, title: l.title, href: `/${l.year}/lists/${l.id}` })),
       ]);
@@ -157,22 +157,15 @@ export default function Nav() {
             <SidebarLink href={`/${CURRENT_YEAR}/stats`} label="year in review" icon={ChartBarIcon} />
           </SidebarSection>
 
-          {tabs.length > 0 && (
-            <SidebarSection label="tabs">
-              {tabs.map((t) => (
-                <Link
-                  key={t.id}
-                  href={t.href}
-                  className="flex items-center gap-2 px-2.5 py-[7px] rounded-[10px] text-[12px] font-medium transition-colors truncate hover:bg-[var(--bg-nav-hover)] text-[var(--fg-muted)]"
-                >
-                  <BookmarkIcon size={13} className="shrink-0 opacity-60" />
-                  <span className="truncate">{t.title}</span>
-                </Link>
+          {bookmarks.length > 0 && (
+            <SidebarSection label="bookmarks">
+              {bookmarks.map((t) => (
+                <SidebarLink key={t.id} href={t.href} label={t.title} icon={BookmarkIcon} />
               ))}
             </SidebarSection>
           )}
 
-          <div className="mt-auto px-2.5 space-y-2">
+          <div className="mt-auto space-y-2">
             <SidebarLink href="/profile" label="profile & settings" icon={GearIcon} />
           </div>
         </nav>

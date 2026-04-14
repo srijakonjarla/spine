@@ -6,6 +6,7 @@ export interface SeriesBook {
   position: number;
   status: "read" | "reading" | "unread" | "skipped";
   bookId: string | null;
+  coverUrl: string;
 }
 
 export interface Series {
@@ -27,6 +28,7 @@ interface SeriesRow {
     position: number;
     status: string;
     book_id: string | null;
+    cover_url: string;
   }[];
 }
 
@@ -44,6 +46,7 @@ function mapSeries(row: SeriesRow): Series {
         position: b.position,
         status: b.status as SeriesBook["status"],
         bookId: b.book_id,
+        coverUrl: b.cover_url ?? "",
       })),
   };
 }
@@ -67,13 +70,13 @@ export async function deleteSeries(id: string): Promise<void> {
   await apiFetch(`/api/series/${id}`, { method: "DELETE" });
 }
 
-export async function addSeriesBook(seriesId: string, title: string, position: number): Promise<SeriesBook> {
+export async function addSeriesBook(seriesId: string, title: string, position: number, coverUrl = ""): Promise<SeriesBook> {
   const res = await apiFetch(`/api/series/${seriesId}/books`, {
     method: "POST",
-    body: JSON.stringify({ title, position }),
+    body: JSON.stringify({ title, position, coverUrl }),
   });
   const b = await res.json();
-  return { id: b.id, title: b.title, position: b.position, status: b.status, bookId: b.book_id };
+  return { id: b.id, title: b.title, position: b.position, status: b.status, bookId: b.book_id, coverUrl: b.cover_url ?? "" };
 }
 
 export async function updateSeriesBook(seriesId: string, bookId: string, status: SeriesBook["status"]): Promise<void> {

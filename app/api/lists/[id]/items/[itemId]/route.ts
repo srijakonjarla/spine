@@ -5,9 +5,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ it
   const supabase = createServerClient(req);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const { itemId } = await params;
-  const patch = await req.json();
 
+  const { itemId } = await params;
+
+  // Verify the item's parent list belongs to this user
+  const { data: item } = await supabase
+    .from("list_items")
+    .select("list_id, lists!inner(user_id)")
+    .eq("id", itemId)
+    .eq("lists.user_id", user.id)
+    .single();
+  if (!item) return NextResponse.json({ error: "not found" }, { status: 404 });
+
+  const patch = await req.json();
   const row: Record<string, string> = {};
   if (patch.releaseDate !== undefined) row.item_date = patch.releaseDate;
   if (patch.notes !== undefined) row.notes = patch.notes;
@@ -22,11 +32,21 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const supabase = createServerClient(req);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const { id: listId, itemId } = await params;
+
+  const { itemId } = await params;
+
+  // Verify the item's parent list belongs to this user
+  const { data: item } = await supabase
+    .from("list_items")
+    .select("list_id, lists!inner(user_id)")
+    .eq("id", itemId)
+    .eq("lists.user_id", user.id)
+    .single();
+  if (!item) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const { error } = await supabase.from("list_items").delete().eq("id", itemId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  await supabase.from("lists").update({ updated_at: new Date().toISOString() }).eq("id", listId);
+  await supabase.from("lists").update({ updated_at: new Date().toISOString() }).eq("id", item.list_id).eq("user_id", user.id);
   return NextResponse.json({ ok: true });
 }

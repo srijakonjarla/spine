@@ -61,22 +61,31 @@ function GoodreadsImport({ userId }: { userId: string }) {
     reader.readAsText(file);
   };
 
-  async function processEntry(entry: {
-    title: string; author: string; genres: string[]; status: string;
-    dateStarted: string; dateFinished: string; dateShelved: string;
-    rating: number; feeling: string; createdAt: string; updatedAt: string;
-  }) {
-    // Enrich with Google Books — genres, release date, canonical author
-    const googleBook = await lookupBook(entry.title, entry.author);
+  async function processEntry(
+    entry: {
+      title: string; author: string; genres: string[]; status: string;
+      dateStarted: string; dateFinished: string; dateShelved: string;
+      rating: number; feeling: string; createdAt: string; updatedAt: string;
+    },
+    isbn: string,
+  ) {
+    // Use ISBN for Google Books lookup when available — far more accurate than title search
+    const googleBook = isbn
+      ? await lookupBook(isbn)
+      : await lookupBook(entry.title, entry.author);
+
     const genres = googleBook?.genres?.length
       ? Array.from(new Set([...entry.genres, ...googleBook.genres]))
       : entry.genres;
     const releaseDate = googleBook?.releaseDate ?? "";
     const author = entry.author || googleBook?.author || "";
+    const coverUrl = googleBook?.coverUrl ?? "";
+    const resolvedIsbn = isbn || googleBook?.isbn || "";
+    const pageCount = googleBook?.pageCount ?? null;
 
     const { data: book } = await supabase
       .from("books")
-      .select("id, status, date_finished, date_shelved, genres, release_date, book_reads(id, status, date_finished, date_shelved)")
+      .select("id, status, date_finished, date_shelved, genres, release_date, cover_url, isbn, book_reads(id, status, date_finished, date_shelved)")
       .eq("user_id", userId)
       .ilike("title", entry.title)
       .ilike("author", author || "%")
@@ -86,6 +95,7 @@ function GoodreadsImport({ userId }: { userId: string }) {
       await supabase.from("books").insert({
         id: crypto.randomUUID(), user_id: userId,
         title: entry.title, author, release_date: releaseDate, genres,
+        cover_url: coverUrl, isbn: resolvedIsbn, page_count: pageCount,
         status: entry.status,
         date_started: entry.dateStarted || null,
         date_finished: entry.dateFinished || null,
@@ -98,12 +108,18 @@ function GoodreadsImport({ userId }: { userId: string }) {
 
     // Patch existing book with enriched metadata if Google Books had better data
     const mergedGenres = Array.from(new Set([...(book.genres ?? []), ...genres]));
-    const needsPatch = (mergedGenres.length > (book.genres ?? []).length) ||
-      (!book.release_date && releaseDate);
+    const needsPatch =
+      mergedGenres.length > (book.genres ?? []).length ||
+      (!book.release_date && releaseDate) ||
+      (!book.cover_url && coverUrl) ||
+      (!book.isbn && resolvedIsbn);
     if (needsPatch) {
       await supabase.from("books").update({
         genres: mergedGenres,
         ...(releaseDate && !book.release_date ? { release_date: releaseDate } : {}),
+        ...(coverUrl && !book.cover_url ? { cover_url: coverUrl } : {}),
+        ...(resolvedIsbn && !book.isbn ? { isbn: resolvedIsbn } : {}),
+        ...(pageCount ? { page_count: pageCount } : {}),
       }).eq("id", book.id);
     }
 
@@ -111,7 +127,7 @@ function GoodreadsImport({ userId }: { userId: string }) {
       const reads = (book.book_reads ?? []) as { status: string; date_finished: string | null }[];
       if (!reads.some((r) => r.status === "finished" && r.date_finished === entry.dateFinished)) {
         await supabase.from("book_reads").insert({
-          book_id: book.id, status: entry.status,
+          book_id: book.id, user_id: userId, status: entry.status,
           date_started: entry.dateStarted || null, date_finished: entry.dateFinished || null,
           date_shelved: null, rating: entry.rating, feeling: entry.feeling,
           created_at: entry.createdAt, updated_at: entry.updatedAt,
@@ -121,7 +137,7 @@ function GoodreadsImport({ userId }: { userId: string }) {
       const reads = (book.book_reads ?? []) as { status: string; date_shelved: string | null }[];
       if (!reads.some((r) => r.status === "did-not-finish" && r.date_shelved === entry.dateShelved)) {
         await supabase.from("book_reads").insert({
-          book_id: book.id, status: entry.status,
+          book_id: book.id, user_id: userId, status: entry.status,
           date_started: entry.dateStarted || null, date_finished: null,
           date_shelved: entry.dateShelved || null, rating: entry.rating, feeling: entry.feeling,
           created_at: entry.createdAt, updated_at: entry.updatedAt,
@@ -135,8 +151,8 @@ function GoodreadsImport({ userId }: { userId: string }) {
     setProgress(0);
     try {
       for (let i = 0; i < previews.length; i += BATCH) {
-        const batch = previews.slice(i, i + BATCH).map(({ entry }) => entry);
-        await Promise.allSettled(batch.map((e) => processEntry(e)));
+        const batch = previews.slice(i, i + BATCH);
+        await Promise.allSettled(batch.map(({ entry, isbn }) => processEntry(entry, isbn)));
         setProgress(i + batch.length);
         if (i + BATCH < previews.length) await new Promise((r) => setTimeout(r, 300));
       }

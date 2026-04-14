@@ -1,17 +1,18 @@
-interface TabButtonProps {
+import { BookmarkSimpleIcon } from "@phosphor-icons/react";
+
+interface BookmarkButtonProps {
   bookmarked: boolean;
   onToggle: () => void;
-  size?: "xs" | "sm";
 }
 
-export function BookmarkButton({ bookmarked, onToggle, size = "xs" }: TabButtonProps) {
+export function BookmarkButton({ bookmarked, onToggle }: BookmarkButtonProps) {
   return (
     <button
       onClick={onToggle}
-      title={bookmarked ? "remove tab" : "tab this"}
-      className={`text-${size} transition-colors ${bookmarked ? "text-stone-600" : "text-stone-300 hover:text-stone-500"}`}
+      title={bookmarked ? "remove bookmark" : "bookmark"}
+      className={`transition-colors ${bookmarked ? "text-[var(--fg-heading)]" : "text-[var(--fg-faint)] hover:text-[var(--fg-muted)]"}`}
     >
-      {bookmarked ? "⌖ tabbed" : "⌖ tab"}
+      <BookmarkSimpleIcon size={18} weight={bookmarked ? "fill" : "regular"} />
     </button>
   );
 }

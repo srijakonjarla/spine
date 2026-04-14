@@ -9,6 +9,7 @@ import { CatalogSearch } from "@/components/CatalogSearch";
 import { StarDisplay } from "@/components/StarDisplay";
 import { STATUS_LABEL, STATUS_SYMBOL, STATUS_COLOR, TRUNCATED_STATUSES, TRUNCATE_LIMIT } from "@/lib/statusMeta";
 import type { BookEntry } from "@/types";
+import { localDateStr } from "@/lib/dates";
 
 const ARCHIVED_STATUSES = ["finished", "did-not-finish"] as const;
 
@@ -102,14 +103,17 @@ export default function LibraryPage() {
       genres: enriched?.genres ?? [],
       moodTags: [],
       status,
-      dateStarted: status === "reading" ? now.toISOString().split("T")[0] : "",
+      dateStarted: status === "reading" ? localDateStr(now) : "",
       dateFinished: "",
-      dateShelved: status === "want-to-read" ? now.toISOString().split("T")[0] : "",
+      dateShelved: status === "want-to-read" ? localDateStr(now) : "",
       rating: 0,
       feeling: "",
       thoughts: [],
       reads: [],
       bookmarked: false,
+      coverUrl: enriched?.coverUrl ?? "",
+      isbn: enriched?.isbn ?? "",
+      pageCount: enriched?.pageCount ?? null,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     };

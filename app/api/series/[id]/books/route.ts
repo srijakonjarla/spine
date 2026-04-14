@@ -5,13 +5,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const supabase = createServerClient(req);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
   const { id: seriesId } = await params;
-  const { title, position } = await req.json();
+
+  // Verify the series belongs to this user
+  const { data: series } = await supabase
+    .from("series")
+    .select("id")
+    .eq("id", seriesId)
+    .eq("user_id", user.id)
+    .single();
+  if (!series) return NextResponse.json({ error: "not found" }, { status: 404 });
+
+  const { title, position, coverUrl } = await req.json();
   if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
 
   const { data, error } = await supabase
     .from("series_books")
-    .insert({ series_id: seriesId, title: title.trim(), position, status: "unread" })
+    .insert({ series_id: seriesId, title: title.trim(), position, cover_url: coverUrl ?? "", status: "unread" })
     .select()
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

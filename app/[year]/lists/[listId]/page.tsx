@@ -14,8 +14,9 @@ import type { BookList, ListItem } from "@/types";
 import {
   BooksIcon, LightbulbIcon, CheckSquareIcon, ListBulletsIcon, PaletteIcon, TrashIcon,
 } from "@phosphor-icons/react";
+import { BookmarkButton } from "@/components/BookmarkButton";
 import type { Icon } from "@phosphor-icons/react";
-import { coverGradientClass } from "@/components/lists/coverConstants";
+import { coverGradientStyle } from "@/components/lists/coverConstants";
 
 const BULLET_SYMBOLS = ["→", "●", "✦", "◆", "○", "—", "✓", "★"];
 const SPINE_COUNT = 10;
@@ -54,6 +55,7 @@ export default function ListDetailPage() {
   const [inlineText, setInlineText] = useState("");
   const [adding, setAdding] = useState(false);
   const [showCoverModal, setShowCoverModal] = useState(false);
+  const [itemSearch, setItemSearch] = useState("");
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const itemSaveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
@@ -139,18 +141,27 @@ export default function ListDetailPage() {
   return (
     <div className="page">
       {/* Back link */}
-      <div className="px-8 pt-5">
+      <div className="px-8 pt-5 flex items-center justify-between">
         <Link
           href={`/${year}/lists`}
           className="text-[12px] text-[var(--fg-muted)] hover:text-[var(--fg-heading)] transition-colors"
         >
           ← lists
         </Link>
+        <BookmarkButton
+          bookmarked={list.bookmarked}
+          onToggle={() => {
+            const bookmarked = !list.bookmarked;
+            setList((prev) => prev ? { ...prev, bookmarked } : prev);
+            saveListField({ bookmarked });
+          }}
+        />
       </div>
 
       {/* Gradient header */}
       <div
-        className={`relative overflow-hidden px-9 py-8 mt-3 ${coverGradientClass(list.color)}`}
+        className="relative overflow-hidden px-9 py-8 mt-3"
+        style={coverGradientStyle(list.color)}
       >
         {/* Glow orb */}
         <div className="absolute -bottom-10 -right-10 w-44 h-44 rounded-full pointer-events-none [background-image:var(--cover-glow-orb)]" />
@@ -281,8 +292,21 @@ export default function ListDetailPage() {
           ) : (
             /* Book list */
             <>
+              {list.items.length > 4 && (
+                <input
+                  type="text"
+                  value={itemSearch}
+                  onChange={(e) => setItemSearch(e.target.value)}
+                  placeholder="search by title or author…"
+                  className="underline-input mb-4"
+                />
+              )}
               <div className="space-y-2.5 mb-3">
-                {list.items.map((item: ListItem) => (
+                {list.items.filter((item: ListItem) => {
+                  if (!itemSearch.trim()) return true;
+                  const q = itemSearch.toLowerCase();
+                  return item.title.toLowerCase().includes(q) || (item.author ?? "").toLowerCase().includes(q);
+                }).map((item: ListItem) => (
                   <div
                     key={item.id}
                     className="group flex gap-3.5 items-center bg-[var(--bg-surface)] rounded-xl px-4 py-3 border border-[var(--border-light)] hover:translate-x-1 transition-transform"

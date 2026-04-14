@@ -17,6 +17,7 @@ import { BookmarkButton } from "@/components/BookmarkButton";
 import { StarDisplay } from "@/components/StarDisplay";
 import { usePreviousRoute } from "@/components/NavigationProvider";
 import type { BookEntry, BookRead, ReadingStatus, Thought, Quote } from "@/types";
+import { localDateStr } from "@/lib/dates";
 
 const MOOD_TAGS = [
   "cozy", "dark", "hopeful", "funny", "slow-burn",
@@ -339,10 +340,10 @@ export default function BookPage() {
   const handleStatusChange = (status: ReadingStatus) => {
     const patch: Partial<BookEntry> = { status };
     if (status === "finished" && entry && !entry.dateFinished) {
-      patch.dateFinished = new Date().toISOString().split("T")[0];
+      patch.dateFinished = localDateStr();
     }
     if (status === "did-not-finish" && entry && !entry.dateShelved) {
-      patch.dateShelved = new Date().toISOString().split("T")[0];
+      patch.dateShelved = localDateStr();
     }
     update(patch);
   };
@@ -400,25 +401,37 @@ export default function BookPage() {
           </div>
         </div>
 
-        {/* title */}
-        <input
-          id="book-title"
-          type="text"
-          value={entry.title}
-          onChange={(e) => update({ title: e.target.value })}
-          placeholder="book title"
-          className="w-full text-2xl font-[family-name:var(--font-playfair)] font-semibold text-[var(--fg-heading)] bg-transparent border-none outline-none placeholder:text-[var(--fg-faint)] mb-1 tracking-tight"
-        />
-
-        {/* author */}
-        <input
-          id="book-author"
-          type="text"
-          value={entry.author}
-          onChange={(e) => update({ author: e.target.value })}
-          placeholder="author"
-          className="w-full text-sm text-stone-400 bg-transparent border-none outline-none placeholder:text-stone-300 mb-4"
-        />
+        {/* cover + title/author */}
+        <div className="flex gap-4 mb-4">
+          {entry.coverUrl && (
+            <img
+              src={entry.coverUrl}
+              alt={entry.title}
+              className="w-16 rounded shadow-sm shrink-0 self-start object-cover"
+            />
+          )}
+          <div className="flex-1 min-w-0">
+            <input
+              id="book-title"
+              type="text"
+              value={entry.title}
+              onChange={(e) => update({ title: e.target.value })}
+              placeholder="book title"
+              className="w-full text-2xl font-[family-name:var(--font-playfair)] font-semibold text-[var(--fg-heading)] bg-transparent border-none outline-none placeholder:text-[var(--fg-faint)] mb-1 tracking-tight"
+            />
+            <input
+              id="book-author"
+              type="text"
+              value={entry.author}
+              onChange={(e) => update({ author: e.target.value })}
+              placeholder="author"
+              className="w-full text-sm text-stone-400 bg-transparent border-none outline-none placeholder:text-stone-300"
+            />
+            {entry.pageCount && (
+              <p className="text-xs text-[var(--fg-faint)] mt-1">{entry.pageCount} pages</p>
+            )}
+          </div>
+        </div>
 
         {/* genres */}
         <GenreTags
@@ -524,7 +537,7 @@ export default function BookPage() {
                 <span className="text-xs text-stone-300">·</span>
                 <span className="text-xs text-stone-400 capitalize">{entry.status.replace(/-/g, " ")}</span>
                 {entry.rating > 0 && <StarDisplay rating={entry.rating} size={11} />}
-                <span className="text-xs text-amber-700">← current</span>
+                {entry.status === "reading" && <span className="text-xs text-amber-700">← current</span>}
               </div>
               {/* archived past reads, most recent first */}
               {[...entry.reads].reverse().map((read) => (

@@ -9,6 +9,7 @@ import { getDisplayName, hasImportedGoodreads } from "@/lib/auth";
 import { useAuth } from "@/components/AuthProvider";
 import type { BookEntry, ReadingLogEntry, ReadingGoal } from "@/types";
 import { FireIcon, LeafIcon, StarIcon } from "@phosphor-icons/react";
+import { localDateStr } from "@/lib/dates";
 
 const CURRENT_YEAR = new Date().getFullYear();
 const MONTH_ABBRS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
@@ -33,7 +34,7 @@ function StreakBars({ loggedDates, days = 14 }: { loggedDates: Set<string>; days
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().slice(0, 10);
+    const dateStr = localDateStr(d);
     bars.push({ dateStr, logged: loggedDates.has(dateStr), isToday: i === 0 });
   }
   return (
@@ -56,6 +57,7 @@ export default function Home() {
   const [autoGoal, setAutoGoal] = useState<ReadingGoal | null>(null);
   const [finishedThisYear, setFinishedThisYear] = useState(0);
   const [archivedYears, setArchivedYears] = useState<{ year: number; books: number }[]>([]);
+  const [wantToRead, setWantToRead] = useState(0);
   const [goodreadsImported, setGoodreadsImported] = useState(true);
 
   useEffect(() => {
@@ -77,6 +79,7 @@ export default function Home() {
       const thisYear = finished.filter((b) => b.dateFinished?.startsWith(`${CURRENT_YEAR}`));
       setFinishedThisYear(thisYear.length);
       setRecentlyFinished(finished.slice(0, 3));
+      setWantToRead(allBooks.filter((b) => b.status === "want-to-read").length);
 
       setAutoGoal(goals.find((g) => g.isAuto) ?? null);
 
@@ -107,8 +110,8 @@ export default function Home() {
 
   const currentStreak = (() => {
     let streak = 0;
-    const d = new Date(new Date().toISOString().slice(0, 10));
-    while (loggedDates.has(d.toISOString().slice(0, 10))) {
+    const d = new Date();
+    while (loggedDates.has(localDateStr(d))) {
       streak++;
       d.setDate(d.getDate() - 1);
     }
@@ -229,31 +232,26 @@ export default function Home() {
             )}
           </div>
 
-          {/* Journal key */}
-          <div className="rounded-2xl p-4 bg-[var(--bg-surface)] border border-[var(--border-light)]">
+          {/* Shelf snapshot card */}
+          <Link href="/library" className="block group rounded-2xl p-4 bg-[var(--bg-surface)] border border-[var(--border-light)] transition-opacity group-hover:opacity-90">
             <p className="text-[9px] font-bold uppercase tracking-[0.12em] mb-3 text-[var(--fg-faint)]">
-              journal key
+              your shelf
             </p>
-            <div className="space-y-2">
-              {[
-                { symbol: "●", toneClass: "bg-[var(--bg-terra-15)] text-terra", label: "finished" },
-                { symbol: "—", toneClass: "bg-[var(--bg-logged)] text-sage", label: "reading day" },
-                { symbol: "✦", toneClass: "bg-[var(--bg-gold-15)] text-gold", label: "quote" },
-                { symbol: "○", toneClass: "bg-[var(--bg-lavender-20)] text-[var(--lavender-muted)]", label: "dnf" },
-              ].map(({ symbol, toneClass, label }) => (
-                <div key={label} className="flex items-center gap-2">
-                  <span
-                    className={`text-[11px] w-5 h-5 flex items-center justify-center rounded shrink-0 font-medium ${toneClass}`}
-                  >
-                    {symbol}
-                  </span>
-                  <span className="font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)]">
-                    {label}
-                  </span>
-                </div>
-              ))}
+            <div className="space-y-2.5">
+              <div className="flex items-baseline justify-between">
+                <span className="font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)]">reading</span>
+                <span className="font-[family-name:var(--font-playfair)] text-[15px] font-bold text-terra">{reading.length}</span>
+              </div>
+              <div className="flex items-baseline justify-between">
+                <span className="font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)]">{CURRENT_YEAR}</span>
+                <span className="font-[family-name:var(--font-playfair)] text-[15px] font-bold text-sage">{finishedThisYear}</span>
+              </div>
+              <div className="flex items-baseline justify-between">
+                <span className="font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)]">want to read</span>
+                <span className="font-[family-name:var(--font-playfair)] text-[15px] font-bold text-[var(--fg-muted)]">{wantToRead}</span>
+              </div>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* Recent log entries with notes */}

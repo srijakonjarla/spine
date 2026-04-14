@@ -97,6 +97,7 @@ function detectDNF(bookshelves: string): boolean {
 export interface GoodreadsPreview {
   entry: BookEntry;
   originalShelf: string;
+  isbn: string;
 }
 
 export function parseGoodreadsCSV(text: string): GoodreadsPreview[] {
@@ -111,6 +112,11 @@ export function parseGoodreadsCSV(text: string): GoodreadsPreview[] {
     const dateAdded = goodreadsDateToISO(row["Date Added"] ?? "");
     const isDNF = detectDNF(bookshelves);
     const status = isDNF ? "did-not-finish" : mapStatus(shelf);
+
+    // Prefer ISBN13, fall back to ISBN10; strip Goodreads' `="..."` quoting
+    const rawIsbn13 = (row["ISBN13"] ?? row["ISBN"] ?? "").replace(/[="]/g, "").trim();
+    const rawIsbn10 = (row["ISBN"] ?? "").replace(/[="]/g, "").trim();
+    const isbn = rawIsbn13.length === 13 ? rawIsbn13 : rawIsbn10.length === 10 ? rawIsbn10 : "";
 
     const entry: BookEntry = {
       id: crypto.randomUUID(),
@@ -127,10 +133,13 @@ export function parseGoodreadsCSV(text: string): GoodreadsPreview[] {
       thoughts: [],
       reads: [],
       bookmarked: false,
+      coverUrl: "",
+      isbn: "",
+      pageCount: null,
       createdAt: dateAdded ? `${dateAdded}T00:00:00.000Z` : now,
       updatedAt: now,
     };
 
-    return { entry, originalShelf: shelf };
+    return { entry, originalShelf: shelf, isbn };
   }).filter((p) => p.entry.title);
 }

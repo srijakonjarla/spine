@@ -20,24 +20,37 @@ function ResetPasswordForm() {
   const [resendMessage, setResendMessage] = useState("");
 
   useEffect(() => {
-    // Read directly from window.location to avoid Next.js Suspense/SSR issues
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
 
-    if (!code) {
-      setSupabaseError("No reset code found in the URL.");
-      setStage("error");
+    if (code) {
+      // PKCE flow — exchange code for session
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (error) { setSupabaseError(error.message); setStage("error"); }
+        else { setStage("form"); }
+      });
       return;
     }
 
-    supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-      if (error) {
-        setSupabaseError(error.message);
-        setStage("error");
-      } else {
+    // Implicit flow — Supabase JS auto-creates a session from the hash fragment.
+    // Listen for the PASSWORD_RECOVERY event, or check if the session already exists.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" && session) {
         setStage("form");
       }
     });
+
+    // Session may already be set by the time this effect runs
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) { setStage("form"); }
+    });
+
+    // Fallback: if nothing fires within 4s, show error
+    const timeout = setTimeout(() => {
+      setStage((s) => s === "exchanging" ? "error" : s);
+    }, 4000);
+
+    return () => { subscription.unsubscribe(); clearTimeout(timeout); };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,10 +61,14 @@ function ResetPasswordForm() {
     setError("");
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
-    setLoading(false);
 
-    if (error) { setError(error.message); }
-    else { setStage("done"); }
+    if (error) {
+      setLoading(false);
+      setError(error.message);
+    } else {
+      await supabase.auth.signOut();
+      window.location.href = "/login?reset=1";
+    }
   };
 
   const handleResend = async (e: React.FormEvent) => {
@@ -147,14 +164,6 @@ function ResetPasswordForm() {
           </form>
         )}
 
-        {stage === "done" && (
-          <div className="space-y-4">
-            <p className="text-xs text-stone-500">password updated. you can now sign in.</p>
-            <button onClick={() => router.push("/login")} className="btn-primary">
-              sign in
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

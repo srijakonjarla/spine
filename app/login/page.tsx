@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn, signUp, resetPassword } from "@/lib/auth";
 
 type Mode = "signin" | "signup" | "forgot";
@@ -39,6 +39,13 @@ export default function LoginPage() {
   };
 
   const switchMode = (next: Mode) => { setMode(next); setError(""); setMessage(""); };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("reset") === "1") {
+      setMessage("password updated — sign in with your new password.");
+    }
+  }, []);
 
   return (
     <div className="page flex items-center justify-center px-6">

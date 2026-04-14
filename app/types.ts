@@ -34,6 +34,9 @@ export interface BookEntry {
   thoughts: Thought[];
   reads: BookRead[];
   bookmarked: boolean;
+  coverUrl: string;
+  isbn: string;
+  pageCount: number | null;
   createdAt: string;
   updatedAt: string;
 }

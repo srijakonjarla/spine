@@ -9,6 +9,7 @@ import { getGoals } from "@/lib/goals";
 import { getQuotes } from "@/lib/quotes";
 import { getLists } from "@/lib/lists";
 import type { BookEntry, BookList, ReadingLogEntry, ReadingGoal } from "@/types";
+import { localDateStr } from "@/lib/dates";
 
 const MONTH_ABBRS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -114,7 +115,7 @@ export default function YearPage() {
   const year = Number(yearParam);
   const now = new Date();
   const isCurrentYear = year === now.getFullYear();
-  const todayStr = now.toISOString().slice(0, 10);
+  const todayStr = localDateStr(now);
 
   const [allBooks, setAllBooks] = useState<BookEntry[]>([]);
   const [logEntries, setLogEntries] = useState<ReadingLogEntry[]>([]);

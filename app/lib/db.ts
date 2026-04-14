@@ -30,6 +30,9 @@ interface BookRow {
   rating: number;
   feeling: string;
   bookmarked: boolean;
+  cover_url: string;
+  isbn: string;
+  page_count: number | null;
   created_at: string;
   updated_at: string;
   thoughts?: ThoughtRow[];
@@ -72,6 +75,9 @@ function mapBook(row: BookRow): BookEntry {
     rating: row.rating,
     feeling: row.feeling,
     bookmarked: row.bookmarked ?? false,
+    coverUrl: row.cover_url ?? "",
+    isbn: row.isbn ?? "",
+    pageCount: row.page_count ?? null,
     thoughts: (row.thoughts ?? [])
       .map((t) => ({ id: t.id, text: t.text, createdAt: t.created_at }))
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
@@ -155,20 +161,3 @@ export async function deleteBookRead(id: string): Promise<void> {
   await apiFetch(`/api/reads/${id}`, { method: "DELETE" });
 }
 
-// ---- import helper (used during Goodreads import — calls Supabase directly) ----
-
-export async function addImportedRead(bookId: string, entry: BookEntry): Promise<void> {
-  const { supabase } = await import("./supabase");
-  const { error } = await supabase.from("book_reads").insert({
-    book_id: bookId,
-    status: entry.status,
-    date_started: entry.dateStarted || null,
-    date_finished: entry.dateFinished || null,
-    date_shelved: entry.dateShelved || null,
-    rating: entry.rating,
-    feeling: entry.feeling,
-    created_at: entry.createdAt,
-    updated_at: entry.updatedAt,
-  });
-  if (error) throw error;
-}

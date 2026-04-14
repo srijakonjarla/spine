@@ -22,6 +22,9 @@ const READING_ACTIVITY_FIELDS = new Set(["status", "dateStarted", "dateFinished"
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = createServerClient(req);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
   const { id } = await params;
   const patch = await req.json();
 
@@ -37,23 +40,26 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if ("feeling"      in patch) row.feeling       = patch.feeling;
   if ("bookmarked"   in patch) row.bookmarked    = patch.bookmarked;
   if ("moodTags"     in patch) row.mood_tags     = patch.moodTags;
+  if ("coverUrl"     in patch) row.cover_url     = patch.coverUrl;
+  if ("isbn"         in patch) row.isbn          = patch.isbn;
+  if ("pageCount"    in patch) row.page_count    = patch.pageCount;
 
-  const { error } = await supabase.from("books").update(row).eq("id", id);
+  const { error } = await supabase.from("books").update(row).eq("id", id).eq("user_id", user.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const isReadingActivity = Object.keys(patch).some((k) => READING_ACTIVITY_FIELDS.has(k));
-  if (isReadingActivity) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) await autoLogToday(supabase, user.id);
-  }
+  if (isReadingActivity) await autoLogToday(supabase, user.id);
 
   return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = createServerClient(req);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
   const { id } = await params;
-  const { error } = await supabase.from("books").delete().eq("id", id);
+  const { error } = await supabase.from("books").delete().eq("id", id).eq("user_id", user.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

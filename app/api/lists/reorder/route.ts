@@ -5,7 +5,18 @@ export async function POST(req: NextRequest) {
   const supabase = createServerClient(req);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
   const { orderedIds } = await req.json();
+
+  // Verify all lists belong to this user
+  const { data: owned } = await supabase
+    .from("lists")
+    .select("id")
+    .in("id", orderedIds)
+    .eq("user_id", user.id);
+  if (!owned || owned.length !== orderedIds.length) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
 
   const { error } = await supabase.rpc("reorder_lists", {
     ids: orderedIds,

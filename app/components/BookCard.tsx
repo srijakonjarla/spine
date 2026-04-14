@@ -35,7 +35,7 @@ export default function BookCard({ entry }: { entry: BookEntry }) {
         )}
         <button
           onClick={toggleBookmark}
-          title={bookmarked ? "remove tab" : "tab this"}
+          title={bookmarked ? "remove bookmark" : "bookmark"}
           className={`shrink-0 text-xs transition-colors ${bookmarked ? "text-stone-600" : "text-stone-200 opacity-0 group-hover:opacity-100"}`}
         >
           ⌖

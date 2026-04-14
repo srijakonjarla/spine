@@ -3,10 +3,13 @@
 import { useState, useEffect } from "react";
 import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
-import { getEntries } from "@/lib/db";
+import { getEntries, createEntry } from "@/lib/db";
+import { type CatalogEntry, lookupBook } from "@/lib/catalog";
+import { CatalogSearch } from "@/components/CatalogSearch";
 import { STATUS_LABEL } from "@/lib/statusMeta";
 import { StarDisplay } from "@/components/StarDisplay";
 import type { BookEntry } from "@/types";
+import { localDateStr } from "@/lib/dates";
 
 const VALID_STATUSES = new Set(["reading", "finished", "want-to-read", "did-not-finish"]);
 
@@ -17,8 +20,49 @@ export default function StatusCatalogPage() {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
   const [activeMood, setActiveMood] = useState<string | null>(null);
+  const [addValue, setAddValue] = useState("");
+  const [adding, setAdding] = useState(false);
 
   if (!VALID_STATUSES.has(status)) notFound();
+
+  const addBook = async (catalog?: CatalogEntry) => {
+    const title = (catalog?.title ?? addValue).trim();
+    if (!title || adding) return;
+    setAdding(true);
+    try {
+      const enriched = catalog ?? await lookupBook(title);
+      const now = new Date();
+      const today = localDateStr(now);
+      const entry: BookEntry = {
+        id: crypto.randomUUID(),
+        title: enriched?.title ?? title,
+        author: enriched?.author ?? "",
+        genres: enriched?.genres ?? [],
+        moodTags: [],
+        status: status as BookEntry["status"],
+        dateStarted: status === "reading" ? today : "",
+        dateFinished: status === "finished" ? today : "",
+        dateShelved: (status === "want-to-read" || status === "did-not-finish") ? today : "",
+        rating: 0,
+        feeling: "",
+        thoughts: [],
+        reads: [],
+        bookmarked: false,
+        coverUrl: enriched?.coverUrl ?? "",
+        isbn: enriched?.isbn ?? "",
+        pageCount: enriched?.pageCount ?? null,
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+      };
+      await createEntry(entry);
+      setEntries((prev) => [entry, ...prev]);
+      setAddValue("");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setAdding(false);
+    }
+  };
 
   useEffect(() => {
     getEntries()
@@ -62,6 +106,21 @@ export default function StatusCatalogPage() {
           </div>
         </div>
         <p className="text-xs mb-8 text-[var(--fg-faint)]">{entries.length} books</p>
+
+        {/* Add book */}
+        <div className="mb-6">
+          <CatalogSearch
+            value={addValue}
+            onChange={setAddValue}
+            onSelect={(s) => addBook(s)}
+            onSubmit={() => addBook()}
+            placeholder={`add to ${STATUS_LABEL[status]?.toLowerCase() ?? status}...`}
+            disabled={adding}
+          />
+          {addValue.trim() && !adding && (
+            <p className="hint-text">↵ to add</p>
+          )}
+        </div>
 
         {/* Search */}
         <div className="mb-6">
@@ -120,20 +179,23 @@ export default function StatusCatalogPage() {
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4">
             {filtered.map((e) => (
               <Link key={e.id} href={`/book/${e.id}`} className="group relative">
-                <div
-                  className="relative mb-2 rounded-lg flex flex-col justify-between p-2.5 group-hover:opacity-85 transition-opacity h-[130px] bg-[var(--bg-hover)] border border-[var(--border-light)]"
-                >
-                  {e.moodTags.length > 0 && (
-                    <span
-                      className={`self-start text-[9px] px-1.5 py-0.5 rounded-full mood-grid-tag mood-${e.moodTags[0].replace(/\s+/g, "-")}`}
-                    >
-                      {e.moodTags[0]}
-                    </span>
+                <div className="relative mb-2 rounded-lg overflow-hidden group-hover:opacity-85 transition-opacity h-[130px] bg-[var(--bg-hover)] border border-[var(--border-light)]">
+                  {e.coverUrl ? (
+                    <img src={e.coverUrl} alt={e.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex flex-col justify-between p-2.5">
+                      {e.moodTags.length > 0 && (
+                        <span className={`self-start text-[9px] px-1.5 py-0.5 rounded-full mood-grid-tag mood-${e.moodTags[0].replace(/\s+/g, "-")}`}>
+                          {e.moodTags[0]}
+                        </span>
+                      )}
+                      {e.rating > 0 && (
+                        <span className="self-end text-[10px] text-gold">{"★".repeat(Math.round(e.rating))}</span>
+                      )}
+                    </div>
                   )}
-                  {e.rating > 0 && (
-                    <span className="self-end text-[10px] text-gold">
-                      {"★".repeat(Math.round(e.rating))}
-                    </span>
+                  {e.coverUrl && e.rating > 0 && (
+                    <span className="absolute bottom-1.5 right-1.5 text-[10px] text-gold drop-shadow">{"★".repeat(Math.round(e.rating))}</span>
                   )}
                 </div>
                 <p className="text-[11px] font-medium leading-tight truncate text-[var(--fg)]">{e.title || "untitled"}</p>

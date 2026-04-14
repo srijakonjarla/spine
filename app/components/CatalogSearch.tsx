@@ -28,15 +28,29 @@ export function CatalogSearch({
 }: Props) {
   const [suggestions, setSuggestions] = useState<CatalogEntry[]>([]);
   const [idx, setIdx] = useState(-1);
+  const [searchError, setSearchError] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleChange = useCallback((v: string) => {
     onChange(v);
     setIdx(-1);
-    if (timer.current) clearTimeout(timer.current);
-    if (!v.trim()) { setSuggestions([]); return; }
+    setSearchError(false);
+    if (timer.current) {
+      clearTimeout(timer.current);
+    }
+    if (!v.trim()) {
+      setSuggestions([]);
+      return;
+    }
     timer.current = setTimeout(async () => {
-      try { setSuggestions(await searchCatalog(v)); } catch { /* ignore */ }
+      try {
+        const results = await searchCatalog(v);
+        setSuggestions(results);
+      } catch (err) {
+        console.error("[CatalogSearch] error:", err);
+        setSearchError(true);
+        setSuggestions([]);
+      }
     }, 250);
   }, [onChange]);
 
@@ -66,6 +80,11 @@ export function CatalogSearch({
         disabled={disabled}
         className="underline-input"
       />
+      {searchError && (
+        <p className="absolute left-0 right-0 top-full mt-1.5 text-[11px] text-[var(--fg-faint)] px-1">
+          search unavailable
+        </p>
+      )}
       {suggestions.length > 0 && (
         <div className="absolute left-0 right-0 top-full mt-1.5 bg-[var(--bg-surface)] border border-[var(--border-light)] rounded-xl shadow-md overflow-hidden z-10">
           {suggestions.map((s, i) => (
@@ -98,7 +117,12 @@ export function useCatalogSearch(delay = 250) {
     if (timer.current) clearTimeout(timer.current);
     if (!value.trim()) { setSuggestions([]); return; }
     timer.current = setTimeout(async () => {
-      try { setSuggestions(await searchCatalog(value)); } catch { /* ignore */ }
+      try {
+        setSuggestions(await searchCatalog(value));
+      } catch (err) {
+        console.error("[CatalogSearch]", err);
+        setSuggestions([]);
+      }
     }, delay);
   }, [delay]);
 

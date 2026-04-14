@@ -8,6 +8,7 @@ import { CatalogSearch } from "@/components/CatalogSearch";
 import { getEntries, createEntry } from "@/lib/db";
 import { type CatalogEntry, lookupBook } from "@/lib/catalog";
 import type { BookEntry } from "@/types";
+import { localDateStr } from "@/lib/dates";
 
 function effectiveDate(e: BookEntry): string {
   if (e.status === "finished" && e.dateFinished) return e.dateFinished;
@@ -65,7 +66,7 @@ export default function BooksPage() {
         genres: enriched?.genres ?? [],
         moodTags: [],
         status: "reading",
-        dateStarted: now.toISOString().split("T")[0],
+        dateStarted: localDateStr(now),
         dateFinished: "",
         dateShelved: "",
         rating: 0,
@@ -73,6 +74,9 @@ export default function BooksPage() {
         thoughts: [],
         reads: [],
         bookmarked: false,
+        coverUrl: enriched?.coverUrl ?? "",
+        isbn: enriched?.isbn ?? "",
+        pageCount: enriched?.pageCount ?? null,
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
       };

@@ -9,6 +9,7 @@ import { getQuotes } from "@/lib/quotes";
 import type { BookEntry, BookRead, ReadingLogEntry, Quote } from "@/types";
 import { DayPanel } from "@/components/calendar/DayPanel";
 import { MonthCalendar } from "@/components/calendar/MonthCalendar";
+import { localDateStr } from "@/lib/dates";
 
 const MONTH_ABBRS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 
@@ -23,7 +24,7 @@ function computeStreaks(loggedDates: Set<string>): Set<string> {
     const d = new Date(sorted[i]);
     const prev = new Date(d); prev.setDate(prev.getDate() - 1);
     const next = new Date(d); next.setDate(next.getDate() + 1);
-    if (loggedDates.has(prev.toISOString().slice(0, 10)) || loggedDates.has(next.toISOString().slice(0, 10))) {
+    if (loggedDates.has(localDateStr(prev)) || loggedDates.has(localDateStr(next))) {
       streakDates.add(sorted[i]);
     }
   }
@@ -38,7 +39,7 @@ export default function MonthSpreadPage() {
   const monthIndex = Math.max(0, MONTH_ABBRS.indexOf(monthParam.toLowerCase()));
 
   const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
+  const todayStr = localDateStr(now);
 
   const [allBooks, setAllBooks] = useState<BookEntry[]>([]);
   const [reading, setReading] = useState<BookEntry[]>([]);
@@ -98,7 +99,7 @@ export default function MonthSpreadPage() {
   const currentStreak = (() => {
     let streak = 0;
     const d = new Date(todayStr);
-    while (loggedDates.has(d.toISOString().slice(0, 10))) {
+    while (loggedDates.has(localDateStr(d))) {
       streak++;
       d.setDate(d.getDate() - 1);
     }
