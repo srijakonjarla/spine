@@ -1,32 +1,44 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { resetPassword } from "@/lib/auth";
 
 type Stage = "exchanging" | "form" | "done" | "error";
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [stage, setStage] = useState<Stage>("exchanging");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [supabaseError, setSupabaseError] = useState("");
+  const [email, setEmail] = useState("");
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState("");
 
   useEffect(() => {
-    const code = searchParams.get("code");
+    // Read directly from window.location to avoid Next.js Suspense/SSR issues
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+
     if (!code) {
+      setSupabaseError("No reset code found in the URL.");
       setStage("error");
       return;
     }
-    supabase.auth.exchangeCodeForSession(code)
-      .then(({ error }) => {
-        if (error) { setStage("error"); }
-        else { setStage("form"); }
-      });
-  }, [searchParams]);
+
+    supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+      if (error) {
+        setSupabaseError(error.message);
+        setStage("error");
+      } else {
+        setStage("form");
+      }
+    });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +54,20 @@ export default function ResetPasswordPage() {
     else { setStage("done"); }
   };
 
+  const handleResend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setResendLoading(true);
+    try {
+      await resetPassword(email);
+      setResendMessage("check your email for a new reset link.");
+    } catch (err) {
+      setResendMessage(err instanceof Error ? err.message : "something went wrong");
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
   return (
     <div className="page flex items-center justify-center px-6">
       <div className="w-full max-w-sm font-mono">
@@ -55,11 +81,32 @@ export default function ResetPasswordPage() {
         )}
 
         {stage === "error" && (
-          <div className="space-y-4">
-            <p className="text-xs text-red-400">this reset link is invalid or has expired.</p>
-            <button onClick={() => router.push("/login")} className="back-link">
-              ← back to sign in
-            </button>
+          <div className="space-y-6">
+            <div>
+              <p className="text-xs text-red-400 mb-1">this reset link is invalid or has expired.</p>
+              {supabaseError && <p className="text-[11px] text-stone-400">{supabaseError}</p>}
+            </div>
+
+            <form onSubmit={handleResend} className="space-y-3">
+              <p className="text-xs text-stone-400">send a new link:</p>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                className="underline-input"
+              />
+              {resendMessage && <p className="text-xs text-stone-500">{resendMessage}</p>}
+              <div className="flex items-center gap-4 pt-1">
+                <button type="submit" disabled={resendLoading} className="btn-primary">
+                  {resendLoading ? "..." : "resend link"}
+                </button>
+                <button type="button" onClick={() => router.push("/login")} className="back-link">
+                  ← sign in
+                </button>
+              </div>
+            </form>
           </div>
         )}
 
@@ -110,5 +157,13 @@ export default function ResetPasswordPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="page flex items-center justify-center px-6"><p className="text-xs text-stone-400 font-mono">verifying link...</p></div>}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

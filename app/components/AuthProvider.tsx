@@ -37,7 +37,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     if (loading) return;
-    if (!user && pathname !== "/login") {
+    const isPublicPath = pathname === "/login" || pathname.startsWith("/auth/");
+    if (!user && !isPublicPath) {
       // Hard redirect so all React state is cleared — prevents stale data
       // from the previous session leaking into a subsequent login.
       window.location.href = "/login";
