@@ -9,6 +9,10 @@ import {
 } from "@/lib/series";
 import { getEntries } from "@/lib/db";
 import { CatalogSearch } from "@/components/CatalogSearch";
+import { BookCoverThumb } from "@/components/BookCover";
+import { ProgressBar } from "@/components/ProgressBar";
+import { EmptyState } from "@/components/EmptyState";
+import { PageHeader } from "@/components/PageHeader";
 import { type CatalogEntry } from "@/lib/catalog";
 import type { BookEntry } from "@/types";
 
@@ -109,15 +113,7 @@ function SeriesCard({
         </div>
       </div>
 
-      {/* Progress bar */}
-      {total > 0 && (
-        <div className="w-full h-1 bg-[var(--border-light)] rounded-full overflow-hidden mb-4">
-          <div
-            style={{ width: `${Math.round((readCount / total) * 100)}%` }}
-            className="h-full rounded-full transition-all duration-500 bg-sage"
-          />
-        </div>
-      )}
+      {total > 0 && <ProgressBar value={readCount / total} size="xs" className="mb-4" />}
 
       {/* Books */}
       <div className="space-y-1.5 mb-4">
@@ -128,11 +124,7 @@ function SeriesCard({
               <span className="text-xs text-[var(--fg-faint)] w-5 shrink-0 font-mono">{book.position}.</span>
 
               {/* Cover thumbnail */}
-              {book.coverUrl ? (
-                <img src={book.coverUrl} alt={book.title} className="w-6 h-9 object-cover rounded-sm shrink-0 shadow-sm" />
-              ) : (
-                <div className="w-6 h-9 rounded-sm shrink-0 bg-[var(--bg-hover)]" />
-              )}
+              <BookCoverThumb coverUrl={book.coverUrl} title={book.title} />
 
               {/* Status dot */}
               <button
@@ -263,12 +255,10 @@ export default function SeriesPage() {
           <Link href="/library" className="back-link">← library</Link>
         </div>
 
-        <div className="mb-10 pb-8 border-b border-[var(--border-light)]">
-          <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold page-title tracking-tight">series tracker</h1>
-          {!loading && seriesList.length > 0 && (
-            <p className="text-xs text-[var(--fg-faint)] mt-3">{seriesList.length} series</p>
-          )}
-        </div>
+        <PageHeader
+          title="series tracker"
+          subtitle={!loading && seriesList.length > 0 ? `${seriesList.length} series` : undefined}
+        />
 
         {loading && (
           <div className="space-y-4 animate-pulse">
@@ -277,7 +267,7 @@ export default function SeriesPage() {
         )}
 
         {!loading && seriesList.length === 0 && !showAdd && (
-          <p className="text-xs text-[var(--fg-faint)] mb-6">No series tracked yet.</p>
+          <EmptyState message="No series tracked yet." />
         )}
 
         {!loading && (

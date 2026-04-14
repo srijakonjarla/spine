@@ -14,7 +14,11 @@ import {
 } from "@/lib/db";
 import { getQuotes, addQuote, deleteQuote } from "@/lib/quotes";
 import { BookmarkButton } from "@/components/BookmarkButton";
+import { BookCover } from "@/components/BookCover";
 import { StarDisplay } from "@/components/StarDisplay";
+import { QuoteCard } from "@/components/QuoteCard";
+import { MoodChip } from "@/components/MoodChip";
+import { EmptyState } from "@/components/EmptyState";
 import { usePreviousRoute } from "@/components/NavigationProvider";
 import type { BookEntry, BookRead, ReadingStatus, Thought, Quote } from "@/types";
 import { localDateStr } from "@/lib/dates";
@@ -229,26 +233,20 @@ function QuoteSection({ bookId }: { bookId: string }) {
       )}
 
       {quotes.length === 0 && !open && (
-        <p className="text-xs text-stone-300">no quotes saved yet</p>
+        <EmptyState message="no quotes saved yet" />
       )}
 
       <div className="space-y-4">
         {quotes.map((q) => (
-          <div key={q.id} className="group border-l-2 border-stone-200 pl-3 hover:border-stone-400 transition-colors">
-            <p className="text-sm text-stone-700 italic leading-relaxed">&ldquo;{q.text}&rdquo;</p>
-            <div className="flex items-center gap-2 mt-1">
-              {q.pageNumber && <span className="text-xs text-stone-400">p. {q.pageNumber}</span>}
-              <button
-                onClick={() => {
-                  deleteQuote(q.id);
-                  setQuotes((prev) => prev.filter((x) => x.id !== q.id));
-                }}
-                className="text-xs text-stone-200 hover:text-red-700 transition-colors opacity-0 group-hover:opacity-100 ml-auto"
-              >
-                delete
-              </button>
-            </div>
-          </div>
+          <QuoteCard
+            key={q.id}
+            text={q.text}
+            pageNumber={q.pageNumber}
+            onDelete={() => {
+              deleteQuote(q.id);
+              setQuotes((prev) => prev.filter((x) => x.id !== q.id));
+            }}
+          />
         ))}
       </div>
     </div>
@@ -403,13 +401,7 @@ export default function BookPage() {
 
         {/* cover + title/author */}
         <div className="flex gap-4 mb-4">
-          {entry.coverUrl && (
-            <img
-              src={entry.coverUrl}
-              alt={entry.title}
-              className="w-16 rounded shadow-sm shrink-0 self-start object-cover"
-            />
-          )}
+          <BookCover coverUrl={entry.coverUrl} title={entry.title} author={entry.author} className="w-16" />
           <div className="flex-1 min-w-0">
             <input
               id="book-title"

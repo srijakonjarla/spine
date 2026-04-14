@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   // Require a Bearer token on all API routes
   if (req.nextUrl.pathname.startsWith("/api/") && req.nextUrl.pathname !== "/api/catalog") {
     const auth = req.headers.get("Authorization");

@@ -5,6 +5,9 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { getQuotes, deleteQuote } from "@/lib/quotes";
 import type { Quote } from "@/types";
+import { QuoteCard } from "@/components/QuoteCard";
+import { PageHeader } from "@/components/PageHeader";
+import { EmptyState } from "@/components/EmptyState";
 
 export default function QuoteCollectionPage() {
   const { year: yearParam } = useParams<{ year: string }>();
@@ -32,13 +35,11 @@ export default function QuoteCollectionPage() {
           <Link href="/" className="back-link">← home</Link>
         </div>
 
-        <div className="mb-10 pb-8 border-b border-stone-200">
-          <p className="text-xs text-stone-300 mb-2 tracking-widest uppercase">reading journal · {year}</p>
-          <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold page-title tracking-tight">quote collection</h1>
-          {!loading && (
-            <p className="text-xs text-stone-400 mt-3">{quotes.length} saved</p>
-          )}
-        </div>
+        <PageHeader
+          title="quote collection"
+          eyebrow={`reading journal · ${year}`}
+          subtitle={!loading ? `${quotes.length} saved` : undefined}
+        />
 
         {loading && (
           <div className="space-y-6 animate-pulse">
@@ -53,33 +54,19 @@ export default function QuoteCollectionPage() {
         )}
 
         {!loading && quotes.length === 0 && (
-          <p className="text-xs text-stone-400">
-            no quotes saved yet — add them from any book page.
-          </p>
+          <EmptyState message="no quotes saved yet — add them from any book page." />
         )}
 
         {!loading && quotes.length > 0 && (
           <div className="space-y-8">
             {quotes.map((quote) => (
-              <div key={quote.id} className="group border-l-2 border-stone-200 pl-4 hover:border-stone-400 transition-colors">
-                <p className="text-sm text-stone-700 italic leading-relaxed mb-2">
-                  &ldquo;{quote.text}&rdquo;
-                </p>
-                <div className="flex items-center gap-2 text-xs text-stone-400">
-                  {quote.bookTitle && (
-                    <span>— {quote.bookTitle}</span>
-                  )}
-                  {quote.pageNumber && (
-                    <span>· p. {quote.pageNumber}</span>
-                  )}
-                  <button
-                    onClick={() => handleDelete(quote.id)}
-                    className="ml-auto text-stone-200 hover:text-red-700 transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                    delete
-                  </button>
-                </div>
-              </div>
+              <QuoteCard
+                key={quote.id}
+                text={quote.text}
+                bookTitle={quote.bookTitle}
+                pageNumber={quote.pageNumber}
+                onDelete={() => handleDelete(quote.id)}
+              />
             ))}
           </div>
         )}

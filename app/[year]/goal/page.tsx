@@ -6,6 +6,8 @@ import Link from "next/link";
 import { getGoals, setGoal, updateGoal, deleteGoal, addBookToGoal, removeBookFromGoal } from "@/lib/goals";
 import { getEntries } from "@/lib/db";
 import type { ReadingGoal, BookEntry } from "@/types";
+import { ProgressBar } from "@/components/ProgressBar";
+import { PageHeader } from "@/components/PageHeader";
 
 // ─── Auto goal card ───────────────────────────────────────────────────────────
 function AutoGoalCard({
@@ -38,12 +40,7 @@ function AutoGoalCard({
           <span className="text-4xl font-semibold text-stone-900">{finishedCount}</span>
           <span className="text-sm text-stone-400">of {target} books · {percent}%</span>
         </div>
-        <div className="w-full h-1.5 bg-stone-100 rounded-full overflow-hidden">
-          <div
-            style={{ width: `${percent}%` }}
-            className="h-full rounded-full transition-all duration-500 bg-plum"
-          />
-        </div>
+        <ProgressBar value={percent} percent color="plum" />
       </div>
 
       <div className="flex gap-5">
@@ -179,12 +176,7 @@ function CustomGoalCard({
           <span className="text-3xl font-semibold text-stone-900">{goalBooks.length}</span>
           <span className="text-sm text-stone-400">of {target} · {percent}%</span>
         </div>
-        <div className="w-full h-1.5 bg-stone-100 rounded-full overflow-hidden">
-          <div
-            style={{ width: `${percent}%` }}
-            className="h-full bg-stone-600 rounded-full transition-all duration-500"
-          />
-        </div>
+        <ProgressBar value={percent} percent color="plum" />
       </div>
 
       {/* Books in this goal */}
@@ -368,12 +360,7 @@ export default function GoalPage() {
           <Link href="/" className="back-link">← home</Link>
         </div>
 
-        <div className="mb-10 pb-8 border-b border-stone-200">
-          <p className="text-xs text-stone-300 mb-2 tracking-widest uppercase">reading journal · {year}</p>
-          <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold text-[var(--fg-heading)] tracking-tight">
-            reading goals
-          </h1>
-        </div>
+        <PageHeader title="reading goals" eyebrow={`reading journal · ${year}`} />
 
         <div className="space-y-4 mb-8">
           {/* Auto yearly goal */}

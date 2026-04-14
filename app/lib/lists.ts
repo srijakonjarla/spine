@@ -97,7 +97,7 @@ export async function createList(
 
 export async function updateList(
   id: string,
-  patch: { title?: string; description?: string; color?: string; emoji?: string; bulletSymbol?: string; dateLabel?: string; notesLabel?: string }
+  patch: { title?: string; description?: string; color?: string; emoji?: string; bulletSymbol?: string; dateLabel?: string; notesLabel?: string; bookmarked?: boolean }
 ): Promise<void> {
   await apiFetch(`/api/lists/${id}`, {
     method: "PATCH",

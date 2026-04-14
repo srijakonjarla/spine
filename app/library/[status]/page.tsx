@@ -8,6 +8,9 @@ import { type CatalogEntry, lookupBook } from "@/lib/catalog";
 import { CatalogSearch } from "@/components/CatalogSearch";
 import { STATUS_LABEL } from "@/lib/statusMeta";
 import { StarDisplay } from "@/components/StarDisplay";
+import { BookCoverThumb } from "@/components/BookCover";
+import { MoodChip, AllMoodsChip } from "@/components/MoodChip";
+import { EmptyState } from "@/components/EmptyState";
 import type { BookEntry } from "@/types";
 import { localDateStr } from "@/lib/dates";
 
@@ -138,24 +141,15 @@ export default function StatusCatalogPage() {
         {/* Mood filter chips */}
         {allMoods.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-8">
-            <button
-              onClick={() => setActiveMood(null)}
-              className={`text-xs px-3 py-1 rounded-full transition-colors border border-[var(--border-light)] ${!activeMood ? "bg-plum text-white" : "bg-[var(--bg-surface)] text-[var(--fg-muted)]"}`}
-            >
-              all
-            </button>
-            {allMoods.map((mood) => {
-              const active = activeMood === mood;
-              return (
-                <button
-                  key={mood}
-                  onClick={() => setActiveMood(active ? null : mood)}
-                  className={`mood-filter-chip mood-${mood.replace(/\s+/g, "-")}${active ? " active" : ""}`}
-                >
-                  {mood}
-                </button>
-              );
-            })}
+            <AllMoodsChip active={!activeMood} onClick={() => setActiveMood(null)} />
+            {allMoods.map((mood) => (
+              <MoodChip
+                key={mood}
+                mood={mood}
+                active={activeMood === mood}
+                onClick={() => setActiveMood(activeMood === mood ? null : mood)}
+              />
+            ))}
           </div>
         )}
 
@@ -171,30 +165,15 @@ export default function StatusCatalogPage() {
           </div>
         )}
 
-        {!loading && filtered.length === 0 && (
-          <p className="text-xs text-[var(--fg-faint)]">no books found.</p>
-        )}
+        {!loading && filtered.length === 0 && <EmptyState message="no books found." />}
 
         {!loading && filtered.length > 0 && view === "grid" && (
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4">
             {filtered.map((e) => (
               <Link key={e.id} href={`/book/${e.id}`} className="group relative">
-                <div className="relative mb-2 rounded-lg overflow-hidden group-hover:opacity-85 transition-opacity h-[130px] bg-[var(--bg-hover)] border border-[var(--border-light)]">
-                  {e.coverUrl ? (
-                    <img src={e.coverUrl} alt={e.title} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex flex-col justify-between p-2.5">
-                      {e.moodTags.length > 0 && (
-                        <span className={`self-start text-[9px] px-1.5 py-0.5 rounded-full mood-grid-tag mood-${e.moodTags[0].replace(/\s+/g, "-")}`}>
-                          {e.moodTags[0]}
-                        </span>
-                      )}
-                      {e.rating > 0 && (
-                        <span className="self-end text-[10px] text-gold">{"★".repeat(Math.round(e.rating))}</span>
-                      )}
-                    </div>
-                  )}
-                  {e.coverUrl && e.rating > 0 && (
+                <div className="relative mb-2 rounded-lg overflow-hidden group-hover:opacity-85 transition-opacity h-[130px]">
+                  <BookCoverThumb coverUrl={e.coverUrl} title={e.title} author={e.author} width="w-full" height="h-full" />
+                  {e.rating > 0 && (
                     <span className="absolute bottom-1.5 right-1.5 text-[10px] text-gold drop-shadow">{"★".repeat(Math.round(e.rating))}</span>
                   )}
                 </div>

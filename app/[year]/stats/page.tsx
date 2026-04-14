@@ -8,6 +8,9 @@ import { getReadingLog } from "@/lib/habits";
 import { getQuotes } from "@/lib/quotes";
 import { StarIcon } from "@phosphor-icons/react";
 import type { BookEntry } from "@/types";
+import { StatCard } from "@/components/StatCard";
+import { ProgressBar } from "@/components/ProgressBar";
+import { EmptyState } from "@/components/EmptyState";
 
 export default function StatsPage() {
   const { year: yearParam } = useParams<{ year: string }>();
@@ -82,13 +85,7 @@ export default function StatsPage() {
             { label: "avg rating", value: avgRating > 0 ? avgRating.toFixed(1) : "—", accentClass: "border-t-[var(--stat-border-rating)]" },
             { label: "quotes saved", value: quoteCount, accentClass: "border-t-[var(--stat-border-quotes)]" },
           ].map(({ label, value, accentClass }) => (
-            <div
-              key={label}
-              className={`rounded-2xl p-5 bg-[var(--bg-surface)] border border-[var(--border-light)] border-t-[3px] ${accentClass}`}
-            >
-              <p className="text-2xl font-bold text-[var(--fg-heading)]">{value}</p>
-              <p className="text-xs mt-1 text-[var(--fg-faint)]">{label}</p>
-            </div>
+            <StatCard key={label} label={label} value={value} accentClass={accentClass} />
           ))}
         </div>
 
@@ -124,12 +121,7 @@ export default function StatsPage() {
                       <span className="text-xs text-[var(--fg)]">{genre}</span>
                       <span className="text-xs text-[var(--fg-faint)]">{count}</span>
                     </div>
-                    <div className="h-1.5 rounded-full overflow-hidden bg-[var(--border)]">
-                      <div
-                        style={{ width: `${Math.round((count / maxGenreCount) * 100)}%` }}
-                        className="h-full rounded-full bg-[linear-gradient(to_right,var(--plum),var(--terra))]"
-                      />
-                    </div>
+                    <ProgressBar value={count / maxGenreCount} color="gradient" />
                   </div>
                 ))}
               </div>
@@ -180,9 +172,7 @@ export default function StatsPage() {
           </div>
         )}
 
-        {finished.length === 0 && (
-          <p className="text-sm text-[var(--fg-faint)]">No finished books this year yet.</p>
-        )}
+        {finished.length === 0 && <EmptyState message="No finished books this year yet." />}
       </div>
     </div>
   );

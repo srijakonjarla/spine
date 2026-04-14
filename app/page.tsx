@@ -9,6 +9,8 @@ import { getDisplayName, hasImportedGoodreads } from "@/lib/auth";
 import { useAuth } from "@/components/AuthProvider";
 import type { BookEntry, ReadingLogEntry, ReadingGoal } from "@/types";
 import { FireIcon, LeafIcon, StarIcon } from "@phosphor-icons/react";
+import { MoodChip } from "@/components/MoodChip";
+import { ProgressBar } from "@/components/ProgressBar";
 import { localDateStr } from "@/lib/dates";
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -164,12 +166,7 @@ export default function Home() {
                   {book.moodTags.length > 0 && (
                     <div className="flex gap-1.5 mt-2.5 flex-wrap">
                       {book.moodTags.slice(0, 3).map((tag) => (
-                        <span
-                          key={tag}
-                          className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-hover)] text-[var(--fg-muted)]"
-                        >
-                          {tag}
-                        </span>
+                        <MoodChip key={tag} mood={tag} display />
                       ))}
                     </div>
                   )}
@@ -207,12 +204,7 @@ export default function Home() {
                   {finishedThisYear} / {goalTarget}
                   <span className="text-[11px] font-normal ml-1 text-[var(--fg-muted)]">books</span>
                 </p>
-                <div className="h-1.5 rounded-full overflow-hidden mb-2 bg-[var(--bg-muted-tag)]">
-                  <div
-                    style={{ width: `${Math.round(goalProgress * 100)}%` }}
-                    className="h-full rounded-full transition-all duration-500 bg-sage"
-                  />
-                </div>
+                <ProgressBar value={goalProgress} className="mb-2" />
                 <p className="font-[family-name:var(--font-caveat)] text-[13px] text-sage">
                   {goalProgress >= 1 ? (
                     <>goal reached <LeafIcon size={13} weight="fill" className="inline-block align-text-bottom ml-0.5" /></>
