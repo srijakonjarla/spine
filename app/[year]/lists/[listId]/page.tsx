@@ -7,10 +7,12 @@ import {
   getList, updateList, deleteList,
   addListItem, updateListItem, removeListItem,
 } from "@/lib/lists";
+import { getEntries } from "@/lib/db";
 import { CatalogSearch } from "@/components/CatalogSearch";
 import { CoverChangeModal } from "@/components/lists/CoverChangeModal";
 import { type CatalogEntry } from "@/lib/catalog";
-import type { BookList, ListItem } from "@/types";
+import { STATUS_SYMBOL, STATUS_COLOR, STATUS_LABEL } from "@/lib/statusMeta";
+import type { BookList, BookEntry, ListItem } from "@/types";
 import {
   BooksIcon, LightbulbIcon, CheckSquareIcon, ListBulletsIcon, PaletteIcon, TrashIcon,
 } from "@phosphor-icons/react";
@@ -49,6 +51,7 @@ export default function ListDetailPage() {
   const router = useRouter();
 
   const [list, setList] = useState<BookList | null>(null);
+  const [libraryEntries, setLibraryEntries] = useState<BookEntry[]>([]);
   const [showAddBook, setShowAddBook] = useState(false);
   const [draftTitle, setDraftTitle] = useState("");
   const [draftAuthor, setDraftAuthor] = useState("");
@@ -66,6 +69,7 @@ export default function ListDetailPage() {
       if (!l) { router.replace(`/${year}/lists`); return; }
       setList(l);
     });
+    getEntries().then(setLibraryEntries).catch(console.error);
   }, [listId, year, router]);
 
   const saveListField = useCallback((patch: Parameters<typeof updateList>[1]) => {
@@ -306,7 +310,13 @@ export default function ListDetailPage() {
                   if (!itemSearch.trim()) return true;
                   const q = itemSearch.toLowerCase();
                   return item.title.toLowerCase().includes(q) || (item.author ?? "").toLowerCase().includes(q);
-                }).map((item: ListItem) => (
+                }).map((item: ListItem) => {
+                  const matched = libraryEntries.find((b) =>
+                    b.title.toLowerCase() === item.title.toLowerCase() &&
+                    (!item.author || b.author.toLowerCase() === item.author.toLowerCase())
+                  );
+                  const status = matched?.status;
+                  return (
                   <div
                     key={item.id}
                     className="group flex gap-3.5 items-center bg-[var(--bg-surface)] rounded-xl px-4 py-3 border border-[var(--border-light)] hover:translate-x-1 transition-transform"
@@ -337,6 +347,13 @@ export default function ListDetailPage() {
                       />
                     </div>
 
+                    {/* Status pill */}
+                    {status && (
+                      <span className={`shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full border opacity-70 group-hover:opacity-100 transition-opacity ${STATUS_COLOR[status]} border-current`}>
+                        {STATUS_SYMBOL[status]} {STATUS_LABEL[status] === "want to read" ? "tbr" : STATUS_LABEL[status]}
+                      </span>
+                    )}
+
                     {/* Remove */}
                     <button
                       onClick={() => handleRemoveItem(item.id)}
@@ -345,7 +362,8 @@ export default function ListDetailPage() {
                       ×
                     </button>
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Add book row */}
@@ -363,6 +381,7 @@ export default function ListDetailPage() {
                     onSubmit={handleAddBook}
                     placeholder="search for a book to add…"
                     className="mb-1"
+                    libraryEntries={libraryEntries}
                   />
                   <input
                     type="text"

@@ -87,8 +87,8 @@ export default function Nav() {
       ]);
 
       setBookmarks([
-        ...(booksRes.data ?? []).map((b: any) => ({ id: b.id, title: b.title ?? "untitled", href: `/book/${b.id}` })),
-        ...(listsRes.data ?? []).map((l: any) => ({ id: l.id, title: l.title, href: `/${l.year}/lists/${l.id}` })),
+        ...(booksRes.data ?? []).map((b: { id: string; title: string | null }) => ({ id: b.id, title: b.title ?? "untitled", href: `/book/${b.id}` })),
+        ...(listsRes.data ?? []).map((l: { id: string; title: string; year: number }) => ({ id: l.id, title: l.title, href: `/${l.year}/lists/${l.id}` })),
       ]);
       setShelfCounts({
         reading: readingRes.count ?? 0,

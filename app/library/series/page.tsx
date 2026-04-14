@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
-  getSeries, createSeries, deleteSeries,
+  getSeries, createSeries, updateSeries, deleteSeries,
   addSeriesBook, updateSeriesBook, deleteSeriesBook,
   type Series, type SeriesBook,
 } from "@/lib/series";
@@ -47,6 +47,7 @@ function SeriesCard({
   series,
   library,
   onDelete,
+  onUpdate,
   onBookStatusChange,
   onBookDelete,
   onBookAdd,
@@ -54,14 +55,26 @@ function SeriesCard({
   series: Series;
   library: BookEntry[];
   onDelete: (id: string) => void;
+  onUpdate: (id: string, patch: { name?: string; author?: string }) => void;
   onBookStatusChange: (seriesId: string, bookId: string, status: SeriesBook["status"]) => void;
   onBookDelete: (seriesId: string, bookId: string) => void;
   onBookAdd: (seriesId: string, book: SeriesBook) => void;
 }) {
+  const [name, setName] = useState(series.name);
+  const [author, setAuthor] = useState(series.author);
   const [addingBook, setAddingBook] = useState(false);
   const [draftTitle, setDraftTitle] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleFieldChange = (patch: { name?: string; author?: string }) => {
+    if (patch.name !== undefined) setName(patch.name);
+    if (patch.author !== undefined) setAuthor(patch.author);
+    onUpdate(series.id, patch);
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => updateSeries(series.id, patch), 600);
+  };
 
   const readCount = series.books.filter((b) => b.status === "read").length;
   const total = series.books.length;
@@ -71,7 +84,12 @@ function SeriesCard({
     if (!title || saving) return;
     setSaving(true);
     try {
-      const book = await addSeriesBook(series.id, title, total + 1, catalog?.coverUrl ?? "");
+      const libraryStatus = catalog?.status;
+      const initialStatus: SeriesBook["status"] | undefined =
+        libraryStatus === "finished" ? "read" :
+        libraryStatus === "reading"  ? "reading" :
+        undefined;
+      const book = await addSeriesBook(series.id, title, total + 1, catalog?.coverUrl ?? "", initialStatus);
       onBookAdd(series.id, book);
       setDraftTitle("");
       setAddingBook(false);
@@ -80,7 +98,6 @@ function SeriesCard({
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Delete "${series.name}"?`)) return;
     setDeleting(true);
     try { await deleteSeries(series.id); onDelete(series.id); }
     catch (err) { console.error(err); setDeleting(false); }
@@ -101,9 +118,21 @@ function SeriesCard({
     <div className="border border-[var(--border-light)] rounded-xl p-6">
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-4">
-        <div>
-          <h3 className="font-[family-name:var(--font-playfair)] text-lg font-semibold text-[var(--fg-heading)]">{series.name}</h3>
-          {series.author && <p className="text-xs text-[var(--fg-faint)] mt-0.5">{series.author}</p>}
+        <div className="flex-1 min-w-0">
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => handleFieldChange({ name: e.target.value })}
+            placeholder="series name"
+            className="font-[family-name:var(--font-playfair)] text-lg font-semibold text-[var(--fg-heading)] bg-transparent border-none outline-none w-full placeholder:text-[var(--fg-faint)]"
+          />
+          <input
+            type="text"
+            value={author}
+            onChange={(e) => handleFieldChange({ author: e.target.value })}
+            placeholder="author"
+            className="text-xs text-[var(--fg-faint)] bg-transparent border-none outline-none w-full mt-0.5 placeholder:text-[var(--fg-faint)]/50"
+          />
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <span className="text-xs text-[var(--fg-faint)]">{readCount}/{total}</span>
@@ -148,7 +177,7 @@ function SeriesCard({
                   className={`text-[10px] shrink-0 px-1.5 py-0.5 rounded-full border transition-colors ${STATUS_TEXT_CLS[book.status]} border-current hover:opacity-70`}
                   title="View in your library"
                 >
-                  {libraryBook.status === "finished" ? "read" : libraryBook.status === "reading" ? "reading" : "in library"}
+                  {libraryBook.status === "finished" ? "read" : libraryBook.status === "reading" ? "reading" : "tbr"}
                 </Link>
               )}
 
@@ -180,6 +209,7 @@ function SeriesCard({
             onSubmit={() => handleAddBook()}
             placeholder={`Book ${total + 1} title or ISBN...`}
             disabled={saving}
+            libraryEntries={library}
           />
           {draftTitle.trim() && !saving && (
             <p className="text-[11px] text-[var(--fg-faint)] mt-1">↵ to add without catalog match</p>
@@ -230,6 +260,10 @@ export default function SeriesPage() {
 
   const handleDelete = (id: string) => setSeriesList((prev) => prev.filter((s) => s.id !== id));
 
+  const handleUpdate = (id: string, patch: { name?: string; author?: string }) => {
+    setSeriesList((prev) => prev.map((s) => s.id !== id ? s : { ...s, ...patch }));
+  };
+
   const handleBookStatusChange = (seriesId: string, bookId: string, status: SeriesBook["status"]) => {
     setSeriesList((prev) => prev.map((s) =>
       s.id !== seriesId ? s : { ...s, books: s.books.map((b) => b.id === bookId ? { ...b, status } : b) }
@@ -278,6 +312,7 @@ export default function SeriesPage() {
                 series={s}
                 library={library}
                 onDelete={handleDelete}
+                onUpdate={handleUpdate}
                 onBookStatusChange={handleBookStatusChange}
                 onBookDelete={handleBookDelete}
                 onBookAdd={handleBookAdd}

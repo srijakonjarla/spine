@@ -48,11 +48,10 @@ export default function MonthSpreadPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   useEffect(() => {
-    setSelectedDate(null);
-
     const load = () =>
       Promise.all([getEntries(), getReadingLog(year), getQuotes()])
         .then(([books, log, qs]) => {
+          setSelectedDate(null);
           setAllBooks(books);
           setReading(books.filter((b) => b.status === "reading"));
           setLogEntries(log as ReadingLogEntry[]);
@@ -159,7 +158,7 @@ export default function MonthSpreadPage() {
 
   return (
     <div className="page">
-      <div className="mx-auto px-6 py-12 max-w-[56rem]">
+      <div className="mx-auto px-6 py-12">
 
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
@@ -260,7 +259,7 @@ export default function MonthSpreadPage() {
               <div className="space-y-4">
                 {quotesThisMonth.slice(0, 5).map((q) => (
                   <div key={q.id} className="pl-3 border-l-2 border-l-[var(--lavender)]">
-                    <p className="font-serif text-sm italic leading-relaxed text-[var(--fg)]">"{q.text}"</p>
+                    <p className="font-serif text-sm italic leading-relaxed text-[var(--fg)]">&ldquo;{q.text}&rdquo;</p>
                     {(q.bookTitle || q.pageNumber) && (
                       <p className="text-[10px] mt-1.5 text-[var(--fg-faint)]">
                         {q.bookTitle && <span>{q.bookTitle}</span>}

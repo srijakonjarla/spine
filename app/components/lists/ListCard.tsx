@@ -2,8 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import type { BookList } from "@/types";
-import { BooksIcon, LightbulbIcon, CheckSquareIcon, ListBulletsIcon } from "@phosphor-icons/react";
-import type { Icon } from "@phosphor-icons/react";
+import { BooksIcon, LightbulbIcon, CheckSquareIcon, ListBulletsIcon, type Icon } from "@phosphor-icons/react";
 import { COVER_ICONS, coverGradientStyle } from "./coverConstants";
 
 const LIST_TYPES: ReadonlyArray<{ value: string; icon: Icon; label: string }> = [
@@ -13,12 +12,8 @@ const LIST_TYPES: ReadonlyArray<{ value: string; icon: Icon; label: string }> = 
   { value: "bullet_list", icon: ListBulletsIcon, label: "Bullet Points" },
 ];
 
-function listTypeLabel(listType: string): string {
-  return LIST_TYPES.find((t) => t.value === listType)?.label ?? "Book List";
-}
-
-function listTypeIcon(listType: string): Icon {
-  return LIST_TYPES.find((t) => t.value === listType)?.icon ?? BooksIcon;
+function listTypeMeta(listType: string) {
+  return LIST_TYPES.find((t) => t.value === listType) ?? LIST_TYPES[0];
 }
 
 interface ListCardProps {
@@ -30,7 +25,7 @@ export function ListCard({ list, year }: ListCardProps) {
   const router = useRouter();
   const isIdeaType = ["idea_list", "bullet_list"].includes(list.listType);
   const bullet = list.bulletSymbol || "→";
-  const TypeIcon = listTypeIcon(list.listType);
+  const { icon: TypeIcon, label: typeLabel } = listTypeMeta(list.listType);
   const CoverIcon = COVER_ICONS[list.emoji] ?? BooksIcon;
 
   return (
@@ -45,7 +40,7 @@ export function ListCard({ list, year }: ListCardProps) {
       >
         <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.1em] px-2 py-0.5 rounded-full self-start text-white/80 bg-white/15">
           <TypeIcon size={10} />
-          {listTypeLabel(list.listType)}
+          {typeLabel}
         </span>
         <CoverIcon size={26} className="text-white/90" />
       </div>

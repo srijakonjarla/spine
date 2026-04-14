@@ -17,12 +17,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .single();
   if (!series) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const { title, position, coverUrl } = await req.json();
+  const { title, position, coverUrl, status } = await req.json();
   if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
+
+  const VALID_STATUSES = ["unread", "reading", "read", "skipped"];
+  const resolvedStatus = VALID_STATUSES.includes(status) ? status : "unread";
 
   const { data, error } = await supabase
     .from("series_books")
-    .insert({ series_id: seriesId, title: title.trim(), position, cover_url: coverUrl ?? "", status: "unread" })
+    .insert({ series_id: seriesId, title: title.trim(), position, cover_url: coverUrl ?? "", status: resolvedStatus })
     .select()
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

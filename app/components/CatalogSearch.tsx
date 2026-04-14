@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useRef } from "react";
 import { searchCatalog, type CatalogEntry } from "@/lib/catalog";
+import { STATUS_SYMBOL, STATUS_COLOR } from "@/lib/statusMeta";
+import type { BookEntry } from "@/types";
 
 interface Props {
   id?: string;
@@ -13,6 +15,8 @@ interface Props {
   disabled?: boolean;
   className?: string;
   showReleaseDate?: boolean;
+  /** User's shelved books — shown first with status badges */
+  libraryEntries?: BookEntry[];
 }
 
 export function CatalogSearch({
@@ -25,6 +29,7 @@ export function CatalogSearch({
   disabled = false,
   className = "",
   showReleaseDate = false,
+  libraryEntries,
 }: Props) {
   const [suggestions, setSuggestions] = useState<CatalogEntry[]>([]);
   const [idx, setIdx] = useState(-1);
@@ -35,24 +40,49 @@ export function CatalogSearch({
     onChange(v);
     setIdx(-1);
     setSearchError(false);
-    if (timer.current) {
-      clearTimeout(timer.current);
-    }
-    if (!v.trim()) {
-      setSuggestions([]);
-      return;
-    }
+    if (timer.current) clearTimeout(timer.current);
+    if (!v.trim()) { setSuggestions([]); return; }
+
     timer.current = setTimeout(async () => {
       try {
-        const results = await searchCatalog(v);
-        setSuggestions(results);
+        // Library matches first
+        const q = v.toLowerCase();
+        const libMatches: CatalogEntry[] = (libraryEntries ?? [])
+          .filter((b) =>
+            b.title.toLowerCase().includes(q) ||
+            (b.author ?? "").toLowerCase().includes(q)
+          )
+          .map((b) => ({
+            id: b.id,
+            title: b.title,
+            author: b.author,
+            releaseDate: "",
+            genres: b.genres,
+            coverUrl: b.coverUrl,
+            isbn: b.isbn,
+            pageCount: b.pageCount,
+            status: b.status,
+            bookId: b.id,
+          }));
+
+        // Remote catalog, deduped against library matches
+        const remote = await searchCatalog(v);
+        const deduped = remote.filter(
+          (r) => !libMatches.some((lm) => {
+            if (r.isbn && lm.isbn && r.isbn === lm.isbn) return true;
+            return r.title.toLowerCase() === lm.title.toLowerCase() &&
+              r.author.toLowerCase() === (lm.author ?? "").toLowerCase();
+          })
+        );
+
+        setSuggestions([...libMatches, ...deduped]);
       } catch (err) {
         console.error("[CatalogSearch] error:", err);
         setSearchError(true);
         setSuggestions([]);
       }
     }, 250);
-  }, [onChange]);
+  }, [onChange, libraryEntries]);
 
   const commit = (entry?: CatalogEntry) => {
     if (entry) { onSelect(entry); setSuggestions([]); setIdx(-1); }
@@ -89,13 +119,18 @@ export function CatalogSearch({
         <div className="absolute left-0 right-0 top-full mt-1.5 bg-[var(--bg-surface)] border border-[var(--border-light)] rounded-xl shadow-md overflow-hidden z-10">
           {suggestions.map((s, i) => (
             <button
-              key={s.id}
+              key={`${s.id}-${i}`}
               onMouseDown={() => commit(s)}
-              className={`w-full text-left px-4 py-2.5 flex items-baseline gap-3 transition-colors ${i === idx ? "bg-[var(--bg-subtle)]" : "hover:bg-[var(--bg-faintest)]"}`}
+              className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${i === idx ? "bg-[var(--bg-subtle)]" : "hover:bg-[var(--bg-faintest)]"}`}
             >
-              <span className="text-sm text-[var(--fg)] truncate">{s.title}</span>
-              {s.author && <span className="text-xs text-[var(--fg-muted)] shrink-0">{s.author}</span>}
+              <span className="text-sm text-[var(--fg)] truncate flex-1">{s.title}</span>
+              {s.author && <span className="text-xs text-[var(--fg-muted)] shrink-0 hidden sm:block">{s.author}</span>}
               {showReleaseDate && s.releaseDate && <span className="text-xs text-[var(--fg-faint)] shrink-0 ml-auto">{s.releaseDate}</span>}
+              {s.status && (
+                <span className={`text-[10px] shrink-0 font-medium ${STATUS_COLOR[s.status] ?? "text-[var(--fg-faint)]"}`}>
+                  {STATUS_SYMBOL[s.status] ?? "·"} <span className="hidden sm:inline">{s.status === "want-to-read" ? "tbr" : s.status}</span>
+                </span>
+              )}
             </button>
           ))}
         </div>

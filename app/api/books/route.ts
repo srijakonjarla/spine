@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createServerClient } from "@/lib/supabase-server";
+import { syncBookSeries } from "@/lib/seriesSync.server";
 
 export async function GET(req: NextRequest) {
   const supabase = createServerClient(req);
@@ -67,5 +68,17 @@ export async function POST(req: NextRequest) {
   });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Fire series sync after the response is sent — doesn't block the client
+  after(async () => {
+    await syncBookSeries(supabase, user.id, {
+      id: entry.id,
+      title: entry.title ?? "",
+      author: entry.author ?? "",
+      status: entry.status,
+      coverUrl: entry.coverUrl ?? "",
+    });
+  });
+
   return NextResponse.json({ ok: true }, { status: 201 });
 }

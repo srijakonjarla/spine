@@ -105,6 +105,7 @@ export default function Home() {
     }
     load().catch(console.error);
     hasImportedGoodreads().then(setGoodreadsImported);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   const name = user ? getDisplayName(user) : "";
@@ -134,7 +135,7 @@ export default function Home() {
 
   return (
     <div className="page">
-      <div className="page-content max-w-[44rem]">
+      <div className="page-content">
 
         {/* Greeting */}
         <div className="mb-8">

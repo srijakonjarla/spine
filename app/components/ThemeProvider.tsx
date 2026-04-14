@@ -13,21 +13,24 @@ export function useTheme() {
   return useContext(ThemeContext);
 }
 
+function resolveTheme(): Theme {
+  const current = document.documentElement.getAttribute("data-theme");
+  if (current === "dark" || current === "light") return current;
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const resolved: Theme = prefersDark ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", resolved);
+  return resolved;
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // Start with undefined — only resolve after mount to avoid SSR mismatch
   const [theme, setTheme] = useState<Theme | undefined>(undefined);
 
   useEffect(() => {
-    // Read what the anti-FOUC script already set on <html>
-    const current = document.documentElement.getAttribute("data-theme");
-    if (current === "dark" || current === "light") {
-      setTheme(current);
-    } else {
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const resolved: Theme = prefersDark ? "dark" : "light";
-      document.documentElement.setAttribute("data-theme", resolved);
-      setTheme(resolved);
-    }
+    // Syncing React state with the DOM theme set by the anti-FOUC script.
+    // Synchronous setState on mount is intentional here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTheme(resolveTheme());
   }, []);
 
   const toggle = () => {

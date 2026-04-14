@@ -45,7 +45,7 @@ export default function ListsPage() {
 
   return (
     <div className="page">
-      <div className="mx-auto px-6 py-12 max-w-[56rem]">
+      <div className="mx-auto px-6 py-12">
 
         <div className="flex items-baseline justify-between mb-8">
           <div>
@@ -78,7 +78,7 @@ export default function ListsPage() {
           >
             <span className="text-[28px] text-[var(--fg-faint)]">＋</span>
             <span className="font-[family-name:var(--font-caveat)] text-[14px] text-[var(--fg-muted)]">create a new list</span>
-            <span className="text-[11px] text-[var(--fg-faint)] max-w-[140px] text-center leading-relaxed">books, ideas, bullet points — anything</span>
+            <span className="text-[11px] text-[var(--fg-faint)] text-center leading-relaxed">books, ideas, bullet points — anything</span>
           </button>
         </div>
       </div>

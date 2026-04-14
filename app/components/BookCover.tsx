@@ -27,6 +27,7 @@ export function BookCover({ coverUrl, title, author, className = "w-16" }: BookC
 
   if (coverUrl) {
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={coverUrl}
         alt={title}
@@ -71,6 +72,7 @@ export function BookCoverThumb({
 
   if (coverUrl) {
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={coverUrl}
         alt={title}

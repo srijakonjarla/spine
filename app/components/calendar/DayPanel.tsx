@@ -272,7 +272,7 @@ export function DayPanel({
             <div className="space-y-4">
               {localQuotes.map((q) => (
                 <div key={q.id} className="pl-3 border-l-2 border-l-[var(--lavender)]">
-                  <p className="text-[13px] italic leading-relaxed text-[var(--fg)] font-serif">"{q.text}"</p>
+                  <p className="text-[13px] italic leading-relaxed text-[var(--fg)] font-serif">&ldquo;{q.text}&rdquo;</p>
                   {(q.bookTitle || q.pageNumber) && (
                     <p className="text-[10px] mt-1.5 text-[var(--fg-faint)]">
                       {q.bookTitle}{q.pageNumber ? ` · p. ${q.pageNumber}` : ""}

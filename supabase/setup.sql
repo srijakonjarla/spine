@@ -6,8 +6,10 @@
 -- TABLES
 -- ============================================================
 
--- Personal book library. Metadata (title, author, genres) is stored directly
--- on the row — no shared catalog table. Google Books is queried at write time.
+-- Personal book library. Metadata (title, author, genres, cover) is stored directly
+-- on the row — no shared catalog table. Hardcover API is queried at write time
+-- (Google Books as fallback). cover_url, isbn, page_count are enriched via the
+-- /api/admin/backfill route after import.
 create table if not exists books (
   id            uuid        primary key default gen_random_uuid(),
   user_id       uuid        not null references auth.users(id) on delete cascade,
@@ -15,6 +17,9 @@ create table if not exists books (
   author        text        not null default '',
   release_date  text        not null default '',
   genres        text[]      not null default '{}',
+  cover_url     text        not null default '',
+  isbn          text        not null default '',
+  page_count    integer,
   status        text        not null default 'want-to-read',
   date_started  date,
   date_finished date,
@@ -39,6 +44,7 @@ create table if not exists thoughts (
 create table if not exists book_reads (
   id            uuid        primary key default gen_random_uuid(),
   book_id       uuid        not null references books(id) on delete cascade,
+  user_id       uuid        references auth.users(id) on delete cascade,
   status        text        not null default 'finished',
   date_started  date,
   date_finished date,

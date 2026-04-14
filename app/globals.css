@@ -165,6 +165,19 @@
   --bg-muted-tag: rgba(255, 255, 255, 0.07);
   --bg-selected:  rgba(255, 255, 255, 0.10);
 
+  /* Plum-tinted overlays → white-tinted in dark mode */
+  --bg-plum-trace:  rgba(255, 255, 255, 0.03);
+  --bg-plum-soft:   rgba(255, 255, 255, 0.04);
+  --bg-plum-mid:    rgba(255, 255, 255, 0.06);
+  --bg-nav-hover:   rgba(255, 255, 255, 0.06);
+
+  /* Stars — brighter filled, dimmer empty */
+  --star-filled: #E8C468;
+  --star-empty:  rgba(237, 232, 223, 0.20);
+
+  /* Auth loading bg */
+  --auth-loading-bg: #1C1612;
+
   --background: var(--bg-page);
   --foreground: var(--fg);
 }
@@ -254,6 +267,38 @@ h1, h2, h3 {
 /* Animate pulse skeletons */
 [data-theme="dark"] .bg-stone-200 { background: rgba(255,255,255,0.1); }
 
+/* Borders — extra weights */
+[data-theme="dark"] .border-stone-300 { border-color: rgba(255,255,255,0.12); }
+
+/* bg-stone-900 used as primary button (save, submit, etc.) */
+[data-theme="dark"] .bg-stone-900,
+[data-theme="dark"] .hover\:bg-stone-700:hover { background: rgba(237,232,223,0.12) !important; }
+[data-theme="dark"] .bg-stone-900.text-white,
+[data-theme="dark"] .bg-stone-700.text-white { color: var(--fg) !important; }
+
+/* Amber status text */
+[data-theme="dark"] .text-amber-700 { color: var(--terra); }
+
+/* Forms — bg-white textareas / inputs */
+[data-theme="dark"] .bg-white.border,
+[data-theme="dark"] .bg-white.focus\:ring-stone-200 { background: var(--bg-surface) !important; color: var(--fg); border-color: var(--border) !important; }
+[data-theme="dark"] .focus\:ring-stone-200:focus { --tw-ring-color: var(--border); }
+
+/* Profile / preview surface */
+[data-theme="dark"] .bg-stone-50 { background: rgba(255,255,255,0.04) !important; }
+
+/* Hover borders */
+[data-theme="dark"] .hover\:border-stone-400:hover,
+[data-theme="dark"] .hover\:border-stone-500:hover,
+[data-theme="dark"] .hover\:border-stone-600:hover { border-color: var(--fg-muted); }
+
+/* Focus borders */
+[data-theme="dark"] .focus\:border-stone-500:focus,
+[data-theme="dark"] .focus\:border-stone-600:focus { border-color: var(--fg-muted); }
+
+/* Placeholder text */
+[data-theme="dark"] .placeholder\:text-stone-300::placeholder { color: var(--fg-faint); }
+
 /* Catalogue search dropdown */
 [data-theme="dark"] .bg-\[rgba\(45\2c27\2c46\2c0\.05\)\],
 [data-theme="dark"] .hover\:bg-\[rgba\(45\2c27\2c46\2c0\.04\)\]:hover {
@@ -271,7 +316,7 @@ h1, h2, h3 {
   }
 
   .page-content {
-    max-width: 48rem;
+    /* max-width: 48rem; */
     margin: 0 auto;
     padding: 3rem 1.5rem;
   }

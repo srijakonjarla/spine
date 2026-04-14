@@ -8,7 +8,7 @@ An online reading bullet journal. Log books, write reflections, track reading ha
 - **Database:** Supabase (Postgres + Auth + RLS)
 - **Styling:** Tailwind CSS v4
 - **Language:** TypeScript
-- **Book metadata:** Google Books API
+- **Book metadata:** Hardcover API (primary) + Google Books API (fallback)
 
 ## Features
 
@@ -18,11 +18,12 @@ An online reading bullet journal. Log books, write reflections, track reading ha
 - **Habit tracker** — Year grid of reading days with inline journal entries
 - **Quote collection** — All saved quotes across books, per year
 - **Reading goals** — Annual auto-tracked goal + custom goals with manually assigned books
-- **Series tracker** — Track progress through multi-book series
+- **Series tracker** — Track progress through multi-book series; auto-populated from Hardcover when books are added or marked read
 - **Recommendations** — Log books recommended to/by you with context
 - **Custom lists** — Flexible lists (anticipated reads, book club, favorites, etc.)
 - **Stats** — Year-in-review with genre breakdown, mood cloud, pace chart, top books
-- **Goodreads import** — Import reading history from a Goodreads CSV export
+- **Goodreads import** — Import reading history from a Goodreads CSV export; enriched with Hardcover metadata (cover, ISBN, page count, genres) via batched ISBN lookup
+- **Library enrichment** — Backfill cover art, ISBNs, page counts, and genres for existing books from Hardcover
 - **Dark mode** — Warm lamplight dark theme
 
 ## Routes
@@ -42,8 +43,18 @@ An online reading bullet journal. Log books, write reflections, track reading ha
 /[year]/stats              Year-in-review stats
 /[year]/books              Reading log by year
 /book/[id]                 Individual book entry
-/import                    Goodreads CSV import
+/profile                   Account settings, Goodreads import, library enrichment
 ```
+
+### Admin API routes
+
+| Route | Description |
+|-------|-------------|
+| `POST /api/admin/import-goodreads` | Start a server-side Goodreads CSV import (runs via `after()`, navigable away) |
+| `GET  /api/admin/import-goodreads` | Poll import progress from `user_metadata` |
+| `POST /api/admin/backfill` | Enrich all library books with Hardcover metadata (cover, ISBN, pages, genres) |
+| `GET  /api/admin/backfill` | Count books still missing cover/page count/ISBN |
+| `POST /api/admin/sync-series` | Bulk-populate series tracker from Hardcover for all finished/reading books |
 
 ## Setup
 
@@ -66,8 +77,11 @@ Create `.env.local`:
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-GOOGLE_BOOKS_API_KEY=your-google-books-api-key
+HARDCOVER_API_TOKEN=your-hardcover-bearer-token   # required for book search & enrichment
+GOOGLE_BOOKS_API_KEY=your-google-books-api-key    # optional fallback if Hardcover misses
 ```
+
+`HARDCOVER_API_TOKEN` is a personal Bearer token from [hardcover.app](https://hardcover.app). Without it, catalog search falls back to Google Books only and library enrichment is disabled.
 
 ### 4. Run
 

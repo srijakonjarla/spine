@@ -17,10 +17,9 @@ import { BookmarkButton } from "@/components/BookmarkButton";
 import { BookCover } from "@/components/BookCover";
 import { StarDisplay } from "@/components/StarDisplay";
 import { QuoteCard } from "@/components/QuoteCard";
-import { MoodChip } from "@/components/MoodChip";
 import { EmptyState } from "@/components/EmptyState";
 import { usePreviousRoute } from "@/components/NavigationProvider";
-import type { BookEntry, BookRead, ReadingStatus, Thought, Quote } from "@/types";
+import type { BookEntry, ReadingStatus, Thought, Quote } from "@/types";
 import { localDateStr } from "@/lib/dates";
 
 const MOOD_TAGS = [

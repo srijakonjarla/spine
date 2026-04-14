@@ -53,11 +53,11 @@ function MiniMonthCal({
   return (
     <Link
       href={`/${year}/${MONTH_ABBRS[monthIndex]}`}
-      className={`block rounded-xl p-3 transition-opacity hover:opacity-80 bg-[var(--bg-surface)] ${
+      className={`flex flex-col rounded-xl p-3 transition-opacity hover:opacity-80 bg-[var(--bg-surface)] ${
         isThisMonth
           ? "border-[1.5px] border-[var(--border-terra-soft)]"
           : "border border-[var(--border-light)]"
-      } ${isFutureMonth ? "opacity-[0.45]" : ""}`}
+      } ${isFutureMonth ? "opacity-[0.45]" : "aspect-4/3"}`}
     >
       <div className="flex items-baseline justify-between mb-2">
         <p className="text-[11px] font-semibold text-[var(--fg-muted)]">
@@ -69,14 +69,14 @@ function MiniMonthCal({
           </p>
         )}
         {isFutureMonth && (
-          <p className="text-[9px] font-[family-name:var(--font-caveat)] text-[var(--fg-faint)]">
+          <p className="text-md font-[family-name:var(--font-caveat)] text-[var(--fg-faint)]">
             not yet written
           </p>
         )}
       </div>
 
       {isFutureMonth ? null : (
-        <div className="grid grid-cols-7 gap-[2px]">
+        <div className="flex-1 grid grid-cols-7 gap-[2px] [grid-auto-rows:1fr]">
           {cells.map((dateStr, i) => {
             if (!dateStr) return <div key={i} />;
             const isFuture = isCurrentYear && dateStr > todayStr;
@@ -94,7 +94,7 @@ function MiniMonthCal({
             return (
               <div
                 key={i}
-                className={`rounded-[2px] h-[5px] ${isFuture ? "opacity-40" : ""} ${bgClass}`}
+                className={`rounded-[2px] ${isFuture ? "opacity-40" : ""} ${bgClass}`}
               />
             );
           })}
@@ -250,14 +250,14 @@ export default function YearPage() {
         </div>
       </div>
 
-      <div className="page-content max-w-[56rem]">
+      <div className="page-content">
 
         {/* 12 mini month calendars */}
         <div className="mb-12">
           <p className="font-[family-name:var(--font-playfair)] text-[17px] italic mb-5 text-[var(--fg-heading)]">
             {year} at a glance
           </p>
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-4 gap-3">
             {MONTH_NAMES.map((_, i) => (
               <MiniMonthCal
                 key={i}

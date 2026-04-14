@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createServerClient } from "@/lib/supabase-server";
 import { autoLogToday } from "@/lib/autoLog";
+import { syncBookSeries } from "@/lib/seriesSync.server";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = createServerClient(req);
@@ -49,6 +50,26 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const isReadingActivity = Object.keys(patch).some((k) => READING_ACTIVITY_FIELDS.has(k));
   if (isReadingActivity) await autoLogToday(supabase, user.id);
+
+  // When status changes to reading/finished, sync series membership
+  if ("status" in patch && ["reading", "finished"].includes(patch.status)) {
+    after(async () => {
+      const { data: book } = await supabase
+        .from("books")
+        .select("id, title, author, status, cover_url")
+        .eq("id", id)
+        .single();
+      if (book) {
+        await syncBookSeries(supabase, user.id, {
+          id: book.id,
+          title: book.title,
+          author: book.author,
+          status: book.status,
+          coverUrl: book.cover_url ?? "",
+        });
+      }
+    });
+  }
 
   return NextResponse.json({ ok: true });
 }

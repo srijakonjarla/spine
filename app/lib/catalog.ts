@@ -7,6 +7,10 @@ export interface CatalogEntry {
   coverUrl: string;
   isbn: string;
   pageCount: number | null;
+  /** Set when this result comes from the user's own library */
+  status?: string;
+  /** The library book id, if this result is from the user's library */
+  bookId?: string;
 }
 
 interface BookRow {

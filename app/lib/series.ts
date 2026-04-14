@@ -66,14 +66,21 @@ export async function createSeries(name: string, author: string): Promise<Series
   return mapSeries(await res.json());
 }
 
+export async function updateSeries(id: string, patch: { name?: string; author?: string }): Promise<void> {
+  await apiFetch(`/api/series/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
 export async function deleteSeries(id: string): Promise<void> {
   await apiFetch(`/api/series/${id}`, { method: "DELETE" });
 }
 
-export async function addSeriesBook(seriesId: string, title: string, position: number, coverUrl = ""): Promise<SeriesBook> {
+export async function addSeriesBook(seriesId: string, title: string, position: number, coverUrl = "", status?: SeriesBook["status"]): Promise<SeriesBook> {
   const res = await apiFetch(`/api/series/${seriesId}/books`, {
     method: "POST",
-    body: JSON.stringify({ title, position, coverUrl }),
+    body: JSON.stringify({ title, position, coverUrl, ...(status ? { status } : {}) }),
   });
   const b = await res.json();
   return { id: b.id, title: b.title, position: b.position, status: b.status, bookId: b.book_id, coverUrl: b.cover_url ?? "" };

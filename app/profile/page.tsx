@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { signOut, getDisplayName } from "@/lib/auth";
 import { useTheme } from "@/components/ThemeProvider";
 import { parseGoodreadsCSV, type GoodreadsPreview } from "@/lib/goodreads";
-import { lookupBook } from "@/lib/catalog";
+import { apiFetch } from "@/lib/api";
 import type { User } from "@supabase/supabase-js";
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
@@ -20,9 +20,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 // ─── Goodreads import (inlined) ───────────────────────────────────────────────
-type ImportState = "idle" | "preview" | "importing" | "done" | "error";
-
-const BATCH = 5;
 
 const STATUS_LABEL: Record<string, string> = {
   reading: "reading",
@@ -31,18 +28,52 @@ const STATUS_LABEL: Record<string, string> = {
   "did-not-finish": "did not finish",
 };
 
-function GoodreadsImport({ userId }: { userId: string }) {
-  const [importState, setImportState] = useState<ImportState>("idle");
+function GoodreadsImport() {
+  const [state, setState] = useState<"idle" | "preview" | "running" | "done" | "error">("idle");
+  const [csvText, setCsvText] = useState("");
   const [previews, setPreviews] = useState<GoodreadsPreview[]>([]);
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState<{ processed: number; total: number } | null>(null);
   const [error, setError] = useState("");
   const [alreadyImported, setAlreadyImported] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopPolling = () => {
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+  };
+
+  const startPolling = () => {
+    stopPolling();
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await apiFetch("/api/admin/import-goodreads");
+        const data = await res.json();
+        setProgress({ processed: data.processed ?? 0, total: data.total ?? 0 });
+        if (data.status === "done") {
+          stopPolling();
+          setState("done");
+          setAlreadyImported(true);
+        }
+      } catch { /* ignore */ }
+    }, 10_000);
+  };
 
   useEffect(() => {
+    // Read import state directly from Supabase auth — no extra API call needed
     supabase.auth.getUser().then(({ data }) => {
-      setAlreadyImported(data.user?.user_metadata?.goodreads_imported === true);
+      const meta = data.user?.user_metadata;
+      const imp = meta?.goodreads_import;
+      if (imp?.status === "running") {
+        // Resume polling for an import started in a previous session
+        setState("running");
+        setProgress({ processed: imp.processed ?? 0, total: imp.total ?? 0 });
+        startPolling();
+      } else if (meta?.goodreads_imported === true) {
+        setAlreadyImported(true);
+      }
     });
+    return () => stopPolling();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,123 +83,40 @@ function GoodreadsImport({ userId }: { userId: string }) {
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
-        const parsed = parseGoodreadsCSV(ev.target?.result as string);
+        const text = ev.target?.result as string;
+        const parsed = parseGoodreadsCSV(text);
         if (!parsed.length) { setError("No books found. Make sure this is a Goodreads export CSV."); return; }
+        setCsvText(text);
         setPreviews(parsed);
-        setImportState("preview");
+        setState("preview");
       } catch { setError("Failed to parse CSV. Please check the file format."); }
     };
     reader.readAsText(file);
   };
 
-  async function processEntry(
-    entry: {
-      title: string; author: string; genres: string[]; status: string;
-      dateStarted: string; dateFinished: string; dateShelved: string;
-      rating: number; feeling: string; createdAt: string; updatedAt: string;
-    },
-    isbn: string,
-  ) {
-    // Use ISBN for Google Books lookup when available — far more accurate than title search
-    const googleBook = isbn
-      ? await lookupBook(isbn)
-      : await lookupBook(entry.title, entry.author);
-
-    const genres = googleBook?.genres?.length
-      ? Array.from(new Set([...entry.genres, ...googleBook.genres]))
-      : entry.genres;
-    const releaseDate = googleBook?.releaseDate ?? "";
-    const author = entry.author || googleBook?.author || "";
-    const coverUrl = googleBook?.coverUrl ?? "";
-    const resolvedIsbn = isbn || googleBook?.isbn || "";
-    const pageCount = googleBook?.pageCount ?? null;
-
-    const { data: book } = await supabase
-      .from("books")
-      .select("id, status, date_finished, date_shelved, genres, release_date, cover_url, isbn, book_reads(id, status, date_finished, date_shelved)")
-      .eq("user_id", userId)
-      .ilike("title", entry.title)
-      .ilike("author", author || "%")
-      .maybeSingle();
-
-    if (!book) {
-      await supabase.from("books").insert({
-        id: crypto.randomUUID(), user_id: userId,
-        title: entry.title, author, release_date: releaseDate, genres,
-        cover_url: coverUrl, isbn: resolvedIsbn, page_count: pageCount,
-        status: entry.status,
-        date_started: entry.dateStarted || null,
-        date_finished: entry.dateFinished || null,
-        date_shelved: entry.dateShelved || null,
-        rating: entry.rating, feeling: entry.feeling, bookmarked: false,
-        created_at: entry.createdAt, updated_at: entry.updatedAt,
-      });
-      return;
-    }
-
-    // Patch existing book with enriched metadata if Google Books had better data
-    const mergedGenres = Array.from(new Set([...(book.genres ?? []), ...genres]));
-    const needsPatch =
-      mergedGenres.length > (book.genres ?? []).length ||
-      (!book.release_date && releaseDate) ||
-      (!book.cover_url && coverUrl) ||
-      (!book.isbn && resolvedIsbn);
-    if (needsPatch) {
-      await supabase.from("books").update({
-        genres: mergedGenres,
-        ...(releaseDate && !book.release_date ? { release_date: releaseDate } : {}),
-        ...(coverUrl && !book.cover_url ? { cover_url: coverUrl } : {}),
-        ...(resolvedIsbn && !book.isbn ? { isbn: resolvedIsbn } : {}),
-        ...(pageCount ? { page_count: pageCount } : {}),
-      }).eq("id", book.id);
-    }
-
-    if (entry.status === "finished" && entry.dateFinished !== book.date_finished) {
-      const reads = (book.book_reads ?? []) as { status: string; date_finished: string | null }[];
-      if (!reads.some((r) => r.status === "finished" && r.date_finished === entry.dateFinished)) {
-        await supabase.from("book_reads").insert({
-          book_id: book.id, user_id: userId, status: entry.status,
-          date_started: entry.dateStarted || null, date_finished: entry.dateFinished || null,
-          date_shelved: null, rating: entry.rating, feeling: entry.feeling,
-          created_at: entry.createdAt, updated_at: entry.updatedAt,
-        });
-      }
-    } else if (entry.status === "did-not-finish" && entry.dateShelved !== book.date_shelved) {
-      const reads = (book.book_reads ?? []) as { status: string; date_shelved: string | null }[];
-      if (!reads.some((r) => r.status === "did-not-finish" && r.date_shelved === entry.dateShelved)) {
-        await supabase.from("book_reads").insert({
-          book_id: book.id, user_id: userId, status: entry.status,
-          date_started: entry.dateStarted || null, date_finished: null,
-          date_shelved: entry.dateShelved || null, rating: entry.rating, feeling: entry.feeling,
-          created_at: entry.createdAt, updated_at: entry.updatedAt,
-        });
-      }
-    }
-  }
-
   const handleImport = async () => {
-    setImportState("importing");
-    setProgress(0);
     try {
-      for (let i = 0; i < previews.length; i += BATCH) {
-        const batch = previews.slice(i, i + BATCH);
-        await Promise.allSettled(batch.map(({ entry, isbn }) => processEntry(entry, isbn)));
-        setProgress(i + batch.length);
-        if (i + BATCH < previews.length) await new Promise((r) => setTimeout(r, 300));
-      }
-      await supabase.auth.updateUser({ data: { goodreads_imported: true } });
-      setAlreadyImported(true);
-      setImportState("done");
+      setState("running");
+      const res = await apiFetch("/api/admin/import-goodreads", {
+        method: "POST",
+        body: JSON.stringify({ csv: csvText }),
+      });
+      const { total } = await res.json();
+      setProgress({ processed: 0, total });
+      startPolling();
     } catch (err) {
-      setImportState("error");
       setError(String(err));
+      setState("error");
     }
   };
 
   const reset = () => {
-    setImportState("idle");
+    stopPolling();
+    setState("idle");
     setPreviews([]);
+    setCsvText("");
     setError("");
+    setProgress(null);
     if (fileRef.current) fileRef.current.value = "";
   };
 
@@ -177,87 +125,271 @@ function GoodreadsImport({ userId }: { userId: string }) {
   const readingCount  = previews.filter((p) => p.entry.status === "reading").length;
   const wantCount     = previews.filter((p) => p.entry.status === "want-to-read").length;
 
-  if (alreadyImported && importState !== "idle") {
-    // allow re-import after done
+  if (state === "running") {
+    const pct = progress?.total ? Math.round((progress.processed / progress.total) * 100) : 0;
+    return (
+      <div className="space-y-3 max-w-sm">
+        <p className="text-xs text-[var(--fg-muted)] animate-pulse">
+          importing in the background — you can navigate away
+        </p>
+        {progress && (
+          <>
+            <p className="text-xs text-[var(--fg-faint)]">{progress.processed} / {progress.total} books · {pct}%</p>
+            <div className="w-full h-0.5 bg-[var(--border-light)] rounded-full overflow-hidden">
+              <div style={{ width: `${pct}%` }} className="h-full bg-[var(--sage)] transition-all duration-500" />
+            </div>
+          </>
+        )}
+      </div>
+    );
   }
 
-  if (importState === "done") {
+  if (state === "done") {
     return (
       <div className="space-y-2">
-        <p className="text-sm text-stone-700">{previews.length} books imported.</p>
-        <button onClick={reset} className="text-xs text-stone-400 hover:text-stone-700 transition-colors">
+        <p className="text-xs text-sage">{progress?.total ?? previews.length} books imported.</p>
+        <button onClick={reset} className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors">
           import again
         </button>
       </div>
     );
   }
 
-  if (importState === "importing") {
-    return (
-      <div className="space-y-2 max-w-sm">
-        <p className="text-sm text-stone-500">Importing... {progress} / {previews.length}</p>
-        <div className="w-full h-0.5 bg-stone-100 rounded-full overflow-hidden">
-          <div
-            style={{ width: `${previews.length ? Math.round((progress / previews.length) * 100) : 0}%` }}
-            className="h-full bg-stone-400 transition-all duration-300"
-          />
-        </div>
-      </div>
-    );
-  }
-
-  if (importState === "error") {
+  if (state === "error") {
     return (
       <div className="space-y-2">
         <p className="text-xs text-red-400">{error || "Something went wrong."}</p>
-        <button onClick={reset} className="text-xs text-stone-400 hover:text-stone-700 transition-colors">try again</button>
+        <button onClick={reset} className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors">try again</button>
       </div>
     );
   }
 
-  if (importState === "preview") {
+  if (state === "preview") {
     return (
       <div className="max-w-sm">
-        <div className="mb-4 p-4 bg-stone-50 border border-stone-200 rounded-lg space-y-1">
-          <p className="text-xs text-stone-500"><span className="text-stone-800 font-semibold">{previews.length}</span> books found</p>
-          <p className="text-xs text-stone-400">· {finishedCount} finished</p>
-          {dnfCount > 0 && <p className="text-xs text-stone-400">· {dnfCount} did not finish</p>}
-          <p className="text-xs text-stone-400">· {readingCount} currently reading</p>
-          <p className="text-xs text-stone-400">· {wantCount} want to read</p>
+        <div className="mb-4 p-4 bg-[var(--bg-surface)] border border-[var(--border-light)] rounded-lg space-y-1">
+          <p className="text-xs text-[var(--fg-muted)]"><span className="font-semibold text-[var(--fg-heading)]">{previews.length}</span> books found</p>
+          <p className="text-xs text-[var(--fg-faint)]">· {finishedCount} finished</p>
+          {dnfCount > 0 && <p className="text-xs text-[var(--fg-faint)]">· {dnfCount} did not finish</p>}
+          <p className="text-xs text-[var(--fg-faint)]">· {readingCount} currently reading</p>
+          <p className="text-xs text-[var(--fg-faint)]">· {wantCount} want to read</p>
         </div>
         <div className="space-y-0.5 mb-6 max-h-60 overflow-y-auto">
           {previews.map(({ entry }) => (
             <div key={entry.id} className="flex items-baseline gap-3 py-0.5">
-              <span className="text-xs text-stone-300">·</span>
-              <span className="text-sm text-stone-700 truncate flex-1">{entry.title}</span>
-              <span className="text-xs text-stone-400 shrink-0">{entry.author}</span>
-              <span className="text-xs text-stone-300 shrink-0">{STATUS_LABEL[entry.status]}</span>
+              <span className="text-xs text-[var(--fg-faint)]">·</span>
+              <span className="text-sm text-[var(--fg)] truncate flex-1">{entry.title}</span>
+              <span className="text-xs text-[var(--fg-muted)] shrink-0">{entry.author}</span>
+              <span className="text-xs text-[var(--fg-faint)] shrink-0">{STATUS_LABEL[entry.status]}</span>
             </div>
           ))}
         </div>
         <div className="flex gap-3">
           <button onClick={handleImport} className="btn-primary">import all</button>
-          <button onClick={reset} className="text-sm text-stone-400 hover:text-stone-700 transition-colors px-4 py-2">cancel</button>
+          <button onClick={reset} className="text-sm text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors px-4 py-2">cancel</button>
         </div>
       </div>
     );
   }
 
-  // idle
   return (
     <div>
-      <p className="text-xs text-stone-400 mb-4">
+      <p className="text-xs text-[var(--fg-faint)] mb-4">
         Export your library from Goodreads (My Books → Export Library) then upload the CSV.
-        {alreadyImported && <span className="text-stone-300 ml-2">· previously imported</span>}
+        Runs in the background — you can navigate away once started.
+        {alreadyImported && <span className="text-[var(--fg-faint)] ml-2">· previously imported</span>}
       </p>
       <input ref={fileRef} type="file" accept=".csv" onChange={handleFile} className="hidden" />
       <button
         onClick={() => fileRef.current?.click()}
-        className="text-sm border border-stone-300 rounded-lg px-4 py-2.5 text-stone-600 hover:border-stone-500 hover:text-stone-800 transition-colors"
+        className="text-sm border border-[var(--border-light)] rounded-lg px-4 py-2.5 text-[var(--fg-muted)] hover:border-[var(--fg-muted)] hover:text-[var(--fg)] transition-colors"
       >
-        Choose CSV file
+        choose CSV file
       </button>
       {error && <p className="text-xs text-red-400 mt-3">{error}</p>}
+    </div>
+  );
+}
+
+// ─── Enrich library ───────────────────────────────────────────────────────────
+function EnrichLibrary() {
+  const [state, setState] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [total, setTotal] = useState<number | null>(null);
+  const [remaining, setRemaining] = useState<number | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopPolling = () => {
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+  };
+
+  const checkProgress = async () => {
+    try {
+      const res = await apiFetch("/api/admin/backfill");
+      const { remaining: rem } = await res.json();
+      setRemaining(rem);
+      if (rem === 0) { stopPolling(); setState("done"); }
+    } catch { /* ignore transient errors */ }
+  };
+
+  const start = async () => {
+    try {
+      setState("running");
+      const res = await apiFetch("/api/admin/backfill", { method: "POST" });
+      const { total: t } = await res.json();
+      setTotal(t);
+      if (t === 0) { setState("done"); return; }
+      // Poll every 15s — server is processing in the background
+      pollRef.current = setInterval(checkProgress, 15_000);
+    } catch {
+      setState("error");
+    }
+  };
+
+  // Clean up poll on unmount
+  useEffect(() => () => stopPolling(), []);
+
+  return (
+    <div>
+      <p className="text-xs text-[var(--fg-faint)] mb-4">
+        Fills in covers, page counts, ISBNs, and genres using Hardcover. Runs in the background — you can navigate away.
+        {remaining !== null && remaining > 0 && (
+          <span className="ml-2 text-[var(--fg-muted)]">· {remaining} books still need enrichment</span>
+        )}
+      </p>
+
+      {state === "idle" && (
+        <button
+          onClick={start}
+          className="text-sm border border-[var(--border-light)] rounded-lg px-4 py-2.5 text-[var(--fg-muted)] hover:border-[var(--fg-muted)] hover:text-[var(--fg)] transition-colors"
+        >
+          enrich library metadata
+        </button>
+      )}
+
+      {state === "running" && (
+        <div className="space-y-2">
+          <p className="text-xs text-[var(--fg-muted)] animate-pulse">
+            enriching{total ? ` ${total} books` : ""}… running in the background
+          </p>
+          <button onClick={checkProgress} className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors">
+            check progress
+          </button>
+        </div>
+      )}
+
+      {state === "done" && (
+        <div className="space-y-2">
+          <p className="text-xs text-[var(--sage)]">
+            {total === 0 ? "All books are already enriched." : `Done — ${total} book${total === 1 ? "" : "s"} enriched.`}
+          </p>
+          <button
+            onClick={() => { setState("idle"); setTotal(null); setRemaining(null); }}
+            className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
+          >
+            run again
+          </button>
+        </div>
+      )}
+
+      {state === "error" && (
+        <div className="space-y-2">
+          <p className="text-xs text-red-400">Something went wrong. Check that HARDCOVER_API_TOKEN is set.</p>
+          <button onClick={() => setState("idle")} className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors">
+            try again
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Sync series ──────────────────────────────────────────────────────────────
+function SyncSeries() {
+  const [state, setState] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [totalSynced, setTotalSynced] = useState(0);
+  const [batchMsg, setBatchMsg] = useState("");
+  const stopRef = useRef(false);
+
+  const run = async () => {
+    stopRef.current = false;
+    setState("running");
+    setTotalSynced(0);
+    let offset = 0;
+    let cumulative = 0;
+
+    try {
+      while (!stopRef.current) {
+        setBatchMsg(`scanning books ${offset + 1}–${offset + 20}…`);
+        const res = await apiFetch("/api/admin/sync-series", {
+          method: "POST",
+          body: JSON.stringify({ offset, limit: 20 }),
+        });
+        const { synced, remaining } = await res.json();
+        cumulative += synced;
+        setTotalSynced(cumulative);
+        if (remaining === 0) break;
+        offset += 20;
+      }
+      setState(stopRef.current ? "idle" : "done");
+    } catch {
+      setState("error");
+    }
+  };
+
+  return (
+    <div>
+      <p className="text-xs text-[var(--fg-faint)] mb-4">
+        Looks up your read and currently-reading books on Hardcover to detect series membership,
+        then auto-populates your series tracker with the correct position and status.
+      </p>
+
+      {state === "idle" && (
+        <button
+          onClick={run}
+          className="text-sm border border-[var(--border-light)] rounded-lg px-4 py-2.5 text-[var(--fg-muted)] hover:border-[var(--fg-muted)] hover:text-[var(--fg)] transition-colors"
+        >
+          sync series from hardcover
+        </button>
+      )}
+
+      {state === "running" && (
+        <div className="space-y-2">
+          <p className="text-xs text-[var(--fg-muted)] animate-pulse">{batchMsg}</p>
+          {totalSynced > 0 && (
+            <p className="text-xs text-sage">{totalSynced} series books added so far</p>
+          )}
+          <button
+            onClick={() => { stopRef.current = true; }}
+            className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
+          >
+            stop
+          </button>
+        </div>
+      )}
+
+      {state === "done" && (
+        <div className="space-y-2">
+          <p className="text-xs text-sage">
+            Done — {totalSynced} series {totalSynced === 1 ? "entry" : "entries"} added to your tracker.
+            {totalSynced === 0 && " No new series found (books may already be tracked or not in Hardcover's series data)."}
+          </p>
+          <button
+            onClick={() => { setState("idle"); setTotalSynced(0); }}
+            className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
+          >
+            run again
+          </button>
+        </div>
+      )}
+
+      {state === "error" && (
+        <div className="space-y-2">
+          <p className="text-xs text-red-400">Something went wrong. Check that HARDCOVER_API_TOKEN is set.</p>
+          <button onClick={() => setState("idle")} className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors">
+            try again
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -290,7 +422,7 @@ export default function ProfilePage() {
     });
   }, []);
 
-  const handleSaveName = async (e: React.FormEvent) => {
+  const handleSaveName = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name.trim()) return;
     setNameSaving(true);
@@ -307,7 +439,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handleChangePassword = async (e: React.FormEvent) => {
+  const handleChangePassword = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setPwError("");
     setPwMsg("");
@@ -434,7 +566,17 @@ export default function ProfilePage() {
 
         {/* ── Goodreads import ── */}
         <Section title="import from goodreads">
-          {user && <GoodreadsImport userId={user.id} />}
+          {user && <GoodreadsImport />}
+        </Section>
+
+        {/* ── Enrich library ── */}
+        <Section title="enrich library metadata">
+          <EnrichLibrary />
+        </Section>
+
+        {/* ── Sync series ── */}
+        <Section title="sync series from hardcover">
+          <SyncSeries />
         </Section>
 
         {/* ── Account ── */}
