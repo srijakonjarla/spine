@@ -172,7 +172,7 @@ function SeriesCard({
               {...itemProps(index, book.id)}
             >
               <span className="cursor-grab active:cursor-grabbing text-[var(--fg-faint)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0 select-none">⠿</span>
-              <span className="text-xs text-[var(--fg-faint)] w-5 shrink-0 font-mono">{book.position}.</span>
+              <span className="text-xs text-[var(--fg-faint)] w-5 shrink-0 font-mono">{index + 1}.</span>
 
               {/* Cover thumbnail */}
               <BookCoverThumb coverUrl={book.coverUrl} title={book.title} />
