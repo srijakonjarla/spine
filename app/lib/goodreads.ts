@@ -1,4 +1,5 @@
 import type { BookEntry } from "@/types";
+import { goodreadsDateToISO as parseGoodreadsDate } from "@/lib/dates";
 
 // Minimal RFC-4180 CSV parser that handles quoted fields with embedded commas/newlines
 function parseCSV(text: string): Record<string, string>[] {
@@ -65,11 +66,6 @@ function parseCSV(text: string): Record<string, string>[] {
   });
 }
 
-function goodreadsDateToISO(d: string): string {
-  // Goodreads format: YYYY/MM/DD
-  if (!d) return "";
-  return d.replace(/\//g, "-");
-}
 
 function mapStatus(shelf: string): BookEntry["status"] {
   if (shelf === "read") return "finished";
@@ -108,8 +104,7 @@ export function parseGoodreadsCSV(text: string): GoodreadsPreview[] {
     const rating = parseInt(row["My Rating"] ?? "0", 10) || 0;
     const shelf = row["Exclusive Shelf"] ?? "to-read";
     const bookshelves = row["Bookshelves"] ?? "";
-    const dateRead = goodreadsDateToISO(row["Date Read"] ?? "");
-    const dateAdded = goodreadsDateToISO(row["Date Added"] ?? "");
+    const dateRead = parseGoodreadsDate(row["Date Read"] ?? "");
     const isDNF = detectDNF(bookshelves);
     const status = isDNF ? "did-not-finish" : mapStatus(shelf);
 
@@ -133,10 +128,11 @@ export function parseGoodreadsCSV(text: string): GoodreadsPreview[] {
       thoughts: [],
       reads: [],
       bookmarked: false,
+      releaseDate: "",
       coverUrl: "",
       isbn: "",
       pageCount: null,
-      createdAt: dateAdded ? `${dateAdded}T00:00:00.000Z` : now,
+      createdAt: now, // use import time; dateAdded is a DATE not a timestamp
       updatedAt: now,
     };
 

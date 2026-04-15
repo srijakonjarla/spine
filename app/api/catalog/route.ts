@@ -34,6 +34,23 @@ const HARDCOVER_SEARCH_QUERY = `
   }
 `;
 
+const HARDCOVER_DEFAULT_EDITIONS_QUERY = `
+  query DefaultEditions($ids: [Int!]!) {
+    books(where: { id: { _in: $ids } }) {
+      id
+      default_physical_edition_id
+      images { url }
+      cached_tags
+      editions {
+        id
+        isbn_13
+        isbn_10
+        image { url }
+      }
+    }
+  }
+`;
+
 const HARDCOVER_ISBN_QUERY = `
   query LookupByISBN($isbn: String!) {
     editions(where: {
@@ -44,12 +61,13 @@ const HARDCOVER_ISBN_QUERY = `
     }, limit: 1) {
       isbn_10
       isbn_13
+      image { url }
       book {
         id
         title
         pages
         release_date
-        image { url }
+        images { url }
         contributions { author { name } }
         cached_tags
       }
@@ -99,10 +117,34 @@ async function lookupHardcoverByIsbn(isbn: string): Promise<BookResult | null> {
     author: (book.contributions ?? []).map((c: { author: { name: string } }) => c.author.name).join(", "),
     release_date: book.release_date ?? "",
     genres: extractHcGenres(book.cached_tags),
-    cover_url: book.image?.url ?? "",
+    cover_url: edition.image?.url || book.images?.[0]?.url || "",
     isbn: edition.isbn_13 || edition.isbn_10 || isbn,
     page_count: book.pages ?? null,
   };
+}
+
+interface BookEnrichment { isbn: string; coverUrl: string; genres: string[] }
+
+async function fetchDefaultEditionData(bookIds: number[]): Promise<Map<number, BookEnrichment>> {
+  if (!bookIds.length) return new Map();
+  const json = await hcPost(HARDCOVER_DEFAULT_EDITIONS_QUERY, { ids: bookIds });
+  const books: {
+    id: number;
+    default_physical_edition_id: number;
+    images?: { url?: string }[];
+    cached_tags?: unknown;
+    editions: { id: number; isbn_13?: string; isbn_10?: string; image?: { url?: string } }[];
+  }[] = json?.data?.books ?? [];
+  const map = new Map<number, BookEnrichment>();
+  for (const book of books) {
+    const edition = book.editions.find((e) => e.id === book.default_physical_edition_id);
+    map.set(book.id, {
+      isbn: edition?.isbn_13 || edition?.isbn_10 || "",
+      coverUrl: edition?.image?.url || book.images?.[0]?.url || "",
+      genres: extractHcGenres(book.cached_tags),
+    });
+  }
+  return map;
 }
 
 async function searchHardcover(query: string): Promise<BookResult[]> {
@@ -113,10 +155,10 @@ async function searchHardcover(query: string): Promise<BookResult[]> {
   const parsed: { hits?: { document: HardcoverDocument }[] } =
     typeof raw === "string" ? JSON.parse(raw) : raw;
 
-  return (parsed?.hits ?? [])
-    .map(({ document: d }, i): BookResult => {
-      const isbn13 = Array.isArray(d.isbn_13) ? d.isbn_13[0] : d.isbn_13 ?? "";
-      const isbn10 = Array.isArray(d.isbn_10) ? d.isbn_10[0] : d.isbn_10 ?? "";
+  const hits = parsed?.hits ?? [];
+  const results = hits
+    .map(({ document: d }, i): BookResult & { _bookId?: number } => {
+      const bookId = d.id !== undefined ? Number(d.id) : undefined;
       return {
         id: `hc-${d.id ?? i}`,
         title: d.title ?? "",
@@ -124,11 +166,27 @@ async function searchHardcover(query: string): Promise<BookResult[]> {
         release_date: d.release_date ?? String(d.release_year ?? ""),
         genres: extractHcGenres(d.cached_tags),
         cover_url: d.cover_image_url ?? "",
-        isbn: isbn13 || isbn10,
+        isbn: "",
         page_count: d.pages ?? null,
+        _bookId: bookId !== undefined && !isNaN(bookId) ? bookId : undefined,
       };
     })
     .filter((b) => b.title);
+
+  // Follow up for reliable ISBN, cover, and genres via default_physical_edition_id
+  const bookIds = results.map((r) => r._bookId).filter((id): id is number => id !== undefined);
+  const enrichMap = await fetchDefaultEditionData(bookIds);
+  console.log(`[catalog] enrichment follow-up: ${enrichMap.size}/${bookIds.length} resolved`);
+
+  return results.map(({ _bookId, ...r }) => {
+    const enrich = _bookId !== undefined ? enrichMap.get(_bookId) : undefined;
+    return {
+      ...r,
+      isbn:      enrich?.isbn      || r.isbn,
+      cover_url: enrich?.coverUrl  || r.cover_url,
+      genres:    enrich?.genres?.length ? enrich.genres : r.genres,
+    };
+  });
 }
 
 // ── Google Books (fallback) ────────────────────────────────────────────────

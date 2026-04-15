@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { createServerClient } from "@/lib/supabase-server";
 import { syncBookSeries } from "@/lib/seriesSync.server";
+import { upsertBookForUser, flattenUserBook } from "@/lib/bookUpsert.server";
 
 export async function GET(req: NextRequest) {
   const supabase = createServerClient(req);
@@ -13,15 +14,15 @@ export async function GET(req: NextRequest) {
   const offset = searchParams.get("offset");
 
   let query = supabase
-    .from("books")
-    .select("*, thoughts(*), book_reads(*)")
+    .from("user_books")
+    .select("*, catalog_books(*), thoughts(*), book_reads(*)")
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
 
   if (year) {
     const y = Number(year);
     const start = `${y}-01-01`;
-    const end = `${y + 1}-01-01`;
+    const end   = `${y + 1}-01-01`;
     query = query.or(
       `and(created_at.gte.${start},created_at.lt.${end}),` +
       `and(date_finished.gte.${start},date_finished.lt.${end}),` +
@@ -33,11 +34,12 @@ export async function GET(req: NextRequest) {
   if (limit)  query = query.limit(Number(limit));
   if (offset) query = query.range(Number(offset), Number(offset) + Number(limit ?? 50) - 1);
 
-  const { data, error, count } = await query;
+  const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  if (limit) return NextResponse.json({ data, total: count });
-  return NextResponse.json(data);
+  const flattened = (data ?? []).map(flattenUserBook);
+  if (limit) return NextResponse.json({ data: flattened, total: flattened.length });
+  return NextResponse.json(flattened);
 }
 
 export async function POST(req: NextRequest) {
@@ -47,38 +49,43 @@ export async function POST(req: NextRequest) {
 
   const { entry } = await req.json();
 
-  const { error } = await supabase.from("books").insert({
-    id: entry.id,
-    user_id: user.id,
-    title: entry.title ?? "",
-    author: entry.author ?? "",
-    release_date: entry.releaseDate ?? "",
-    genres: entry.genres ?? [],
-    cover_url: entry.coverUrl ?? "",
-    isbn: entry.isbn ?? "",
-    page_count: entry.pageCount ?? null,
-    status: entry.status,
-    date_started: entry.dateStarted || null,
-    date_finished: entry.dateFinished || null,
-    date_shelved: entry.dateShelved || null,
-    rating: entry.rating,
-    feeling: entry.feeling,
-    created_at: entry.createdAt,
-    updated_at: entry.updatedAt,
-  });
+  const result = await upsertBookForUser(
+    supabase,
+    user.id,
+    {
+      title:        entry.title        ?? "",
+      author:       entry.author       ?? "",
+      cover_url:    entry.coverUrl     ?? "",
+      isbn:         entry.isbn         ?? "",
+      release_date: entry.releaseDate  ?? "",
+      genres:       entry.genres       ?? [],
+      page_count:   entry.pageCount    ?? null,
+    },
+    {
+      id:            entry.id,
+      status:        entry.status,
+      date_started:  entry.dateStarted  || null,
+      date_finished: entry.dateFinished || null,
+      date_shelved:  entry.dateShelved  || null,
+      rating:        entry.rating       ?? 0,
+      feeling:       entry.feeling      ?? "",
+      bookmarked:    false,
+      created_at:    entry.createdAt,
+      updated_at:    entry.updatedAt,
+    },
+  );
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!result) return NextResponse.json({ error: "failed to create book" }, { status: 500 });
 
-  // Fire series sync after the response is sent — doesn't block the client
   after(async () => {
     await syncBookSeries(supabase, user.id, {
-      id: entry.id,
-      title: entry.title ?? "",
-      author: entry.author ?? "",
-      status: entry.status,
+      id:       result.userBookId,
+      title:    entry.title   ?? "",
+      author:   entry.author  ?? "",
+      status:   entry.status,
       coverUrl: entry.coverUrl ?? "",
     });
   });
 
-  return NextResponse.json({ ok: true }, { status: 201 });
+  return NextResponse.json({ ok: true, id: result.userBookId }, { status: 201 });
 }

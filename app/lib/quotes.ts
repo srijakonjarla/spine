@@ -7,14 +7,15 @@ interface QuoteRow {
   text: string;
   page_number: string;
   created_at: string;
-  books?: { title?: string } | null;
+  user_books?: { title_override: string | null; catalog_books: { title: string } | null } | null;
 }
 
 function mapQuote(row: QuoteRow): Quote {
+  const ub = row.user_books;
   return {
     id: row.id,
     bookId: row.book_id,
-    bookTitle: row.books?.title,
+    bookTitle: ub?.title_override ?? ub?.catalog_books?.title,
     text: row.text,
     pageNumber: row.page_number,
     createdAt: row.created_at,

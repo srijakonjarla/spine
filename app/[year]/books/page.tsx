@@ -8,7 +8,7 @@ import { CatalogSearch } from "@/components/CatalogSearch";
 import { getEntries, createEntry } from "@/lib/db";
 import { type CatalogEntry, lookupBook } from "@/lib/catalog";
 import type { BookEntry } from "@/types";
-import { localDateStr } from "@/lib/dates";
+import { localDateStr, formatDate } from "@/lib/dates";
 
 function effectiveDate(e: BookEntry): string {
   if (e.status === "finished" && e.dateFinished) return e.dateFinished;
@@ -17,15 +17,13 @@ function effectiveDate(e: BookEntry): string {
 }
 
 function monthKey(iso: string) {
-  const d = new Date(iso);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  // DATE strings (YYYY-MM-DD) are safe to slice; timestamps need local conversion
+  const local = iso.length === 10 ? iso : localDateStr(new Date(iso));
+  return local.slice(0, 7);
 }
 
 function monthLabel(key: string) {
-  const [year, month] = key.split("-");
-  return new Date(Number(year), Number(month) - 1).toLocaleDateString("en-US", {
-    month: "long",
-  });
+  return formatDate(`${key}-01`, { month: "long" });
 }
 
 function sectionId(key: string) {
@@ -56,13 +54,13 @@ export default function BooksPage() {
     if (!title || adding) return;
     setAdding(true);
     try {
-      // If user typed without selecting a suggestion, look up Google Books
       const enriched = catalog ?? await lookupBook(title);
       const now = new Date();
       const entry: BookEntry = {
         id: crypto.randomUUID(),
         title: enriched?.title ?? title,
         author: enriched?.author ?? "",
+        releaseDate: enriched?.releaseDate ?? "",
         genres: enriched?.genres ?? [],
         moodTags: [],
         status: "reading",

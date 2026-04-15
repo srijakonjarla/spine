@@ -5,8 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   getList, updateList, deleteList,
-  addListItem, updateListItem, removeListItem,
+  addListItem, updateListItem, removeListItem, reorderListItems,
 } from "@/lib/lists";
+import { useDragReorder } from "@/hooks/useDragReorder";
 import { getEntries } from "@/lib/db";
 import { CatalogSearch } from "@/components/CatalogSearch";
 import { CoverChangeModal } from "@/components/lists/CoverChangeModal";
@@ -63,6 +64,11 @@ export default function ListDetailPage() {
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const itemSaveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const inlineRef = useRef<HTMLInputElement>(null);
+
+  const { draggingId, itemProps } = useDragReorder(list?.items ?? [], (reordered) => {
+    setList((prev) => prev ? { ...prev, items: reordered } : prev);
+    reorderListItems(listId, reordered.map((i) => i.id));
+  });
 
   useEffect(() => {
     getList(listId).then((l) => {
@@ -237,11 +243,13 @@ export default function ListDetailPage() {
               <div
                 className="rounded-xl px-7 py-6 min-h-[280px] bg-[var(--bg-surface)] border border-[var(--border-light)] bg-[size:18px_18px] bg-[radial-gradient(circle,_var(--bg-muted-tag)_1px,_transparent_1px)]"
               >
-                {list.items.map((item: ListItem) => (
+                {list.items.map((item: ListItem, index: number) => (
                   <div
                     key={item.id}
-                    className="group flex gap-3 items-start py-1.5 border-b border-[var(--border-light)] last:border-none"
+                    className={`group flex gap-3 items-start py-1.5 border-b border-[var(--border-light)] last:border-none transition-opacity ${draggingId === item.id ? "opacity-40" : ""}`}
+                    {...itemProps(index, item.id)}
                   >
+                    <span className="cursor-grab active:cursor-grabbing text-[var(--fg-faint)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0 select-none mt-0.5">⠿</span>
                     {isChecklist ? (
                       <button
                         onClick={() => handleToggleCheck(item.id, item.type)}
@@ -310,7 +318,7 @@ export default function ListDetailPage() {
                   if (!itemSearch.trim()) return true;
                   const q = itemSearch.toLowerCase();
                   return item.title.toLowerCase().includes(q) || (item.author ?? "").toLowerCase().includes(q);
-                }).map((item: ListItem) => {
+                }).map((item: ListItem, index: number) => {
                   const matched = libraryEntries.find((b) =>
                     b.title.toLowerCase() === item.title.toLowerCase() &&
                     (!item.author || b.author.toLowerCase() === item.author.toLowerCase())
@@ -319,8 +327,14 @@ export default function ListDetailPage() {
                   return (
                   <div
                     key={item.id}
-                    className="group flex gap-3.5 items-center bg-[var(--bg-surface)] rounded-xl px-4 py-3 border border-[var(--border-light)] hover:translate-x-1 transition-transform"
+                    className={`group flex gap-3.5 items-center bg-[var(--bg-surface)] rounded-xl px-4 py-3 border border-[var(--border-light)] transition-all ${draggingId === item.id ? "opacity-40" : "hover:translate-x-1"}`}
+                    {...(itemSearch.trim() ? {} : itemProps(index, item.id))}
                   >
+                    {/* Drag handle */}
+                    {!itemSearch.trim() && (
+                      <span className="cursor-grab active:cursor-grabbing text-[var(--fg-faint)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0 select-none text-base">⠿</span>
+                    )}
+
                     {/* Colored spine */}
                     <svg
                       viewBox="0 0 38 54"

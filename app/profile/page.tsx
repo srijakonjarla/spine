@@ -8,6 +8,7 @@ import { useTheme } from "@/components/ThemeProvider";
 import { parseGoodreadsCSV, type GoodreadsPreview } from "@/lib/goodreads";
 import { apiFetch } from "@/lib/api";
 import type { User } from "@supabase/supabase-js";
+import { STATUS_LABEL } from "@/lib/statusMeta";
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -20,13 +21,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 // ─── Goodreads import (inlined) ───────────────────────────────────────────────
-
-const STATUS_LABEL: Record<string, string> = {
-  reading: "reading",
-  finished: "read",
-  "want-to-read": "want to read",
-  "did-not-finish": "did not finish",
-};
 
 function GoodreadsImport() {
   const [state, setState] = useState<"idle" | "preview" | "running" | "done" | "error">("idle");

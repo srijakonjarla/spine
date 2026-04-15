@@ -2,8 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-
-const MONTH_ABBRS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+import { MONTH_ABBRS } from "@/lib/constants";
 
 export default function SpreadRedirect() {
   const router = useRouter();

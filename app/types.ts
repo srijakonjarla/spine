@@ -23,6 +23,7 @@ export interface BookEntry {
   id: string;
   title: string;
   author: string;
+  releaseDate: string;
   genres: string[];
   moodTags: string[];
   status: ReadingStatus;

@@ -40,6 +40,7 @@ export default function StatusCatalogPage() {
         id: crypto.randomUUID(),
         title: enriched?.title ?? title,
         author: enriched?.author ?? "",
+        releaseDate: enriched?.releaseDate ?? "",
         genres: enriched?.genres ?? [],
         moodTags: [],
         status: status as BookEntry["status"],

@@ -77,10 +77,16 @@ export async function deleteSeries(id: string): Promise<void> {
   await apiFetch(`/api/series/${id}`, { method: "DELETE" });
 }
 
-export async function addSeriesBook(seriesId: string, title: string, position: number, coverUrl = "", status?: SeriesBook["status"]): Promise<SeriesBook> {
+export async function addSeriesBook(
+  seriesId: string,
+  title: string,
+  position: number,
+  catalog?: { coverUrl?: string; author?: string; isbn?: string; releaseDate?: string; genres?: string[]; pageCount?: number | null; bookId?: string },
+  status?: SeriesBook["status"],
+): Promise<SeriesBook> {
   const res = await apiFetch(`/api/series/${seriesId}/books`, {
     method: "POST",
-    body: JSON.stringify({ title, position, coverUrl, ...(status ? { status } : {}) }),
+    body: JSON.stringify({ title, position, catalog, ...(status ? { status } : {}) }),
   });
   const b = await res.json();
   return { id: b.id, title: b.title, position: b.position, status: b.status, bookId: b.book_id, coverUrl: b.cover_url ?? "" };
@@ -95,4 +101,11 @@ export async function updateSeriesBook(seriesId: string, bookId: string, status:
 
 export async function deleteSeriesBook(seriesId: string, bookId: string): Promise<void> {
   await apiFetch(`/api/series/${seriesId}/books/${bookId}`, { method: "DELETE" });
+}
+
+export async function reorderSeriesBooks(seriesId: string, orderedIds: string[]): Promise<void> {
+  await apiFetch(`/api/series/${seriesId}/books/reorder`, {
+    method: "POST",
+    body: JSON.stringify({ orderedIds }),
+  });
 }

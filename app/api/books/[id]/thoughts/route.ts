@@ -32,7 +32,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { thoughtId } = await req.json();
 
   // Verify the book belongs to this user before removing the thought
-  const { data: book } = await supabase.from("books").select("id").eq("id", bookId).eq("user_id", user.id).single();
+  const { data: book } = await supabase.from("user_books").select("id").eq("id", bookId).eq("user_id", user.id).single();
   if (!book) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const { error } = await supabase.rpc("remove_thought", {

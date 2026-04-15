@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from("quotes")
-    .select("*, books(title)")
+    .select("*, user_books(title_override, catalog_books(title))")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 

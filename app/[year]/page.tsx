@@ -9,10 +9,8 @@ import { getGoals } from "@/lib/goals";
 import { getQuotes } from "@/lib/quotes";
 import { getLists } from "@/lib/lists";
 import type { BookEntry, BookList, ReadingLogEntry, ReadingGoal } from "@/types";
-import { localDateStr } from "@/lib/dates";
-
-const MONTH_ABBRS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
-const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+import { localDateStr, dateMonth } from "@/lib/dates";
+import { MONTH_ABBRS, MONTH_NAMES } from "@/lib/constants";
 
 function pad(n: number) { return String(n).padStart(2, "0"); }
 
@@ -159,7 +157,7 @@ export default function YearPage() {
   const booksByMonth: BookEntry[][] = Array.from({ length: 12 }, () => []);
   finishedBooks.forEach(b => {
     if (b.dateFinished) {
-      const m = new Date(b.dateFinished + "T12:00:00").getMonth();
+      const m = dateMonth(b.dateFinished) ?? 0;
       booksByMonth[m].push(b);
     }
   });

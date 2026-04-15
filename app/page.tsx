@@ -11,10 +11,10 @@ import type { BookEntry, ReadingLogEntry, ReadingGoal } from "@/types";
 import { FireIcon, LeafIcon, StarIcon } from "@phosphor-icons/react";
 import { MoodChip } from "@/components/MoodChip";
 import { ProgressBar } from "@/components/ProgressBar";
-import { localDateStr } from "@/lib/dates";
+import { localDateStr, formatDate, currentStreak } from "@/lib/dates";
+import { MONTH_ABBRS } from "@/lib/constants";
 
 const CURRENT_YEAR = new Date().getFullYear();
-const MONTH_ABBRS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 const CURRENT_MONTH_ABBR = MONTH_ABBRS[new Date().getMonth()];
 
 function greeting() {
@@ -25,9 +25,7 @@ function greeting() {
 }
 
 function formatLogDate(iso: string) {
-  return new Date(iso + "T12:00:00").toLocaleDateString("en-US", {
-    month: "long", day: "numeric", year: "numeric",
-  });
+  return formatDate(iso, { month: "long", day: "numeric", year: "numeric" });
 }
 
 function StreakBars({ loggedDates, days = 14 }: { loggedDates: Set<string>; days?: number }) {
@@ -111,15 +109,7 @@ export default function Home() {
   const name = user ? getDisplayName(user) : "";
   const loggedDates = new Set(logEntries.map((e) => e.logDate));
 
-  const currentStreak = (() => {
-    let streak = 0;
-    const d = new Date();
-    while (loggedDates.has(localDateStr(d))) {
-      streak++;
-      d.setDate(d.getDate() - 1);
-    }
-    return streak;
-  })();
+  const streak = currentStreak(loggedDates);
 
   const recentEntries = [...logEntries]
     .filter((e) => e.note.trim())
@@ -143,8 +133,8 @@ export default function Home() {
             {greeting()}{name ? `, ${name}` : ""}.
           </p>
           <p className="font-[family-name:var(--font-caveat)] text-[17px] mt-1 text-terra">
-            {todayLabel}{currentStreak >= 2 && (
-              <> · {currentStreak}-day streak <FireIcon size={14} weight="fill" className="inline-block text-orange-400 ml-0.5 align-text-bottom" /></>
+            {todayLabel}{streak >= 2 && (
+              <> · {streak}-day streak <FireIcon size={14} weight="fill" className="inline-block text-orange-400 ml-0.5 align-text-bottom" /></>
             )}
           </p>
         </div>
@@ -187,10 +177,10 @@ export default function Home() {
             </p>
             <StreakBars loggedDates={loggedDates} days={14} />
             <p className="font-[family-name:var(--font-playfair)] text-[22px] font-bold mt-2 leading-none text-[var(--fg-heading)]">
-              {currentStreak}
+              {streak}
             </p>
             <p className="text-[9px] mt-0.5 font-semibold uppercase tracking-[0.08em] text-[var(--fg-faint)]">
-              {currentStreak === 1 ? "day" : "days"}
+              {streak === 1 ? "day" : "days"}
             </p>
           </div>
 
@@ -281,12 +271,12 @@ export default function Home() {
           </div>
         )}
 
-        {/* Recently finished (if no log entries) */}
-        {recentEntries.length === 0 && recentlyFinished.length > 0 && (
+        {/* Recently finished — books not already highlighted in a log entry above */}
+        {recentlyFinished.filter((b) => !recentEntries.some((e) => e.logDate === b.dateFinished)).length > 0 && (
           <div className="mb-8">
             <p className="section-label mb-3">recently read</p>
             <div className="space-y-1">
-              {recentlyFinished.map((book) => (
+              {recentlyFinished.filter((b) => !recentEntries.some((e) => e.logDate === b.dateFinished)).map((book) => (
                 <Link
                   key={book.id}
                   href={`/book/${book.id}`}

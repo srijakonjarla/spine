@@ -9,34 +9,20 @@ import { getQuotes } from "@/lib/quotes";
 import type { BookEntry, BookRead, ReadingLogEntry, Quote } from "@/types";
 import { DayPanel } from "@/components/calendar/DayPanel";
 import { MonthCalendar } from "@/components/calendar/MonthCalendar";
-import { localDateStr } from "@/lib/dates";
-
-const MONTH_ABBRS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+import { localDateStr, currentStreak, streakDates, formatMonthYear } from "@/lib/dates";
+import { MONTH_ABBRS } from "@/lib/constants";
 
 function pad(n: number) {
   return String(n).padStart(2, "0");
 }
 
-function computeStreaks(loggedDates: Set<string>): Set<string> {
-  const streakDates = new Set<string>();
-  const sorted = Array.from(loggedDates).sort();
-  for (let i = 0; i < sorted.length; i++) {
-    const d = new Date(sorted[i]);
-    const prev = new Date(d); prev.setDate(prev.getDate() - 1);
-    const next = new Date(d); next.setDate(next.getDate() + 1);
-    if (loggedDates.has(localDateStr(prev)) || loggedDates.has(localDateStr(next))) {
-      streakDates.add(sorted[i]);
-    }
-  }
-  return streakDates;
-}
 
 export default function MonthSpreadPage() {
   const { year: yearParam, month: monthParam } = useParams<{ year: string; month: string }>();
   const router = useRouter();
 
   const year = Number(yearParam);
-  const monthIndex = Math.max(0, MONTH_ABBRS.indexOf(monthParam.toLowerCase()));
+  const monthIndex = Math.max(0, (MONTH_ABBRS as readonly string[]).indexOf(monthParam.toLowerCase()));
 
   const now = new Date();
   const todayStr = localDateStr(now);
@@ -73,7 +59,8 @@ export default function MonthSpreadPage() {
 
   const loggedDates = new Set(logEntries.map((e) => e.logDate));
   const loggedThisMonth = new Set(logEntries.map((e) => e.logDate).filter((d) => d.startsWith(monthKey)));
-  const streakDates = computeStreaks(loggedDates);
+  const streak = currentStreak(loggedDates);
+  const streakDays = streakDates(loggedDates);
 
   const finishedByDate = new Map<string, BookEntry>();
   allBooks.forEach((b) => {
@@ -82,7 +69,7 @@ export default function MonthSpreadPage() {
     }
   });
 
-  const quoteDateSet = new Set(quotes.map((q) => q.createdAt.slice(0, 10)).filter((d) => d.startsWith(monthKey)));
+  const quoteDateSet = new Set(quotes.map((q) => localDateStr(new Date(q.createdAt))).filter((d) => d.startsWith(monthKey)));
 
   const cells: { day: number | null; dateStr: string }[] = [];
   for (let i = 0; i < firstDayOfWeek; i++) cells.push({ day: null, dateStr: "" });
@@ -95,17 +82,9 @@ export default function MonthSpreadPage() {
   const quotesThisMonth = quotes.filter((q) => q.createdAt.startsWith(monthKey));
   const daysRead = loggedThisMonth.size;
 
-  const currentStreak = (() => {
-    let streak = 0;
-    const d = new Date(todayStr);
-    while (loggedDates.has(localDateStr(d))) {
-      streak++;
-      d.setDate(d.getDate() - 1);
-    }
-    return streak;
-  })();
+  // streak is already computed above via streak(loggedDates)
 
-  const monthLabel = new Date(year, monthIndex).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const monthLabel = formatMonthYear(`${year}-${String(monthIndex + 1).padStart(2, "0")}-01`);
 
   const goToMonth = (y: number, m: number) => {
     const newYear = m < 0 ? y - 1 : m > 11 ? y + 1 : y;
@@ -132,8 +111,8 @@ export default function MonthSpreadPage() {
   };
 
   const panelLog = selectedDate ? logEntries.find((e) => e.logDate === selectedDate) : undefined;
-  const panelQuotes = selectedDate ? quotes.filter((q) => q.createdAt.slice(0, 10) === selectedDate) : [];
-  const panelFinished = selectedDate ? allBooks.filter((b) => b.dateFinished === selectedDate || b.dateShelved === selectedDate) : [];
+  const panelQuotes = selectedDate ? quotes.filter((q) => localDateStr(new Date(q.createdAt)) === selectedDate) : [];
+  const panelFinished = selectedDate ? allBooks.filter((b) => (b.status === "finished" || b.status === "did-not-finish") && (b.dateFinished === selectedDate || b.dateShelved === selectedDate)) : [];
   const panelStarted = selectedDate ? allBooks.filter((b) => b.dateStarted === selectedDate && b.dateFinished !== selectedDate && b.dateShelved !== selectedDate) : [];
   const panelReading = selectedDate === todayStr ? reading : [];
   const panelFinishedIds = new Set(panelFinished.map((b) => b.id));
@@ -142,14 +121,14 @@ export default function MonthSpreadPage() {
     ? allBooks.flatMap((b) => {
         if (panelFinishedIds.has(b.id) || panelStartedIds.has(b.id)) return [];
         return b.reads
-          .filter((r) => r.createdAt.slice(0, 10) === selectedDate)
+          .filter((r) => localDateStr(new Date(r.createdAt)) === selectedDate)
           .map((r) => ({ bookTitle: b.title, bookId: b.id, read: r as BookRead }));
       })
     : [];
   const panelThoughts = selectedDate
     ? allBooks.flatMap((b) =>
         b.thoughts
-          .filter((t) => t.createdAt.slice(0, 10) === selectedDate)
+          .filter((t) => localDateStr(new Date(t.createdAt)) === selectedDate)
           .map((t) => ({ id: t.id, text: t.text, bookTitle: b.title, bookId: b.id }))
       )
     : [];
@@ -172,7 +151,7 @@ export default function MonthSpreadPage() {
             <p className="text-xs mt-2 text-[var(--fg-muted)]">
               {finishedThisMonth.length > 0 && `${finishedThisMonth.length} books finished`}
               {daysRead > 0 && ` · ${daysRead} days read`}
-              {currentStreak >= 3 && ` · ${currentStreak}-day streak 🔥`}
+              {streak >= 3 && ` · ${streak}-day streak 🔥`}
               {quotesThisMonth.length > 0 && ` · ${quotesThisMonth.length} quotes`}
             </p>
           </div>
@@ -205,7 +184,7 @@ export default function MonthSpreadPage() {
           todayStr={todayStr}
           selectedDate={selectedDate}
           loggedDates={loggedDates}
-          streakDates={streakDates}
+          streakDates={streakDays}
           finishedByDate={finishedByDate}
           quoteDateSet={quoteDateSet}
           onSelectDate={setSelectedDate}

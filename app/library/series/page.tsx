@@ -4,9 +4,10 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   getSeries, createSeries, updateSeries, deleteSeries,
-  addSeriesBook, updateSeriesBook, deleteSeriesBook,
+  addSeriesBook, updateSeriesBook, deleteSeriesBook, reorderSeriesBooks,
   type Series, type SeriesBook,
 } from "@/lib/series";
+import { useDragReorder } from "@/hooks/useDragReorder";
 import { getEntries } from "@/lib/db";
 import { CatalogSearch } from "@/components/CatalogSearch";
 import { BookCoverThumb } from "@/components/BookCover";
@@ -51,6 +52,7 @@ function SeriesCard({
   onBookStatusChange,
   onBookDelete,
   onBookAdd,
+  onBooksReorder,
 }: {
   series: Series;
   library: BookEntry[];
@@ -59,6 +61,7 @@ function SeriesCard({
   onBookStatusChange: (seriesId: string, bookId: string, status: SeriesBook["status"]) => void;
   onBookDelete: (seriesId: string, bookId: string) => void;
   onBookAdd: (seriesId: string, book: SeriesBook) => void;
+  onBooksReorder: (seriesId: string, books: SeriesBook[]) => void;
 }) {
   const [name, setName] = useState(series.name);
   const [author, setAuthor] = useState(series.author);
@@ -67,6 +70,11 @@ function SeriesCard({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { draggingId, itemProps } = useDragReorder(series.books, (reordered) => {
+    onBooksReorder(series.id, reordered);
+    reorderSeriesBooks(series.id, reordered.map((b) => b.id));
+  });
 
   const handleFieldChange = (patch: { name?: string; author?: string }) => {
     if (patch.name !== undefined) setName(patch.name);
@@ -89,7 +97,16 @@ function SeriesCard({
         libraryStatus === "finished" ? "read" :
         libraryStatus === "reading"  ? "reading" :
         undefined;
-      const book = await addSeriesBook(series.id, title, total + 1, catalog?.coverUrl ?? "", initialStatus);
+      const catalogMeta = catalog ? {
+        coverUrl: catalog.coverUrl,
+        author: catalog.author,
+        isbn: catalog.isbn,
+        releaseDate: catalog.releaseDate,
+        genres: catalog.genres,
+        pageCount: catalog.pageCount,
+        bookId: catalog.bookId,
+      } : undefined;
+      const book = await addSeriesBook(series.id, title, total + 1, catalogMeta, initialStatus);
       onBookAdd(series.id, book);
       setDraftTitle("");
       setAddingBook(false);
@@ -146,10 +163,15 @@ function SeriesCard({
 
       {/* Books */}
       <div className="space-y-1.5 mb-4">
-        {series.books.map((book) => {
+        {series.books.map((book, index) => {
           const libraryBook = matchLibraryBook(book, library);
           return (
-            <div key={book.id} className="flex items-center gap-3 py-1 group">
+            <div
+              key={book.id}
+              className={`flex items-center gap-3 py-1 group transition-opacity ${draggingId === book.id ? "opacity-40" : ""}`}
+              {...itemProps(index, book.id)}
+            >
+              <span className="cursor-grab active:cursor-grabbing text-[var(--fg-faint)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0 select-none">⠿</span>
               <span className="text-xs text-[var(--fg-faint)] w-5 shrink-0 font-mono">{book.position}.</span>
 
               {/* Cover thumbnail */}
@@ -282,6 +304,12 @@ export default function SeriesPage() {
     ));
   };
 
+  const handleBooksReorder = (seriesId: string, books: SeriesBook[]) => {
+    setSeriesList((prev) => prev.map((s) =>
+      s.id !== seriesId ? s : { ...s, books }
+    ));
+  };
+
   return (
     <div className="page">
       <div className="page-content">
@@ -316,6 +344,7 @@ export default function SeriesPage() {
                 onBookStatusChange={handleBookStatusChange}
                 onBookDelete={handleBookDelete}
                 onBookAdd={handleBookAdd}
+                onBooksReorder={handleBooksReorder}
               />
             ))}
           </div>

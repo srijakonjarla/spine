@@ -66,6 +66,7 @@ function mapBook(row: BookRow): BookEntry {
     id: row.id,
     title: row.title ?? "",
     author: row.author ?? "",
+    releaseDate: row.release_date ?? "",
     genres: row.genres ?? [],
     moodTags: row.mood_tags ?? [],
     status: row.status as BookEntry["status"],
@@ -108,7 +109,15 @@ export async function getEntries(opts?: {
 }
 
 export async function getEntry(id: string): Promise<BookEntry | null> {
-  const res = await apiFetch(`/api/books/${id}`);
+  let res: Response;
+  try {
+    res = await apiFetch(`/api/books/${id}`);
+  } catch (err) {
+    // 404 means the book doesn't exist (or belongs to another user) — return null
+    // so callers can redirect gracefully instead of crashing.
+    if (err instanceof Error && err.message.startsWith("API error 404")) return null;
+    throw err;
+  }
   const data = await res.json();
   if (!data) return null;
   return mapBook(data as BookRow);

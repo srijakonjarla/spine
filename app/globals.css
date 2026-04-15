@@ -205,6 +205,10 @@
   --color-gold-light:     var(--gold-light);
   --color-cream:          var(--cream);
   --color-ink:            var(--ink);
+  --color-ink-light:      var(--ink-light);
+  --color-fg-muted:       var(--fg-muted);
+  --color-fg-faint:       var(--fg-faint);
+  --color-surface:        var(--bg-surface);
 }
 
 /* ─── Base ───────────────────────────────────────────────────── */
@@ -530,4 +534,233 @@ h1, h2, h3 {
     background: rgb(var(--mood-ch) / 0.1);
     color: var(--mood-c);
   }
+
+  /* ── Book log page ───────────────────────────────────────────── */
+
+  /* White surface card — used throughout book/[id] tabs */
+  .book-surface {
+    background: var(--bg-surface);
+    border-radius: 12px;
+    box-shadow: 0 1px 4px var(--border-light);
+  }
+
+  /* Serif card heading with bottom rule */
+  .book-card-heading {
+    font-family: var(--font-playfair), Georgia, serif;
+    font-weight: 700;
+    color: var(--plum);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: 12px;
+  }
+
+  /* Caveat section label */
+  .caveat-label {
+    font-family: var(--font-caveat), cursive;
+    font-size: 15px;
+    color: var(--ink-light);
+  }
+
+  /* Tab bar button */
+  .tab-btn {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 14px 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ink-light);
+    position: relative;
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+    transition: color 0.15s;
+  }
+  .tab-btn:hover { color: var(--fg); }
+  .tab-btn.active { color: var(--plum); }
+  .tab-btn.active::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    left: 20px;
+    right: 20px;
+    height: 2px;
+    background: var(--terra);
+    border-radius: 1px;
+  }
+
+  /* Hero frosted-glass editable card */
+  .hero-overlay-card {
+    background: rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(8px);
+    border-radius: 12px;
+    padding: 16px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    /* gold stars on dark background */
+    --star-filled: #E8C468;
+    --star-empty: rgba(255, 255, 255, 0.25);
+  }
+
+  /* Uppercase date label inside hero */
+  .hero-date-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: rgba(255, 255, 255, 0.40);
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+  }
+
+  /* Date input inside hero */
+  .hero-date-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: rgba(255, 255, 255, 0.70);
+    font-size: 12px;
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+    color-scheme: dark;
+  }
+
+  /* Genre chip inside hero */
+  .hero-genre-chip {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 100px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.20);
+    color: rgba(255, 255, 255, 0.80);
+    cursor: pointer;
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+    transition: background 0.15s;
+  }
+  .hero-genre-chip:hover { background: rgba(255, 255, 255, 0.20); }
+
+  /* "+ genre" add button inside hero */
+  .hero-genre-add-btn {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 100px;
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.40);
+    cursor: pointer;
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .hero-genre-add-btn:hover { color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.5); }
+
+  /* Genre text input inside hero */
+  .hero-genre-input {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 100px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.30);
+    color: rgba(255, 255, 255, 0.90);
+    outline: none;
+    width: 80px;
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+  }
+
+  /* Status pill inside hero (inactive state) */
+  .hero-status-pill {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.20);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.55);
+    transition: all 0.15s;
+  }
+
+  /* Key-value row in details sidebar */
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 12px;
+  }
+
+  /* Timeline session entry */
+  .thought-row {
+    display: flex;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border-light);
+    align-items: flex-start;
+  }
+
+  /* Calendar day cell in timeline */
+  .timeline-day {
+    width: 34px;
+    height: 34px;
+    border-radius: 7px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+    cursor: default;
+  }
+
+  /* Quoted passage block */
+  .quote-passage {
+    font-family: var(--font-playfair), Georgia, serif;
+    font-size: 14px;
+    font-style: italic;
+    color: var(--ink);
+    line-height: 1.7;
+    border-left: 3px solid var(--lavender);
+    padding-left: 14px;
+  }
+
+  /* Timeline thought textarea */
+  .timeline-thought-input {
+    width: 100%;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-family: var(--font-caveat), cursive;
+    font-size: 15px;
+    color: var(--ink);
+    line-height: 1.6;
+    resize: none;
+    outline: none;
+    box-shadow: 0 1px 3px var(--border-light);
+  }
+
+  /* Field label above inputs in Details tab */
+  .detail-field-label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+    margin-bottom: 5px;
+  }
 }
+
+/* ─── Book hero gradients ────────────────────────────────────────
+   Defined outside @layer so they are never purged by Tailwind's
+   content scan (the class name is constructed dynamically in JS). */
+.hero-gradient-0 { background: linear-gradient(135deg, #3A1F3D 0%, #4A2B5A 60%, #5A3268 100%); }
+.hero-gradient-1 { background: linear-gradient(135deg, #5B2F0F 0%, #8E4A1A 55%, #6B3A1A 100%); }
+.hero-gradient-2 { background: linear-gradient(135deg, #1A2F5C 0%, #2A4D8F 55%, #1E3A7A 100%); }
+.hero-gradient-3 { background: linear-gradient(135deg, #0F2218 0%, #1E3A2E 55%, #2A5240 100%); }
+.hero-gradient-4 { background: linear-gradient(135deg, #8E4A2E 0%, #C97B5A 55%, #A05C42 100%); }
+.hero-gradient-5 { background: linear-gradient(135deg, #4A2862 0%, #7B4A8D 55%, #5A3270 100%); }
+.hero-gradient-6 { background: linear-gradient(135deg, #1C2040 0%, #2D3561 55%, #1E2A50 100%); }
+.hero-gradient-7 { background: linear-gradient(135deg, #5C1A1A 0%, #8E2C2C 55%, #6A2020 100%); }
+.hero-gradient-8 { background: linear-gradient(135deg, #8A6B20 0%, #B48930 55%, #8A6818 100%); }
+.hero-gradient-9 { background: linear-gradient(135deg, #3A2018 0%, #5B3A2E 55%, #4A2E22 100%); }

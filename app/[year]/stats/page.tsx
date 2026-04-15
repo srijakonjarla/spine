@@ -9,6 +9,7 @@ import { getQuotes } from "@/lib/quotes";
 import { StarIcon } from "@phosphor-icons/react";
 import type { BookEntry } from "@/types";
 import { StatCard } from "@/components/StatCard";
+import { formatDate } from "@/lib/dates";
 import { ProgressBar } from "@/components/ProgressBar";
 import { EmptyState } from "@/components/EmptyState";
 
@@ -53,7 +54,7 @@ export default function StatsPage() {
   });
   const months = Array.from({ length: 12 }, (_, i) => {
     const key = `${year}-${String(i + 1).padStart(2, "0")}`;
-    return { key, label: new Date(year, i).toLocaleDateString("en-US", { month: "short" }), count: monthlyFinished[key] ?? 0 };
+    return { key, label: formatDate(`${key}-01`, { month: "short" }), count: monthlyFinished[key] ?? 0 };
   });
   const maxMonthly = Math.max(...months.map((m) => m.count), 1);
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse, after } from "next/server";
 import { createServerClient } from "@/lib/supabase-server";
 import { autoLogToday } from "@/lib/autoLog";
 import { syncBookSeries } from "@/lib/seriesSync.server";
+import { flattenUserBook } from "@/lib/bookUpsert.server";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = createServerClient(req);
@@ -10,15 +11,20 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { id } = await params;
   const { data, error } = await supabase
-    .from("books")
-    .select("*, thoughts(*), book_reads(*)")
+    .from("user_books")
+    .select("*, catalog_books(*), thoughts(*), book_reads(*)")
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
-  if (error) return NextResponse.json(null, { status: 404 });
-  return NextResponse.json(data);
+  if (error || !data) return NextResponse.json(null, { status: 404 });
+  return NextResponse.json(flattenUserBook(data));
 }
 
+// Fields the user can change that go to the shared catalog (improve it for everyone).
+const CATALOG_FIELDS = new Set(["coverUrl", "isbn", "pageCount", "releaseDate", "genres"]);
+// Fields that become per-user overrides when edited.
+const OVERRIDE_FIELDS = new Set(["title", "author"]);
+// Fields that go directly on user_books.
 const READING_ACTIVITY_FIELDS = new Set(["status", "dateStarted", "dateFinished", "rating", "feeling", "moodTags"]);
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -28,25 +34,50 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const patch = await req.json();
+  const now = new Date().toISOString();
 
-  const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
-  if ("title"        in patch) row.title        = patch.title;
-  if ("author"       in patch) row.author        = patch.author;
-  if ("genres"       in patch) row.genres        = patch.genres;
-  if ("status"       in patch) row.status        = patch.status;
-  if ("dateStarted"  in patch) row.date_started  = patch.dateStarted  || null;
-  if ("dateFinished" in patch) row.date_finished = patch.dateFinished || null;
-  if ("dateShelved"  in patch) row.date_shelved  = patch.dateShelved  || null;
-  if ("rating"       in patch) row.rating        = patch.rating;
-  if ("feeling"      in patch) row.feeling       = patch.feeling;
-  if ("bookmarked"   in patch) row.bookmarked    = patch.bookmarked;
-  if ("moodTags"     in patch) row.mood_tags     = patch.moodTags;
-  if ("coverUrl"     in patch) row.cover_url     = patch.coverUrl;
-  if ("isbn"         in patch) row.isbn          = patch.isbn;
-  if ("pageCount"    in patch) row.page_count    = patch.pageCount;
+  // Verify ownership and get the catalog_book_id
+  const { data: ub } = await supabase
+    .from("user_books")
+    .select("id, catalog_book_id")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+  if (!ub) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const { error } = await supabase.from("books").update(row).eq("id", id).eq("user_id", user.id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  // ── Personal fields → user_books ──────────────────────────────────────────
+  const userRow: Record<string, unknown> = { updated_at: now };
+  if ("status"       in patch) userRow.status        = patch.status;
+  if ("dateStarted"  in patch) userRow.date_started  = patch.dateStarted  || null;
+  if ("dateFinished" in patch) userRow.date_finished = patch.dateFinished || null;
+  if ("dateShelved"  in patch) userRow.date_shelved  = patch.dateShelved  || null;
+  if ("rating"       in patch) userRow.rating        = patch.rating;
+  if ("feeling"      in patch) userRow.feeling       = patch.feeling;
+  if ("bookmarked"   in patch) userRow.bookmarked    = patch.bookmarked;
+  if ("moodTags"     in patch) userRow.mood_tags     = patch.moodTags;
+  // Title and author become per-user overrides
+  if ("title"        in patch) userRow.title_override  = patch.title  || null;
+  if ("author"       in patch) userRow.author_override = patch.author || null;
+
+  const { error: ubErr } = await supabase
+    .from("user_books")
+    .update(userRow)
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (ubErr) return NextResponse.json({ error: ubErr.message }, { status: 500 });
+
+  // ── Catalog fields → catalog_books (shared, benefits all users) ───────────
+  const catalogRow: Record<string, unknown> = {};
+  if ("coverUrl"    in patch) catalogRow.cover_url    = patch.coverUrl;
+  if ("isbn"        in patch) catalogRow.isbn         = patch.isbn;
+  if ("pageCount"   in patch) catalogRow.page_count   = patch.pageCount;
+  if ("releaseDate" in patch) catalogRow.release_date = patch.releaseDate;
+  if ("genres"      in patch) catalogRow.genres       = patch.genres;
+
+  if (Object.keys(catalogRow).length) {
+    catalogRow.updated_at = now;
+    await supabase.from("catalog_books").update(catalogRow).eq("id", ub.catalog_book_id);
+  }
 
   const isReadingActivity = Object.keys(patch).some((k) => READING_ACTIVITY_FIELDS.has(k));
   if (isReadingActivity) await autoLogToday(supabase, user.id);
@@ -55,22 +86,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if ("status" in patch && ["reading", "finished"].includes(patch.status)) {
     after(async () => {
       const { data: book } = await supabase
-        .from("books")
-        .select("id, title, author, status, cover_url")
+        .from("user_books")
+        .select("id, status, title_override, author_override, catalog_books(title, author, cover_url)")
         .eq("id", id)
         .single();
       if (book) {
+        const cb = book.catalog_books as unknown as { title: string; author: string; cover_url: string } | null;
         await syncBookSeries(supabase, user.id, {
-          id: book.id,
-          title: book.title,
-          author: book.author,
-          status: book.status,
-          coverUrl: book.cover_url ?? "",
+          id:       book.id,
+          title:    book.title_override  ?? cb?.title  ?? "",
+          author:   book.author_override ?? cb?.author ?? "",
+          status:   book.status,
+          coverUrl: cb?.cover_url ?? "",
         });
       }
     });
   }
 
+  void CATALOG_FIELDS; void OVERRIDE_FIELDS; // consumed above
   return NextResponse.json({ ok: true });
 }
 
@@ -80,7 +113,12 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const { error } = await supabase.from("books").delete().eq("id", id).eq("user_id", user.id);
+  // Deleting user_books cascades to thoughts, book_reads via FK
+  const { error } = await supabase
+    .from("user_books")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

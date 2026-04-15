@@ -1,9 +1,19 @@
+import type { ReadingStatus } from "@/types";
+
 export const STATUS_LABEL: Record<string, string> = {
   reading: "currently reading",
   finished: "read",
   "want-to-read": "want to read",
   "did-not-finish": "did not finish",
 };
+
+/** Status pills used in the book hero and filter UIs — short labels. */
+export const STATUSES: { value: ReadingStatus; label: string }[] = [
+  { value: "reading",         label: "reading" },
+  { value: "finished",        label: "read" },
+  { value: "did-not-finish",  label: "did not finish" },
+  { value: "want-to-read",    label: "want to read" },
+];
 
 export const STATUS_SYMBOL: Record<string, string> = {
   reading: "○",

@@ -10,7 +10,7 @@ import { StarDisplay } from "@/components/StarDisplay";
 import { BookCoverThumb } from "@/components/BookCover";
 import { MoodChip, AllMoodsChip } from "@/components/MoodChip";
 import type { BookEntry } from "@/types";
-import { localDateStr } from "@/lib/dates";
+import { localDateStr, dateYear } from "@/lib/dates";
 
 function InlineAdd({
   placeholder,
@@ -99,7 +99,7 @@ export default function LibraryPage() {
   const finishedFiltered = entries.filter((e) => e.status === "finished" && matchesFilter(e));
   const yearMap = new Map<number, BookEntry[]>();
   finishedFiltered.forEach((b) => {
-    const y = b.dateFinished ? new Date(b.dateFinished + "T12:00:00").getFullYear() : 0;
+    const y = b.dateFinished ? (dateYear(b.dateFinished) ?? 0) : 0;
     if (!yearMap.has(y)) yearMap.set(y, []);
     yearMap.get(y)!.push(b);
   });
@@ -116,6 +116,7 @@ export default function LibraryPage() {
       id: crypto.randomUUID(),
       title: enriched?.title ?? title,
       author: enriched?.author ?? "",
+      releaseDate: enriched?.releaseDate ?? "",
       genres: enriched?.genres ?? [],
       moodTags: [],
       status,
