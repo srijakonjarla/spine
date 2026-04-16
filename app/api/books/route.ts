@@ -15,12 +15,24 @@ export async function GET(req: NextRequest) {
   const year = searchParams.get("year");
   const limit = searchParams.get("limit");
   const offset = searchParams.get("offset");
+  const sort = searchParams.get("order");
 
   let query = supabase
     .from("user_books")
     .select("*, catalog_books(*), thoughts(*), book_reads(*)")
-    .eq("user_id", user.id)
-    .order("updated_at", { ascending: false });
+    .eq("user_id", user.id);
+
+  // apply sorting
+  if (sort) {
+    const [column, direction] = sort.split(".");
+
+    query = query.order(column, {
+      ascending: direction !== "desc",
+      nullsFirst: false,
+    });
+  } else {
+    query = query.order("updated_at", { ascending: false, nullsFirst: false });
+  }
 
   if (year) {
     const y = Number(year);

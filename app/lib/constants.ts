@@ -41,11 +41,18 @@ export const MOOD_TAGS = [
   "dark",
   "hopeful",
   "funny",
-  "slow-burn",
   "heart-wrenching",
   "whimsical",
-  "thought-provoking",
-  "escapist",
+  "melancholic",
+  "bittersweet",
+  "uplifting",
+  "throught-provoking",
+  "tense",
+  "dreamy",
+  "eerie",
+  "nostalgic",
+  "romantic",
+  "cathartic",
 ] as const;
 
 export type MoodTag = (typeof MOOD_TAGS)[number];

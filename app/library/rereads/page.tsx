@@ -6,6 +6,7 @@ import { getEntries } from "@/lib/db";
 import { BookCover } from "@/components/BookCover";
 import { EmptyState } from "@/components/EmptyState";
 import type { BookEntry, BookRead } from "@/types";
+import { StarDisplay } from "@/components/StarDisplay";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -35,15 +36,10 @@ function readCount(entry: BookEntry): number {
   return entry.reads.length + 1;
 }
 
-function starsText(rating: number): string {
-  if (!rating) return "unrated";
-  return "★".repeat(Math.round(rating)) + "☆".repeat(5 - Math.round(rating));
-}
-
 type Trend = "up" | "down" | "same" | "unknown";
 function ratingTrend(timeline: { rating: number }[]): Trend {
   const rated = timeline.filter((r) => r.rating > 0);
-  if (rated.length < 2) return "unknown";
+  if (rated.length < 1) return "unknown";
   const first = rated[0].rating;
   const last = rated[rated.length - 1].rating;
   if (last > first) return "up";
@@ -246,17 +242,19 @@ export default function RereadsPage() {
                                   ? "text-[var(--sage)]"
                                   : isLast && trend === "down"
                                     ? "text-[var(--terra)]"
-                                    : "text-[var(--fg-faint)]"
+                                    : "text-[var(--fg-muted)]"
                             }`}
                           >
-                            {r.rating > 0
-                              ? starsText(r.rating)
-                              : r.status === "reading"
-                                ? "in progress"
-                                : "—"}
+                            {r.rating > 0 ? (
+                              <StarDisplay rating={r.rating} size={10} />
+                            ) : r.status === "reading" ? (
+                              "in progress"
+                            ) : (
+                              "—"
+                            )}
                           </span>
                           {!isLast && (
-                            <span className="text-[9px] text-[var(--fg-faint)]">
+                            <span className="text-[9px] text-[var(--fg-muted)]">
                               →
                             </span>
                           )}

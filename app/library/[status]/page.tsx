@@ -75,7 +75,7 @@ export default function StatusCatalogPage() {
   };
 
   useEffect(() => {
-    getEntries()
+    getEntries({ status })
       .then((all) => setEntries(all.filter((e) => e.status === status)))
       .catch(console.error)
       .finally(() => setLoading(false));

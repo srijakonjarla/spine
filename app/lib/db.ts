@@ -1,5 +1,5 @@
 import { apiFetch } from "./api";
-import type { BookEntry, BookRead, Thought } from "@/types";
+import type { BookEntry, BookRead, ReadingStatus, Thought } from "@/types";
 
 // ---- mapping ----
 
@@ -96,11 +96,25 @@ export async function getEntries(opts?: {
   year?: number;
   limit?: number;
   offset?: number;
+  status?: string;
 }): Promise<BookEntry[]> {
   const params = new URLSearchParams();
-  if (opts?.year !== undefined) params.set("year", String(opts.year));
-  if (opts?.limit !== undefined) params.set("limit", String(opts.limit));
-  if (opts?.offset !== undefined) params.set("offset", String(opts.offset));
+  if (opts?.year) params.set("year", String(opts.year));
+  if (opts?.limit) params.set("limit", String(opts.limit));
+  if (opts?.offset) params.set("offset", String(opts.offset));
+  if (opts?.status) {
+    switch (opts.status) {
+      case "finished":
+        params.set("order", "date_finished.desc");
+        break;
+      case "reading":
+        params.set("order", "date_started.desc");
+        break;
+      case "did-not-finish":
+        params.set("order", "date_shelved.desc");
+        break;
+    }
+  }
   const qs = params.toString();
   const res = await apiFetch(qs ? `/api/books?${qs}` : "/api/books");
   const data = await res.json();

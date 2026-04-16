@@ -178,7 +178,7 @@ export default function StatsPage() {
               {months.map((m) => (
                 <div
                   key={m.key}
-                  className="flex-1 flex flex-col items-center gap-1"
+                  className="flex-1 flex flex-col justify-end items-center gap-1 h-full"
                 >
                   <div
                     style={
