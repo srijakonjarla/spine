@@ -7,7 +7,7 @@ import {
 } from "next/font/google";
 import "@/globals.css";
 import AuthProvider from "@/providers/AuthProvider";
-import Nav from "@/components/Nav";
+import Nav from "@/components/navigation/Nav";
 import { NavigationProvider } from "@/providers/NavigationProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 

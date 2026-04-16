@@ -1,13 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useAuth } from "../providers/AuthProvider";
+import { useAuth } from "@/providers/AuthProvider";
 import { signOut } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
-import { ThemeToggle } from "./ThemeToggle";
-import type { Icon } from "@phosphor-icons/react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   HouseIcon,
   ListBulletsIcon,
@@ -21,9 +19,15 @@ import {
   TargetIcon,
   ChartBarIcon,
   GearIcon,
-  BookmarkIcon,
+  ArrowsClockwiseIcon,
+  BooksIcon,
 } from "@phosphor-icons/react";
 import { MONTH_ABBRS } from "@/lib/constants";
+import {
+  SidebarLink,
+  SidebarSection,
+  TopNavLink,
+} from "@/components/navigation";
 const CURRENT_YEAR = new Date().getFullYear();
 const CURRENT_MONTH = MONTH_ABBRS[new Date().getMonth()];
 const CURRENT_MONTH_LABEL = new Date().toLocaleDateString("en-US", {
@@ -40,77 +44,6 @@ interface ShelfCounts {
   reading: number;
   finished: number;
   wantToRead: number;
-}
-
-function TopNavLink({ href, label }: { href: string; label: string }) {
-  const pathname = usePathname();
-  const active =
-    href === "/"
-      ? pathname === "/"
-      : pathname === href || pathname.startsWith(href + "/");
-  return (
-    <Link
-      href={href}
-      className={`text-[13px] font-medium transition-colors ${active ? "text-white" : "text-white/60 hover:text-white"}`}
-    >
-      {label}
-    </Link>
-  );
-}
-
-function SidebarLink({
-  href,
-  label,
-  exact,
-  icon: IconComp,
-}: {
-  href: string;
-  label: string;
-  exact?: boolean;
-  icon?: Icon;
-}) {
-  const pathname = usePathname();
-  const active = exact
-    ? pathname === href
-    : href === "/"
-      ? pathname === "/"
-      : pathname === href || pathname.startsWith(href + "/");
-  return (
-    <Link
-      href={href}
-      className={`flex items-center gap-2 px-2.5 py-[7px] rounded-[10px] text-[13px] transition-colors ${
-        active
-          ? "font-semibold bg-[var(--bg-hover)] text-[var(--fg-heading)]"
-          : "font-medium hover:bg-[var(--bg-nav-hover)] text-[var(--fg)]"
-      }`}
-    >
-      {IconComp && (
-        <IconComp
-          size={15}
-          weight={active ? "fill" : "regular"}
-          className="shrink-0 opacity-70"
-        />
-      )}
-      {label}
-    </Link>
-  );
-}
-
-function SidebarSection({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="mb-7">
-      <p className="text-[10px] font-bold uppercase tracking-[0.12em] mb-2.5 px-2.5 text-[var(--fg-muted)]">
-        {label}
-      </p>
-      <div className="space-y-0.5">{children}</div>
-    </div>
-  );
 }
 
 export default function Nav() {
@@ -271,12 +204,12 @@ export default function Nav() {
             <SidebarLink
               href="/library/want-to-read"
               label={`want to read${shelfCounts.wantToRead > 0 ? ` · ${shelfCounts.wantToRead}` : ""}`}
-              icon={BookmarkSimpleIcon}
+              icon={BooksIcon}
             />
             <SidebarLink
               href="/library/rereads"
               label="re-reads"
-              icon={BookmarkIcon}
+              icon={ArrowsClockwiseIcon}
             />
             <SidebarLink
               href="/library/series"
@@ -310,7 +243,7 @@ export default function Nav() {
                   key={t.id}
                   href={t.href}
                   label={t.title}
-                  icon={BookmarkIcon}
+                  icon={BookmarkSimpleIcon}
                 />
               ))}
             </SidebarSection>
