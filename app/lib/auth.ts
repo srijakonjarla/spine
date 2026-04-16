@@ -34,7 +34,10 @@ export async function hasImportedGoodreads(): Promise<boolean> {
   return data.user?.user_metadata?.goodreads_imported === true;
 }
 
-export function getDisplayName(user: { email?: string; user_metadata?: Record<string, string> }) {
+export function getDisplayName(user: {
+  email?: string;
+  user_metadata?: Record<string, string>;
+}) {
   return (
     user.user_metadata?.name ||
     user.user_metadata?.full_name ||

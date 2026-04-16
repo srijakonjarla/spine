@@ -10,6 +10,6 @@ export function createServerClient(req: NextRequest) {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
-    token ? { global: { headers: { Authorization: `Bearer ${token}` } } } : {}
+    token ? { global: { headers: { Authorization: `Bearer ${token}` } } } : {},
   );
 }

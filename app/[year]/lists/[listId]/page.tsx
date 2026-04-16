@@ -4,8 +4,13 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  getList, updateList, deleteList,
-  addListItem, updateListItem, removeListItem, reorderListItems,
+  getList,
+  updateList,
+  deleteList,
+  addListItem,
+  updateListItem,
+  removeListItem,
+  reorderListItems,
 } from "@/lib/lists";
 import { useDragReorder } from "@/hooks/useDragReorder";
 import { getEntries } from "@/lib/db";
@@ -15,7 +20,12 @@ import { type CatalogEntry } from "@/lib/catalog";
 import { STATUS_SYMBOL, STATUS_COLOR, STATUS_LABEL } from "@/lib/statusMeta";
 import type { BookList, BookEntry, ListItem } from "@/types";
 import {
-  BooksIcon, LightbulbIcon, CheckSquareIcon, ListBulletsIcon, PaletteIcon, TrashIcon,
+  BooksIcon,
+  LightbulbIcon,
+  CheckSquareIcon,
+  ListBulletsIcon,
+  PaletteIcon,
+  TrashIcon,
 } from "@phosphor-icons/react";
 import { BookmarkButton } from "@/components/BookmarkButton";
 import type { Icon } from "@phosphor-icons/react";
@@ -53,6 +63,7 @@ export default function ListDetailPage() {
 
   const [list, setList] = useState<BookList | null>(null);
   const [libraryEntries, setLibraryEntries] = useState<BookEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAddBook, setShowAddBook] = useState(false);
   const [draftTitle, setDraftTitle] = useState("");
   const [draftAuthor, setDraftAuthor] = useState("");
@@ -62,37 +73,64 @@ export default function ListDetailPage() {
   const [itemSearch, setItemSearch] = useState("");
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const itemSaveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const itemSaveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
   const inlineRef = useRef<HTMLInputElement>(null);
 
-  const { draggingId, itemProps } = useDragReorder(list?.items ?? [], (reordered) => {
-    setList((prev) => prev ? { ...prev, items: reordered } : prev);
-    reorderListItems(listId, reordered.map((i) => i.id));
-  });
+  const { draggingId, itemProps } = useDragReorder(
+    list?.items ?? [],
+    (reordered) => {
+      setList((prev) => (prev ? { ...prev, items: reordered } : prev));
+      reorderListItems(
+        listId,
+        reordered.map((i) => i.id),
+      );
+    },
+  );
 
   useEffect(() => {
-    getList(listId).then((l) => {
-      if (!l) { router.replace(`/${year}/lists`); return; }
-      setList(l);
-    });
-    getEntries().then(setLibraryEntries).catch(console.error);
+    Promise.all([getList(listId), getEntries()])
+      .then(([l, entries]) => {
+        if (!l) {
+          router.replace(`/${year}/lists`);
+          return;
+        }
+        setList(l);
+        setLibraryEntries(entries);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, [listId, year, router]);
 
-  const saveListField = useCallback((patch: Parameters<typeof updateList>[1]) => {
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => updateList(listId, patch), 600);
-  }, [listId]);
+  const saveListField = useCallback(
+    (patch: Parameters<typeof updateList>[1]) => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => updateList(listId, patch), 600);
+    },
+    [listId],
+  );
 
   const handleAddBook = async () => {
     const title = draftTitle.trim();
     if (!title || adding) return;
     setAdding(true);
     try {
-      const item = await addListItem(listId, { title, author: draftAuthor.trim() });
-      setList((prev) => prev ? { ...prev, items: [...prev.items, item] } : prev);
-      setDraftTitle(""); setDraftAuthor(""); setShowAddBook(false);
-    } catch (err) { console.error(err); }
-    finally { setAdding(false); }
+      const item = await addListItem(listId, {
+        title,
+        author: draftAuthor.trim(),
+      });
+      setList((prev) =>
+        prev ? { ...prev, items: [...prev.items, item] } : prev,
+      );
+      setDraftTitle("");
+      setDraftAuthor("");
+      setShowAddBook(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setAdding(false);
+    }
   };
 
   const handleAddIdea = async () => {
@@ -101,31 +139,57 @@ export default function ListDetailPage() {
     setAdding(true);
     try {
       const item = await addListItem(listId, { title });
-      setList((prev) => prev ? { ...prev, items: [...prev.items, item] } : prev);
+      setList((prev) =>
+        prev ? { ...prev, items: [...prev.items, item] } : prev,
+      );
       setInlineText("");
       setTimeout(() => inlineRef.current?.focus(), 50);
-    } catch (err) { console.error(err); }
-    finally { setAdding(false); }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setAdding(false);
+    }
   };
 
   const handleToggleCheck = (id: string, currentType: string) => {
     const next = currentType === "done" ? "" : "done";
-    setList((prev) => prev ? { ...prev, items: prev.items.map((i) => i.id === id ? { ...i, type: next } : i) } : prev);
+    setList((prev) =>
+      prev
+        ? {
+            ...prev,
+            items: prev.items.map((i) =>
+              i.id === id ? { ...i, type: next } : i,
+            ),
+          }
+        : prev,
+    );
     updateListItem(id, { type: next });
   };
 
   const handleUpdateItemNotes = (id: string, notes: string) => {
-    setList((prev) => prev ? { ...prev, items: prev.items.map((i) => i.id === id ? { ...i, notes } : i) } : prev);
+    setList((prev) =>
+      prev
+        ? {
+            ...prev,
+            items: prev.items.map((i) => (i.id === id ? { ...i, notes } : i)),
+          }
+        : prev,
+    );
     const t = itemSaveTimers.current.get(id);
     if (t) clearTimeout(t);
-    itemSaveTimers.current.set(id, setTimeout(() => {
-      updateListItem(id, { notes });
-      itemSaveTimers.current.delete(id);
-    }, 600));
+    itemSaveTimers.current.set(
+      id,
+      setTimeout(() => {
+        updateListItem(id, { notes });
+        itemSaveTimers.current.delete(id);
+      }, 600),
+    );
   };
 
   const handleRemoveItem = async (id: string) => {
-    setList((prev) => prev ? { ...prev, items: prev.items.filter((i) => i.id !== id) } : prev);
+    setList((prev) =>
+      prev ? { ...prev, items: prev.items.filter((i) => i.id !== id) } : prev,
+    );
     await removeListItem(id, listId);
   };
 
@@ -136,17 +200,31 @@ export default function ListDetailPage() {
   };
 
   const handleSaveCover = async (color: string, emoji: string) => {
-    setList((prev) => prev ? { ...prev, color, emoji } : prev);
+    setList((prev) => (prev ? { ...prev, color, emoji } : prev));
     await updateList(listId, { color, emoji });
     setShowCoverModal(false);
   };
 
   if (!list) return <div className="page" />;
 
-  const isIdeaType = ["idea_list", "bullet_list", "checklist"].includes(list.listType);
+  const isIdeaType = ["idea_list", "bullet_list", "checklist"].includes(
+    list.listType,
+  );
   const isChecklist = list.listType === "checklist";
   const bullet = list.bulletSymbol || "→";
   const itemLabel = isIdeaType ? "ideas" : "books";
+
+  if (loading)
+    return (
+      <div className="page animate-pulse">
+        <div className="h-48 bg-[var(--bg-hover)] mb-8" />
+        <div className="page-content space-y-2.5">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-10 bg-[var(--bg-hover)] rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
 
   return (
     <div className="page">
@@ -154,7 +232,7 @@ export default function ListDetailPage() {
       <div className="px-8 pt-5 flex items-center justify-between">
         <Link
           href={`/${year}/lists`}
-          className="text-[12px] text-[var(--fg-muted)] hover:text-[var(--fg-heading)] transition-colors"
+          className="text-xs text-[var(--fg-muted)] hover:text-[var(--fg-heading)] transition-colors"
         >
           ← lists
         </Link>
@@ -162,7 +240,7 @@ export default function ListDetailPage() {
           bookmarked={list.bookmarked}
           onToggle={() => {
             const bookmarked = !list.bookmarked;
-            setList((prev) => prev ? { ...prev, bookmarked } : prev);
+            setList((prev) => (prev ? { ...prev, bookmarked } : prev));
             saveListField({ bookmarked });
           }}
         />
@@ -178,9 +256,7 @@ export default function ListDetailPage() {
         {(() => {
           const TypeIcon = LIST_TYPE_ICONS[list.listType] ?? BooksIcon;
           return (
-            <p
-              className="flex items-center gap-1.5 font-[family-name:var(--font-caveat)] text-[14px] mb-1 relative z-10 text-white/55"
-            >
+            <p className="flex items-center gap-1.5 font-[family-name:var(--font-caveat)] text-sm mb-1 relative z-10 text-white/55">
               <TypeIcon size={14} />
               {LIST_TYPE_LABELS[list.listType] ?? "list"}
             </p>
@@ -191,15 +267,13 @@ export default function ListDetailPage() {
           value={list.title}
           onChange={(e) => {
             const title = e.target.value;
-            setList((prev) => prev ? { ...prev, title } : prev);
+            setList((prev) => (prev ? { ...prev, title } : prev));
             saveListField({ title });
           }}
           placeholder="list title"
-          className="w-full font-serif text-[30px] font-bold italic text-white bg-transparent border-none outline-none mb-1 relative z-10 placeholder:text-white/40 leading-snug"
+          className="w-full font-serif text-3xl font-bold italic text-white bg-transparent border-none outline-none mb-1 relative z-10 placeholder:text-white/40 leading-snug"
         />
-        <p
-          className="font-[family-name:var(--font-caveat)] text-[14px] relative z-10 text-white/60"
-        >
+        <p className="font-[family-name:var(--font-caveat)] text-sm relative z-10 text-white/60">
           {list.items.length} {itemLabel}
           {list.description ? ` · ${list.description}` : ""}
         </p>
@@ -207,10 +281,8 @@ export default function ListDetailPage() {
 
       {/* 2-column body */}
       <div className="grid grid-cols-[1fr_280px]">
-
         {/* ── Left: items ── */}
         <div className="px-7 py-6">
-
           {isIdeaType ? (
             /* Idea / bullet / checklist */
             <>
@@ -223,10 +295,12 @@ export default function ListDetailPage() {
                       <button
                         key={sym}
                         onClick={() => {
-                          setList((prev) => prev ? { ...prev, bulletSymbol: sym } : prev);
+                          setList((prev) =>
+                            prev ? { ...prev, bulletSymbol: sym } : prev,
+                          );
                           saveListField({ bulletSymbol: sym });
                         }}
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-[14px] transition-all font-[family-name:var(--font-caveat)] ${
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm transition-all font-[family-name:var(--font-caveat)] ${
                           bullet === sym
                             ? "text-white bg-[var(--terra)]"
                             : "text-[var(--terra)] bg-[var(--bg-surface)] border border-[var(--border-light)] hover:border-[var(--terra)]"
@@ -240,16 +314,16 @@ export default function ListDetailPage() {
               )}
 
               {/* Dotted grid */}
-              <div
-                className="rounded-xl px-7 py-6 min-h-[280px] bg-[var(--bg-surface)] border border-[var(--border-light)] bg-[size:18px_18px] bg-[radial-gradient(circle,_var(--bg-muted-tag)_1px,_transparent_1px)]"
-              >
+              <div className="rounded-xl px-7 py-6 min-h-[280px] bg-[var(--bg-surface)] border border-[var(--border-light)] bg-[size:18px_18px] bg-[radial-gradient(circle,_var(--bg-muted-tag)_1px,_transparent_1px)]">
                 {list.items.map((item: ListItem, index: number) => (
                   <div
                     key={item.id}
                     className={`group flex gap-3 items-start py-1.5 border-b border-[var(--border-light)] last:border-none transition-opacity ${draggingId === item.id ? "opacity-40" : ""}`}
                     {...itemProps(index, item.id)}
                   >
-                    <span className="cursor-grab active:cursor-grabbing text-[var(--fg-faint)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0 select-none mt-0.5">⠿</span>
+                    <span className="cursor-grab active:cursor-grabbing text-[var(--fg-faint)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0 select-none mt-0.5">
+                      ⠿
+                    </span>
                     {isChecklist ? (
                       <button
                         onClick={() => handleToggleCheck(item.id, item.type)}
@@ -260,22 +334,28 @@ export default function ListDetailPage() {
                         }`}
                       >
                         {item.type === "done" && (
-                          <span className="text-white text-[9px] leading-none">✓</span>
+                          <span className="text-white text-[9px] leading-none">
+                            ✓
+                          </span>
                         )}
                       </button>
                     ) : (
-                      <span className="shrink-0 text-[15px] w-5 mt-0.5 text-[var(--terra)]">{bullet}</span>
+                      <span className="shrink-0 text-[15px] w-5 mt-0.5 text-[var(--terra)]">
+                        {bullet}
+                      </span>
                     )}
                     <span
-                      className={`font-[family-name:var(--font-caveat)] text-[16px] flex-1 leading-snug text-[var(--terra)] ${
-                        isChecklist && item.type === "done" ? "line-through opacity-45" : ""
+                      className={`font-[family-name:var(--font-caveat)] text-base flex-1 leading-snug text-[var(--terra)] ${
+                        isChecklist && item.type === "done"
+                          ? "line-through opacity-45"
+                          : ""
                       }`}
                     >
                       {item.title}
                     </span>
                     <button
                       onClick={() => handleRemoveItem(item.id)}
-                      className="text-[16px] text-[var(--fg-faint)] hover:text-red-400 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
+                      className="text-base text-[var(--fg-faint)] hover:text-red-400 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
                     >
                       ×
                     </button>
@@ -287,7 +367,9 @@ export default function ListDetailPage() {
                   {isChecklist ? (
                     <span className="shrink-0 mt-1 w-4 h-4 rounded border-[1.5px] border-[var(--terra)]" />
                   ) : (
-                    <span className="shrink-0 text-[15px] w-5 mt-0.5 text-[var(--fg-faint)]">{bullet}</span>
+                    <span className="shrink-0 text-[15px] w-5 mt-0.5 text-[var(--fg-faint)]">
+                      {bullet}
+                    </span>
                   )}
                   <input
                     ref={inlineRef}
@@ -296,7 +378,7 @@ export default function ListDetailPage() {
                     onChange={(e) => setInlineText(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleAddIdea()}
                     placeholder={isChecklist ? "add an item…" : "add an idea…"}
-                    className="font-[family-name:var(--font-caveat)] text-[16px] flex-1 bg-transparent border-none outline-none text-[var(--terra)] placeholder:text-[var(--terra)]"
+                    className="font-[family-name:var(--font-caveat)] text-base flex-1 bg-transparent border-none outline-none text-[var(--terra)] placeholder:text-[var(--terra)]"
                   />
                 </div>
               </div>
@@ -314,77 +396,107 @@ export default function ListDetailPage() {
                 />
               )}
               <div className="space-y-2.5 mb-3">
-                {list.items.filter((item: ListItem) => {
-                  if (!itemSearch.trim()) return true;
-                  const q = itemSearch.toLowerCase();
-                  return item.title.toLowerCase().includes(q) || (item.author ?? "").toLowerCase().includes(q);
-                }).map((item: ListItem, index: number) => {
-                  const matched = libraryEntries.find((b) =>
-                    b.title.toLowerCase() === item.title.toLowerCase() &&
-                    (!item.author || b.author.toLowerCase() === item.author.toLowerCase())
-                  );
-                  const status = matched?.status;
-                  return (
-                  <div
-                    key={item.id}
-                    className={`group flex gap-3.5 items-center bg-[var(--bg-surface)] rounded-xl px-4 py-3 border border-[var(--border-light)] transition-all ${draggingId === item.id ? "opacity-40" : "hover:translate-x-1"}`}
-                    {...(itemSearch.trim() ? {} : itemProps(index, item.id))}
-                  >
-                    {/* Drag handle */}
-                    {!itemSearch.trim() && (
-                      <span className="cursor-grab active:cursor-grabbing text-[var(--fg-faint)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0 select-none text-base">⠿</span>
-                    )}
+                {list.items
+                  .filter((item: ListItem) => {
+                    if (!itemSearch.trim()) return true;
+                    const q = itemSearch.toLowerCase();
+                    return (
+                      item.title.toLowerCase().includes(q) ||
+                      (item.author ?? "").toLowerCase().includes(q)
+                    );
+                  })
+                  .map((item: ListItem, index: number) => {
+                    const matched = libraryEntries.find(
+                      (b) =>
+                        b.title.toLowerCase() === item.title.toLowerCase() &&
+                        (!item.author ||
+                          b.author.toLowerCase() === item.author.toLowerCase()),
+                    );
+                    const status = matched?.status;
+                    return (
+                      <div
+                        key={item.id}
+                        className={`group flex gap-3.5 items-center bg-[var(--bg-surface)] rounded-xl px-4 py-3 border border-[var(--border-light)] transition-all ${draggingId === item.id ? "opacity-40" : "hover:translate-x-1"}`}
+                        {...(itemSearch.trim()
+                          ? {}
+                          : itemProps(index, item.id))}
+                      >
+                        {/* Drag handle */}
+                        {!itemSearch.trim() && (
+                          <span className="cursor-grab active:cursor-grabbing text-[var(--fg-faint)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0 select-none text-base">
+                            ⠿
+                          </span>
+                        )}
 
-                    {/* Colored spine */}
-                    <svg
-                      viewBox="0 0 38 54"
-                      className="shrink-0 rounded-sm w-[38px] h-[54px] shadow-[var(--shadow-spine-card)]"
-                    >
-                      <rect width="38" height="54" rx="3" fill={spineColor(item.title)} />
-                      <rect x="4" y="8" width="30" height="1.5" rx="0.75" fill="var(--spine-gloss-line)" />
-                    </svg>
+                        {/* Colored spine */}
+                        <svg
+                          viewBox="0 0 38 54"
+                          className="shrink-0 rounded-sm w-[38px] h-[54px] shadow-[var(--shadow-spine-card)]"
+                        >
+                          <rect
+                            width="38"
+                            height="54"
+                            rx="3"
+                            fill={spineColor(item.title)}
+                          />
+                          <rect
+                            x="4"
+                            y="8"
+                            width="30"
+                            height="1.5"
+                            rx="0.75"
+                            fill="var(--spine-gloss-line)"
+                          />
+                        </svg>
 
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-serif text-[13px] font-semibold text-[var(--fg-heading)] leading-snug">
-                        {item.title}
-                      </p>
-                      {item.author && (
-                        <p className="text-[11px] text-[var(--fg-muted)] mt-0.5">{item.author}</p>
-                      )}
-                      <input
-                        type="text"
-                        value={item.notes ?? ""}
-                        onChange={(e) => handleUpdateItemNotes(item.id, e.target.value)}
-                        placeholder="add a note…"
-                        className="font-[family-name:var(--font-caveat)] text-[12px] text-[var(--terra)] bg-transparent border-none outline-none w-full mt-1 placeholder:text-[var(--terra)]/40"
-                      />
-                    </div>
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-serif text-[13px] font-semibold text-[var(--fg-heading)] leading-snug">
+                            {item.title}
+                          </p>
+                          {item.author && (
+                            <p className="text-[11px] text-[var(--fg-muted)] mt-0.5">
+                              {item.author}
+                            </p>
+                          )}
+                          <input
+                            type="text"
+                            value={item.notes ?? ""}
+                            onChange={(e) =>
+                              handleUpdateItemNotes(item.id, e.target.value)
+                            }
+                            placeholder="add a note…"
+                            className="font-[family-name:var(--font-caveat)] text-xs text-[var(--terra)] bg-transparent border-none outline-none w-full mt-1 placeholder:text-[var(--terra)]/40"
+                          />
+                        </div>
 
-                    {/* Status pill */}
-                    {status && (
-                      <span className={`shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full border opacity-70 group-hover:opacity-100 transition-opacity ${STATUS_COLOR[status]} border-current`}>
-                        {STATUS_SYMBOL[status]} {STATUS_LABEL[status] === "want to read" ? "tbr" : STATUS_LABEL[status]}
-                      </span>
-                    )}
+                        {/* Status pill */}
+                        {status && (
+                          <span
+                            className={`shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full border opacity-70 group-hover:opacity-100 transition-opacity ${STATUS_COLOR[status]} border-current`}
+                          >
+                            {STATUS_SYMBOL[status]}{" "}
+                            {STATUS_LABEL[status] === "want to read"
+                              ? "tbr"
+                              : STATUS_LABEL[status]}
+                          </span>
+                        )}
 
-                    {/* Remove */}
-                    <button
-                      onClick={() => handleRemoveItem(item.id)}
-                      className="text-[18px] text-[var(--fg-faint)] hover:text-red-400 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
-                    >
-                      ×
-                    </button>
-                  </div>
-                  );
-                })}
+                        {/* Remove */}
+                        <button
+                          onClick={() => handleRemoveItem(item.id)}
+                          className="text-lg text-[var(--fg-faint)] hover:text-red-400 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })}
               </div>
 
               {/* Add book row */}
               {showAddBook ? (
-                <div
-                  className="rounded-xl px-4 py-3 border border-dashed border-[var(--border-light)] bg-[var(--bg-surface)]"
-                >
+                <div className="rounded-xl px-4 py-3 border border-dashed border-[var(--border-light)] bg-[var(--bg-surface)]">
                   <CatalogSearch
                     value={draftTitle}
                     onChange={(v) => setDraftTitle(v)}
@@ -403,19 +515,23 @@ export default function ListDetailPage() {
                     onChange={(e) => setDraftAuthor(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleAddBook()}
                     placeholder="author"
-                    className="text-[12px] text-[var(--fg-muted)] bg-transparent border-none outline-none w-full placeholder:text-[var(--fg-faint)]"
+                    className="text-xs text-[var(--fg-muted)] bg-transparent border-none outline-none w-full placeholder:text-[var(--fg-faint)]"
                   />
                   <div className="flex gap-3 mt-2 pt-2 border-t border-[var(--border-light)]">
                     <button
                       onClick={handleAddBook}
                       disabled={!draftTitle.trim() || adding}
-                      className="text-[12px] font-semibold text-[var(--plum)] hover:text-[var(--plum-light)] transition-colors disabled:opacity-30"
+                      className="text-xs font-semibold text-[var(--plum)] hover:text-[var(--plum-light)] transition-colors disabled:opacity-30"
                     >
                       add ↵
                     </button>
                     <button
-                      onClick={() => { setShowAddBook(false); setDraftTitle(""); setDraftAuthor(""); }}
-                      className="text-[12px] text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
+                      onClick={() => {
+                        setShowAddBook(false);
+                        setDraftTitle("");
+                        setDraftAuthor("");
+                      }}
+                      className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
                     >
                       cancel
                     </button>
@@ -426,7 +542,7 @@ export default function ListDetailPage() {
                   onClick={() => setShowAddBook(true)}
                   className="w-full flex gap-2.5 items-center px-4 py-3 rounded-xl border border-dashed border-[var(--border-light)] hover:border-[var(--terra)] hover:bg-[var(--terra)]/4 transition-all font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)] hover:text-[var(--terra)]"
                 >
-                  <span className="text-[18px]">＋</span>
+                  <span className="text-lg">＋</span>
                   search for a book to add…
                 </button>
               )}
@@ -436,12 +552,9 @@ export default function ListDetailPage() {
 
         {/* ── Right sidebar ── */}
         <div className="border-l border-[var(--border-light)] px-5 py-6">
-
           {/* Item count */}
           <p className="section-label mb-2">{isIdeaType ? "Ideas" : "Books"}</p>
-          <div
-            className="rounded-xl px-4 py-3 text-center mb-5 border border-[var(--border-light)] bg-[var(--bg-surface)]"
-          >
+          <div className="rounded-xl px-4 py-3 text-center mb-5 border border-[var(--border-light)] bg-[var(--bg-surface)]">
             <p className="font-serif text-[28px] font-bold text-[var(--plum)] leading-none">
               {list.items.length}
             </p>
@@ -458,12 +571,12 @@ export default function ListDetailPage() {
                 value={list.description}
                 onChange={(e) => {
                   const description = e.target.value;
-                  setList((prev) => prev ? { ...prev, description } : prev);
+                  setList((prev) => (prev ? { ...prev, description } : prev));
                   saveListField({ description });
                 }}
                 placeholder="notes about this list…"
                 rows={5}
-                className="w-full font-[family-name:var(--font-caveat)] text-[14px] text-[var(--fg-muted)] rounded-xl px-3 py-3 border border-[var(--border-light)] outline-none resize-none placeholder:text-[var(--fg-faint)] mb-5 bg-[var(--bg-surface)] leading-[2] bg-[repeating-linear-gradient(transparent,_transparent_28px,_var(--bg-muted-tag)_29px)]"
+                className="w-full font-[family-name:var(--font-caveat)] text-sm text-[var(--fg-muted)] rounded-xl px-3 py-3 border border-[var(--border-light)] outline-none resize-none placeholder:text-[var(--fg-faint)] mb-5 bg-[var(--bg-surface)] leading-[2] bg-[repeating-linear-gradient(transparent,_transparent_28px,_var(--bg-muted-tag)_29px)]"
               />
             </>
           )}
@@ -473,13 +586,13 @@ export default function ListDetailPage() {
           <div className="flex flex-col gap-1.5">
             <button
               onClick={() => setShowCoverModal(true)}
-              className="flex items-center gap-2 text-[12px] text-[var(--fg-muted)] px-3 py-2 rounded-lg border border-[var(--border-light)] hover:border-[var(--fg-muted)] transition-colors text-left bg-[var(--bg-surface)]"
+              className="flex items-center gap-2 text-xs text-[var(--fg-muted)] px-3 py-2 rounded-lg border border-[var(--border-light)] hover:border-[var(--fg-muted)] transition-colors text-left bg-[var(--bg-surface)]"
             >
               <PaletteIcon size={13} /> Change cover
             </button>
             <button
               onClick={handleDelete}
-              className="flex items-center gap-2 text-[12px] text-red-500/70 px-3 py-2 rounded-lg border border-[var(--border-light)] hover:border-red-300 transition-colors text-left bg-[var(--bg-surface)]"
+              className="flex items-center gap-2 text-xs text-red-500/70 px-3 py-2 rounded-lg border border-[var(--border-light)] hover:border-red-300 transition-colors text-left bg-[var(--bg-surface)]"
             >
               <TrashIcon size={13} /> Delete list
             </button>

@@ -8,104 +8,48 @@ import { getReadingLog } from "@/lib/habits";
 import { getGoals } from "@/lib/goals";
 import { getQuotes } from "@/lib/quotes";
 import { getLists } from "@/lib/lists";
-import type { BookEntry, BookList, ReadingLogEntry, ReadingGoal } from "@/types";
+import type {
+  BookEntry,
+  BookList,
+  ReadingLogEntry,
+  ReadingGoal,
+} from "@/types";
 import { localDateStr, dateMonth } from "@/lib/dates";
 import { MONTH_ABBRS, MONTH_NAMES } from "@/lib/constants";
-
-function pad(n: number) { return String(n).padStart(2, "0"); }
+import MiniMonthCal from "@/components/calendar/MiniMonthCal";
 
 function hashStr(s: string): number {
-  return Math.abs(s.split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0));
+  return Math.abs(
+    s.split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0),
+  );
 }
 
 const SPINE_COLOR_CLASSES = [
-  "bg-[var(--year-shelf-0)]", "bg-[var(--year-shelf-1)]", "bg-[var(--year-shelf-2)]", "bg-[var(--year-shelf-3)]", "bg-[var(--year-shelf-4)]",
-  "bg-[var(--year-shelf-5)]", "bg-[var(--year-shelf-6)]", "bg-[var(--year-shelf-7)]", "bg-[var(--year-shelf-8)]", "bg-[var(--year-shelf-9)]",
-  "bg-[var(--year-shelf-10)]", "bg-[var(--year-shelf-11)]", "bg-[var(--year-shelf-12)]", "bg-[var(--year-shelf-13)]", "bg-[var(--year-shelf-14)]",
-  "bg-[var(--year-shelf-15)]", "bg-[var(--year-shelf-16)]", "bg-[var(--year-shelf-17)]", "bg-[var(--year-shelf-18)]",
+  "bg-[var(--year-shelf-0)]",
+  "bg-[var(--year-shelf-1)]",
+  "bg-[var(--year-shelf-2)]",
+  "bg-[var(--year-shelf-3)]",
+  "bg-[var(--year-shelf-4)]",
+  "bg-[var(--year-shelf-5)]",
+  "bg-[var(--year-shelf-6)]",
+  "bg-[var(--year-shelf-7)]",
+  "bg-[var(--year-shelf-8)]",
+  "bg-[var(--year-shelf-9)]",
+  "bg-[var(--year-shelf-10)]",
+  "bg-[var(--year-shelf-11)]",
+  "bg-[var(--year-shelf-12)]",
+  "bg-[var(--year-shelf-13)]",
+  "bg-[var(--year-shelf-14)]",
+  "bg-[var(--year-shelf-15)]",
+  "bg-[var(--year-shelf-16)]",
+  "bg-[var(--year-shelf-17)]",
+  "bg-[var(--year-shelf-18)]",
 ] as const;
-function spineColorClass(title: string) { return SPINE_COLOR_CLASSES[hashStr(title) % SPINE_COLOR_CLASSES.length]; }
-function spineHeightPx(title: string) { return 44 + (hashStr(title) % 26); }
-
-function MiniMonthCal({
-  year, monthIndex, loggedDates, finishedDates, todayStr, isCurrentYear,
-}: {
-  year: number; monthIndex: number; loggedDates: Set<string>;
-  finishedDates: Set<string>; todayStr: string; isCurrentYear: boolean;
-}) {
-  const monthKey = `${year}-${pad(monthIndex + 1)}`;
-  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
-  const firstDOW = new Date(year, monthIndex, 1).getDay();
-  const isThisMonth = todayStr.startsWith(monthKey);
-
-  const cells: (string | null)[] = [];
-  for (let i = 0; i < firstDOW; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(`${monthKey}-${pad(d)}`);
-
-  const booksThisMonth = Array.from(finishedDates).filter(d => d.startsWith(monthKey)).length;
-  const daysLoggedThisMonth = Array.from(loggedDates).filter(d => d.startsWith(monthKey)).length;
-  const monthHasActivity = daysLoggedThisMonth > 0 || booksThisMonth > 0;
-  const firstDayOfMonth = `${monthKey}-01`;
-  const isFutureMonth = isCurrentYear && firstDayOfMonth > todayStr;
-
-  return (
-    <Link
-      href={`/${year}/${MONTH_ABBRS[monthIndex]}`}
-      className={`flex flex-col rounded-xl p-3 transition-opacity hover:opacity-80 bg-[var(--bg-surface)] ${
-        isThisMonth
-          ? "border-[1.5px] border-[var(--border-terra-soft)]"
-          : "border border-[var(--border-light)]"
-      } ${isFutureMonth ? "opacity-[0.45]" : "aspect-4/3"}`}
-    >
-      <div className="flex items-baseline justify-between mb-2">
-        <p className="text-[11px] font-semibold text-[var(--fg-muted)]">
-          {MONTH_NAMES[monthIndex]}
-        </p>
-        {booksThisMonth > 0 && (
-          <p className="text-[9px] text-sage">
-            {booksThisMonth} {booksThisMonth === 1 ? "book" : "books"}
-          </p>
-        )}
-        {isFutureMonth && (
-          <p className="text-md font-[family-name:var(--font-caveat)] text-[var(--fg-faint)]">
-            not yet written
-          </p>
-        )}
-      </div>
-
-      {isFutureMonth ? null : (
-        <div className="flex-1 grid grid-cols-7 gap-[2px] [grid-auto-rows:1fr]">
-          {cells.map((dateStr, i) => {
-            if (!dateStr) return <div key={i} />;
-            const isFuture = isCurrentYear && dateStr > todayStr;
-            const isFinish = finishedDates.has(dateStr);
-            const isLogged = loggedDates.has(dateStr);
-            const isToday = dateStr === todayStr;
-
-            const bgClass =
-              isToday  ? "bg-plum" :
-              isFinish ? "bg-[var(--bg-terra-70)]" :
-              isLogged ? "bg-[var(--bg-sage-50)]" :
-              isFuture ? "bg-[var(--bg-plum-trace)]" :
-                         "bg-[var(--bg-plum-soft)]";
-
-            return (
-              <div
-                key={i}
-                className={`rounded-[2px] ${isFuture ? "opacity-40" : ""} ${bgClass}`}
-              />
-            );
-          })}
-        </div>
-      )}
-
-      {!isFutureMonth && !monthHasActivity && (
-        <p className="text-[9px] font-[family-name:var(--font-caveat)] mt-1 text-[var(--fg-faint)]">
-          no days logged
-        </p>
-      )}
-    </Link>
-  );
+function spineColorClass(title: string) {
+  return SPINE_COLOR_CLASSES[hashStr(title) % SPINE_COLOR_CLASSES.length];
+}
+function spineHeightPx(title: string) {
+  return 44 + (hashStr(title) % 26);
 }
 
 export default function YearPage() {
@@ -120,42 +64,55 @@ export default function YearPage() {
   const [goals, setGoals] = useState<ReadingGoal[]>([]);
   const [quoteCount, setQuoteCount] = useState(0);
   const [lists, setLists] = useState<BookList[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([getEntries(), getReadingLog(year), getGoals(year), getQuotes(), getLists(year)])
+    Promise.all([
+      getEntries(),
+      getReadingLog(year),
+      getGoals(year),
+      getQuotes(),
+      getLists(year),
+    ])
       .then(([books, log, gs, quotes, ls]) => {
         setAllBooks(books);
         setLogEntries(log as ReadingLogEntry[]);
         setGoals(gs);
-        setQuoteCount(quotes.filter(q => q.createdAt.startsWith(`${year}`)).length);
+        setQuoteCount(
+          quotes.filter((q) => q.createdAt.startsWith(`${year}`)).length,
+        );
         setLists(ls);
       })
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, [year]);
 
-  const loggedDates = new Set(logEntries.map(e => e.logDate));
+  const loggedDates = new Set(logEntries.map((e) => e.logDate));
 
-  const finishedBooks = allBooks.filter(b =>
-    b.status === "finished" && b.dateFinished?.startsWith(`${year}`)
-  ).sort((a, b) => a.dateFinished!.localeCompare(b.dateFinished!));
+  const finishedBooks = allBooks
+    .filter(
+      (b) => b.status === "finished" && b.dateFinished?.startsWith(`${year}`),
+    )
+    .sort((a, b) => a.dateFinished!.localeCompare(b.dateFinished!));
 
-  const finishedDates = new Set(finishedBooks.map(b => b.dateFinished!));
+  const finishedDates = new Set(finishedBooks.map((b) => b.dateFinished!));
 
   const avgRating = (() => {
-    const rated = finishedBooks.filter(b => b.rating > 0);
+    const rated = finishedBooks.filter((b) => b.rating > 0);
     if (!rated.length) return null;
     return (rated.reduce((s, b) => s + b.rating, 0) / rated.length).toFixed(1);
   })();
 
-  const autoGoal = goals.find(g => g.isAuto) ?? null;
-  const customGoals = goals.filter(g => !g.isAuto);
+  const autoGoal = goals.find((g) => g.isAuto) ?? null;
+  const customGoals = goals.filter((g) => !g.isAuto);
 
-  const goalProgress = autoGoal && autoGoal.target > 0
-    ? Math.min(1, finishedBooks.length / autoGoal.target)
-    : null;
+  const goalProgress =
+    autoGoal && autoGoal.target > 0
+      ? Math.min(1, finishedBooks.length / autoGoal.target)
+      : null;
 
   const booksByMonth: BookEntry[][] = Array.from({ length: 12 }, () => []);
-  finishedBooks.forEach(b => {
+  finishedBooks.forEach((b) => {
     if (b.dateFinished) {
       const m = dateMonth(b.dateFinished) ?? 0;
       booksByMonth[m].push(b);
@@ -170,6 +127,31 @@ export default function YearPage() {
     ? `in progress · ${now.toLocaleDateString("en-US", { month: "long", day: "numeric" })}`
     : `complete · ${finishedBooks.length} books`;
 
+  if (loading)
+    return (
+      <div className="page animate-pulse">
+        <div className="-mt-6 -mx-6 mb-10 px-8 py-10 lg:px-12 lg:py-14 bg-plum">
+          <div className="h-4 w-28 bg-white/20 rounded mb-3" />
+          <div className="h-16 w-24 bg-white/20 rounded mb-4" />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-12 bg-white/20 rounded-lg" />
+            ))}
+          </div>
+        </div>
+        <div className="page-content">
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div
+                key={i}
+                className="aspect-[4/3] bg-[var(--bg-hover)] rounded-xl"
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+
   return (
     <div className="page">
       {/* Hero */}
@@ -181,17 +163,23 @@ export default function YearPage() {
           <h1 className="font-[family-name:var(--font-playfair)] font-bold italic leading-none mb-2 text-[clamp(52px,8vw,80px)] text-white">
             {year}
           </h1>
-          <p className="text-[13px] mb-8 text-white/45">
-            {statusLabel}
-          </p>
+          <p className="text-[13px] mb-8 text-white/45">{statusLabel}</p>
 
           {/* Stat grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
             {[
-              { val: finishedBooks.length, label: "Books read", sub: autoGoal ? `goal: ${autoGoal.target}` : null },
-              { val: loggedDates.size,     label: "Days read",  sub: null },
-              { val: avgRating ? `${avgRating}★` : "—", label: "Avg rating", sub: null },
-              { val: quoteCount,           label: "Quotes saved", sub: null },
+              {
+                val: finishedBooks.length,
+                label: "Books read",
+                sub: autoGoal ? `goal: ${autoGoal.target}` : null,
+              },
+              { val: loggedDates.size, label: "Days read", sub: null },
+              {
+                val: avgRating ? `${avgRating}★` : "—",
+                label: "Avg rating",
+                sub: null,
+              },
+              { val: quoteCount, label: "Quotes saved", sub: null },
             ].map(({ val, label, sub }) => (
               <div key={label}>
                 <p className="font-[family-name:var(--font-playfair)] font-bold leading-none mb-1 text-[clamp(22px,4vw,32px)] text-white">
@@ -200,7 +188,9 @@ export default function YearPage() {
                 <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/55">
                   {label}
                 </p>
-                {sub && <p className="text-[10px] mt-0.5 text-white/30">{sub}</p>}
+                {sub && (
+                  <p className="text-[10px] mt-0.5 text-white/30">{sub}</p>
+                )}
               </div>
             ))}
           </div>
@@ -214,7 +204,8 @@ export default function YearPage() {
                     {autoGoal.name || "reading goal"}
                   </p>
                   <p className="font-[family-name:var(--font-playfair)] text-[15px] font-semibold mb-2 text-white">
-                    {finishedBooks.length} of {autoGoal.target} books · {Math.round(goalProgress * 100)}%
+                    {finishedBooks.length} of {autoGoal.target} books ·{" "}
+                    {Math.round(goalProgress * 100)}%
                   </p>
                   <div className="h-1.5 rounded-full overflow-hidden bg-white/10">
                     <div
@@ -224,10 +215,14 @@ export default function YearPage() {
                   </div>
                 </div>
               )}
-              {customGoals.map(g => {
-                const p = g.target > 0 ? Math.min(1, g.bookIds.length / g.target) : 0;
+              {customGoals.map((g) => {
+                const p =
+                  g.target > 0 ? Math.min(1, g.bookIds.length / g.target) : 0;
                 return (
-                  <div key={g.id} className="rounded-xl px-4 py-3 min-w-[180px] bg-white/7 border border-white/10">
+                  <div
+                    key={g.id}
+                    className="rounded-xl px-4 py-3 min-w-[180px] bg-white/7 border border-white/10"
+                  >
                     <p className="text-[9px] uppercase tracking-[0.12em] font-semibold mb-1 text-gold/70">
                       {g.name}
                     </p>
@@ -249,7 +244,6 @@ export default function YearPage() {
       </div>
 
       <div className="page-content">
-
         {/* 12 mini month calendars */}
         <div className="mb-12">
           <p className="font-[family-name:var(--font-playfair)] text-[17px] italic mb-5 text-[var(--fg-heading)]">
@@ -279,7 +273,10 @@ export default function YearPage() {
             <div className="rounded-2xl p-5 overflow-x-auto bg-[var(--bg-surface)] border border-[var(--border-light)]">
               <div className="flex items-end gap-1 min-w-0">
                 {shelfMonths.map(({ monthIndex, books }, si) => (
-                  <div key={monthIndex} className="flex items-end gap-0.5 shrink-0">
+                  <div
+                    key={monthIndex}
+                    className="flex items-end gap-0.5 shrink-0"
+                  >
                     {si > 0 && (
                       <span className="text-[8px] uppercase font-bold mx-2 self-end pb-1 text-[var(--fg-faint)] tracking-[0.1em]">
                         {MONTH_NAMES[monthIndex].slice(0, 3)}
@@ -290,7 +287,7 @@ export default function YearPage() {
                         {MONTH_NAMES[monthIndex].slice(0, 3)}
                       </span>
                     )}
-                    {books.map(b => (
+                    {books.map((b) => (
                       <Link
                         key={b.id}
                         href={`/book/${b.id}`}
@@ -313,10 +310,12 @@ export default function YearPage() {
               <p className="font-[family-name:var(--font-playfair)] text-[17px] italic text-[var(--fg-heading)]">
                 {year} lists
               </p>
-              <Link href={`/${year}/lists`} className="back-link">all lists →</Link>
+              <Link href={`/${year}/lists`} className="back-link">
+                all lists →
+              </Link>
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
-              {lists.map(list => (
+              {lists.map((list) => (
                 <Link
                   key={list.id}
                   href={`/${year}/lists/${list.id}`}
@@ -331,15 +330,23 @@ export default function YearPage() {
                     </span>
                   </div>
                   {list.items.length === 0 ? (
-                    <p className="text-[11px] italic text-[var(--fg-faint)]">empty</p>
+                    <p className="text-[11px] italic text-[var(--fg-faint)]">
+                      empty
+                    </p>
                   ) : (
                     <ol className="space-y-1">
                       {list.items.slice(0, 4).map((item, i) => (
                         <li key={item.id} className="flex items-baseline gap-2">
-                          <span className="text-[10px] w-4 shrink-0 tabular-nums text-[var(--fg-faint)]">{i + 1}.</span>
-                          <span className="text-[12px] truncate text-[var(--fg)]">{item.title}</span>
+                          <span className="text-[10px] w-4 shrink-0 tabular-nums text-[var(--fg-faint)]">
+                            {i + 1}.
+                          </span>
+                          <span className="text-xs truncate text-[var(--fg)]">
+                            {item.title}
+                          </span>
                           {item.author && (
-                            <span className="text-[11px] shrink-0 hidden sm:block text-[var(--fg-muted)]">{item.author}</span>
+                            <span className="text-[11px] shrink-0 hidden sm:block text-[var(--fg-muted)]">
+                              {item.author}
+                            </span>
                           )}
                         </li>
                       ))}
@@ -358,10 +365,21 @@ export default function YearPage() {
 
         {/* Footer nav */}
         <div className="pt-5 border-t border-[var(--border-light)] flex flex-wrap gap-x-5 gap-y-1.5">
-          <Link href="/" className="back-link">← home</Link>
-          <Link href={`/${year}/${MONTH_ABBRS[now.getMonth()]}`} className="back-link">this month →</Link>
-          <Link href={`/${year}/stats`} className="back-link">year stats →</Link>
-          <Link href={`/${year}/goal`} className="back-link">goals →</Link>
+          <Link href="/" className="back-link">
+            ← home
+          </Link>
+          <Link
+            href={`/${year}/${MONTH_ABBRS[now.getMonth()]}`}
+            className="back-link"
+          >
+            this month →
+          </Link>
+          <Link href={`/${year}/stats`} className="back-link">
+            year stats →
+          </Link>
+          <Link href={`/${year}/goal`} className="back-link">
+            goals →
+          </Link>
         </div>
       </div>
     </div>

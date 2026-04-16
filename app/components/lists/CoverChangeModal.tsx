@@ -13,7 +13,12 @@ interface CoverChangeModalProps {
   onSave: (color: string, emoji: string) => Promise<void>;
 }
 
-export function CoverChangeModal({ initialColor, initialEmoji, onClose, onSave }: CoverChangeModalProps) {
+export function CoverChangeModal({
+  initialColor,
+  initialEmoji,
+  onClose,
+  onSave,
+}: CoverChangeModalProps) {
   const [color, setColor] = useState(initialColor);
   const [emoji, setEmoji] = useState(initialEmoji);
   const [saving, setSaving] = useState(false);
@@ -33,12 +38,14 @@ export function CoverChangeModal({ initialColor, initialEmoji, onClose, onSave }
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 px-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      <div
-        className="w-full max-w-[400px] rounded-2xl p-6 shadow-2xl bg-[var(--bg-surface)] border border-[var(--border-light)]"
-      >
-        <h3 className="font-serif text-[18px] font-bold text-[var(--fg-heading)] mb-1">Change cover</h3>
+      <div className="w-full max-w-[400px] rounded-2xl p-6 shadow-2xl bg-[var(--bg-surface)] border border-[var(--border-light)]">
+        <h3 className="font-serif text-lg font-bold text-[var(--fg-heading)] mb-1">
+          Change cover
+        </h3>
         <p className="font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)] mb-5">
           pick a new color and icon
         </p>

@@ -48,13 +48,13 @@ An online reading bullet journal. Log books, write reflections, track reading ha
 
 ### Admin API routes
 
-| Route | Description |
-|-------|-------------|
+| Route                              | Description                                                                   |
+| ---------------------------------- | ----------------------------------------------------------------------------- |
 | `POST /api/admin/import-goodreads` | Start a server-side Goodreads CSV import (runs via `after()`, navigable away) |
-| `GET  /api/admin/import-goodreads` | Poll import progress from `user_metadata` |
-| `POST /api/admin/backfill` | Enrich all library books with Hardcover metadata (cover, ISBN, pages, genres) |
-| `GET  /api/admin/backfill` | Count books still missing cover/page count/ISBN |
-| `POST /api/admin/sync-series` | Bulk-populate series tracker from Hardcover for all finished/reading books |
+| `GET  /api/admin/import-goodreads` | Poll import progress from `user_metadata`                                     |
+| `POST /api/admin/backfill`         | Enrich all library books with Hardcover metadata (cover, ISBN, pages, genres) |
+| `GET  /api/admin/backfill`         | Count books still missing cover/page count/ISBN                               |
+| `POST /api/admin/sync-series`      | Bulk-populate series tracker from Hardcover for all finished/reading books    |
 
 ## Setup
 
@@ -91,28 +91,28 @@ npm run dev
 
 ## Database Schema
 
-| Table | Description |
-|-------|-------------|
-| `books` | Personal book library with inline metadata (title, author, genres) |
-| `thoughts` | Reflection notes per book |
-| `book_reads` | Re-read history per book |
-| `quotes` | Saved quotes linked to books |
-| `reading_log` | Daily reading habit log with notes |
-| `reading_goals` | Annual goals (auto-tracked or custom) |
-| `goal_books` | Books manually assigned to custom goals |
-| `lists` | Custom curated lists |
-| `list_items` | Items within a list |
-| `series` | Book series tracker |
-| `series_books` | Books within a series with read status |
-| `recommendations` | Books recommended to/by the user |
+| Table             | Description                                                        |
+| ----------------- | ------------------------------------------------------------------ |
+| `books`           | Personal book library with inline metadata (title, author, genres) |
+| `thoughts`        | Reflection notes per book                                          |
+| `book_reads`      | Re-read history per book                                           |
+| `quotes`          | Saved quotes linked to books                                       |
+| `reading_log`     | Daily reading habit log with notes                                 |
+| `reading_goals`   | Annual goals (auto-tracked or custom)                              |
+| `goal_books`      | Books manually assigned to custom goals                            |
+| `lists`           | Custom curated lists                                               |
+| `list_items`      | Items within a list                                                |
+| `series`          | Book series tracker                                                |
+| `series_books`    | Books within a series with read status                             |
+| `recommendations` | Books recommended to/by the user                                   |
 
 ## Color Palette
 
-| Token | Hex | Used for |
-|-------|-----|----------|
-| Plum | `#2D1B2E` | Primary brand, headers, today marker |
-| Terra | `#C97B5A` | Finished books, CTAs |
-| Sage | `#7B9E87` | Reading streaks, habit tracker, goals |
-| Gold | `#D4A843` | Quotes, celebration moments |
-| Lavender | `#C4B5D4` | Annotations, quotes accent |
-| Cream | `#FAF6F0` | Page background |
+| Token    | Hex       | Used for                              |
+| -------- | --------- | ------------------------------------- |
+| Plum     | `#2D1B2E` | Primary brand, headers, today marker  |
+| Terra    | `#C97B5A` | Finished books, CTAs                  |
+| Sage     | `#7B9E87` | Reading streaks, habit tracker, goals |
+| Gold     | `#D4A843` | Quotes, celebration moments           |
+| Lavender | `#C4B5D4` | Annotations, quotes accent            |
+| Cream    | `#FAF6F0` | Page background                       |

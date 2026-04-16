@@ -30,7 +30,11 @@ function labelForPathname(pathname: string): string {
 
 const NavigationContext = createContext<RouteEntry | null>(null);
 
-export function NavigationProvider({ children }: { children: React.ReactNode }) {
+export function NavigationProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
   const currentRef = useRef<RouteEntry | null>(null);
   const [previous, setPrevious] = useState<RouteEntry | null>(null);

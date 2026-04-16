@@ -3,8 +3,11 @@ import { createServerClient } from "@/lib/supabase-server";
 
 export async function POST(req: NextRequest) {
   const supabase = createServerClient(req);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user)
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { orderedIds } = await req.json();
 
@@ -22,6 +25,7 @@ export async function POST(req: NextRequest) {
     ids: orderedIds,
     orders: orderedIds.map((_: string, i: number) => i),
   });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

@@ -10,7 +10,11 @@ interface StarRatingProps {
   className?: string;
 }
 
-export function StarRating({ rating, onChange, className = "" }: StarRatingProps) {
+export function StarRating({
+  rating,
+  onChange,
+  className = "",
+}: StarRatingProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<number | null>(null);
 
@@ -18,7 +22,10 @@ export function StarRating({ rating, onChange, className = "" }: StarRatingProps
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return null;
     const x = e.clientX - rect.left;
-    return Math.max(0.25, Math.min(5, Math.round((x / rect.width) * 5 * 4) / 4));
+    return Math.max(
+      0.25,
+      Math.min(5, Math.round((x / rect.width) * 5 * 4) / 4),
+    );
   };
 
   return (

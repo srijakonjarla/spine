@@ -58,7 +58,10 @@ export async function getSeries(): Promise<Series[]> {
   return (data as SeriesRow[]).map(mapSeries);
 }
 
-export async function createSeries(name: string, author: string): Promise<Series> {
+export async function createSeries(
+  name: string,
+  author: string,
+): Promise<Series> {
   const res = await apiFetch("/api/series", {
     method: "POST",
     body: JSON.stringify({ name, author }),
@@ -66,7 +69,10 @@ export async function createSeries(name: string, author: string): Promise<Series
   return mapSeries(await res.json());
 }
 
-export async function updateSeries(id: string, patch: { name?: string; author?: string }): Promise<void> {
+export async function updateSeries(
+  id: string,
+  patch: { name?: string; author?: string },
+): Promise<void> {
   await apiFetch(`/api/series/${id}`, {
     method: "PATCH",
     body: JSON.stringify(patch),
@@ -81,29 +87,61 @@ export async function addSeriesBook(
   seriesId: string,
   title: string,
   position: number,
-  catalog?: { coverUrl?: string; author?: string; isbn?: string; releaseDate?: string; genres?: string[]; pageCount?: number | null; bookId?: string },
+  catalog?: {
+    coverUrl?: string;
+    author?: string;
+    isbn?: string;
+    releaseDate?: string;
+    genres?: string[];
+    pageCount?: number | null;
+    bookId?: string;
+  },
   status?: SeriesBook["status"],
 ): Promise<SeriesBook> {
   const res = await apiFetch(`/api/series/${seriesId}/books`, {
     method: "POST",
-    body: JSON.stringify({ title, position, catalog, ...(status ? { status } : {}) }),
+    body: JSON.stringify({
+      title,
+      position,
+      catalog,
+      ...(status ? { status } : {}),
+    }),
   });
   const b = await res.json();
-  return { id: b.id, title: b.title, position: b.position, status: b.status, bookId: b.book_id, coverUrl: b.cover_url ?? "" };
+  return {
+    id: b.id,
+    title: b.title,
+    position: b.position,
+    status: b.status,
+    bookId: b.book_id,
+    coverUrl: b.cover_url ?? "",
+  };
 }
 
-export async function updateSeriesBook(seriesId: string, bookId: string, status: SeriesBook["status"]): Promise<void> {
+export async function updateSeriesBook(
+  seriesId: string,
+  bookId: string,
+  status: SeriesBook["status"],
+): Promise<void> {
   await apiFetch(`/api/series/${seriesId}/books/${bookId}`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
   });
 }
 
-export async function deleteSeriesBook(seriesId: string, bookId: string): Promise<void> {
-  await apiFetch(`/api/series/${seriesId}/books/${bookId}`, { method: "DELETE" });
+export async function deleteSeriesBook(
+  seriesId: string,
+  bookId: string,
+): Promise<void> {
+  await apiFetch(`/api/series/${seriesId}/books/${bookId}`, {
+    method: "DELETE",
+  });
 }
 
-export async function reorderSeriesBooks(seriesId: string, orderedIds: string[]): Promise<void> {
+export async function reorderSeriesBooks(
+  seriesId: string,
+  orderedIds: string[],
+): Promise<void> {
   await apiFetch(`/api/series/${seriesId}/books/reorder`, {
     method: "POST",
     body: JSON.stringify({ orderedIds }),

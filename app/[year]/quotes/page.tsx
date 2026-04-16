@@ -32,7 +32,9 @@ export default function QuoteCollectionPage() {
     <div className="page">
       <div className="page-content">
         <div className="mb-10">
-          <Link href="/" className="back-link">← home</Link>
+          <Link href="/" className="back-link">
+            ← home
+          </Link>
         </div>
 
         <PageHeader

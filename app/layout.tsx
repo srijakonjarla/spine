@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
-import { DM_Sans, Playfair_Display, Caveat, Geist_Mono } from "next/font/google";
+import {
+  DM_Sans,
+  Playfair_Display,
+  Caveat,
+  Geist_Mono,
+} from "next/font/google";
 import "@/globals.css";
-import AuthProvider from "@/components/AuthProvider";
+import AuthProvider from "@/providers/AuthProvider";
 import Nav from "@/components/Nav";
-import { NavigationProvider } from "@/components/NavigationProvider";
-import { ThemeProvider } from "@/components/ThemeProvider";
+import { NavigationProvider } from "@/providers/NavigationProvider";
+import { ThemeProvider } from "@/providers/ThemeProvider";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -44,7 +49,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{__html: `(function(){var t=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.setAttribute('data-theme',t||(d?'dark':'light'));})()`}} />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var t=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.setAttribute('data-theme',t||(d?'dark':'light'));})()`,
+          }}
+        />
       </head>
       <body
         className={`${dmSans.variable} ${playfair.variable} ${caveat.variable} ${geistMono.variable} antialiased`}
@@ -53,9 +62,7 @@ export default function RootLayout({
           <AuthProvider>
             <NavigationProvider>
               <Nav />
-              <div className="pt-14 lg:pl-[220px]">
-                {children}
-              </div>
+              <div className="pt-14 lg:pl-[220px]">{children}</div>
             </NavigationProvider>
           </AuthProvider>
         </ThemeProvider>

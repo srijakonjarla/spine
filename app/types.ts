@@ -1,4 +1,8 @@
-export type ReadingStatus = "reading" | "finished" | "want-to-read" | "did-not-finish";
+export type ReadingStatus =
+  | "reading"
+  | "finished"
+  | "want-to-read"
+  | "did-not-finish";
 
 export interface Thought {
   id: string;

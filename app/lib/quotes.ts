@@ -7,7 +7,10 @@ interface QuoteRow {
   text: string;
   page_number: string;
   created_at: string;
-  user_books?: { title_override: string | null; catalog_books: { title: string } | null } | null;
+  user_books?: {
+    title_override: string | null;
+    catalog_books: { title: string } | null;
+  } | null;
 }
 
 function mapQuote(row: QuoteRow): Quote {
@@ -29,10 +32,18 @@ export async function getQuotes(bookId?: string): Promise<Quote[]> {
   return data.map(mapQuote);
 }
 
-export async function addQuote(text: string, bookId?: string, pageNumber?: string): Promise<Quote> {
+export async function addQuote(
+  text: string,
+  bookId?: string,
+  pageNumber?: string,
+): Promise<Quote> {
   const res = await apiFetch("/api/quotes", {
     method: "POST",
-    body: JSON.stringify({ text, bookId: bookId ?? null, pageNumber: pageNumber ?? "" }),
+    body: JSON.stringify({
+      text,
+      bookId: bookId ?? null,
+      pageNumber: pageNumber ?? "",
+    }),
   });
   const row: QuoteRow = await res.json();
   return mapQuote(row);

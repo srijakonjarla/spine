@@ -15,9 +15,13 @@ export default function ListsPage() {
   const [lists, setLists] = useState<BookList[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getLists(year).then(setLists).catch(console.error);
+    getLists(year)
+      .then(setLists)
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, [year]);
 
   const handleCreate = async (opts: {
@@ -43,14 +47,31 @@ export default function ListsPage() {
     }
   };
 
+  if (loading)
+    return (
+      <div className="page">
+        <div className="mx-auto px-6 py-12 animate-pulse">
+          <div className="h-5 w-16 bg-[var(--bg-hover)] rounded mb-8" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-40 bg-[var(--bg-hover)] rounded-xl" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+
   return (
     <div className="page">
       <div className="mx-auto px-6 py-12">
-
         <div className="flex items-baseline justify-between mb-8">
           <div>
-            <p className="text-xs uppercase tracking-widest mb-1 text-[var(--fg-faint)]">reading journal · {year}</p>
-            <h1 className="font-serif text-3xl font-semibold tracking-tight text-[var(--fg-heading)]">lists</h1>
+            <p className="text-xs uppercase tracking-widest mb-1 text-[var(--fg-faint)]">
+              reading journal · {year}
+            </p>
+            <h1 className="font-serif text-3xl font-semibold tracking-tight text-[var(--fg-heading)]">
+              lists
+            </h1>
             {lists.length > 0 && (
               <p className="font-[family-name:var(--font-caveat)] text-[15px] text-[var(--terra)] mt-1">
                 {lists.length} collections — make as many as you need
@@ -77,8 +98,12 @@ export default function ListsPage() {
             className="rounded-2xl flex flex-col items-center justify-center gap-2 min-h-[180px] transition-all border-2 border-dashed border-[var(--border-light)] hover:border-[var(--terra)] hover:bg-[var(--terra)]/4"
           >
             <span className="text-[28px] text-[var(--fg-faint)]">＋</span>
-            <span className="font-[family-name:var(--font-caveat)] text-[14px] text-[var(--fg-muted)]">create a new list</span>
-            <span className="text-[11px] text-[var(--fg-faint)] text-center leading-relaxed">books, ideas, bullet points — anything</span>
+            <span className="font-[family-name:var(--font-caveat)] text-sm text-[var(--fg-muted)]">
+              create a new list
+            </span>
+            <span className="text-[11px] text-[var(--fg-faint)] text-center leading-relaxed">
+              books, ideas, bullet points — anything
+            </span>
           </button>
         </div>
       </div>

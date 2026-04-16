@@ -2,15 +2,22 @@
 
 import { useRouter } from "next/navigation";
 import type { BookList } from "@/types";
-import { BooksIcon, LightbulbIcon, CheckSquareIcon, ListBulletsIcon, type Icon } from "@phosphor-icons/react";
+import {
+  BooksIcon,
+  LightbulbIcon,
+  CheckSquareIcon,
+  ListBulletsIcon,
+  type Icon,
+} from "@phosphor-icons/react";
 import { COVER_ICONS, coverGradientStyle } from "./coverConstants";
 
-const LIST_TYPES: ReadonlyArray<{ value: string; icon: Icon; label: string }> = [
-  { value: "book_list",   icon: BooksIcon,       label: "Book List" },
-  { value: "idea_list",   icon: LightbulbIcon,   label: "Idea List" },
-  { value: "checklist",   icon: CheckSquareIcon, label: "Checklist" },
-  { value: "bullet_list", icon: ListBulletsIcon, label: "Bullet Points" },
-];
+const LIST_TYPES: ReadonlyArray<{ value: string; icon: Icon; label: string }> =
+  [
+    { value: "book_list", icon: BooksIcon, label: "Book List" },
+    { value: "idea_list", icon: LightbulbIcon, label: "Idea List" },
+    { value: "checklist", icon: CheckSquareIcon, label: "Checklist" },
+    { value: "bullet_list", icon: ListBulletsIcon, label: "Bullet Points" },
+  ];
 
 function listTypeMeta(listType: string) {
   return LIST_TYPES.find((t) => t.value === listType) ?? LIST_TYPES[0];
@@ -47,14 +54,21 @@ export function ListCard({ list, year }: ListCardProps) {
 
       {/* Body */}
       <div className="px-4 pt-3 pb-4">
-        <p className="font-serif text-[15px] font-bold leading-snug mb-0.5 text-[var(--fg-heading)]">{list.title}</p>
-        <p className="font-[family-name:var(--font-caveat)] text-[12px] text-[var(--terra)] mb-2">
+        <p className="font-serif text-[15px] font-bold leading-snug mb-0.5 text-[var(--fg-heading)]">
+          {list.title}
+        </p>
+        <p className="font-[family-name:var(--font-caveat)] text-xs text-[var(--terra)] mb-2">
           {list.items.length} {isIdeaType ? "ideas" : "books"}
         </p>
         <div className="flex flex-col gap-0.5">
           {list.items.slice(0, 3).map((item) => (
-            <p key={item.id} className="text-[11px] truncate text-[var(--fg-muted)]">
-              {isIdeaType && <span className="text-[var(--terra)] mr-1">{bullet}</span>}
+            <p
+              key={item.id}
+              className="text-[11px] truncate text-[var(--fg-muted)]"
+            >
+              {isIdeaType && (
+                <span className="text-[var(--terra)] mr-1">{bullet}</span>
+              )}
               {item.title}
             </p>
           ))}

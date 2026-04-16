@@ -27,12 +27,12 @@ export default function BookCard({ entry }: { entry: BookEntry }) {
           {entry.title || "untitled"}
         </span>
         {entry.author && (
-          <span className="text-xs text-stone-400 truncate shrink-0">{entry.author}</span>
+          <span className="text-xs text-stone-400 truncate shrink-0">
+            {entry.author}
+          </span>
         )}
         <span className="dot-leader" />
-        {entry.rating > 0 && (
-          <StarDisplay rating={entry.rating} size={11} />
-        )}
+        {entry.rating > 0 && <StarDisplay rating={entry.rating} size={11} />}
         <button
           onClick={toggleBookmark}
           title={bookmarked ? "remove bookmark" : "bookmark"}

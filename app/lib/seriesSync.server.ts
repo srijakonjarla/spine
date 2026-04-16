@@ -31,19 +31,28 @@ async function hcPost(query: string, variables: Record<string, unknown>) {
   if (!token) return null;
   const res = await fetch(HC_ENDPOINT, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify({ query, variables }),
   });
   if (!res.ok) return null;
   return res.json();
 }
 
-async function getHardcoverId(title: string, author: string): Promise<number | null> {
-  const json = await hcPost(SEARCH_QUERY, { query: [title, author].filter(Boolean).join(" ") });
+async function getHardcoverId(
+  title: string,
+  author: string,
+): Promise<number | null> {
+  const json = await hcPost(SEARCH_QUERY, {
+    query: [title, author].filter(Boolean).join(" "),
+  });
   const raw = json?.data?.search?.results;
   if (!raw) return null;
-  const parsed: { hits?: { document: { id?: number | string; title?: string } }[] } =
-    typeof raw === "string" ? JSON.parse(raw) : raw;
+  const parsed: {
+    hits?: { document: { id?: number | string; title?: string } }[];
+  } = typeof raw === "string" ? JSON.parse(raw) : raw;
   const hit = parsed?.hits?.[0]?.document;
   if (!hit?.id || !hit.title) return null;
   const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -51,16 +60,21 @@ async function getHardcoverId(title: string, author: string): Promise<number | n
   return Number(hit.id);
 }
 
-interface HCSeries { position: number | null; series: { name: string } | null }
+interface HCSeries {
+  position: number | null;
+  series: { name: string } | null;
+}
 
 async function getBookSeriesFromHC(hcId: number): Promise<HCSeries[]> {
   const json = await hcPost(DETAILS_QUERY, { id: hcId });
   return json?.data?.books?.[0]?.book_series ?? [];
 }
 
-export function toSeriesStatus(libraryStatus: string): "read" | "reading" | "unread" {
+export function toSeriesStatus(
+  libraryStatus: string,
+): "read" | "reading" | "unread" {
   if (libraryStatus === "finished") return "read";
-  if (libraryStatus === "reading")  return "reading";
+  if (libraryStatus === "reading") return "reading";
   return "unread";
 }
 
@@ -71,7 +85,13 @@ export function toSeriesStatus(libraryStatus: string): "read" | "reading" | "unr
 export async function syncBookSeries(
   supabase: SupabaseClient,
   userId: string,
-  book: { id: string; title: string; author: string; status: string; coverUrl: string }
+  book: {
+    id: string;
+    title: string;
+    author: string;
+    status: string;
+    coverUrl: string;
+  },
 ): Promise<void> {
   // Only worth syncing for books the user has actually read or is reading
   if (!["finished", "reading"].includes(book.status)) return;

@@ -4,8 +4,11 @@ import { autoLogToday } from "@/lib/autoLog";
 
 export async function GET(req: NextRequest) {
   const supabase = createServerClient(req);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user)
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const bookId = req.nextUrl.searchParams.get("bookId");
 
@@ -18,25 +21,36 @@ export async function GET(req: NextRequest) {
   if (bookId) query = query.eq("book_id", bookId);
 
   const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
 }
 
 export async function POST(req: NextRequest) {
   const supabase = createServerClient(req);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user)
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { text, pageNumber, bookId } = await req.json();
-  if (!text?.trim()) return NextResponse.json({ error: "text required" }, { status: 400 });
+  if (!text?.trim())
+    return NextResponse.json({ error: "text required" }, { status: 400 });
 
   const { data, error } = await supabase
     .from("quotes")
-    .insert({ user_id: user.id, text: text.trim(), page_number: pageNumber ?? "", book_id: bookId ?? null })
+    .insert({
+      user_id: user.id,
+      text: text.trim(),
+      page_number: pageNumber ?? "",
+      book_id: bookId ?? null,
+    })
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
 
   await autoLogToday(supabase, user.id);
   return NextResponse.json(data, { status: 201 });

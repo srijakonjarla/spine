@@ -5,7 +5,12 @@ interface QuoteCardProps {
   onDelete?: () => void;
 }
 
-export function QuoteCard({ text, bookTitle, pageNumber, onDelete }: QuoteCardProps) {
+export function QuoteCard({
+  text,
+  bookTitle,
+  pageNumber,
+  onDelete,
+}: QuoteCardProps) {
   return (
     <div className="group border-l-2 border-[var(--border)] pl-4 hover:border-[var(--fg-faint)] transition-colors">
       <p className="text-sm italic leading-relaxed mb-2 text-[var(--fg)]">

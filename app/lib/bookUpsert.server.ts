@@ -60,17 +60,25 @@ export async function upsertBookForUser(
       catalogBookId = existing.id;
       // Opportunistically fill in missing catalog fields without overwriting good data
       const patch: Record<string, unknown> = {};
-      if (catalog.cover_url)          patch.cover_url    = catalog.cover_url;
-      if (catalog.genres?.length)     patch.genres       = catalog.genres;
-      if (catalog.page_count != null) patch.page_count   = catalog.page_count;
-      if (catalog.release_date)       patch.release_date = catalog.release_date;
+      if (catalog.cover_url) patch.cover_url = catalog.cover_url;
+      if (catalog.genres?.length) patch.genres = catalog.genres;
+      if (catalog.page_count != null) patch.page_count = catalog.page_count;
+      if (catalog.release_date) patch.release_date = catalog.release_date;
       if (Object.keys(patch).length) {
         patch.updated_at = new Date().toISOString();
-        await supabase.from("catalog_books").update(patch).eq("id", catalogBookId).eq("cover_url", "");
+        await supabase
+          .from("catalog_books")
+          .update(patch)
+          .eq("id", catalogBookId)
+          .eq("cover_url", "");
         // Only update cover_url when it was empty — don't downgrade a good cover
         if (!patch.cover_url) delete patch.cover_url;
-        if (Object.keys(patch).length > 1) { // still has other fields
-          await supabase.from("catalog_books").update(patch).eq("id", catalogBookId);
+        if (Object.keys(patch).length > 1) {
+          // still has other fields
+          await supabase
+            .from("catalog_books")
+            .update(patch)
+            .eq("id", catalogBookId);
         }
       }
     }
@@ -81,15 +89,15 @@ export async function upsertBookForUser(
     const { data: created, error } = await supabase
       .from("catalog_books")
       .insert({
-        title:        catalog.title,
-        author:       catalog.author,
-        cover_url:    catalog.cover_url,
-        isbn:         catalog.isbn,
+        title: catalog.title,
+        author: catalog.author,
+        cover_url: catalog.cover_url,
+        isbn: catalog.isbn,
         release_date: catalog.release_date,
-        genres:       catalog.genres,
-        page_count:   catalog.page_count,
-        created_at:   now,
-        updated_at:   now,
+        genres: catalog.genres,
+        page_count: catalog.page_count,
+        created_at: now,
+        updated_at: now,
       })
       .select("id")
       .single();
@@ -103,18 +111,18 @@ export async function upsertBookForUser(
     .from("user_books")
     .insert({
       ...(personal.id ? { id: personal.id } : {}),
-      user_id:        userId,
+      user_id: userId,
       catalog_book_id: catalogBookId,
-      status:         personal.status,
-      date_started:   personal.date_started  ?? null,
-      date_finished:  personal.date_finished ?? null,
-      date_shelved:   personal.date_shelved  ?? null,
-      rating:         personal.rating        ?? 0,
-      feeling:        personal.feeling       ?? "",
-      mood_tags:      personal.mood_tags     ?? [],
-      bookmarked:     personal.bookmarked    ?? false,
-      created_at:     personal.created_at    ?? now,
-      updated_at:     personal.updated_at    ?? now,
+      status: personal.status,
+      date_started: personal.date_started ?? null,
+      date_finished: personal.date_finished ?? null,
+      date_shelved: personal.date_shelved ?? null,
+      rating: personal.rating ?? 0,
+      feeling: personal.feeling ?? "",
+      mood_tags: personal.mood_tags ?? [],
+      bookmarked: personal.bookmarked ?? false,
+      created_at: personal.created_at ?? now,
+      updated_at: personal.updated_at ?? now,
     })
     .select("id")
     .single();
@@ -155,28 +163,36 @@ export function flattenUserBook(row: {
   thoughts?: unknown[];
   book_reads?: unknown[];
 }) {
-  const cb = row.catalog_books ?? { title: "", author: "", cover_url: "", isbn: "", release_date: "", genres: [], page_count: null };
+  const cb = row.catalog_books ?? {
+    title: "",
+    author: "",
+    cover_url: "",
+    isbn: "",
+    release_date: "",
+    genres: [],
+    page_count: null,
+  };
   return {
-    id:           row.id,
-    user_id:      row.user_id,
-    title:        row.title_override  ?? cb.title  ?? "",
-    author:       row.author_override ?? cb.author ?? "",
+    id: row.id,
+    user_id: row.user_id,
+    title: row.title_override ?? cb.title ?? "",
+    author: row.author_override ?? cb.author ?? "",
     release_date: cb.release_date ?? "",
-    genres:       cb.genres        ?? [],
-    cover_url:    cb.cover_url     ?? "",
-    isbn:         cb.isbn          ?? "",
-    page_count:   cb.page_count    ?? null,
-    status:       row.status,
-    date_started:  row.date_started,
+    genres: cb.genres ?? [],
+    cover_url: cb.cover_url ?? "",
+    isbn: cb.isbn ?? "",
+    page_count: cb.page_count ?? null,
+    status: row.status,
+    date_started: row.date_started,
     date_finished: row.date_finished,
-    date_shelved:  row.date_shelved,
-    rating:        row.rating,
-    feeling:       row.feeling,
-    mood_tags:     row.mood_tags  ?? [],
-    bookmarked:    row.bookmarked ?? false,
-    created_at:    row.created_at,
-    updated_at:    row.updated_at,
-    thoughts:      row.thoughts   ?? [],
-    book_reads:    row.book_reads ?? [],
+    date_shelved: row.date_shelved,
+    rating: row.rating,
+    feeling: row.feeling,
+    mood_tags: row.mood_tags ?? [],
+    bookmarked: row.bookmarked ?? false,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    thoughts: row.thoughts ?? [],
+    book_reads: row.book_reads ?? [],
   };
 }

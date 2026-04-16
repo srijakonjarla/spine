@@ -8,7 +8,7 @@ import { useRef } from "react";
 export function useDraggableList<T extends { id: string }>(
   setItems: React.Dispatch<React.SetStateAction<T[]>>,
   onSave: (orderedIds: string[]) => void,
-  saveDelay = 500
+  saveDelay = 500,
 ) {
   const dragId = useRef<string | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -30,7 +30,10 @@ export function useDraggableList<T extends { id: string }>(
       const [moved] = items.splice(fromIdx, 1);
       items.splice(toIdx, 0, moved);
       if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => onSave(items.map((i) => i.id)), saveDelay);
+      saveTimer.current = setTimeout(
+        () => onSave(items.map((i) => i.id)),
+        saveDelay,
+      );
       return items;
     });
   };

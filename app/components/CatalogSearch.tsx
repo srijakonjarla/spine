@@ -36,57 +36,70 @@ export function CatalogSearch({
   const [searchError, setSearchError] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleChange = useCallback((v: string) => {
-    onChange(v);
-    setIdx(-1);
-    setSearchError(false);
-    if (timer.current) clearTimeout(timer.current);
-    if (!v.trim()) { setSuggestions([]); return; }
-
-    timer.current = setTimeout(async () => {
-      try {
-        // Library matches first
-        const q = v.toLowerCase();
-        const libMatches: CatalogEntry[] = (libraryEntries ?? [])
-          .filter((b) =>
-            b.title.toLowerCase().includes(q) ||
-            (b.author ?? "").toLowerCase().includes(q)
-          )
-          .map((b) => ({
-            id: b.id,
-            title: b.title,
-            author: b.author,
-            releaseDate: "",
-            genres: b.genres,
-            coverUrl: b.coverUrl,
-            isbn: b.isbn,
-            pageCount: b.pageCount,
-            status: b.status,
-            bookId: b.id,
-          }));
-
-        // Remote catalog, deduped against library matches
-        const remote = await searchCatalog(v);
-        const deduped = remote.filter(
-          (r) => !libMatches.some((lm) => {
-            if (r.isbn && lm.isbn && r.isbn === lm.isbn) return true;
-            return r.title.toLowerCase() === lm.title.toLowerCase() &&
-              r.author.toLowerCase() === (lm.author ?? "").toLowerCase();
-          })
-        );
-
-        setSuggestions([...libMatches, ...deduped]);
-      } catch (err) {
-        console.error("[CatalogSearch] error:", err);
-        setSearchError(true);
+  const handleChange = useCallback(
+    (v: string) => {
+      onChange(v);
+      setIdx(-1);
+      setSearchError(false);
+      if (timer.current) clearTimeout(timer.current);
+      if (!v.trim()) {
         setSuggestions([]);
+        return;
       }
-    }, 250);
-  }, [onChange, libraryEntries]);
+
+      timer.current = setTimeout(async () => {
+        try {
+          // Library matches first
+          const q = v.toLowerCase();
+          const libMatches: CatalogEntry[] = (libraryEntries ?? [])
+            .filter(
+              (b) =>
+                b.title.toLowerCase().includes(q) ||
+                (b.author ?? "").toLowerCase().includes(q),
+            )
+            .map((b) => ({
+              id: b.id,
+              title: b.title,
+              author: b.author,
+              releaseDate: "",
+              genres: b.genres,
+              coverUrl: b.coverUrl,
+              isbn: b.isbn,
+              pageCount: b.pageCount,
+              status: b.status,
+              bookId: b.id,
+            }));
+
+          // Remote catalog, deduped against library matches
+          const remote = await searchCatalog(v);
+          const deduped = remote.filter(
+            (r) =>
+              !libMatches.some((lm) => {
+                if (r.isbn && lm.isbn && r.isbn === lm.isbn) return true;
+                return (
+                  r.title.toLowerCase() === lm.title.toLowerCase() &&
+                  r.author.toLowerCase() === (lm.author ?? "").toLowerCase()
+                );
+              }),
+          );
+
+          setSuggestions([...libMatches, ...deduped]);
+        } catch (err) {
+          console.error("[CatalogSearch] error:", err);
+          setSearchError(true);
+          setSuggestions([]);
+        }
+      }, 250);
+    },
+    [onChange, libraryEntries],
+  );
 
   const commit = (entry?: CatalogEntry) => {
-    if (entry) { onSelect(entry); setSuggestions([]); setIdx(-1); }
-    else onSubmit?.();
+    if (entry) {
+      onSelect(entry);
+      setSuggestions([]);
+      setIdx(-1);
+    } else onSubmit?.();
   };
 
   return (
@@ -98,10 +111,26 @@ export function CatalogSearch({
         onChange={(e) => handleChange(e.target.value)}
         onKeyDown={(e) => {
           if (suggestions.length > 0) {
-            if (e.key === "ArrowDown") { e.preventDefault(); setIdx((i) => Math.min(i + 1, suggestions.length - 1)); return; }
-            if (e.key === "ArrowUp") { e.preventDefault(); setIdx((i) => Math.max(i - 1, -1)); return; }
-            if (e.key === "Escape") { setSuggestions([]); setIdx(-1); return; }
-            if (e.key === "Enter" && idx >= 0) { e.preventDefault(); commit(suggestions[idx]); return; }
+            if (e.key === "ArrowDown") {
+              e.preventDefault();
+              setIdx((i) => Math.min(i + 1, suggestions.length - 1));
+              return;
+            }
+            if (e.key === "ArrowUp") {
+              e.preventDefault();
+              setIdx((i) => Math.max(i - 1, -1));
+              return;
+            }
+            if (e.key === "Escape") {
+              setSuggestions([]);
+              setIdx(-1);
+              return;
+            }
+            if (e.key === "Enter" && idx >= 0) {
+              e.preventDefault();
+              commit(suggestions[idx]);
+              return;
+            }
           }
           if (e.key === "Enter") commit();
         }}
@@ -123,12 +152,27 @@ export function CatalogSearch({
               onMouseDown={() => commit(s)}
               className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${i === idx ? "bg-[var(--bg-subtle)]" : "hover:bg-[var(--bg-faintest)]"}`}
             >
-              <span className="text-sm text-[var(--fg)] truncate flex-1">{s.title}</span>
-              {s.author && <span className="text-xs text-[var(--fg-muted)] shrink-0 hidden sm:block">{s.author}</span>}
-              {showReleaseDate && s.releaseDate && <span className="text-xs text-[var(--fg-faint)] shrink-0 ml-auto">{s.releaseDate}</span>}
+              <span className="text-sm text-[var(--fg)] truncate flex-1">
+                {s.title}
+              </span>
+              {s.author && (
+                <span className="text-xs text-[var(--fg-muted)] shrink-0 hidden sm:block">
+                  {s.author}
+                </span>
+              )}
+              {showReleaseDate && s.releaseDate && (
+                <span className="text-xs text-[var(--fg-faint)] shrink-0 ml-auto">
+                  {s.releaseDate}
+                </span>
+              )}
               {s.status && (
-                <span className={`text-[10px] shrink-0 font-medium ${STATUS_COLOR[s.status] ?? "text-[var(--fg-faint)]"}`}>
-                  {STATUS_SYMBOL[s.status] ?? "·"} <span className="hidden sm:inline">{s.status === "want-to-read" ? "tbr" : s.status}</span>
+                <span
+                  className={`text-[10px] shrink-0 font-medium ${STATUS_COLOR[s.status] ?? "text-[var(--fg-faint)]"}`}
+                >
+                  {STATUS_SYMBOL[s.status] ?? "·"}{" "}
+                  <span className="hidden sm:inline">
+                    {s.status === "want-to-read" ? "tbr" : s.status}
+                  </span>
                 </span>
               )}
             </button>
@@ -146,22 +190,40 @@ export function useCatalogSearch(delay = 250) {
   const [idx, setIdx] = useState(-1);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleChange = useCallback((value: string) => {
-    setInput(value);
-    setIdx(-1);
-    if (timer.current) clearTimeout(timer.current);
-    if (!value.trim()) { setSuggestions([]); return; }
-    timer.current = setTimeout(async () => {
-      try {
-        setSuggestions(await searchCatalog(value));
-      } catch (err) {
-        console.error("[CatalogSearch]", err);
+  const handleChange = useCallback(
+    (value: string) => {
+      setInput(value);
+      setIdx(-1);
+      if (timer.current) clearTimeout(timer.current);
+      if (!value.trim()) {
         setSuggestions([]);
+        return;
       }
-    }, delay);
-  }, [delay]);
+      timer.current = setTimeout(async () => {
+        try {
+          setSuggestions(await searchCatalog(value));
+        } catch (err) {
+          console.error("[CatalogSearch]", err);
+          setSuggestions([]);
+        }
+      }, delay);
+    },
+    [delay],
+  );
 
-  const clear = useCallback(() => { setInput(""); setSuggestions([]); setIdx(-1); }, []);
+  const clear = useCallback(() => {
+    setInput("");
+    setSuggestions([]);
+    setIdx(-1);
+  }, []);
 
-  return { input, suggestions, idx, setIdx, handleChange, clear, setSuggestions };
+  return {
+    input,
+    suggestions,
+    idx,
+    setIdx,
+    handleChange,
+    clear,
+    setSuggestions,
+  };
 }

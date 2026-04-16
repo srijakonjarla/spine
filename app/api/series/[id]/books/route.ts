@@ -12,10 +12,16 @@ interface CatalogMeta {
   bookId?: string;
 }
 
-export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const supabase = createServerClient(req);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user)
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { id: seriesId } = await params;
 
@@ -25,18 +31,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .eq("id", seriesId)
     .eq("user_id", user.id)
     .single();
-  if (!series) return NextResponse.json({ error: "not found" }, { status: 404 });
+  if (!series)
+    return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const { title, position, catalog, status } = await req.json() as {
+  const { title, position, catalog, status } = (await req.json()) as {
     title: string;
     position: number;
     catalog?: CatalogMeta;
     status?: string;
   };
-  if (!title?.trim()) return NextResponse.json({ error: "title required" }, { status: 400 });
+  if (!title?.trim())
+    return NextResponse.json({ error: "title required" }, { status: 400 });
 
   const VALID_STATUSES = ["unread", "reading", "read", "skipped"];
-  const resolvedStatus = VALID_STATUSES.includes(status ?? "") ? status! : "unread";
+  const resolvedStatus = VALID_STATUSES.includes(status ?? "")
+    ? status!
+    : "unread";
   const coverUrl = catalog?.coverUrl ?? "";
 
   // Resolve user_books.id — find existing entry or create a TBR book
@@ -72,20 +82,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         supabase,
         user.id,
         {
-          title:        title.trim(),
-          author:       catalog?.author       ?? "",
-          cover_url:    coverUrl,
-          isbn:         catalog?.isbn         ?? "",
-          release_date: catalog?.releaseDate  ?? "",
-          genres:       catalog?.genres       ?? [],
-          page_count:   catalog?.pageCount    ?? null,
+          title: title.trim(),
+          author: catalog?.author ?? "",
+          cover_url: coverUrl,
+          isbn: catalog?.isbn ?? "",
+          release_date: catalog?.releaseDate ?? "",
+          genres: catalog?.genres ?? [],
+          page_count: catalog?.pageCount ?? null,
         },
         {
-          status:       "want-to-read",
+          status: "want-to-read",
           date_shelved: now.slice(0, 10),
-          bookmarked:   false,
-          created_at:   now,
-          updated_at:   now,
+          bookmarked: false,
+          created_at: now,
+          updated_at: now,
         },
       );
       if (result) bookId = result.userBookId;
@@ -96,14 +106,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .from("series_books")
     .insert({
       series_id: seriesId,
-      title:     title.trim(),
+      title: title.trim(),
       position,
       cover_url: coverUrl,
-      status:    resolvedStatus,
-      book_id:   bookId,
+      status: resolvedStatus,
+      book_id: bookId,
     })
     .select()
     .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data, { status: 201 });
 }

@@ -1,17 +1,47 @@
 "use client";
 
 import { useState } from "react";
-import { BooksIcon, LightbulbIcon, CheckSquareIcon, ListBulletsIcon } from "@phosphor-icons/react";
+import {
+  BooksIcon,
+  LightbulbIcon,
+  CheckSquareIcon,
+  ListBulletsIcon,
+} from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 import { ColorPicker } from "./ColorPicker";
 import { IconPicker } from "./IconPicker";
 import { COVER_COLORS, COVER_ICON_NAMES } from "./coverConstants";
 
-const LIST_TYPES: ReadonlyArray<{ value: string; icon: Icon; label: string; desc: string }> = [
-  { value: "book_list",   icon: BooksIcon,       label: "Book List",     desc: "search and add books from the catalog" },
-  { value: "idea_list",   icon: LightbulbIcon,   label: "Idea List",     desc: "freeform writing on a dotted-grid page" },
-  { value: "checklist",   icon: CheckSquareIcon, label: "Checklist",     desc: "items with checkboxes you can tick off" },
-  { value: "bullet_list", icon: ListBulletsIcon, label: "Bullet Points", desc: "bullet points with custom symbols" },
+const LIST_TYPES: ReadonlyArray<{
+  value: string;
+  icon: Icon;
+  label: string;
+  desc: string;
+}> = [
+  {
+    value: "book_list",
+    icon: BooksIcon,
+    label: "Book List",
+    desc: "search and add books from the catalog",
+  },
+  {
+    value: "idea_list",
+    icon: LightbulbIcon,
+    label: "Idea List",
+    desc: "freeform writing on a dotted-grid page",
+  },
+  {
+    value: "checklist",
+    icon: CheckSquareIcon,
+    label: "Checklist",
+    desc: "items with checkboxes you can tick off",
+  },
+  {
+    value: "bullet_list",
+    icon: ListBulletsIcon,
+    label: "Bullet Points",
+    desc: "bullet points with custom symbols",
+  },
 ];
 
 interface ListCreateModalProps {
@@ -26,7 +56,11 @@ interface ListCreateModalProps {
   saving: boolean;
 }
 
-export function ListCreateModal({ onClose, onCreate, saving }: ListCreateModalProps) {
+export function ListCreateModal({
+  onClose,
+  onCreate,
+  saving,
+}: ListCreateModalProps) {
   const [name, setName] = useState("");
   const [listType, setListType] = useState<string>("book_list");
   const [color, setColor] = useState<string>(COVER_COLORS[0]);
@@ -36,19 +70,27 @@ export function ListCreateModal({ onClose, onCreate, saving }: ListCreateModalPr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || saving) return;
-    await onCreate({ name: name.trim(), listType, color, emoji, description: description.trim() });
+    await onCreate({
+      name: name.trim(),
+      listType,
+      color,
+      emoji,
+      description: description.trim(),
+    });
   };
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--bg-overlay)] px-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      <div
-        className="w-full max-w-[480px] rounded-2xl p-7 shadow-2xl bg-[var(--bg-surface)] border border-[var(--border-light)]"
-      >
-        <h2 className="font-serif text-[22px] font-bold text-[var(--fg-heading)] mb-0.5">Create a new list</h2>
-        <p className="font-[family-name:var(--font-caveat)] text-[14px] text-[var(--fg-muted)] mb-6">
+      <div className="w-full max-w-[480px] rounded-2xl p-7 shadow-2xl bg-[var(--bg-surface)] border border-[var(--border-light)]">
+        <h2 className="font-serif text-[22px] font-bold text-[var(--fg-heading)] mb-0.5">
+          Create a new list
+        </h2>
+        <p className="font-[family-name:var(--font-caveat)] text-sm text-[var(--fg-muted)] mb-6">
           name it, type it, color it — then fill it
         </p>
 
@@ -82,7 +124,9 @@ export function ListCreateModal({ onClose, onCreate, saving }: ListCreateModalPr
                   }`}
                 >
                   <t.icon size={20} />
-                  <span className="text-[10px] font-semibold leading-tight text-[var(--fg-muted)]">{t.label}</span>
+                  <span className="text-[10px] font-semibold leading-tight text-[var(--fg-muted)]">
+                    {t.label}
+                  </span>
                 </button>
               ))}
             </div>
@@ -106,7 +150,10 @@ export function ListCreateModal({ onClose, onCreate, saving }: ListCreateModalPr
           {/* Description */}
           <div className="mb-7">
             <label className="section-label block mb-1.5">
-              Description <span className="normal-case font-normal opacity-60">optional</span>
+              Description{" "}
+              <span className="normal-case font-normal opacity-60">
+                optional
+              </span>
             </label>
             <input
               type="text"

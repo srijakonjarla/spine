@@ -6,7 +6,12 @@ function StarSvg({ fill, size = 14 }: { fill: number; size?: number }) {
   const id = useId();
   const pct = Math.round(Math.max(0, Math.min(1, fill)) * 100);
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" className="inline-block align-middle">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      className="inline-block align-middle"
+    >
       <defs>
         <linearGradient id={id} x1="0" x2="1" y1="0" y2="0">
           <stop offset={`${pct}%`} stopColor="var(--star-filled)" />
@@ -21,7 +26,13 @@ function StarSvg({ fill, size = 14 }: { fill: number; size?: number }) {
   );
 }
 
-export function StarDisplay({ rating, size }: { rating: number; size?: number }) {
+export function StarDisplay({
+  rating,
+  size,
+}: {
+  rating: number;
+  size?: number;
+}) {
   return (
     <span className="inline-flex gap-0.5">
       {[1, 2, 3, 4, 5].map((i) => (

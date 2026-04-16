@@ -9,10 +9,10 @@ export const STATUS_LABEL: Record<string, string> = {
 
 /** Status pills used in the book hero and filter UIs — short labels. */
 export const STATUSES: { value: ReadingStatus; label: string }[] = [
-  { value: "reading",         label: "reading" },
-  { value: "finished",        label: "read" },
-  { value: "did-not-finish",  label: "did not finish" },
-  { value: "want-to-read",    label: "want to read" },
+  { value: "reading", label: "reading" },
+  { value: "finished", label: "read" },
+  { value: "did-not-finish", label: "did not finish" },
+  { value: "want-to-read", label: "want to read" },
 ];
 
 export const STATUS_SYMBOL: Record<string, string> = {
@@ -29,7 +29,12 @@ export const STATUS_COLOR: Record<string, string> = {
   "did-not-finish": "text-[var(--fg-faint)]",
 };
 
-export const STATUS_ORDER = ["reading", "want-to-read", "finished", "did-not-finish"] as const;
+export const STATUS_ORDER = [
+  "reading",
+  "want-to-read",
+  "finished",
+  "did-not-finish",
+] as const;
 
 // statuses that get truncated on the shelf overview
 export const TRUNCATED_STATUSES = new Set(["want-to-read", "finished"]);

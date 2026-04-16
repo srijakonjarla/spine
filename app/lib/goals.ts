@@ -1,7 +1,9 @@
 import { apiFetch } from "@/lib/api";
 import type { ReadingGoal } from "@/types";
 
-interface GoalBookRow { book_id: string }
+interface GoalBookRow {
+  book_id: string;
+}
 
 interface GoalRow {
   id: string;
@@ -38,7 +40,7 @@ export async function setGoal(
   year: number,
   target: number,
   name: string,
-  isAuto = false
+  isAuto = false,
 ): Promise<ReadingGoal> {
   const res = await apiFetch("/api/goals", {
     method: "POST",
@@ -48,7 +50,10 @@ export async function setGoal(
   return mapGoal(row);
 }
 
-export async function updateGoal(id: string, patch: { target?: number; name?: string }): Promise<void> {
+export async function updateGoal(
+  id: string,
+  patch: { target?: number; name?: string },
+): Promise<void> {
   await apiFetch(`/api/goals/${id}`, {
     method: "PATCH",
     body: JSON.stringify(patch),
@@ -59,13 +64,19 @@ export async function deleteGoal(id: string): Promise<void> {
   await apiFetch(`/api/goals/${id}`, { method: "DELETE" });
 }
 
-export async function addBookToGoal(goalId: string, bookId: string): Promise<void> {
+export async function addBookToGoal(
+  goalId: string,
+  bookId: string,
+): Promise<void> {
   await apiFetch(`/api/goals/${goalId}/books`, {
     method: "POST",
     body: JSON.stringify({ bookId }),
   });
 }
 
-export async function removeBookFromGoal(goalId: string, bookId: string): Promise<void> {
+export async function removeBookFromGoal(
+  goalId: string,
+  bookId: string,
+): Promise<void> {
   await apiFetch(`/api/goals/${goalId}/books/${bookId}`, { method: "DELETE" });
 }

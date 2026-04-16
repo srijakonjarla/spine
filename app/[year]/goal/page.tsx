@@ -3,7 +3,14 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { getGoals, setGoal, updateGoal, deleteGoal, addBookToGoal, removeBookFromGoal } from "@/lib/goals";
+import {
+  getGoals,
+  setGoal,
+  updateGoal,
+  deleteGoal,
+  addBookToGoal,
+  removeBookFromGoal,
+} from "@/lib/goals";
 import { getEntries } from "@/lib/db";
 import type { ReadingGoal, BookEntry } from "@/types";
 import { ProgressBar } from "@/components/ProgressBar";
@@ -25,20 +32,29 @@ function AutoGoalCard({
 
   const scheduleSave = (val: number) => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => updateGoal(goal.id, { target: val }).catch(console.error), 600);
+    saveTimer.current = setTimeout(
+      () => updateGoal(goal.id, { target: val }).catch(console.error),
+      600,
+    );
   };
 
   return (
     <div className="border border-stone-200 rounded-xl p-6 space-y-5">
       <div className="flex items-center justify-between">
-        <p className="text-xs text-stone-400 uppercase tracking-widest">2026 reading goal</p>
+        <p className="text-xs text-stone-400 uppercase tracking-widest">
+          2026 reading goal
+        </p>
         <span className="text-xs text-stone-300">auto-tracked</span>
       </div>
 
       <div>
         <div className="flex items-baseline justify-between mb-2">
-          <span className="text-4xl font-semibold text-stone-900">{finishedCount}</span>
-          <span className="text-sm text-stone-400">of {target} books · {percent}%</span>
+          <span className="text-4xl font-semibold text-stone-900">
+            {finishedCount}
+          </span>
+          <span className="text-sm text-stone-400">
+            of {target} books · {percent}%
+          </span>
         </div>
         <ProgressBar value={percent} percent color="plum" />
       </div>
@@ -47,8 +63,13 @@ function AutoGoalCard({
         {[25, 50, 75, 100].map((m) => {
           const reached = percent >= m;
           return (
-            <div key={m} className={`flex items-center gap-1.5 text-xs ${reached ? "text-stone-700" : "text-stone-300"}`}>
-              <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center text-[9px] shrink-0 ${reached ? "text-white bg-plum border-plum" : "border-stone-200"}`}>
+            <div
+              key={m}
+              className={`flex items-center gap-1.5 text-xs ${reached ? "text-stone-700" : "text-stone-300"}`}
+            >
+              <span
+                className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center text-[9px] shrink-0 ${reached ? "text-white bg-plum border-plum" : "border-stone-200"}`}
+              >
                 {reached ? "✓" : ""}
               </span>
               {m}%
@@ -106,14 +127,22 @@ function CustomGoalCard({
 
   const scheduleSave = (patch: { target?: number; name?: string }) => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => updateGoal(goal.id, patch).catch(console.error), 600);
+    saveTimer.current = setTimeout(
+      () => updateGoal(goal.id, patch).catch(console.error),
+      600,
+    );
   };
 
   const handleDelete = async () => {
     if (!confirm("Delete this goal?")) return;
     setDeleting(true);
-    try { await deleteGoal(goal.id); onDelete(goal.id); }
-    catch (err) { console.error(err); setDeleting(false); }
+    try {
+      await deleteGoal(goal.id);
+      onDelete(goal.id);
+    } catch (err) {
+      console.error(err);
+      setDeleting(false);
+    }
   };
 
   const handleAddBook = async (bookId: string) => {
@@ -124,8 +153,11 @@ function CustomGoalCard({
       onBookAdded(goal.id, bookId);
       setSearch("");
       setShowPicker(false);
-    } catch (err) { console.error(err); }
-    finally { setBusy(null); }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setBusy(null);
+    }
   };
 
   const handleRemoveBook = async (bookId: string) => {
@@ -134,17 +166,23 @@ function CustomGoalCard({
     try {
       await removeBookFromGoal(goal.id, bookId);
       onBookRemoved(goal.id, bookId);
-    } catch (err) { console.error(err); }
-    finally { setBusy(null); }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setBusy(null);
+    }
   };
 
   // Books eligible to add: not already in goal
-  const eligible = allEntries.filter(
-    (e) => !goal.bookIds.includes(e.id) &&
-      (search.trim() === "" ||
-        e.title.toLowerCase().includes(search.toLowerCase()) ||
-        e.author.toLowerCase().includes(search.toLowerCase()))
-  ).slice(0, 12);
+  const eligible = allEntries
+    .filter(
+      (e) =>
+        !goal.bookIds.includes(e.id) &&
+        (search.trim() === "" ||
+          e.title.toLowerCase().includes(search.toLowerCase()) ||
+          e.author.toLowerCase().includes(search.toLowerCase())),
+    )
+    .slice(0, 12);
 
   return (
     <div className="border border-stone-200 rounded-xl p-6 space-y-5">
@@ -173,8 +211,12 @@ function CustomGoalCard({
       {/* Progress */}
       <div>
         <div className="flex items-baseline justify-between mb-2">
-          <span className="text-3xl font-semibold text-stone-900">{goalBooks.length}</span>
-          <span className="text-sm text-stone-400">of {target} · {percent}%</span>
+          <span className="text-3xl font-semibold text-stone-900">
+            {goalBooks.length}
+          </span>
+          <span className="text-sm text-stone-400">
+            of {target} · {percent}%
+          </span>
         </div>
         <ProgressBar value={percent} percent color="plum" />
       </div>
@@ -185,10 +227,17 @@ function CustomGoalCard({
           {goalBooks.map((e) => (
             <div key={e.id} className="flex items-baseline gap-2 py-0.5 group">
               <span className="text-xs text-stone-300">·</span>
-              <Link href={`/book/${e.id}`} className="text-sm text-stone-700 hover:text-stone-900 truncate flex-1">
+              <Link
+                href={`/book/${e.id}`}
+                className="text-sm text-stone-700 hover:text-stone-900 truncate flex-1"
+              >
                 {e.title}
               </Link>
-              {e.author && <span className="text-xs text-stone-400 shrink-0">{e.author}</span>}
+              {e.author && (
+                <span className="text-xs text-stone-400 shrink-0">
+                  {e.author}
+                </span>
+              )}
               <button
                 onClick={() => handleRemoveBook(e.id)}
                 disabled={busy === e.id}
@@ -221,8 +270,14 @@ function CustomGoalCard({
                   disabled={busy === e.id}
                   className="w-full flex items-baseline gap-2 py-1 px-2 rounded hover:bg-stone-50 transition-colors text-left"
                 >
-                  <span className="text-sm text-stone-700 truncate flex-1">{e.title}</span>
-                  {e.author && <span className="text-xs text-stone-400 shrink-0">{e.author}</span>}
+                  <span className="text-sm text-stone-700 truncate flex-1">
+                    {e.title}
+                  </span>
+                  {e.author && (
+                    <span className="text-xs text-stone-400 shrink-0">
+                      {e.author}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -230,7 +285,10 @@ function CustomGoalCard({
             <p className="text-xs text-stone-300 mt-2">no books found</p>
           )}
           <button
-            onClick={() => { setShowPicker(false); setSearch(""); }}
+            onClick={() => {
+              setShowPicker(false);
+              setSearch("");
+            }}
             className="text-xs text-stone-400 hover:text-stone-700 transition-colors mt-3"
           >
             cancel
@@ -283,28 +341,30 @@ export default function GoalPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    Promise.all([
-      getGoals(year),
-      getEntries({ year }),
-      getEntries(),
-    ]).then(async ([gs, yearEntries, allEntries]) => {
-      let resolved = gs;
-      const finished = yearEntries.filter((b) => b.status === "finished");
-      setFinishedCount(finished.length);
-      setAllEntries(allEntries);
+    Promise.all([getGoals(year), getEntries({ year }), getEntries()])
+      .then(async ([gs, yearEntries, allEntries]) => {
+        let resolved = gs;
+        const finished = yearEntries.filter((b) => b.status === "finished");
+        setFinishedCount(finished.length);
+        setAllEntries(allEntries);
 
-      // Auto-create the yearly goal if this is the current year and none exists
-      if (year === CURRENT_YEAR && !gs.some((g) => g.isAuto)) {
-        const created = await setGoal(year, 12, `${year} reading goal`, true);
-        resolved = [created, ...gs];
-      }
+        // Auto-create the yearly goal if this is the current year and none exists
+        if (year === CURRENT_YEAR && !gs.some((g) => g.isAuto)) {
+          const created = await setGoal(year, 12, `${year} reading goal`, true);
+          resolved = [created, ...gs];
+        }
 
-      setGoals(resolved);
-    }).catch(console.error).finally(() => setLoading(false));
+        setGoals(resolved);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, [year]);
 
-  const handleUpdate = (id: string, patch: { target?: number; name?: string }) => {
-    setGoals((prev) => prev.map((g) => g.id === id ? { ...g, ...patch } : g));
+  const handleUpdate = (
+    id: string,
+    patch: { target?: number; name?: string },
+  ) => {
+    setGoals((prev) => prev.map((g) => (g.id === id ? { ...g, ...patch } : g)));
   };
 
   const handleDelete = (id: string) => {
@@ -312,15 +372,21 @@ export default function GoalPage() {
   };
 
   const handleBookAdded = (goalId: string, bookId: string) => {
-    setGoals((prev) => prev.map((g) =>
-      g.id === goalId ? { ...g, bookIds: [...g.bookIds, bookId] } : g
-    ));
+    setGoals((prev) =>
+      prev.map((g) =>
+        g.id === goalId ? { ...g, bookIds: [...g.bookIds, bookId] } : g,
+      ),
+    );
   };
 
   const handleBookRemoved = (goalId: string, bookId: string) => {
-    setGoals((prev) => prev.map((g) =>
-      g.id === goalId ? { ...g, bookIds: g.bookIds.filter((id) => id !== bookId) } : g
-    ));
+    setGoals((prev) =>
+      prev.map((g) =>
+        g.id === goalId
+          ? { ...g, bookIds: g.bookIds.filter((id) => id !== bookId) }
+          : g,
+      ),
+    );
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -357,10 +423,15 @@ export default function GoalPage() {
     <div className="page">
       <div className="page-content">
         <div className="mb-10">
-          <Link href="/" className="back-link">← home</Link>
+          <Link href="/" className="back-link">
+            ← home
+          </Link>
         </div>
 
-        <PageHeader title="reading goals" eyebrow={`reading journal · ${year}`} />
+        <PageHeader
+          title="reading goals"
+          eyebrow={`reading journal · ${year}`}
+        />
 
         <div className="space-y-4 mb-8">
           {/* Auto yearly goal */}
@@ -388,7 +459,10 @@ export default function GoalPage() {
 
         {/* Add custom goal */}
         {showAdd ? (
-          <form onSubmit={handleCreate} className="border border-stone-200 rounded-xl p-6 space-y-4">
+          <form
+            onSubmit={handleCreate}
+            className="border border-stone-200 rounded-xl p-6 space-y-4"
+          >
             <p className="section-label">new custom goal</p>
             <div>
               <label className="text-xs text-stone-400 block mb-1">name</label>
@@ -402,7 +476,9 @@ export default function GoalPage() {
               />
             </div>
             <div>
-              <label className="text-xs text-stone-400 block mb-1">target books</label>
+              <label className="text-xs text-stone-400 block mb-1">
+                target books
+              </label>
               <input
                 type="number"
                 value={setupTarget}
@@ -422,7 +498,11 @@ export default function GoalPage() {
               </button>
               <button
                 type="button"
-                onClick={() => { setShowAdd(false); setSetupTarget(""); setSetupName(""); }}
+                onClick={() => {
+                  setShowAdd(false);
+                  setSetupTarget("");
+                  setSetupName("");
+                }}
                 className="text-sm text-stone-400 hover:text-stone-700 transition-colors px-4 py-2"
               >
                 cancel

@@ -4,14 +4,20 @@ import { useState, useRef, useEffect, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { signOut, getDisplayName } from "@/lib/auth";
-import { useTheme } from "@/components/ThemeProvider";
+import { useTheme } from "@/providers/ThemeProvider";
 import { parseGoodreadsCSV, type GoodreadsPreview } from "@/lib/goodreads";
 import { apiFetch } from "@/lib/api";
 import type { User } from "@supabase/supabase-js";
 import { STATUS_LABEL } from "@/lib/statusMeta";
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="border-b border-stone-100 pb-10 mb-10 last:border-0 last:mb-0 last:pb-0">
       <p className="section-label mb-6">{title}</p>
@@ -23,17 +29,25 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 // ─── Goodreads import (inlined) ───────────────────────────────────────────────
 
 function GoodreadsImport() {
-  const [state, setState] = useState<"idle" | "preview" | "running" | "done" | "error">("idle");
+  const [state, setState] = useState<
+    "idle" | "preview" | "running" | "done" | "error"
+  >("idle");
   const [csvText, setCsvText] = useState("");
   const [previews, setPreviews] = useState<GoodreadsPreview[]>([]);
-  const [progress, setProgress] = useState<{ processed: number; total: number } | null>(null);
+  const [progress, setProgress] = useState<{
+    processed: number;
+    total: number;
+  } | null>(null);
   const [error, setError] = useState("");
   const [alreadyImported, setAlreadyImported] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stopPolling = () => {
-    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
   };
 
   const startPolling = () => {
@@ -48,7 +62,9 @@ function GoodreadsImport() {
           setState("done");
           setAlreadyImported(true);
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }, 10_000);
   };
 
@@ -67,7 +83,7 @@ function GoodreadsImport() {
       }
     });
     return () => stopPolling();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,11 +95,16 @@ function GoodreadsImport() {
       try {
         const text = ev.target?.result as string;
         const parsed = parseGoodreadsCSV(text);
-        if (!parsed.length) { setError("No books found. Make sure this is a Goodreads export CSV."); return; }
+        if (!parsed.length) {
+          setError("No books found. Make sure this is a Goodreads export CSV.");
+          return;
+        }
         setCsvText(text);
         setPreviews(parsed);
         setState("preview");
-      } catch { setError("Failed to parse CSV. Please check the file format."); }
+      } catch {
+        setError("Failed to parse CSV. Please check the file format.");
+      }
     };
     reader.readAsText(file);
   };
@@ -114,13 +135,23 @@ function GoodreadsImport() {
     if (fileRef.current) fileRef.current.value = "";
   };
 
-  const finishedCount = previews.filter((p) => p.entry.status === "finished").length;
-  const dnfCount      = previews.filter((p) => p.entry.status === "did-not-finish").length;
-  const readingCount  = previews.filter((p) => p.entry.status === "reading").length;
-  const wantCount     = previews.filter((p) => p.entry.status === "want-to-read").length;
+  const finishedCount = previews.filter(
+    (p) => p.entry.status === "finished",
+  ).length;
+  const dnfCount = previews.filter(
+    (p) => p.entry.status === "did-not-finish",
+  ).length;
+  const readingCount = previews.filter(
+    (p) => p.entry.status === "reading",
+  ).length;
+  const wantCount = previews.filter(
+    (p) => p.entry.status === "want-to-read",
+  ).length;
 
   if (state === "running") {
-    const pct = progress?.total ? Math.round((progress.processed / progress.total) * 100) : 0;
+    const pct = progress?.total
+      ? Math.round((progress.processed / progress.total) * 100)
+      : 0;
     return (
       <div className="space-y-3 max-w-sm">
         <p className="text-xs text-[var(--fg-muted)] animate-pulse">
@@ -128,9 +159,14 @@ function GoodreadsImport() {
         </p>
         {progress && (
           <>
-            <p className="text-xs text-[var(--fg-faint)]">{progress.processed} / {progress.total} books · {pct}%</p>
+            <p className="text-xs text-[var(--fg-faint)]">
+              {progress.processed} / {progress.total} books · {pct}%
+            </p>
             <div className="w-full h-0.5 bg-[var(--border-light)] rounded-full overflow-hidden">
-              <div style={{ width: `${pct}%` }} className="h-full bg-[var(--sage)] transition-all duration-500" />
+              <div
+                style={{ width: `${pct}%` }}
+                className="h-full bg-[var(--sage)] transition-all duration-500"
+              />
             </div>
           </>
         )}
@@ -141,8 +177,13 @@ function GoodreadsImport() {
   if (state === "done") {
     return (
       <div className="space-y-2">
-        <p className="text-xs text-sage">{progress?.total ?? previews.length} books imported.</p>
-        <button onClick={reset} className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors">
+        <p className="text-xs text-sage">
+          {progress?.total ?? previews.length} books imported.
+        </p>
+        <button
+          onClick={reset}
+          className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
+        >
           import again
         </button>
       </div>
@@ -152,8 +193,15 @@ function GoodreadsImport() {
   if (state === "error") {
     return (
       <div className="space-y-2">
-        <p className="text-xs text-red-400">{error || "Something went wrong."}</p>
-        <button onClick={reset} className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors">try again</button>
+        <p className="text-xs text-red-400">
+          {error || "Something went wrong."}
+        </p>
+        <button
+          onClick={reset}
+          className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
+        >
+          try again
+        </button>
       </div>
     );
   }
@@ -162,25 +210,53 @@ function GoodreadsImport() {
     return (
       <div className="max-w-sm">
         <div className="mb-4 p-4 bg-[var(--bg-surface)] border border-[var(--border-light)] rounded-lg space-y-1">
-          <p className="text-xs text-[var(--fg-muted)]"><span className="font-semibold text-[var(--fg-heading)]">{previews.length}</span> books found</p>
-          <p className="text-xs text-[var(--fg-faint)]">· {finishedCount} finished</p>
-          {dnfCount > 0 && <p className="text-xs text-[var(--fg-faint)]">· {dnfCount} did not finish</p>}
-          <p className="text-xs text-[var(--fg-faint)]">· {readingCount} currently reading</p>
-          <p className="text-xs text-[var(--fg-faint)]">· {wantCount} want to read</p>
+          <p className="text-xs text-[var(--fg-muted)]">
+            <span className="font-semibold text-[var(--fg-heading)]">
+              {previews.length}
+            </span>{" "}
+            books found
+          </p>
+          <p className="text-xs text-[var(--fg-faint)]">
+            · {finishedCount} finished
+          </p>
+          {dnfCount > 0 && (
+            <p className="text-xs text-[var(--fg-faint)]">
+              · {dnfCount} did not finish
+            </p>
+          )}
+          <p className="text-xs text-[var(--fg-faint)]">
+            · {readingCount} currently reading
+          </p>
+          <p className="text-xs text-[var(--fg-faint)]">
+            · {wantCount} want to read
+          </p>
         </div>
         <div className="space-y-0.5 mb-6 max-h-60 overflow-y-auto">
           {previews.map(({ entry }) => (
             <div key={entry.id} className="flex items-baseline gap-3 py-0.5">
               <span className="text-xs text-[var(--fg-faint)]">·</span>
-              <span className="text-sm text-[var(--fg)] truncate flex-1">{entry.title}</span>
-              <span className="text-xs text-[var(--fg-muted)] shrink-0">{entry.author}</span>
-              <span className="text-xs text-[var(--fg-faint)] shrink-0">{STATUS_LABEL[entry.status]}</span>
+              <span className="text-sm text-[var(--fg)] truncate flex-1">
+                {entry.title}
+              </span>
+              <span className="text-xs text-[var(--fg-muted)] shrink-0">
+                {entry.author}
+              </span>
+              <span className="text-xs text-[var(--fg-faint)] shrink-0">
+                {STATUS_LABEL[entry.status]}
+              </span>
             </div>
           ))}
         </div>
         <div className="flex gap-3">
-          <button onClick={handleImport} className="btn-primary">import all</button>
-          <button onClick={reset} className="text-sm text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors px-4 py-2">cancel</button>
+          <button onClick={handleImport} className="btn-primary">
+            import all
+          </button>
+          <button
+            onClick={reset}
+            className="text-sm text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors px-4 py-2"
+          >
+            cancel
+          </button>
         </div>
       </div>
     );
@@ -189,11 +265,22 @@ function GoodreadsImport() {
   return (
     <div>
       <p className="text-xs text-[var(--fg-faint)] mb-4">
-        Export your library from Goodreads (My Books → Export Library) then upload the CSV.
-        Runs in the background — you can navigate away once started.
-        {alreadyImported && <span className="text-[var(--fg-faint)] ml-2">· previously imported</span>}
+        Export your library from Goodreads (My Books → Export Library) then
+        upload the CSV. Runs in the background — you can navigate away once
+        started.
+        {alreadyImported && (
+          <span className="text-[var(--fg-faint)] ml-2">
+            · previously imported
+          </span>
+        )}
       </p>
-      <input ref={fileRef} type="file" accept=".csv" onChange={handleFile} className="hidden" />
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".csv"
+        onChange={handleFile}
+        className="hidden"
+      />
       <button
         onClick={() => fileRef.current?.click()}
         className="text-sm border border-[var(--border-light)] rounded-lg px-4 py-2.5 text-[var(--fg-muted)] hover:border-[var(--fg-muted)] hover:text-[var(--fg)] transition-colors"
@@ -207,13 +294,18 @@ function GoodreadsImport() {
 
 // ─── Enrich library ───────────────────────────────────────────────────────────
 function EnrichLibrary() {
-  const [state, setState] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [state, setState] = useState<"idle" | "running" | "done" | "error">(
+    "idle",
+  );
   const [total, setTotal] = useState<number | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stopPolling = () => {
-    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
   };
 
   const checkProgress = async () => {
@@ -221,8 +313,13 @@ function EnrichLibrary() {
       const res = await apiFetch("/api/admin/backfill");
       const { remaining: rem } = await res.json();
       setRemaining(rem);
-      if (rem === 0) { stopPolling(); setState("done"); }
-    } catch { /* ignore transient errors */ }
+      if (rem === 0) {
+        stopPolling();
+        setState("done");
+      }
+    } catch {
+      /* ignore transient errors */
+    }
   };
 
   const start = async () => {
@@ -231,7 +328,10 @@ function EnrichLibrary() {
       const res = await apiFetch("/api/admin/backfill", { method: "POST" });
       const { total: t } = await res.json();
       setTotal(t);
-      if (t === 0) { setState("done"); return; }
+      if (t === 0) {
+        setState("done");
+        return;
+      }
       // Poll every 15s — server is processing in the background
       pollRef.current = setInterval(checkProgress, 15_000);
     } catch {
@@ -245,9 +345,12 @@ function EnrichLibrary() {
   return (
     <div>
       <p className="text-xs text-[var(--fg-faint)] mb-4">
-        Fills in covers, page counts, ISBNs, and genres using Hardcover. Runs in the background — you can navigate away.
+        Fills in covers, page counts, ISBNs, and genres using Hardcover. Runs in
+        the background — you can navigate away.
         {remaining !== null && remaining > 0 && (
-          <span className="ml-2 text-[var(--fg-muted)]">· {remaining} books still need enrichment</span>
+          <span className="ml-2 text-[var(--fg-muted)]">
+            · {remaining} books still need enrichment
+          </span>
         )}
       </p>
 
@@ -265,7 +368,10 @@ function EnrichLibrary() {
           <p className="text-xs text-[var(--fg-muted)] animate-pulse">
             enriching{total ? ` ${total} books` : ""}… running in the background
           </p>
-          <button onClick={checkProgress} className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors">
+          <button
+            onClick={checkProgress}
+            className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
+          >
             check progress
           </button>
         </div>
@@ -274,10 +380,16 @@ function EnrichLibrary() {
       {state === "done" && (
         <div className="space-y-2">
           <p className="text-xs text-[var(--sage)]">
-            {total === 0 ? "All books are already enriched." : `Done — ${total} book${total === 1 ? "" : "s"} enriched.`}
+            {total === 0
+              ? "All books are already enriched."
+              : `Done — ${total} book${total === 1 ? "" : "s"} enriched.`}
           </p>
           <button
-            onClick={() => { setState("idle"); setTotal(null); setRemaining(null); }}
+            onClick={() => {
+              setState("idle");
+              setTotal(null);
+              setRemaining(null);
+            }}
             className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
           >
             run again
@@ -287,8 +399,13 @@ function EnrichLibrary() {
 
       {state === "error" && (
         <div className="space-y-2">
-          <p className="text-xs text-red-400">Something went wrong. Check that HARDCOVER_API_TOKEN is set.</p>
-          <button onClick={() => setState("idle")} className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors">
+          <p className="text-xs text-red-400">
+            Something went wrong. Check that HARDCOVER_API_TOKEN is set.
+          </p>
+          <button
+            onClick={() => setState("idle")}
+            className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
+          >
             try again
           </button>
         </div>
@@ -299,7 +416,9 @@ function EnrichLibrary() {
 
 // ─── Sync series ──────────────────────────────────────────────────────────────
 function SyncSeries() {
-  const [state, setState] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [state, setState] = useState<"idle" | "running" | "done" | "error">(
+    "idle",
+  );
   const [totalSynced, setTotalSynced] = useState(0);
   const [batchMsg, setBatchMsg] = useState("");
   const stopRef = useRef(false);
@@ -333,8 +452,9 @@ function SyncSeries() {
   return (
     <div>
       <p className="text-xs text-[var(--fg-faint)] mb-4">
-        Looks up your read and currently-reading books on Hardcover to detect series membership,
-        then auto-populates your series tracker with the correct position and status.
+        Looks up your read and currently-reading books on Hardcover to detect
+        series membership, then auto-populates your series tracker with the
+        correct position and status.
       </p>
 
       {state === "idle" && (
@@ -348,12 +468,18 @@ function SyncSeries() {
 
       {state === "running" && (
         <div className="space-y-2">
-          <p className="text-xs text-[var(--fg-muted)] animate-pulse">{batchMsg}</p>
+          <p className="text-xs text-[var(--fg-muted)] animate-pulse">
+            {batchMsg}
+          </p>
           {totalSynced > 0 && (
-            <p className="text-xs text-sage">{totalSynced} series books added so far</p>
+            <p className="text-xs text-sage">
+              {totalSynced} series books added so far
+            </p>
           )}
           <button
-            onClick={() => { stopRef.current = true; }}
+            onClick={() => {
+              stopRef.current = true;
+            }}
             className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
           >
             stop
@@ -364,11 +490,16 @@ function SyncSeries() {
       {state === "done" && (
         <div className="space-y-2">
           <p className="text-xs text-sage">
-            Done — {totalSynced} series {totalSynced === 1 ? "entry" : "entries"} added to your tracker.
-            {totalSynced === 0 && " No new series found (books may already be tracked or not in Hardcover's series data)."}
+            Done — {totalSynced} series{" "}
+            {totalSynced === 1 ? "entry" : "entries"} added to your tracker.
+            {totalSynced === 0 &&
+              " No new series found (books may already be tracked or not in Hardcover's series data)."}
           </p>
           <button
-            onClick={() => { setState("idle"); setTotalSynced(0); }}
+            onClick={() => {
+              setState("idle");
+              setTotalSynced(0);
+            }}
             className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
           >
             run again
@@ -378,8 +509,13 @@ function SyncSeries() {
 
       {state === "error" && (
         <div className="space-y-2">
-          <p className="text-xs text-red-400">Something went wrong. Check that HARDCOVER_API_TOKEN is set.</p>
-          <button onClick={() => setState("idle")} className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors">
+          <p className="text-xs text-red-400">
+            Something went wrong. Check that HARDCOVER_API_TOKEN is set.
+          </p>
+          <button
+            onClick={() => setState("idle")}
+            className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
+          >
             try again
           </button>
         </div>
@@ -422,7 +558,9 @@ export default function ProfilePage() {
     setNameSaving(true);
     setNameMsg("");
     try {
-      const { error } = await supabase.auth.updateUser({ data: { name: name.trim() } });
+      const { error } = await supabase.auth.updateUser({
+        data: { name: name.trim() },
+      });
       if (error) throw error;
       setNameMsg("Saved.");
     } catch (err) {
@@ -437,17 +575,27 @@ export default function ProfilePage() {
     e.preventDefault();
     setPwError("");
     setPwMsg("");
-    if (newPassword.length < 8) { setPwError("Password must be at least 8 characters."); return; }
-    if (newPassword !== confirmPassword) { setPwError("Passwords don't match."); return; }
+    if (newPassword.length < 8) {
+      setPwError("Password must be at least 8 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPwError("Passwords don't match.");
+      return;
+    }
     setPwSaving(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
       if (error) throw error;
       setPwMsg("Password updated.");
       setNewPassword("");
       setConfirmPassword("");
     } catch (err) {
-      setPwError(err instanceof Error ? err.message : "Failed to update password.");
+      setPwError(
+        err instanceof Error ? err.message : "Failed to update password.",
+      );
     } finally {
       setPwSaving(false);
       setTimeout(() => setPwMsg(""), 3000);
@@ -477,14 +625,18 @@ export default function ProfilePage() {
           <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold text-[var(--fg-heading)] tracking-tight">
             profile & settings
           </h1>
-          {user?.email && <p className="text-xs text-stone-400 mt-2">{user.email}</p>}
+          {user?.email && (
+            <p className="text-xs text-stone-400 mt-2">{user.email}</p>
+          )}
         </div>
 
         {/* ── Profile ── */}
         <Section title="profile">
           <form onSubmit={handleSaveName} className="max-w-sm space-y-4">
             <div>
-              <label className="text-xs text-stone-400 block mb-1">display name</label>
+              <label className="text-xs text-stone-400 block mb-1">
+                display name
+              </label>
               <input
                 type="text"
                 value={name}
@@ -493,10 +645,16 @@ export default function ProfilePage() {
               />
             </div>
             <div className="flex items-center gap-4">
-              <button type="submit" disabled={nameSaving} className="btn-primary">
+              <button
+                type="submit"
+                disabled={nameSaving}
+                className="btn-primary"
+              >
                 {nameSaving ? "saving..." : "save"}
               </button>
-              {nameMsg && <span className="text-xs text-stone-400">{nameMsg}</span>}
+              {nameMsg && (
+                <span className="text-xs text-stone-400">{nameMsg}</span>
+              )}
             </div>
           </form>
         </Section>
@@ -505,7 +663,9 @@ export default function ProfilePage() {
         <Section title="change password">
           <form onSubmit={handleChangePassword} className="max-w-sm space-y-4">
             <div>
-              <label className="text-xs text-stone-400 block mb-1">new password</label>
+              <label className="text-xs text-stone-400 block mb-1">
+                new password
+              </label>
               <input
                 type="password"
                 value={newPassword}
@@ -515,7 +675,9 @@ export default function ProfilePage() {
               />
             </div>
             <div>
-              <label className="text-xs text-stone-400 block mb-1">confirm new password</label>
+              <label className="text-xs text-stone-400 block mb-1">
+                confirm new password
+              </label>
               <input
                 type="password"
                 value={confirmPassword}
@@ -526,7 +688,11 @@ export default function ProfilePage() {
             </div>
             {pwError && <p className="text-xs text-red-400">{pwError}</p>}
             <div className="flex items-center gap-4">
-              <button type="submit" disabled={pwSaving || !newPassword} className="btn-primary">
+              <button
+                type="submit"
+                disabled={pwSaving || !newPassword}
+                className="btn-primary"
+              >
                 {pwSaving ? "updating..." : "update password"}
               </button>
               {pwMsg && <span className="text-xs text-stone-400">{pwMsg}</span>}
@@ -543,7 +709,9 @@ export default function ProfilePage() {
                 {(["light", "dark"] as const).map((t) => (
                   <button
                     key={t}
-                    onClick={() => { if (theme !== t) toggle(); }}
+                    onClick={() => {
+                      if (theme !== t) toggle();
+                    }}
                     className={`text-xs px-4 py-2 rounded-full border transition-colors ${
                       theme === t
                         ? "bg-plum text-white border-plum"

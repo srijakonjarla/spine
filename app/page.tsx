@@ -6,7 +6,7 @@ import { getEntries } from "@/lib/db";
 import { getReadingLog } from "@/lib/habits";
 import { getGoals } from "@/lib/goals";
 import { getDisplayName, hasImportedGoodreads } from "@/lib/auth";
-import { useAuth } from "@/components/AuthProvider";
+import { useAuth } from "@/providers/AuthProvider";
 import type { BookEntry, ReadingLogEntry, ReadingGoal } from "@/types";
 import { FireIcon, LeafIcon, StarIcon } from "@phosphor-icons/react";
 import { MoodChip } from "@/components/MoodChip";
@@ -28,7 +28,13 @@ function formatLogDate(iso: string) {
   return formatDate(iso, { month: "long", day: "numeric", year: "numeric" });
 }
 
-function StreakBars({ loggedDates, days = 14 }: { loggedDates: Set<string>; days?: number }) {
+function StreakBars({
+  loggedDates,
+  days = 14,
+}: {
+  loggedDates: Set<string>;
+  days?: number;
+}) {
   const today = new Date();
   const bars: { dateStr: string; logged: boolean; isToday: boolean }[] = [];
   for (let i = days - 1; i >= 0; i--) {
@@ -42,8 +48,18 @@ function StreakBars({ loggedDates, days = 14 }: { loggedDates: Set<string>; days
       {bars.map(({ dateStr, logged, isToday }) => {
         const seed = dateStr.split("-").reduce((a, b) => a + Number(b), 0);
         const stableH = logged ? 14 + (seed % 16) : 5;
-        const bgClass = logged ? (isToday ? "bg-sage" : "bg-[var(--bg-sage-60)]") : "bg-[var(--bg-plum-mid)]";
-        return <div key={dateStr} style={{ height: `${stableH}%` }} className={`rounded-sm flex-1 ${bgClass}`} />;
+        const bgClass = logged
+          ? isToday
+            ? "bg-sage"
+            : "bg-[var(--bg-sage-60)]"
+          : "bg-[var(--bg-plum-mid)]";
+        return (
+          <div
+            key={dateStr}
+            style={{ height: `${stableH}%` }}
+            className={`rounded-sm flex-1 ${bgClass}`}
+          />
+        );
       })}
     </div>
   );
@@ -56,12 +72,18 @@ export default function Home() {
   const [logEntries, setLogEntries] = useState<ReadingLogEntry[]>([]);
   const [autoGoal, setAutoGoal] = useState<ReadingGoal | null>(null);
   const [finishedThisYear, setFinishedThisYear] = useState(0);
-  const [archivedYears, setArchivedYears] = useState<{ year: number; books: number }[]>([]);
+  const [archivedYears, setArchivedYears] = useState<
+    { year: number; books: number }[]
+  >([]);
   const [wantToRead, setWantToRead] = useState(0);
   const [goodreadsImported, setGoodreadsImported] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     async function load() {
       const [allBooks, log, goals] = await Promise.all([
         getEntries(),
@@ -76,7 +98,9 @@ export default function Home() {
         .filter((b) => b.status === "finished" && b.dateFinished)
         .sort((a, b) => b.dateFinished!.localeCompare(a.dateFinished!));
 
-      const thisYear = finished.filter((b) => b.dateFinished?.startsWith(`${CURRENT_YEAR}`));
+      const thisYear = finished.filter((b) =>
+        b.dateFinished?.startsWith(`${CURRENT_YEAR}`),
+      );
       setFinishedThisYear(thisYear.length);
       setRecentlyFinished(finished.slice(0, 3));
       setWantToRead(allBooks.filter((b) => b.status === "want-to-read").length);
@@ -98,12 +122,14 @@ export default function Home() {
               const d = b.dateFinished || b.dateStarted || b.createdAt;
               return d && new Date(d).getFullYear() === year;
             }).length,
-          }))
+          })),
       );
     }
-    load().catch(console.error);
+    load()
+      .catch(console.error)
+      .finally(() => setLoading(false));
     hasImportedGoodreads().then(setGoodreadsImported);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   const name = user ? getDisplayName(user) : "";
@@ -117,24 +143,65 @@ export default function Home() {
     .slice(0, 3);
 
   const goalTarget = autoGoal?.target ?? 0;
-  const goalProgress = goalTarget > 0 ? Math.min(1, finishedThisYear / goalTarget) : 0;
+  const goalProgress =
+    goalTarget > 0 ? Math.min(1, finishedThisYear / goalTarget) : 0;
 
   const todayLabel = new Date().toLocaleDateString("en-US", {
-    weekday: "long", month: "long", day: "numeric", year: "numeric",
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
   });
+
+  if (loading)
+    return (
+      <div className="page">
+        <div className="page-content animate-pulse">
+          <div className="h-5 w-36 bg-[var(--bg-hover)] rounded mb-1.5" />
+          <div className="h-3.5 w-48 bg-[var(--bg-hover)] rounded mb-8" />
+          <div className="grid grid-cols-3 gap-3 mb-8">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-16 bg-[var(--bg-hover)] rounded-xl" />
+            ))}
+          </div>
+          <div className="flex gap-3 mb-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="w-14 aspect-[2/3] bg-[var(--bg-hover)] rounded"
+              />
+            ))}
+          </div>
+          <div className="space-y-2.5">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-20 bg-[var(--bg-hover)] rounded-xl" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
 
   return (
     <div className="page">
       <div className="page-content">
-
         {/* Greeting */}
         <div className="mb-8">
           <p className="font-[family-name:var(--font-playfair)] text-3xl font-semibold tracking-tight text-[var(--fg-heading)]">
-            {greeting()}{name ? `, ${name}` : ""}.
+            {greeting()}
+            {name ? `, ${name}` : ""}.
           </p>
           <p className="font-[family-name:var(--font-caveat)] text-[17px] mt-1 text-terra">
-            {todayLabel}{streak >= 2 && (
-              <> · {streak}-day streak <FireIcon size={14} weight="fill" className="inline-block text-orange-400 ml-0.5 align-text-bottom" /></>
+            {todayLabel}
+            {streak >= 2 && (
+              <>
+                {" "}
+                · {streak}-day streak{" "}
+                <FireIcon
+                  size={14}
+                  weight="fill"
+                  className="inline-block text-orange-400 ml-0.5 align-text-bottom"
+                />
+              </>
             )}
           </p>
         </div>
@@ -143,7 +210,11 @@ export default function Home() {
         {reading.length > 0 && (
           <div className="mb-6">
             {reading.map((book) => (
-              <Link key={book.id} href={`/book/${book.id}`} className="block group mb-3">
+              <Link
+                key={book.id}
+                href={`/book/${book.id}`}
+                className="block group mb-3"
+              >
                 <div className="p-4 rounded-2xl transition-opacity group-hover:opacity-90 bg-[var(--bg-surface)] border border-[var(--border-light)]">
                   <p className="text-[9px] font-bold uppercase tracking-[0.12em] mb-1.5 text-[var(--fg-faint)]">
                     currently reading
@@ -152,7 +223,9 @@ export default function Home() {
                     {book.title}
                   </p>
                   {book.author && (
-                    <p className="text-xs mt-0.5 text-[var(--fg-muted)]">{book.author}</p>
+                    <p className="text-xs mt-0.5 text-[var(--fg-muted)]">
+                      {book.author}
+                    </p>
                   )}
                   {book.moodTags.length > 0 && (
                     <div className="flex gap-1.5 mt-2.5 flex-wrap">
@@ -169,7 +242,6 @@ export default function Home() {
 
         {/* Three index cards */}
         <div className="grid grid-cols-3 gap-3 mb-6">
-
           {/* Streak card */}
           <div className="rounded-2xl p-4 bg-[var(--bg-surface)] border border-[var(--border-light)]">
             <p className="text-[9px] font-bold uppercase tracking-[0.12em] mb-3 text-[var(--fg-faint)]">
@@ -193,14 +265,30 @@ export default function Home() {
               <>
                 <p className="font-[family-name:var(--font-playfair)] text-[17px] font-bold leading-tight mb-2 text-[var(--fg-heading)]">
                   {finishedThisYear} / {goalTarget}
-                  <span className="text-[11px] font-normal ml-1 text-[var(--fg-muted)]">books</span>
+                  <span className="text-[11px] font-normal ml-1 text-[var(--fg-muted)]">
+                    books
+                  </span>
                 </p>
                 <ProgressBar value={goalProgress} className="mb-2" />
                 <p className="font-[family-name:var(--font-caveat)] text-[13px] text-sage">
                   {goalProgress >= 1 ? (
-                    <>goal reached <LeafIcon size={13} weight="fill" className="inline-block align-text-bottom ml-0.5" /></>
+                    <>
+                      goal reached{" "}
+                      <LeafIcon
+                        size={13}
+                        weight="fill"
+                        className="inline-block align-text-bottom ml-0.5"
+                      />
+                    </>
                   ) : goalProgress >= 0.75 ? (
-                    <>almost there <LeafIcon size={13} weight="fill" className="inline-block align-text-bottom ml-0.5" /></>
+                    <>
+                      almost there{" "}
+                      <LeafIcon
+                        size={13}
+                        weight="fill"
+                        className="inline-block align-text-bottom ml-0.5"
+                      />
+                    </>
                   ) : goalProgress >= 0.5 ? (
                     "halfway there"
                   ) : (
@@ -209,29 +297,47 @@ export default function Home() {
                 </p>
               </>
             ) : (
-              <Link href={`/${CURRENT_YEAR}/goal`} className="text-xs hover:opacity-70 transition-opacity text-[var(--fg-faint)]">
+              <Link
+                href={`/${CURRENT_YEAR}/goal`}
+                className="text-xs hover:opacity-70 transition-opacity text-[var(--fg-faint)]"
+              >
                 set a goal →
               </Link>
             )}
           </div>
 
           {/* Shelf snapshot card */}
-          <Link href="/library" className="block group rounded-2xl p-4 bg-[var(--bg-surface)] border border-[var(--border-light)] transition-opacity group-hover:opacity-90">
+          <Link
+            href="/library"
+            className="block group rounded-2xl p-4 bg-[var(--bg-surface)] border border-[var(--border-light)] transition-opacity group-hover:opacity-90"
+          >
             <p className="text-[9px] font-bold uppercase tracking-[0.12em] mb-3 text-[var(--fg-faint)]">
               your shelf
             </p>
             <div className="space-y-2.5">
               <div className="flex items-baseline justify-between">
-                <span className="font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)]">reading</span>
-                <span className="font-[family-name:var(--font-playfair)] text-[15px] font-bold text-terra">{reading.length}</span>
+                <span className="font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)]">
+                  reading
+                </span>
+                <span className="font-[family-name:var(--font-playfair)] text-[15px] font-bold text-terra">
+                  {reading.length}
+                </span>
               </div>
               <div className="flex items-baseline justify-between">
-                <span className="font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)]">{CURRENT_YEAR}</span>
-                <span className="font-[family-name:var(--font-playfair)] text-[15px] font-bold text-sage">{finishedThisYear}</span>
+                <span className="font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)]">
+                  {CURRENT_YEAR}
+                </span>
+                <span className="font-[family-name:var(--font-playfair)] text-[15px] font-bold text-sage">
+                  {finishedThisYear}
+                </span>
               </div>
               <div className="flex items-baseline justify-between">
-                <span className="font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)]">want to read</span>
-                <span className="font-[family-name:var(--font-playfair)] text-[15px] font-bold text-[var(--fg-muted)]">{wantToRead}</span>
+                <span className="font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)]">
+                  want to read
+                </span>
+                <span className="font-[family-name:var(--font-playfair)] text-[15px] font-bold text-[var(--fg-muted)]">
+                  {wantToRead}
+                </span>
               </div>
             </div>
           </Link>
@@ -240,12 +346,14 @@ export default function Home() {
         {/* Recent log entries with notes */}
         {recentEntries.length > 0 && (
           <div className="mb-8">
-            <p className="font-[family-name:var(--font-caveat)] text-[14px] mb-3 text-[var(--fg-muted)]">
+            <p className="font-[family-name:var(--font-caveat)] text-sm mb-3 text-[var(--fg-muted)]">
               recent entries
             </p>
             <div className="space-y-2.5">
               {recentEntries.map((entry) => {
-                const isFinishDay = recentlyFinished.some((b) => b.dateFinished === entry.logDate);
+                const isFinishDay = recentlyFinished.some(
+                  (b) => b.dateFinished === entry.logDate,
+                );
                 return (
                   <Link
                     key={entry.id}
@@ -257,8 +365,11 @@ export default function Home() {
                         isFinishDay ? "border-l-terra" : "border-l-sage"
                       }`}
                     >
-                      <p className={`text-[10px] font-semibold mb-1.5 ${isFinishDay ? "text-terra" : "text-sage"}`}>
-                        {formatLogDate(entry.logDate)}{isFinishDay ? " · ✦ Finished!" : ""}
+                      <p
+                        className={`text-[10px] font-semibold mb-1.5 ${isFinishDay ? "text-terra" : "text-sage"}`}
+                      >
+                        {formatLogDate(entry.logDate)}
+                        {isFinishDay ? " · ✦ Finished!" : ""}
                       </p>
                       <p className="text-[13px] leading-relaxed line-clamp-3 text-[var(--fg)] font-serif">
                         {entry.note}
@@ -272,46 +383,66 @@ export default function Home() {
         )}
 
         {/* Recently finished — books not already highlighted in a log entry above */}
-        {recentlyFinished.filter((b) => !recentEntries.some((e) => e.logDate === b.dateFinished)).length > 0 && (
+        {recentlyFinished.filter(
+          (b) => !recentEntries.some((e) => e.logDate === b.dateFinished),
+        ).length > 0 && (
           <div className="mb-8">
             <p className="section-label mb-3">recently read</p>
             <div className="space-y-1">
-              {recentlyFinished.filter((b) => !recentEntries.some((e) => e.logDate === b.dateFinished)).map((book) => (
-                <Link
-                  key={book.id}
-                  href={`/book/${book.id}`}
-                  className="flex items-baseline gap-3 py-1.5 -mx-1 px-1 rounded-lg hover:bg-[var(--bg-plum-trace)] transition-colors group"
-                >
-                  <p className="text-sm flex-1 truncate group-hover:opacity-70 transition-opacity text-[var(--fg)]">
-                    {book.title}
-                  </p>
-                  {book.author && (
-                    <p className="text-xs shrink-0 hidden sm:block truncate text-[var(--fg-faint)]">
-                      {book.author}
+              {recentlyFinished
+                .filter(
+                  (b) =>
+                    !recentEntries.some((e) => e.logDate === b.dateFinished),
+                )
+                .map((book) => (
+                  <Link
+                    key={book.id}
+                    href={`/book/${book.id}`}
+                    className="flex items-baseline gap-3 py-1.5 -mx-1 px-1 rounded-lg hover:bg-[var(--bg-plum-trace)] transition-colors group"
+                  >
+                    <p className="text-sm flex-1 truncate group-hover:opacity-70 transition-opacity text-[var(--fg)]">
+                      {book.title}
                     </p>
-                  )}
-                  {book.rating > 0 && (
-                    <span className="flex items-center shrink-0 text-gold">
-                      {Array.from({ length: Math.round(book.rating) }, (_, i) => (
-                        <StarIcon key={i} size={10} weight="fill" />
-                      ))}
-                    </span>
-                  )}
-                </Link>
-              ))}
+                    {book.author && (
+                      <p className="text-xs shrink-0 hidden sm:block truncate text-[var(--fg-faint)]">
+                        {book.author}
+                      </p>
+                    )}
+                    {book.rating > 0 && (
+                      <span className="flex items-center shrink-0 text-gold">
+                        {Array.from(
+                          { length: Math.round(book.rating) },
+                          (_, i) => (
+                            <StarIcon key={i} size={10} weight="fill" />
+                          ),
+                        )}
+                      </span>
+                    )}
+                  </Link>
+                ))}
             </div>
           </div>
         )}
 
         {/* Footer links */}
         <div className="pt-5 border-t border-[var(--border-light)] flex flex-wrap gap-x-5 gap-y-1.5">
-          <Link href="/library" className="back-link">library →</Link>
-          <Link href={`/${CURRENT_YEAR}/stats`} className="back-link">{CURRENT_YEAR} in review →</Link>
+          <Link href="/library" className="back-link">
+            library →
+          </Link>
+          <Link href={`/${CURRENT_YEAR}/stats`} className="back-link">
+            {CURRENT_YEAR} in review →
+          </Link>
           {!goodreadsImported && (
-            <Link href="/profile" className="back-link">import from goodreads →</Link>
+            <Link href="/profile" className="back-link">
+              import from goodreads →
+            </Link>
           )}
           {archivedYears.map((j) => (
-            <Link key={j.year} href={`/${j.year}/${MONTH_ABBRS[new Date().getMonth()]}`} className="back-link">
+            <Link
+              key={j.year}
+              href={`/${j.year}/${MONTH_ABBRS[new Date().getMonth()]}`}
+              className="back-link"
+            >
               {j.year} · {j.books} books →
             </Link>
           ))}

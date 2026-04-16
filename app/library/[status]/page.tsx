@@ -14,7 +14,12 @@ import { EmptyState } from "@/components/EmptyState";
 import type { BookEntry } from "@/types";
 import { localDateStr } from "@/lib/dates";
 
-const VALID_STATUSES = new Set(["reading", "finished", "want-to-read", "did-not-finish"]);
+const VALID_STATUSES = new Set([
+  "reading",
+  "finished",
+  "want-to-read",
+  "did-not-finish",
+]);
 
 export default function StatusCatalogPage() {
   const { status } = useParams<{ status: string }>();
@@ -33,7 +38,7 @@ export default function StatusCatalogPage() {
     if (!title || adding) return;
     setAdding(true);
     try {
-      const enriched = catalog ?? await lookupBook(title);
+      const enriched = catalog ?? (await lookupBook(title));
       const now = new Date();
       const today = localDateStr(now);
       const entry: BookEntry = {
@@ -46,7 +51,8 @@ export default function StatusCatalogPage() {
         status: status as BookEntry["status"],
         dateStarted: status === "reading" ? today : "",
         dateFinished: status === "finished" ? today : "",
-        dateShelved: (status === "want-to-read" || status === "did-not-finish") ? today : "",
+        dateShelved:
+          status === "want-to-read" || status === "did-not-finish" ? today : "",
         rating: 0,
         feeling: "",
         thoughts: [],
@@ -75,10 +81,13 @@ export default function StatusCatalogPage() {
       .finally(() => setLoading(false));
   }, [status]);
 
-  const allMoods = Array.from(new Set(entries.flatMap((e) => e.moodTags))).sort();
+  const allMoods = Array.from(
+    new Set(entries.flatMap((e) => e.moodTags)),
+  ).sort();
 
   const filtered = entries.filter((e) => {
-    const matchSearch = !search.trim() ||
+    const matchSearch =
+      !search.trim() ||
       e.title.toLowerCase().includes(search.toLowerCase()) ||
       e.author.toLowerCase().includes(search.toLowerCase());
     const matchMood = !activeMood || e.moodTags.includes(activeMood);
@@ -89,7 +98,9 @@ export default function StatusCatalogPage() {
     <div className="page">
       <div className="page-content">
         <div className="mb-8">
-          <Link href="/library" className="back-link">← library</Link>
+          <Link href="/library" className="back-link">
+            ← library
+          </Link>
         </div>
 
         <div className="flex items-baseline justify-between mb-2">
@@ -109,7 +120,9 @@ export default function StatusCatalogPage() {
             </button>
           </div>
         </div>
-        <p className="text-xs mb-8 text-[var(--fg-faint)]">{entries.length} books</p>
+        <p className="text-xs mb-8 text-[var(--fg-faint)]">
+          {entries.length} books
+        </p>
 
         {/* Add book */}
         <div className="mb-6">
@@ -121,9 +134,7 @@ export default function StatusCatalogPage() {
             placeholder={`add to ${STATUS_LABEL[status]?.toLowerCase() ?? status}...`}
             disabled={adding}
           />
-          {addValue.trim() && !adding && (
-            <p className="hint-text">↵ to add</p>
-          )}
+          {addValue.trim() && !adding && <p className="hint-text">↵ to add</p>}
         </div>
 
         {/* Search */}
@@ -142,7 +153,10 @@ export default function StatusCatalogPage() {
         {/* Mood filter chips */}
         {allMoods.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-8">
-            <AllMoodsChip active={!activeMood} onClick={() => setActiveMood(null)} />
+            <AllMoodsChip
+              active={!activeMood}
+              onClick={() => setActiveMood(null)}
+            />
             {allMoods.map((mood) => (
               <MoodChip
                 key={mood}
@@ -166,20 +180,40 @@ export default function StatusCatalogPage() {
           </div>
         )}
 
-        {!loading && filtered.length === 0 && <EmptyState message="no books found." />}
+        {!loading && filtered.length === 0 && (
+          <EmptyState message="no books found." />
+        )}
 
         {!loading && filtered.length > 0 && view === "grid" && (
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4">
             {filtered.map((e) => (
-              <Link key={e.id} href={`/book/${e.id}`} className="group relative">
+              <Link
+                key={e.id}
+                href={`/book/${e.id}`}
+                className="group relative"
+              >
                 <div className="relative mb-2 rounded-lg overflow-hidden group-hover:opacity-85 transition-opacity h-[130px]">
-                  <BookCoverThumb coverUrl={e.coverUrl} title={e.title} author={e.author} width="w-full" height="h-full" />
+                  <BookCoverThumb
+                    coverUrl={e.coverUrl}
+                    title={e.title}
+                    author={e.author}
+                    width="w-full"
+                    height="h-full"
+                  />
                   {e.rating > 0 && (
-                    <span className="absolute bottom-1.5 right-1.5 text-[10px] text-gold drop-shadow">{"★".repeat(Math.round(e.rating))}</span>
+                    <span className="absolute bottom-1.5 right-1.5 text-[10px] text-gold drop-shadow">
+                      {"★".repeat(Math.round(e.rating))}
+                    </span>
                   )}
                 </div>
-                <p className="text-[11px] font-medium leading-tight truncate text-[var(--fg)]">{e.title || "untitled"}</p>
-                {e.author && <p className="text-[10px] mt-0.5 truncate text-[var(--fg-faint)]">{e.author}</p>}
+                <p className="text-[11px] font-medium leading-tight truncate text-[var(--fg)]">
+                  {e.title || "untitled"}
+                </p>
+                {e.author && (
+                  <p className="text-[10px] mt-0.5 truncate text-[var(--fg-faint)]">
+                    {e.author}
+                  </p>
+                )}
               </Link>
             ))}
           </div>
@@ -188,9 +222,19 @@ export default function StatusCatalogPage() {
         {!loading && filtered.length > 0 && view === "list" && (
           <div className="space-y-0.5">
             {filtered.map((e) => (
-              <Link key={e.id} href={`/book/${e.id}`} className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-lg hover:bg-[var(--bg-plum-trace)] transition-colors group">
-                <span className="text-sm truncate flex-1 text-[var(--fg)]">{e.title || "untitled"}</span>
-                {e.author && <span className="text-xs shrink-0 hidden sm:block text-[var(--fg-faint)]">{e.author}</span>}
+              <Link
+                key={e.id}
+                href={`/book/${e.id}`}
+                className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-lg hover:bg-[var(--bg-plum-trace)] transition-colors group"
+              >
+                <span className="text-sm truncate flex-1 text-[var(--fg)]">
+                  {e.title || "untitled"}
+                </span>
+                {e.author && (
+                  <span className="text-xs shrink-0 hidden sm:block text-[var(--fg-faint)]">
+                    {e.author}
+                  </span>
+                )}
                 <span className="dot-leader hidden sm:block" />
                 {e.rating > 0 && <StarDisplay rating={e.rating} size={11} />}
               </Link>

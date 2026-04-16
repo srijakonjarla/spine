@@ -3,11 +3,14 @@ import { createServerClient } from "@/lib/supabase-server";
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string; bookId: string }> }
+  { params }: { params: Promise<{ id: string; bookId: string }> },
 ) {
   const supabase = createServerClient(req);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user)
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { id: goalId, bookId } = await params;
 
@@ -18,6 +21,7 @@ export async function DELETE(
     .eq("book_id", bookId)
     .eq("user_id", user.id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

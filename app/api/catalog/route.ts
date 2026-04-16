@@ -84,12 +84,17 @@ async function hcPost(query: string, variables: Record<string, unknown>) {
   console.log("[catalog] POST Hardcover API", JSON.stringify(variables));
   const res = await fetch("https://api.hardcover.app/v1/graphql", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify({ query, variables }),
     next: { revalidate: 60 },
   });
   if (!res.ok) {
-    console.error(`[catalog] Hardcover API error: ${res.status} ${res.statusText}`);
+    console.error(
+      `[catalog] Hardcover API error: ${res.status} ${res.statusText}`,
+    );
     return null;
   }
   return res.json();
@@ -100,7 +105,11 @@ function extractHcGenres(cached_tags: unknown): string[] {
   if (Array.isArray(cached_tags)) return cached_tags as string[];
   if (typeof cached_tags === "object") {
     const obj = cached_tags as Record<string, { tag?: string }[]>;
-    return Object.values(obj).flat().map((t) => t?.tag ?? "").filter(Boolean).slice(0, 5);
+    return Object.values(obj)
+      .flat()
+      .map((t) => t?.tag ?? "")
+      .filter(Boolean)
+      .slice(0, 5);
   }
   return [];
 }
@@ -114,7 +123,9 @@ async function lookupHardcoverByIsbn(isbn: string): Promise<BookResult | null> {
   return {
     id: `hc-${book.id}`,
     title: book.title ?? "",
-    author: (book.contributions ?? []).map((c: { author: { name: string } }) => c.author.name).join(", "),
+    author: (book.contributions ?? [])
+      .map((c: { author: { name: string } }) => c.author.name)
+      .join(", "),
     release_date: book.release_date ?? "",
     genres: extractHcGenres(book.cached_tags),
     cover_url: edition.image?.url || book.images?.[0]?.url || "",
@@ -123,9 +134,15 @@ async function lookupHardcoverByIsbn(isbn: string): Promise<BookResult | null> {
   };
 }
 
-interface BookEnrichment { isbn: string; coverUrl: string; genres: string[] }
+interface BookEnrichment {
+  isbn: string;
+  coverUrl: string;
+  genres: string[];
+}
 
-async function fetchDefaultEditionData(bookIds: number[]): Promise<Map<number, BookEnrichment>> {
+async function fetchDefaultEditionData(
+  bookIds: number[],
+): Promise<Map<number, BookEnrichment>> {
   if (!bookIds.length) return new Map();
   const json = await hcPost(HARDCOVER_DEFAULT_EDITIONS_QUERY, { ids: bookIds });
   const books: {
@@ -133,11 +150,18 @@ async function fetchDefaultEditionData(bookIds: number[]): Promise<Map<number, B
     default_physical_edition_id: number;
     images?: { url?: string }[];
     cached_tags?: unknown;
-    editions: { id: number; isbn_13?: string; isbn_10?: string; image?: { url?: string } }[];
+    editions: {
+      id: number;
+      isbn_13?: string;
+      isbn_10?: string;
+      image?: { url?: string };
+    }[];
   }[] = json?.data?.books ?? [];
   const map = new Map<number, BookEnrichment>();
   for (const book of books) {
-    const edition = book.editions.find((e) => e.id === book.default_physical_edition_id);
+    const edition = book.editions.find(
+      (e) => e.id === book.default_physical_edition_id,
+    );
     map.set(book.id, {
       isbn: edition?.isbn_13 || edition?.isbn_10 || "",
       coverUrl: edition?.image?.url || book.images?.[0]?.url || "",
@@ -174,17 +198,21 @@ async function searchHardcover(query: string): Promise<BookResult[]> {
     .filter((b) => b.title);
 
   // Follow up for reliable ISBN, cover, and genres via default_physical_edition_id
-  const bookIds = results.map((r) => r._bookId).filter((id): id is number => id !== undefined);
+  const bookIds = results
+    .map((r) => r._bookId)
+    .filter((id): id is number => id !== undefined);
   const enrichMap = await fetchDefaultEditionData(bookIds);
-  console.log(`[catalog] enrichment follow-up: ${enrichMap.size}/${bookIds.length} resolved`);
+  console.log(
+    `[catalog] enrichment follow-up: ${enrichMap.size}/${bookIds.length} resolved`,
+  );
 
   return results.map(({ _bookId, ...r }) => {
     const enrich = _bookId !== undefined ? enrichMap.get(_bookId) : undefined;
     return {
       ...r,
-      isbn:      enrich?.isbn      || r.isbn,
-      cover_url: enrich?.coverUrl  || r.cover_url,
-      genres:    enrich?.genres?.length ? enrich.genres : r.genres,
+      isbn: enrich?.isbn || r.isbn,
+      cover_url: enrich?.coverUrl || r.cover_url,
+      genres: enrich?.genres?.length ? enrich.genres : r.genres,
     };
   });
 }
@@ -218,9 +246,14 @@ async function searchGoogle(query: string): Promise<BookResult[]> {
 
   return items.map((item): BookResult => {
     const identifiers = item.volumeInfo.industryIdentifiers ?? [];
-    const isbn13 = identifiers.find((i) => i.type === "ISBN_13")?.identifier ?? "";
-    const isbn10 = identifiers.find((i) => i.type === "ISBN_10")?.identifier ?? "";
-    const thumbnail = item.volumeInfo.imageLinks?.thumbnail ?? item.volumeInfo.imageLinks?.smallThumbnail ?? "";
+    const isbn13 =
+      identifiers.find((i) => i.type === "ISBN_13")?.identifier ?? "";
+    const isbn10 =
+      identifiers.find((i) => i.type === "ISBN_10")?.identifier ?? "";
+    const thumbnail =
+      item.volumeInfo.imageLinks?.thumbnail ??
+      item.volumeInfo.imageLinks?.smallThumbnail ??
+      "";
     return {
       id: item.id,
       title: item.volumeInfo.title ?? "",
@@ -259,7 +292,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(hardcover);
   }
 
-  console.log(`[catalog] Hardcover returned 0 results, falling back to Google Books`);
+  console.log(
+    `[catalog] Hardcover returned 0 results, falling back to Google Books`,
+  );
   const google = await searchGoogle(q);
   console.log(`[catalog] Google Books returned ${google.length} results`);
   return NextResponse.json(google);

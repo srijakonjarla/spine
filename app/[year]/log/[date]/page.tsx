@@ -7,6 +7,8 @@ import { useParams, useRouter } from "next/navigation";
 export default function DayLogRedirect() {
   const { year } = useParams<{ year: string }>();
   const router = useRouter();
-  useEffect(() => { router.replace(`/${year}/habits`); }, [year, router]);
+  useEffect(() => {
+    router.replace(`/${year}/habits`);
+  }, [year, router]);
   return null;
 }

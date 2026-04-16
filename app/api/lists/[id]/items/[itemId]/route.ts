@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase-server";
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ itemId: string }> }) {
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ itemId: string }> },
+) {
   const supabase = createServerClient(req);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user)
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { itemId } = await params;
 
@@ -23,15 +29,25 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ it
   if (patch.notes !== undefined) row.notes = patch.notes;
   if (Object.keys(row).length === 0) return NextResponse.json({ ok: true });
 
-  const { error } = await supabase.from("list_items").update(row).eq("id", itemId);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const { error } = await supabase
+    .from("list_items")
+    .update(row)
+    .eq("id", itemId);
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string; itemId: string }> }) {
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string; itemId: string }> },
+) {
   const supabase = createServerClient(req);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user)
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { itemId } = await params;
 
@@ -45,8 +61,13 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (!item) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const { error } = await supabase.from("list_items").delete().eq("id", itemId);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
 
-  await supabase.from("lists").update({ updated_at: new Date().toISOString() }).eq("id", item.list_id).eq("user_id", user.id);
+  await supabase
+    .from("lists")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", item.list_id)
+    .eq("user_id", user.id);
   return NextResponse.json({ ok: true });
 }

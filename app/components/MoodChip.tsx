@@ -7,12 +7,19 @@ interface MoodChipProps {
 }
 
 /** Filter / toggle chip for mood tags */
-export function MoodChip({ mood, active = false, onClick, display = false }: MoodChipProps) {
+export function MoodChip({
+  mood,
+  active = false,
+  onClick,
+  display = false,
+}: MoodChipProps) {
   const slug = mood.replace(/\s+/g, "-");
 
   if (display) {
     return (
-      <span className={`text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-hover)] text-[var(--fg-muted)]`}>
+      <span
+        className={`text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-hover)] text-[var(--fg-muted)]`}
+      >
         {mood}
       </span>
     );
@@ -29,12 +36,20 @@ export function MoodChip({ mood, active = false, onClick, display = false }: Moo
 }
 
 /** "All" reset chip — shown alongside MoodChip filters */
-export function AllMoodsChip({ active, onClick }: { active: boolean; onClick: () => void }) {
+export function AllMoodsChip({
+  active,
+  onClick,
+}: {
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       onClick={onClick}
       className={`text-xs px-3 py-1 rounded-full transition-colors border border-[var(--border-light)] ${
-        active ? "bg-plum text-white" : "bg-[var(--bg-surface)] text-[var(--fg-muted)]"
+        active
+          ? "bg-plum text-white"
+          : "bg-[var(--bg-surface)] text-[var(--fg-muted)]"
       }`}
     >
       all

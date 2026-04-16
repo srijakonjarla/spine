@@ -38,7 +38,11 @@ export default function LoginPage() {
     }
   };
 
-  const switchMode = (next: Mode) => { setMode(next); setError(""); setMessage(""); };
+  const switchMode = (next: Mode) => {
+    setMode(next);
+    setError("");
+    setMessage("");
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -58,7 +62,12 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === "signup" && (
             <div>
-              <label htmlFor="name" className="text-xs text-stone-400 block mb-1">name</label>
+              <label
+                htmlFor="name"
+                className="text-xs text-stone-400 block mb-1"
+              >
+                name
+              </label>
               <input
                 id="name"
                 type="text"
@@ -73,7 +82,12 @@ export default function LoginPage() {
           )}
 
           <div>
-            <label htmlFor="email" className="text-xs text-stone-400 block mb-1">email</label>
+            <label
+              htmlFor="email"
+              className="text-xs text-stone-400 block mb-1"
+            >
+              email
+            </label>
             <input
               id="email"
               type="email"
@@ -88,7 +102,12 @@ export default function LoginPage() {
 
           {mode !== "forgot" && (
             <div>
-              <label htmlFor="password" className="text-xs text-stone-400 block mb-1">password</label>
+              <label
+                htmlFor="password"
+                className="text-xs text-stone-400 block mb-1"
+              >
+                password
+              </label>
               <input
                 id="password"
                 type="password"
@@ -106,20 +125,40 @@ export default function LoginPage() {
 
           <div className="pt-2 flex items-center gap-4">
             <button type="submit" disabled={loading} className="btn-primary">
-              {loading ? "..." : mode === "signin" ? "sign in" : mode === "signup" ? "create account" : "send reset link"}
+              {loading
+                ? "..."
+                : mode === "signin"
+                  ? "sign in"
+                  : mode === "signup"
+                    ? "create account"
+                    : "send reset link"}
             </button>
-            <button type="button" onClick={() => switchMode(mode === "signup" ? "signin" : "signup")} className="back-link">
+            <button
+              type="button"
+              onClick={() =>
+                switchMode(mode === "signup" ? "signin" : "signup")
+              }
+              className="back-link"
+            >
               {mode === "signup" ? "← sign in" : "create account →"}
             </button>
           </div>
 
           {mode === "signin" && (
-            <button type="button" onClick={() => switchMode("forgot")} className="text-xs text-stone-400 hover:text-stone-600 transition-colors">
+            <button
+              type="button"
+              onClick={() => switchMode("forgot")}
+              className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
+            >
               forgot password?
             </button>
           )}
           {mode === "forgot" && (
-            <button type="button" onClick={() => switchMode("signin")} className="back-link">
+            <button
+              type="button"
+              onClick={() => switchMode("signin")}
+              className="back-link"
+            >
               ← back to sign in
             </button>
           )}

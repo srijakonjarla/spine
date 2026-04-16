@@ -17,15 +17,26 @@ interface MonthCalendarProps {
 }
 
 export function MonthCalendar({
-  cells, todayStr, selectedDate, loggedDates, streakDates,
-  finishedByDate, quoteDateSet, onSelectDate,
+  cells,
+  todayStr,
+  selectedDate,
+  loggedDates,
+  streakDates,
+  finishedByDate,
+  quoteDateSet,
+  onSelectDate,
 }: MonthCalendarProps) {
   return (
     <div className="mb-10 rounded-2xl overflow-hidden border border-[var(--border-light)]">
       {/* Day headers */}
       <div className="grid grid-cols-7 border-b border-[var(--border-light)] bg-[var(--bg-surface)]">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-          <div key={d} className="text-center py-2 text-[10px] uppercase tracking-wider text-[var(--fg-faint)]">{d}</div>
+          <div
+            key={d}
+            className="text-center py-2 text-[10px] uppercase tracking-wider text-[var(--fg-faint)]"
+          >
+            {d}
+          </div>
         ))}
       </div>
 
@@ -33,43 +44,63 @@ export function MonthCalendar({
       <div className="grid grid-cols-7 bg-[var(--bg-page)]">
         {cells.map((cell, i) => {
           if (!cell.day) {
-            return <div key={i} className="aspect-square border-r border-b border-[var(--border-light)] opacity-30" />;
+            return (
+              <div
+                key={i}
+                className="aspect-square border-r border-b border-[var(--border-light)] opacity-30"
+              />
+            );
           }
 
           const { dateStr } = cell;
-          const isToday    = dateStr === todayStr;
-          const isFuture   = dateStr > todayStr;
-          const isLogged   = loggedDates.has(dateStr);
-          const isStreak   = streakDates.has(dateStr);
-          const finished   = finishedByDate.get(dateStr);
-          const hasQuote   = quoteDateSet.has(dateStr);
+          const isToday = dateStr === todayStr;
+          const isFuture = dateStr > todayStr;
+          const isLogged = loggedDates.has(dateStr);
+          const isStreak = streakDates.has(dateStr);
+          const finished = finishedByDate.get(dateStr);
+          const hasQuote = quoteDateSet.has(dateStr);
           const isSelected = selectedDate === dateStr;
 
-          const bgClass =
-            isSelected            ? "bg-[var(--bg-selected)]" :
-            isToday               ? "bg-plum" :
-            finished              ? "bg-[var(--bg-finished-day)]" :
-            (isStreak && isLogged)? "bg-[var(--bg-streak)]" :
-            isLogged              ? "bg-[var(--bg-logged)]" :
-                                    "bg-transparent";
+          const bgClass = isSelected
+            ? "bg-[var(--bg-selected)]"
+            : isToday
+              ? "bg-plum"
+              : finished
+                ? "bg-[var(--bg-finished-day)]"
+                : isStreak && isLogged
+                  ? "bg-[var(--bg-streak)]"
+                  : isLogged
+                    ? "bg-[var(--bg-logged)]"
+                    : "bg-transparent";
 
-          const dayNumColor = isFuture ? "text-[var(--fg-faint)]" : isToday ? "text-white" : "text-[var(--fg)]";
+          const dayNumColor = isFuture
+            ? "text-[var(--fg-faint)]"
+            : isToday
+              ? "text-white"
+              : "text-[var(--fg)]";
 
           const inner = (
             <>
-              <span className={`text-[11px] font-medium leading-none mb-1 w-5 h-5 flex items-center justify-center rounded-full ${dayNumColor}`}>
+              <span
+                className={`text-[11px] font-medium leading-none mb-1 w-5 h-5 flex items-center justify-center rounded-full ${dayNumColor}`}
+              >
                 {cell.day}
               </span>
               {finished && (
                 <span className="text-[8px] leading-tight truncate w-full text-terra">
-                  {finished.title.slice(0, 10)}{finished.title.length > 10 ? "…" : ""}
+                  {finished.title.slice(0, 10)}
+                  {finished.title.length > 10 ? "…" : ""}
                 </span>
               )}
               {isLogged && !finished && (
-                <span className={`w-1 h-1 rounded-full absolute bottom-1.5 left-1/2 -translate-x-1/2 ${isStreak ? "bg-sage" : "bg-[var(--fg-faint)]"}`} />
+                <span
+                  className={`w-1 h-1 rounded-full absolute bottom-1.5 left-1/2 -translate-x-1/2 ${isStreak ? "bg-sage" : "bg-[var(--fg-faint)]"}`}
+                />
               )}
               {hasQuote && (
-                <span className="text-[8px] absolute top-1 right-1 text-gold">✦</span>
+                <span className="text-[8px] absolute top-1 right-1 text-gold">
+                  ✦
+                </span>
               )}
             </>
           );

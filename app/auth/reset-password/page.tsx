@@ -26,15 +26,21 @@ function ResetPasswordForm() {
     if (code) {
       // PKCE flow — exchange code for session
       supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-        if (error) { setSupabaseError(error.message); setStage("error"); }
-        else { setStage("form"); }
+        if (error) {
+          setSupabaseError(error.message);
+          setStage("error");
+        } else {
+          setStage("form");
+        }
       });
       return;
     }
 
     // Implicit flow — Supabase JS auto-creates a session from the hash fragment.
     // Listen for the PASSWORD_RECOVERY event, or check if the session already exists.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY" && session) {
         setStage("form");
       }
@@ -42,21 +48,32 @@ function ResetPasswordForm() {
 
     // Session may already be set by the time this effect runs
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) { setStage("form"); }
+      if (session) {
+        setStage("form");
+      }
     });
 
     // Fallback: if nothing fires within 4s, show error
     const timeout = setTimeout(() => {
-      setStage((s) => s === "exchanging" ? "error" : s);
+      setStage((s) => (s === "exchanging" ? "error" : s));
     }, 4000);
 
-    return () => { subscription.unsubscribe(); clearTimeout(timeout); };
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password !== confirm) { setError("passwords don't match"); return; }
-    if (password.length < 6) { setError("password must be at least 6 characters"); return; }
+    if (password !== confirm) {
+      setError("passwords don't match");
+      return;
+    }
+    if (password.length < 6) {
+      setError("password must be at least 6 characters");
+      return;
+    }
 
     setError("");
     setLoading(true);
@@ -79,7 +96,9 @@ function ResetPasswordForm() {
       await resetPassword(email);
       setResendMessage("check your email for a new reset link.");
     } catch (err) {
-      setResendMessage(err instanceof Error ? err.message : "something went wrong");
+      setResendMessage(
+        err instanceof Error ? err.message : "something went wrong",
+      );
     } finally {
       setResendLoading(false);
     }
@@ -100,8 +119,12 @@ function ResetPasswordForm() {
         {stage === "error" && (
           <div className="space-y-6">
             <div>
-              <p className="text-xs text-red-400 mb-1">this reset link is invalid or has expired.</p>
-              {supabaseError && <p className="text-[11px] text-stone-400">{supabaseError}</p>}
+              <p className="text-xs text-red-400 mb-1">
+                this reset link is invalid or has expired.
+              </p>
+              {supabaseError && (
+                <p className="text-[11px] text-stone-400">{supabaseError}</p>
+              )}
             </div>
 
             <form onSubmit={handleResend} className="space-y-3">
@@ -114,12 +137,22 @@ function ResetPasswordForm() {
                 required
                 className="underline-input"
               />
-              {resendMessage && <p className="text-xs text-stone-500">{resendMessage}</p>}
+              {resendMessage && (
+                <p className="text-xs text-stone-500">{resendMessage}</p>
+              )}
               <div className="flex items-center gap-4 pt-1">
-                <button type="submit" disabled={resendLoading} className="btn-primary">
+                <button
+                  type="submit"
+                  disabled={resendLoading}
+                  className="btn-primary"
+                >
                   {resendLoading ? "..." : "resend link"}
                 </button>
-                <button type="button" onClick={() => router.push("/login")} className="back-link">
+                <button
+                  type="button"
+                  onClick={() => router.push("/login")}
+                  className="back-link"
+                >
                   ← sign in
                 </button>
               </div>
@@ -129,9 +162,16 @@ function ResetPasswordForm() {
 
         {stage === "form" && (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <p className="text-xs text-stone-400 mb-6">enter your new password.</p>
+            <p className="text-xs text-stone-400 mb-6">
+              enter your new password.
+            </p>
             <div>
-              <label htmlFor="password" className="text-xs text-stone-400 block mb-1">new password</label>
+              <label
+                htmlFor="password"
+                className="text-xs text-stone-400 block mb-1"
+              >
+                new password
+              </label>
               <input
                 id="password"
                 type="password"
@@ -144,7 +184,12 @@ function ResetPasswordForm() {
               />
             </div>
             <div>
-              <label htmlFor="confirm" className="text-xs text-stone-400 block mb-1">confirm password</label>
+              <label
+                htmlFor="confirm"
+                className="text-xs text-stone-400 block mb-1"
+              >
+                confirm password
+              </label>
               <input
                 id="confirm"
                 type="password"
@@ -163,7 +208,6 @@ function ResetPasswordForm() {
             </div>
           </form>
         )}
-
       </div>
     </div>
   );
@@ -171,7 +215,13 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div className="page flex items-center justify-center px-6"><p className="text-xs text-stone-400 font-mono">verifying link...</p></div>}>
+    <Suspense
+      fallback={
+        <div className="page flex items-center justify-center px-6">
+          <p className="text-xs text-stone-400 font-mono">verifying link...</p>
+        </div>
+      }
+    >
       <ResetPasswordForm />
     </Suspense>
   );

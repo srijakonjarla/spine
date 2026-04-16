@@ -38,15 +38,19 @@ export default function BooksPage() {
   const [activeBooks, setActiveBooks] = useState<BookEntry[]>([]);
   const [addValue, setAddValue] = useState("");
   const [adding, setAdding] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       getEntries({ year }),
       getEntries(), // unfiltered — to catch currently-reading books started in prior years
-    ]).then(([yearEntries, allEntries]) => {
-      setEntries(yearEntries);
-      setActiveBooks(allEntries.filter((e) => e.status === "reading"));
-    }).catch(console.error);
+    ])
+      .then(([yearEntries, allEntries]) => {
+        setEntries(yearEntries);
+        setActiveBooks(allEntries.filter((e) => e.status === "reading"));
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, [year]);
 
   const addBook = async (catalog?: CatalogEntry) => {
@@ -54,7 +58,7 @@ export default function BooksPage() {
     if (!title || adding) return;
     setAdding(true);
     try {
-      const enriched = catalog ?? await lookupBook(title);
+      const enriched = catalog ?? (await lookupBook(title));
       const now = new Date();
       const entry: BookEntry = {
         id: crypto.randomUUID(),
@@ -96,18 +100,50 @@ export default function BooksPage() {
   }, {});
   const months = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
 
+  if (loading)
+    return (
+      <div className="page">
+        <div className="page-content animate-pulse">
+          <div className="h-5 w-20 bg-[var(--bg-hover)] rounded mb-8" />
+          <div className="space-y-8">
+            {[1, 2, 3].map((i) => (
+              <div key={i}>
+                <div className="h-3.5 w-16 bg-[var(--bg-hover)] rounded mb-3" />
+                <div className="space-y-2">
+                  {[1, 2, 3].map((j) => (
+                    <div
+                      key={j}
+                      className="h-9 bg-[var(--bg-hover)] rounded-lg"
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+
   return (
     <div className="page">
       <div className="page-content">
         <div className="mb-10">
-          <Link href="/" className="back-link">← home</Link>
+          <Link href="/" className="back-link">
+            ← home
+          </Link>
         </div>
 
         <div className="mb-10 pb-8 border-b border-stone-200">
-          <p className="text-xs text-stone-300 mb-2 tracking-widest uppercase">reading journal · {year}</p>
-          <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold text-[var(--fg-heading)] tracking-tight">reading log</h1>
+          <p className="text-xs text-stone-300 mb-2 tracking-widest uppercase">
+            reading journal · {year}
+          </p>
+          <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold text-[var(--fg-heading)] tracking-tight">
+            reading log
+          </h1>
           {loggable.length > 0 && (
-            <p className="text-xs text-stone-400 mt-3">{loggable.length} books · {months.length} months</p>
+            <p className="text-xs text-stone-400 mt-3">
+              {loggable.length} books · {months.length} months
+            </p>
           )}
         </div>
 
@@ -143,11 +179,21 @@ export default function BooksPage() {
               <p className="section-label mb-4">contents</p>
               <div className="space-y-1">
                 {months.map((key, i) => (
-                  <a key={key} href={`#${sectionId(key)}`} className="flex items-baseline gap-3 py-1.5 -mx-3 px-3 rounded hover:bg-stone-100/60 transition-colors group">
-                    <span className="text-xs text-stone-300 w-6 shrink-0 font-mono">{String(i + 1).padStart(2, "0")}</span>
-                    <span className="text-xs text-stone-500 group-hover:text-stone-800 transition-colors">{monthLabel(key)}</span>
+                  <a
+                    key={key}
+                    href={`#${sectionId(key)}`}
+                    className="flex items-baseline gap-3 py-1.5 -mx-3 px-3 rounded hover:bg-stone-100/60 transition-colors group"
+                  >
+                    <span className="text-xs text-stone-300 w-6 shrink-0 font-mono">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span className="text-xs text-stone-500 group-hover:text-stone-800 transition-colors">
+                      {monthLabel(key)}
+                    </span>
                     <span className="dot-leader" />
-                    <span className="text-xs text-stone-300 shrink-0">{grouped[key].length}</span>
+                    <span className="text-xs text-stone-300 shrink-0">
+                      {grouped[key].length}
+                    </span>
                   </a>
                 ))}
               </div>
@@ -160,10 +206,16 @@ export default function BooksPage() {
               {months.map((key, i) => (
                 <section key={key} id={sectionId(key)}>
                   <div className="flex items-baseline gap-3 mb-4">
-                    <span className="text-xs text-stone-300 font-mono">{String(i + 1).padStart(2, "0")}</span>
-                    <h2 className="text-sm font-semibold text-stone-700 tracking-wider uppercase">{monthLabel(key)}</h2>
+                    <span className="text-xs text-stone-300 font-mono">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <h2 className="text-sm font-semibold text-stone-700 tracking-wider uppercase">
+                      {monthLabel(key)}
+                    </h2>
                     <span className="flex-1 border-b border-dotted border-stone-200 mb-0.5" />
-                    <span className="text-xs text-stone-300">{grouped[key].length}</span>
+                    <span className="text-xs text-stone-300">
+                      {grouped[key].length}
+                    </span>
                   </div>
                   <div className="space-y-0.5">
                     {grouped[key].map((e) => (

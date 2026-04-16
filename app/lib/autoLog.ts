@@ -11,5 +11,8 @@ export async function autoLogToday(supabase: SupabaseClient, userId: string) {
   const today = localDateStr();
   await supabase
     .from("reading_log")
-    .upsert({ user_id: userId, log_date: today }, { onConflict: "user_id,log_date", ignoreDuplicates: true });
+    .upsert(
+      { user_id: userId, log_date: today },
+      { onConflict: "user_id,log_date", ignoreDuplicates: true },
+    );
 }

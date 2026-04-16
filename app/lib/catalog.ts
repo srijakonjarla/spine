@@ -43,7 +43,7 @@ export async function searchCatalog(query: string): Promise<CatalogEntry[]> {
     return [];
   }
   const res = await fetch(`/api/catalog?q=${encodeURIComponent(query)}`);
-  if (!res.ok) { 
+  if (!res.ok) {
     return [];
   }
   const data = await res.json();
@@ -52,7 +52,10 @@ export async function searchCatalog(query: string): Promise<CatalogEntry[]> {
 
 // Fetch the best-matching Google Books entry.
 // Pass an ISBN for exact lookup, or title + optional author for a text search.
-export async function lookupBook(titleOrIsbn: string, author?: string): Promise<CatalogEntry | null> {
+export async function lookupBook(
+  titleOrIsbn: string,
+  author?: string,
+): Promise<CatalogEntry | null> {
   const digits = titleOrIsbn.replace(/[-\s]/g, "");
   const isIsbn = /^\d{10}$/.test(digits) || /^\d{13}$/.test(digits);
 
@@ -65,5 +68,8 @@ export async function lookupBook(titleOrIsbn: string, author?: string): Promise<
   const results = await searchCatalog(q);
   if (!results.length) return null;
   // Prefer an exact title match; fall back to first result
-  return results.find((r) => r.title.toLowerCase() === titleOrIsbn.toLowerCase()) ?? results[0];
+  return (
+    results.find((r) => r.title.toLowerCase() === titleOrIsbn.toLowerCase()) ??
+    results[0]
+  );
 }

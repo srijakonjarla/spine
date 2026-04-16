@@ -10,7 +10,9 @@ export function PageHeader({ title, eyebrow, subtitle }: PageHeaderProps) {
   return (
     <div className="mb-10 pb-8 border-b border-[var(--border-light)]">
       {eyebrow && (
-        <p className="text-xs mb-2 tracking-widest uppercase text-[var(--fg-faint)]">{eyebrow}</p>
+        <p className="text-xs mb-2 tracking-widest uppercase text-[var(--fg-faint)]">
+          {eyebrow}
+        </p>
       )}
       <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold page-title tracking-tight">
         {title}

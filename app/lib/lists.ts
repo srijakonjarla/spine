@@ -85,7 +85,15 @@ export async function getList(id: string): Promise<BookList | null> {
 export async function createList(
   year: number,
   title: string,
-  opts?: { listType?: string; color?: string; emoji?: string; bulletSymbol?: string; description?: string; dateLabel?: string; notesLabel?: string }
+  opts?: {
+    listType?: string;
+    color?: string;
+    emoji?: string;
+    bulletSymbol?: string;
+    description?: string;
+    dateLabel?: string;
+    notesLabel?: string;
+  },
 ): Promise<BookList> {
   const res = await apiFetch("/api/lists", {
     method: "POST",
@@ -97,7 +105,16 @@ export async function createList(
 
 export async function updateList(
   id: string,
-  patch: { title?: string; description?: string; color?: string; emoji?: string; bulletSymbol?: string; dateLabel?: string; notesLabel?: string; bookmarked?: boolean }
+  patch: {
+    title?: string;
+    description?: string;
+    color?: string;
+    emoji?: string;
+    bulletSymbol?: string;
+    dateLabel?: string;
+    notesLabel?: string;
+    bookmarked?: boolean;
+  },
 ): Promise<void> {
   await apiFetch(`/api/lists/${id}`, {
     method: "PATCH",
@@ -105,7 +122,10 @@ export async function updateList(
   });
 }
 
-export async function toggleListBookmark(id: string, bookmarked: boolean): Promise<void> {
+export async function toggleListBookmark(
+  id: string,
+  bookmarked: boolean,
+): Promise<void> {
   await apiFetch(`/api/lists/${id}`, {
     method: "PATCH",
     body: JSON.stringify({ bookmarked }),
@@ -118,7 +138,14 @@ export async function deleteList(id: string): Promise<void> {
 
 export async function addListItem(
   listId: string,
-  fields: { title: string; author?: string; releaseDate?: string; notes?: string; price?: string; type?: string }
+  fields: {
+    title: string;
+    author?: string;
+    releaseDate?: string;
+    notes?: string;
+    price?: string;
+    type?: string;
+  },
 ): Promise<ListItem> {
   const res = await apiFetch(`/api/lists/${listId}/items`, {
     method: "POST",
@@ -130,7 +157,12 @@ export async function addListItem(
 
 export async function updateListItem(
   id: string,
-  patch: { releaseDate?: string; notes?: string; price?: string; type?: string }
+  patch: {
+    releaseDate?: string;
+    notes?: string;
+    price?: string;
+    type?: string;
+  },
 ): Promise<void> {
   await apiFetch(`/api/items/${id}`, {
     method: "PATCH",
@@ -138,11 +170,17 @@ export async function updateListItem(
   });
 }
 
-export async function removeListItem(id: string, listId: string): Promise<void> {
+export async function removeListItem(
+  id: string,
+  listId: string,
+): Promise<void> {
   await apiFetch(`/api/lists/${listId}/items/${id}`, { method: "DELETE" });
 }
 
-export async function reorderListItems(listId: string, orderedIds: string[]): Promise<void> {
+export async function reorderListItems(
+  listId: string,
+  orderedIds: string[],
+): Promise<void> {
   await apiFetch(`/api/lists/${listId}/items/reorder`, {
     method: "POST",
     body: JSON.stringify({ orderedIds }),

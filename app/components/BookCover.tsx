@@ -1,8 +1,16 @@
 import { useMemo } from "react";
 
 const SPINE_COLORS = [
-  "var(--spine-1)", "var(--spine-2)", "var(--spine-3)", "var(--spine-4)", "var(--spine-5)",
-  "var(--spine-6)", "var(--spine-7)", "var(--spine-8)", "var(--spine-9)", "var(--spine-10)",
+  "var(--spine-1)",
+  "var(--spine-2)",
+  "var(--spine-3)",
+  "var(--spine-4)",
+  "var(--spine-5)",
+  "var(--spine-6)",
+  "var(--spine-7)",
+  "var(--spine-8)",
+  "var(--spine-9)",
+  "var(--spine-10)",
 ];
 
 function hashTitle(s: string): number {
@@ -19,10 +27,15 @@ interface BookCoverProps {
   className?: string;
 }
 
-export function BookCover({ coverUrl, title, author, className = "w-16" }: BookCoverProps) {
+export function BookCover({
+  coverUrl,
+  title,
+  author,
+  className = "w-16",
+}: BookCoverProps) {
   const spineColor = useMemo(
     () => SPINE_COLORS[hashTitle(title || " ") % SPINE_COLORS.length],
-    [title]
+    [title],
   );
 
   if (coverUrl) {
@@ -45,7 +58,9 @@ export function BookCover({ coverUrl, title, author, className = "w-16" }: BookC
         {title}
       </p>
       {author && (
-        <p className="text-[8px] mt-0.5 leading-tight truncate text-white/50">{author}</p>
+        <p className="text-[8px] mt-0.5 leading-tight truncate text-white/50">
+          {author}
+        </p>
       )}
     </div>
   );
@@ -67,7 +82,7 @@ export function BookCoverThumb({
 }) {
   const spineColor = useMemo(
     () => SPINE_COLORS[hashTitle(title || " ") % SPINE_COLORS.length],
-    [title]
+    [title],
   );
 
   if (coverUrl) {
@@ -90,7 +105,9 @@ export function BookCoverThumb({
         {title}
       </p>
       {author && (
-        <p className="text-[7px] mt-0.5 leading-tight truncate text-white/50">{author}</p>
+        <p className="text-[7px] mt-0.5 leading-tight truncate text-white/50">
+          {author}
+        </p>
       )}
     </div>
   );

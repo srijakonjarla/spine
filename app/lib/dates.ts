@@ -49,10 +49,16 @@ export function parseLocalDate(iso: string): Date | null {
  * Format a DATE string as a human-readable string.
  * Defaults to "Jan 15, 2025". Pass Intl options to customise.
  */
-export function formatDate(iso: string, opts?: Intl.DateTimeFormatOptions): string {
+export function formatDate(
+  iso: string,
+  opts?: Intl.DateTimeFormatOptions,
+): string {
   const d = parseLocalDate(iso);
   if (!d) return "";
-  return d.toLocaleDateString("en-US", opts ?? { month: "short", day: "numeric", year: "numeric" });
+  return d.toLocaleDateString(
+    "en-US",
+    opts ?? { month: "short", day: "numeric", year: "numeric" },
+  );
 }
 
 /** Format a DATE string as "Jan 15" (no year). */
@@ -86,13 +92,14 @@ export function formatReadRange(read: {
   dateFinished: string;
   dateShelved: string;
 }): string {
-  const fmt = (iso: string) => formatDate(iso, { month: "short", year: "numeric" });
+  const fmt = (iso: string) =>
+    formatDate(iso, { month: "short", year: "numeric" });
   const start = read.dateStarted ? fmt(read.dateStarted) : "?";
   const end = read.dateFinished
     ? fmt(read.dateFinished)
     : read.dateShelved
-    ? fmt(read.dateShelved)
-    : null;
+      ? fmt(read.dateShelved)
+      : null;
   return end && end !== start ? `${start} – ${end}` : start;
 }
 
@@ -173,7 +180,8 @@ export function readingPeriod(entry: {
         : formatShortDate(entry.dateFinished);
     return `${start} – ${end}`;
   }
-  if (entry.dateShelved) return `${start} – ${formatShortDate(entry.dateShelved)}`;
+  if (entry.dateShelved)
+    return `${start} – ${formatShortDate(entry.dateShelved)}`;
   if (entry.status === "reading") return `since ${start}`;
   return start;
 }

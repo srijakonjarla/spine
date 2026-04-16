@@ -98,8 +98,8 @@ export async function getEntries(opts?: {
   offset?: number;
 }): Promise<BookEntry[]> {
   const params = new URLSearchParams();
-  if (opts?.year   !== undefined) params.set("year",   String(opts.year));
-  if (opts?.limit  !== undefined) params.set("limit",  String(opts.limit));
+  if (opts?.year !== undefined) params.set("year", String(opts.year));
+  if (opts?.limit !== undefined) params.set("limit", String(opts.limit));
   if (opts?.offset !== undefined) params.set("offset", String(opts.offset));
   const qs = params.toString();
   const res = await apiFetch(qs ? `/api/books?${qs}` : "/api/books");
@@ -115,7 +115,8 @@ export async function getEntry(id: string): Promise<BookEntry | null> {
   } catch (err) {
     // 404 means the book doesn't exist (or belongs to another user) — return null
     // so callers can redirect gracefully instead of crashing.
-    if (err instanceof Error && err.message.startsWith("API error 404")) return null;
+    if (err instanceof Error && err.message.startsWith("API error 404"))
+      return null;
     throw err;
   }
   const data = await res.json();
@@ -130,7 +131,10 @@ export async function createEntry(entry: BookEntry): Promise<void> {
   });
 }
 
-export async function updateEntry(id: string, patch: Partial<BookEntry>): Promise<void> {
+export async function updateEntry(
+  id: string,
+  patch: Partial<BookEntry>,
+): Promise<void> {
   await apiFetch(`/api/books/${id}`, {
     method: "PATCH",
     body: JSON.stringify(patch),
@@ -143,14 +147,20 @@ export async function deleteEntry(id: string): Promise<void> {
 
 // ---- thoughts ----
 
-export async function addThought(bookId: string, thought: Thought): Promise<void> {
+export async function addThought(
+  bookId: string,
+  thought: Thought,
+): Promise<void> {
   await apiFetch(`/api/books/${bookId}/thoughts`, {
     method: "POST",
     body: JSON.stringify({ thought }),
   });
 }
 
-export async function removeThought(thoughtId: string, bookId: string): Promise<void> {
+export async function removeThought(
+  thoughtId: string,
+  bookId: string,
+): Promise<void> {
   await apiFetch(`/api/books/${bookId}/thoughts`, {
     method: "DELETE",
     body: JSON.stringify({ thoughtId }),
@@ -170,3 +180,39 @@ export async function deleteBookRead(id: string): Promise<void> {
   await apiFetch(`/api/reads/${id}`, { method: "DELETE" });
 }
 
+export async function logHistoricalRead(
+  bookId: string,
+  read: {
+    status: string;
+    dateStarted: string;
+    dateFinished: string;
+    rating: number;
+    feeling: string;
+  },
+): Promise<BookRead> {
+  const res = await apiFetch(`/api/books/${bookId}/reads`, {
+    method: "PUT",
+    body: JSON.stringify(read),
+  });
+  const row: BookReadRow = await res.json();
+  return mapBookRead(row);
+}
+
+export async function updateBookRead(
+  bookId: string,
+  readId: string,
+  patch: {
+    status: string;
+    dateStarted: string;
+    dateFinished: string;
+    rating: number;
+    feeling: string;
+  },
+): Promise<BookRead> {
+  const res = await apiFetch(`/api/books/${bookId}/reads/${readId}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+  const row: BookReadRow = await res.json();
+  return mapBookRead(row);
+}

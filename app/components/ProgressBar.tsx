@@ -14,13 +14,21 @@ const COLOR_CLASS: Record<string, string> = {
   gradient: "bg-[linear-gradient(to_right,var(--plum),var(--terra))]",
 };
 
-export function ProgressBar({ value, percent = false, color = "sage", size = "sm", className = "" }: ProgressBarProps) {
+export function ProgressBar({
+  value,
+  percent = false,
+  color = "sage",
+  size = "sm",
+  className = "",
+}: ProgressBarProps) {
   const pct = Math.min(100, Math.round(percent ? value : value * 100));
   const h = size === "xs" ? "h-1" : "h-1.5";
   const fill = COLOR_CLASS[color] ?? color;
 
   return (
-    <div className={`${h} rounded-full overflow-hidden bg-[var(--border)] ${className}`}>
+    <div
+      className={`${h} rounded-full overflow-hidden bg-[var(--border)] ${className}`}
+    >
       <div
         style={{ width: `${pct}%` }}
         className={`h-full rounded-full transition-all duration-500 ${fill}`}

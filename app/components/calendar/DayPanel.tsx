@@ -9,43 +9,80 @@ import { formatDate } from "@/lib/dates";
 
 const FEELING_TRUNCATE = 120;
 
-function PanelSection({ label, children }: { label: string; children: React.ReactNode }) {
+function PanelSection({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
-      <p className="text-[9px] uppercase tracking-[0.14em] font-semibold mb-3 text-[var(--fg-faint)]">{label}</p>
+      <p className="text-[9px] uppercase tracking-[0.14em] font-semibold mb-3 text-[var(--fg-faint)]">
+        {label}
+      </p>
       <div className="space-y-3">{children}</div>
     </div>
   );
 }
 
-function BookLink({ id, title, author, rating, feeling, meta, onClose }: {
-  id: string; title: string; author?: string; rating?: number; feeling?: string; meta?: string; onClose: () => void;
+function BookLink({
+  id,
+  title,
+  author,
+  rating,
+  feeling,
+  meta,
+  onClose,
+}: {
+  id: string;
+  title: string;
+  author?: string;
+  rating?: number;
+  feeling?: string;
+  meta?: string;
+  onClose: () => void;
 }) {
   const trimmedFeeling = feeling?.trim();
-  const isTruncated = trimmedFeeling && trimmedFeeling.length > FEELING_TRUNCATE;
-  const feelingSnippet = isTruncated ? trimmedFeeling.slice(0, FEELING_TRUNCATE).trimEnd() + "..." : trimmedFeeling;
+  const isTruncated =
+    trimmedFeeling && trimmedFeeling.length > FEELING_TRUNCATE;
+  const feelingSnippet = isTruncated
+    ? trimmedFeeling.slice(0, FEELING_TRUNCATE).trimEnd() + "..."
+    : trimmedFeeling;
   return (
     <div>
-    <Link href={`/book/${id}`} className="block group" onClick={onClose}>
-      <p className="text-[13px] font-medium truncate text-[var(--fg)] group-hover:opacity-70 transition-opacity">{title}</p>
-      {author && <p className="text-[11px] mt-0.5 truncate text-[var(--fg-muted)]">{author}</p>}
-      {rating != null && rating > 0 && <p className="text-[10px] mt-0.5 text-[var(--gold)]">{"★".repeat(Math.round(rating))}</p>}
-      {meta && <p className="text-[10px] mt-0.5 text-[var(--fg-faint)]">{meta}</p>}
-    </Link>
-    {feelingSnippet && (
-      <p className="text-xs mt-1.5 leading-relaxed text-[var(--fg-muted)] font-serif italic">
-        &ldquo;{feelingSnippet}&rdquo;
-        {isTruncated && (
-          <Link 
-            href={`/book/${id}#reflection`}
-            className="not-italic ml-1.5 text-[10px] text-[var(--fg-faint)] hover:opacity-70 transition-opacity"                                                                
-            onClick={onClose}                                                          
-          >    
-            read more → 
-          </Link>        
+      <Link href={`/book/${id}`} className="block group" onClick={onClose}>
+        <p className="text-[13px] font-medium truncate text-[var(--fg)] group-hover:opacity-70 transition-opacity">
+          {title}
+        </p>
+        {author && (
+          <p className="text-[11px] mt-0.5 truncate text-[var(--fg-muted)]">
+            {author}
+          </p>
         )}
-      </p>
-    )}
+        {rating != null && rating > 0 && (
+          <p className="text-[10px] mt-0.5 text-[var(--gold)]">
+            {"★".repeat(Math.round(rating))}
+          </p>
+        )}
+        {meta && (
+          <p className="text-[10px] mt-0.5 text-[var(--fg-faint)]">{meta}</p>
+        )}
+      </Link>
+      {feelingSnippet && (
+        <p className="text-xs mt-1.5 leading-relaxed text-[var(--fg-muted)] font-serif italic">
+          &ldquo;{feelingSnippet}&rdquo;
+          {isTruncated && (
+            <Link
+              href={`/book/${id}#reflection`}
+              className="not-italic ml-1.5 text-[10px] text-[var(--fg-faint)] hover:opacity-70 transition-opacity"
+              onClick={onClose}
+            >
+              read more →
+            </Link>
+          )}
+        </p>
+      )}
     </div>
   );
 }
@@ -58,7 +95,12 @@ interface DayPanelProps {
   dayFinished: BookEntry[];
   dayStarted: BookEntry[];
   dayReading: BookEntry[];
-  dayThoughts: { id: string; text: string; bookTitle: string; bookId: string }[];
+  dayThoughts: {
+    id: string;
+    text: string;
+    bookTitle: string;
+    bookId: string;
+  }[];
   dayBookLog: { bookTitle: string; bookId: string; read: BookRead }[];
   isLogged: boolean;
   onClose: () => void;
@@ -84,7 +126,11 @@ export function DayPanel({
   onQuoteAdded,
 }: DayPanelProps) {
   const isToday = date === todayStr;
-  const dateLabel = formatDate(date, { weekday: "long", month: "long", day: "numeric" });
+  const dateLabel = formatDate(date, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
 
   const [localLogged, setLocalLogged] = useState(isLogged);
   const [draft, setDraft] = useState(log?.note ?? "");
@@ -101,8 +147,14 @@ export function DayPanel({
   const quoteRef = useRef<HTMLTextAreaElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const activeDayBooks = [...dayFinished, ...dayStarted, ...(isToday ? dayReading : [])];
-  const moodTags = Array.from(new Set(activeDayBooks.flatMap((b) => b.moodTags)));
+  const activeDayBooks = [
+    ...dayFinished,
+    ...dayStarted,
+    ...(isToday ? dayReading : []),
+  ];
+  const moodTags = Array.from(
+    new Set(activeDayBooks.flatMap((b) => b.moodTags)),
+  );
 
   useEffect(() => {
     setLocalLogged(isLogged);
@@ -113,12 +165,13 @@ export function DayPanel({
     setQuotePage("");
     setQuoteBookId("");
 
-    const hasNote = !!(log?.note?.trim());
-    const hasActivity = isLogged || dayQuotes.length > 0 || dayFinished.length > 0;
+    const hasNote = !!log?.note?.trim();
+    const hasActivity =
+      isLogged || dayQuotes.length > 0 || dayFinished.length > 0;
     const shouldEdit = isToday || !hasActivity || !hasNote;
     setEditMode(shouldEdit);
     if (shouldEdit) setTimeout(() => textareaRef.current?.focus(), 60);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date]);
 
   const scheduleSave = (val: string) => {
@@ -140,7 +193,10 @@ export function DayPanel({
     const nowLogged = result === "added";
     setLocalLogged(nowLogged);
     onToggled(date, result);
-    if (!nowLogged) { setDraft(""); onNoteSaved(date, ""); }
+    if (!nowLogged) {
+      setDraft("");
+      onNoteSaved(date, "");
+    }
   };
 
   const handleSaveQuote = async (e: React.FormEvent) => {
@@ -148,16 +204,24 @@ export function DayPanel({
     if (!quoteText.trim()) return;
     setSavingQuote(true);
     try {
-      const q = await addQuote(quoteText.trim(), quoteBookId || undefined, quotePage || undefined);
+      const q = await addQuote(
+        quoteText.trim(),
+        quoteBookId || undefined,
+        quotePage || undefined,
+      );
       setLocalQuotes((prev) => [...prev, q]);
       onQuoteAdded(q);
-      setQuoteText(""); setQuotePage(""); setQuoteBookId(""); setShowQuoteForm(false);
+      setQuoteText("");
+      setQuotePage("");
+      setQuoteBookId("");
+      setShowQuoteForm(false);
     } finally {
       setSavingQuote(false);
     }
   };
 
-  const hasActivity = localLogged || localQuotes.length > 0 || dayFinished.length > 0;
+  const hasActivity =
+    localLogged || localQuotes.length > 0 || dayFinished.length > 0;
 
   return (
     <div className="h-full flex flex-col bg-[var(--bg-surface)]">
@@ -165,9 +229,11 @@ export function DayPanel({
       <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-[var(--border-light)]">
         <div>
           {isToday && (
-            <p className="text-[9px] uppercase tracking-[0.15em] mb-1 font-semibold text-[var(--sage)]">today</p>
+            <p className="text-[9px] uppercase tracking-[0.15em] mb-1 font-semibold text-[var(--sage)]">
+              today
+            </p>
           )}
-          <h2 className="font-serif text-[18px] font-semibold leading-tight text-[var(--fg-heading)]">
+          <h2 className="font-serif text-lg font-semibold leading-tight text-[var(--fg-heading)]">
             {dateLabel}
           </h2>
         </div>
@@ -181,7 +247,6 @@ export function DayPanel({
 
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto px-6 py-5 space-y-7">
-
         {/* Reading day toggle */}
         <div className="flex items-center justify-between">
           <span className="text-xs text-[var(--fg-muted)]">Reading day</span>
@@ -205,15 +270,26 @@ export function DayPanel({
               value={draft}
               rows={7}
               onChange={(e) => scheduleSave(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Escape" && !isToday) setEditMode(false); }}
-              onBlur={() => { if (!isToday) setEditMode(false); }}
-              placeholder={hasActivity ? "add a note for this day..." : "Nothing logged this day — want to add a note?"}
+              onKeyDown={(e) => {
+                if (e.key === "Escape" && !isToday) setEditMode(false);
+              }}
+              onBlur={() => {
+                if (!isToday) setEditMode(false);
+              }}
+              placeholder={
+                hasActivity
+                  ? "add a note for this day..."
+                  : "Nothing logged this day — want to add a note?"
+              }
               className="w-full resize-none focus:outline-none text-[13px] leading-[1.75em] bg-transparent text-[var(--fg)] font-serif pb-[1.75em] caret-plum bg-local [background-image:var(--ruled-note-line)]"
             />
           ) : draft ? (
             <div
               className="cursor-text -mx-1 px-1 py-1 rounded-lg hover:bg-[var(--bg-faintest)] transition-colors"
-              onClick={() => { setEditMode(true); setTimeout(() => textareaRef.current?.focus(), 10); }}
+              onClick={() => {
+                setEditMode(true);
+                setTimeout(() => textareaRef.current?.focus(), 10);
+              }}
             >
               <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-[var(--fg)] font-serif">
                 {draft}
@@ -222,7 +298,10 @@ export function DayPanel({
           ) : (
             <button
               className="text-left text-[13px] italic text-[var(--fg-faint)] font-serif"
-              onClick={() => { setEditMode(true); setTimeout(() => textareaRef.current?.focus(), 10); }}
+              onClick={() => {
+                setEditMode(true);
+                setTimeout(() => textareaRef.current?.focus(), 10);
+              }}
             >
               Nothing logged this day — want to add a note?
             </button>
@@ -233,7 +312,10 @@ export function DayPanel({
         {moodTags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {moodTags.map((tag) => (
-              <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-muted-tag)] text-[var(--fg-muted)]">
+              <span
+                key={tag}
+                className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-muted-tag)] text-[var(--fg-muted)]"
+              >
                 {tag}
               </span>
             ))}
@@ -244,7 +326,15 @@ export function DayPanel({
         {dayFinished.length > 0 && (
           <PanelSection label="finished">
             {dayFinished.map((b) => (
-              <BookLink key={b.id} id={b.id} title={b.title} author={b.author} rating={b.rating} feeling={b.feeling} onClose={onClose} />
+              <BookLink
+                key={b.id}
+                id={b.id}
+                title={b.title}
+                author={b.author}
+                rating={b.rating}
+                feeling={b.feeling}
+                onClose={onClose}
+              />
             ))}
           </PanelSection>
         )}
@@ -253,7 +343,13 @@ export function DayPanel({
         {dayStarted.length > 0 && (
           <PanelSection label="started">
             {dayStarted.map((b) => (
-              <BookLink key={b.id} id={b.id} title={b.title} author={b.author} onClose={onClose} />
+              <BookLink
+                key={b.id}
+                id={b.id}
+                title={b.title}
+                author={b.author}
+                onClose={onClose}
+              />
             ))}
           </PanelSection>
         )}
@@ -262,7 +358,13 @@ export function DayPanel({
         {isToday && dayReading.length > 0 && (
           <PanelSection label="reading now">
             {dayReading.map((b) => (
-              <BookLink key={b.id} id={b.id} title={b.title} author={b.author} onClose={onClose} />
+              <BookLink
+                key={b.id}
+                id={b.id}
+                title={b.title}
+                author={b.author}
+                onClose={onClose}
+              />
             ))}
           </PanelSection>
         )}
@@ -271,15 +373,29 @@ export function DayPanel({
         {dayBookLog.length > 0 && (
           <PanelSection label="book log">
             {dayBookLog.map(({ bookTitle, bookId, read }) => {
-              const status = read.status === "finished" ? "finished" : read.status === "did-not-finish" ? "shelved" : "started";
+              const status =
+                read.status === "finished"
+                  ? "finished"
+                  : read.status === "did-not-finish"
+                    ? "shelved"
+                    : "started";
               const dates = [
                 read.dateStarted && `started ${read.dateStarted}`,
                 read.dateFinished && `finished ${read.dateFinished}`,
-              ].filter(Boolean).join(" · ");
-              const stars = read.rating > 0 ? "★".repeat(Math.round(read.rating)) : "";
+              ]
+                .filter(Boolean)
+                .join(" · ");
+              const stars =
+                read.rating > 0 ? "★".repeat(Math.round(read.rating)) : "";
               const meta = [status, dates, stars].filter(Boolean).join(" · ");
               return (
-                <BookLink key={read.id} id={bookId} title={bookTitle} meta={meta} onClose={onClose} />
+                <BookLink
+                  key={read.id}
+                  id={bookId}
+                  title={bookTitle}
+                  meta={meta}
+                  onClose={onClose}
+                />
               );
             })}
           </PanelSection>
@@ -288,14 +404,22 @@ export function DayPanel({
         {/* Quotes saved on this day */}
         {localQuotes.length > 0 && (
           <div>
-            <p className="text-[9px] uppercase tracking-[0.14em] font-semibold mb-3 text-[var(--fg-faint)]">quotes ✦</p>
+            <p className="text-[9px] uppercase tracking-[0.14em] font-semibold mb-3 text-[var(--fg-faint)]">
+              quotes ✦
+            </p>
             <div className="space-y-4">
               {localQuotes.map((q) => (
-                <div key={q.id} className="pl-3 border-l-2 border-l-[var(--lavender)]">
-                  <p className="text-[13px] italic leading-relaxed text-[var(--fg)] font-serif">&ldquo;{q.text}&rdquo;</p>
+                <div
+                  key={q.id}
+                  className="pl-3 border-l-2 border-l-[var(--lavender)]"
+                >
+                  <p className="text-[13px] italic leading-relaxed text-[var(--fg)] font-serif">
+                    &ldquo;{q.text}&rdquo;
+                  </p>
                   {(q.bookTitle || q.pageNumber) && (
                     <p className="text-[10px] mt-1.5 text-[var(--fg-faint)]">
-                      {q.bookTitle}{q.pageNumber ? ` · p. ${q.pageNumber}` : ""}
+                      {q.bookTitle}
+                      {q.pageNumber ? ` · p. ${q.pageNumber}` : ""}
                     </p>
                   )}
                 </div>
@@ -309,7 +433,9 @@ export function DayPanel({
           <PanelSection label="thoughts">
             {dayThoughts.map((t) => (
               <div key={t.id}>
-                <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-[var(--fg)] font-serif">{t.text}</p>
+                <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-[var(--fg)] font-serif">
+                  {t.text}
+                </p>
                 <Link
                   href={`/book/${t.bookId}`}
                   className="text-[10px] mt-1 block hover:opacity-70 transition-opacity text-[var(--fg-faint)]"
@@ -325,19 +451,29 @@ export function DayPanel({
         {/* Save a quote */}
         {!showQuoteForm ? (
           <button
-            onClick={() => { setShowQuoteForm(true); setTimeout(() => quoteRef.current?.focus(), 40); }}
+            onClick={() => {
+              setShowQuoteForm(true);
+              setTimeout(() => quoteRef.current?.focus(), 40);
+            }}
             className="text-[11px] font-medium flex items-center gap-1.5 transition-opacity hover:opacity-60 text-[var(--fg-faint)]"
           >
             <span className="text-[var(--gold)]">✦</span> save a quote
           </button>
         ) : (
           <form onSubmit={handleSaveQuote} className="space-y-2.5">
-            <p className="text-[9px] uppercase tracking-[0.14em] font-semibold text-[var(--fg-faint)]">save a quote</p>
+            <p className="text-[9px] uppercase tracking-[0.14em] font-semibold text-[var(--fg-faint)]">
+              save a quote
+            </p>
             <textarea
               ref={quoteRef}
               value={quoteText}
               onChange={(e) => setQuoteText(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Escape") { setShowQuoteForm(false); setQuoteText(""); } }}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setShowQuoteForm(false);
+                  setQuoteText("");
+                }
+              }}
               rows={4}
               placeholder="type the quote here..."
               className="w-full resize-none focus:outline-none text-[13px] leading-relaxed rounded-lg px-3 py-2.5 border border-[var(--border-light)] bg-[var(--bg-page)] text-[var(--fg)] font-serif italic"
@@ -351,7 +487,9 @@ export function DayPanel({
                 >
                   <option value="">no book</option>
                   {activeDayBooks.map((b) => (
-                    <option key={b.id} value={b.id}>{b.title}</option>
+                    <option key={b.id} value={b.id}>
+                      {b.title}
+                    </option>
                   ))}
                 </select>
               )}
@@ -373,7 +511,12 @@ export function DayPanel({
               </button>
               <button
                 type="button"
-                onClick={() => { setShowQuoteForm(false); setQuoteText(""); setQuotePage(""); setQuoteBookId(""); }}
+                onClick={() => {
+                  setShowQuoteForm(false);
+                  setQuoteText("");
+                  setQuotePage("");
+                  setQuoteBookId("");
+                }}
                 className="text-[11px] transition-opacity hover:opacity-60 text-[var(--fg-faint)]"
               >
                 cancel

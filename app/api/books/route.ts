@@ -5,12 +5,15 @@ import { upsertBookForUser, flattenUserBook } from "@/lib/bookUpsert.server";
 
 export async function GET(req: NextRequest) {
   const supabase = createServerClient(req);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user)
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { searchParams } = req.nextUrl;
-  const year   = searchParams.get("year");
-  const limit  = searchParams.get("limit");
+  const year = searchParams.get("year");
+  const limit = searchParams.get("limit");
   const offset = searchParams.get("offset");
 
   let query = supabase
@@ -22,30 +25,39 @@ export async function GET(req: NextRequest) {
   if (year) {
     const y = Number(year);
     const start = `${y}-01-01`;
-    const end   = `${y + 1}-01-01`;
+    const end = `${y + 1}-01-01`;
     query = query.or(
       `and(created_at.gte.${start},created_at.lt.${end}),` +
-      `and(date_finished.gte.${start},date_finished.lt.${end}),` +
-      `and(date_started.gte.${start},date_started.lt.${end}),` +
-      `and(date_shelved.gte.${start},date_shelved.lt.${end})`
+        `and(date_finished.gte.${start},date_finished.lt.${end}),` +
+        `and(date_started.gte.${start},date_started.lt.${end}),` +
+        `and(date_shelved.gte.${start},date_shelved.lt.${end})`,
     );
   }
 
-  if (limit)  query = query.limit(Number(limit));
-  if (offset) query = query.range(Number(offset), Number(offset) + Number(limit ?? 50) - 1);
+  if (limit) query = query.limit(Number(limit));
+  if (offset)
+    query = query.range(
+      Number(offset),
+      Number(offset) + Number(limit ?? 50) - 1,
+    );
 
   const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
 
   const flattened = (data ?? []).map(flattenUserBook);
-  if (limit) return NextResponse.json({ data: flattened, total: flattened.length });
+  if (limit)
+    return NextResponse.json({ data: flattened, total: flattened.length });
   return NextResponse.json(flattened);
 }
 
 export async function POST(req: NextRequest) {
   const supabase = createServerClient(req);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user)
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { entry } = await req.json();
 
@@ -53,39 +65,46 @@ export async function POST(req: NextRequest) {
     supabase,
     user.id,
     {
-      title:        entry.title        ?? "",
-      author:       entry.author       ?? "",
-      cover_url:    entry.coverUrl     ?? "",
-      isbn:         entry.isbn         ?? "",
-      release_date: entry.releaseDate  ?? "",
-      genres:       entry.genres       ?? [],
-      page_count:   entry.pageCount    ?? null,
+      title: entry.title ?? "",
+      author: entry.author ?? "",
+      cover_url: entry.coverUrl ?? "",
+      isbn: entry.isbn ?? "",
+      release_date: entry.releaseDate ?? "",
+      genres: entry.genres ?? [],
+      page_count: entry.pageCount ?? null,
     },
     {
-      id:            entry.id,
-      status:        entry.status,
-      date_started:  entry.dateStarted  || null,
+      id: entry.id,
+      status: entry.status,
+      date_started: entry.dateStarted || null,
       date_finished: entry.dateFinished || null,
-      date_shelved:  entry.dateShelved  || null,
-      rating:        entry.rating       ?? 0,
-      feeling:       entry.feeling      ?? "",
-      bookmarked:    false,
-      created_at:    entry.createdAt,
-      updated_at:    entry.updatedAt,
+      date_shelved: entry.dateShelved || null,
+      rating: entry.rating ?? 0,
+      feeling: entry.feeling ?? "",
+      bookmarked: false,
+      created_at: entry.createdAt,
+      updated_at: entry.updatedAt,
     },
   );
 
-  if (!result) return NextResponse.json({ error: "failed to create book" }, { status: 500 });
+  if (!result)
+    return NextResponse.json(
+      { error: "failed to create book" },
+      { status: 500 },
+    );
 
   after(async () => {
     await syncBookSeries(supabase, user.id, {
-      id:       result.userBookId,
-      title:    entry.title   ?? "",
-      author:   entry.author  ?? "",
-      status:   entry.status,
+      id: result.userBookId,
+      title: entry.title ?? "",
+      author: entry.author ?? "",
+      status: entry.status,
       coverUrl: entry.coverUrl ?? "",
     });
   });
 
-  return NextResponse.json({ ok: true, id: result.userBookId }, { status: 201 });
+  return NextResponse.json(
+    { ok: true, id: result.userBookId },
+    { status: 201 },
+  );
 }
