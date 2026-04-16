@@ -49,39 +49,73 @@ export async function upsertBookForUser(
   // ── 1. Resolve or create the catalog_books entry ──────────────────────────
   let catalogBookId: string | null = null;
 
+  const normTitle = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+
   if (catalog.isbn) {
     const { data: existing } = await supabase
       .from("catalog_books")
-      .select("id")
+      .select("id, title, cover_url")
       .eq("isbn", catalog.isbn)
       .maybeSingle();
 
     if (existing) {
-      catalogBookId = existing.id;
-      // Opportunistically fill in missing catalog fields without overwriting good data
-      const patch: Record<string, unknown> = {};
-      if (catalog.cover_url) patch.cover_url = catalog.cover_url;
-      if (catalog.genres?.length) patch.genres = catalog.genres;
-      if (catalog.page_count != null) patch.page_count = catalog.page_count;
-      if (catalog.release_date) patch.release_date = catalog.release_date;
-      if (Object.keys(patch).length) {
-        patch.updated_at = new Date().toISOString();
-        await supabase
-          .from("catalog_books")
-          .update(patch)
-          .eq("id", catalogBookId)
-          .eq("cover_url", "");
-        // Only update cover_url when it was empty — don't downgrade a good cover
-        if (!patch.cover_url) delete patch.cover_url;
-        if (Object.keys(patch).length > 1) {
-          // still has other fields
+      // Validate title matches — guards against bad ISBN data from catalog sources
+      // (e.g. a source returning Vol 6's ISBN for Vol 4). We accept the match only
+      // if one normalized title is a prefix of the other, which handles subtitle
+      // variations ("The Duke and I" ↔ "The Duke and I (Bridgertons #1)") while
+      // correctly rejecting distinct volumes ("Volume Four" ≠ "Volume Six").
+      const inNorm = normTitle(catalog.title);
+      const exNorm = normTitle(existing.title ?? "");
+      const titleMatches =
+        !inNorm ||
+        !exNorm ||
+        inNorm === exNorm ||
+        inNorm.startsWith(exNorm) ||
+        exNorm.startsWith(inNorm);
+
+      if (titleMatches) {
+        catalogBookId = existing.id;
+        const patch: Record<string, unknown> = {};
+
+        // Update title if the incoming one is longer/richer (e.g. Hardcover adds
+        // series suffix that Goodreads omits) or if the existing title is empty.
+        if (
+          catalog.title &&
+          catalog.title !== existing.title &&
+          (
+            !existing.title ||
+            catalog.title.toLowerCase().startsWith(existing.title.toLowerCase())
+          )
+        ) {
+          patch.title = catalog.title;
+        }
+
+        if (catalog.cover_url && !existing.cover_url) patch.cover_url = catalog.cover_url;
+        if (catalog.genres?.length) patch.genres = catalog.genres;
+        if (catalog.page_count != null) patch.page_count = catalog.page_count;
+        if (catalog.release_date) patch.release_date = catalog.release_date;
+
+        if (Object.keys(patch).length) {
+          patch.updated_at = new Date().toISOString();
           await supabase
             .from("catalog_books")
             .update(patch)
             .eq("id", catalogBookId);
         }
       }
+      // else: ISBN matched the wrong book — fall through and create/find by title
     }
+  }
+
+  // When no ISBN (or ISBN matched the wrong book), deduplicate by title + author
+  if (!catalogBookId && catalog.title) {
+    const { data: byTitle } = await supabase
+      .from("catalog_books")
+      .select("id")
+      .ilike("title", catalog.title)
+      .eq("author", catalog.author)
+      .maybeSingle();
+    if (byTitle) catalogBookId = byTitle.id;
   }
 
   if (!catalogBookId) {
@@ -105,30 +139,52 @@ export async function upsertBookForUser(
     catalogBookId = created.id;
   }
 
-  // ── 2. Create the user_books entry ────────────────────────────────────────
+  // ── 2. Insert or fetch the user_books entry ──────────────────────────────
+  // Use ignoreDuplicates: true (ON CONFLICT DO NOTHING) to avoid the upsert
+  // generating "DO UPDATE SET id = EXCLUDED.id" which would try to change the
+  // primary key of an existing row and violate the series_books FK.
+  // If no row is returned (conflict), fetch the existing row instead.
   const now = new Date().toISOString();
-  const { data: userBook, error: ubErr } = await supabase
-    .from("user_books")
-    .insert({
-      ...(personal.id ? { id: personal.id } : {}),
-      user_id: userId,
-      catalog_book_id: catalogBookId,
-      status: personal.status,
-      date_started: personal.date_started ?? null,
-      date_finished: personal.date_finished ?? null,
-      date_shelved: personal.date_shelved ?? null,
-      rating: personal.rating ?? 0,
-      feeling: personal.feeling ?? "",
-      mood_tags: personal.mood_tags ?? [],
-      bookmarked: personal.bookmarked ?? false,
-      created_at: personal.created_at ?? now,
-      updated_at: personal.updated_at ?? now,
-    })
-    .select("id")
-    .single();
+  let userBookId: string | null = null;
 
-  if (ubErr || !userBook) return null;
-  return { userBookId: userBook.id, catalogBookId: catalogBookId! };
+  const { data: inserted } = await supabase
+    .from("user_books")
+    .upsert(
+      {
+        ...(personal.id ? { id: personal.id } : {}),
+        user_id: userId,
+        catalog_book_id: catalogBookId,
+        status: personal.status,
+        date_started: personal.date_started ?? null,
+        date_finished: personal.date_finished ?? null,
+        date_shelved: personal.date_shelved ?? null,
+        rating: personal.rating ?? 0,
+        feeling: personal.feeling ?? "",
+        mood_tags: personal.mood_tags ?? [],
+        bookmarked: personal.bookmarked ?? false,
+        created_at: personal.created_at ?? now,
+        updated_at: personal.updated_at ?? now,
+      },
+      { onConflict: "user_id,catalog_book_id", ignoreDuplicates: true },
+    )
+    .select("id")
+    .maybeSingle();
+
+  if (inserted) {
+    userBookId = inserted.id;
+  } else {
+    // Row already existed — fetch it
+    const { data: existing } = await supabase
+      .from("user_books")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("catalog_book_id", catalogBookId!)
+      .single();
+    if (!existing) return null;
+    userBookId = existing.id;
+  }
+
+  return { userBookId, catalogBookId: catalogBookId! };
 }
 
 /**

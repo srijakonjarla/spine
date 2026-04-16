@@ -123,6 +123,7 @@ function extractGenres(cached_tags: unknown): string[] {
 }
 
 interface HCBook {
+  title: string;
   coverUrl: string;
   isbn: string;
   pageCount: number | null;
@@ -154,6 +155,7 @@ function parseEditionAlias(
   if (!edition?.book?.title) return null;
   const b = edition.book;
   return {
+    title: b.title ?? "",
     coverUrl: edition.image?.url || b.images?.[0]?.url || "",
     isbn: edition.isbn_13 || edition.isbn_10 || fallbackIsbn,
     pageCount: b.pages ?? null,
@@ -192,6 +194,7 @@ function parseSearchAlias(
   const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
   if (!norm(d.title).includes(norm(title).slice(0, 5))) return null;
   return {
+    title: d.title,
     coverUrl: d.cover_image_url ?? "",
     isbn: "",
     pageCount: d.pages ?? null,
@@ -291,24 +294,88 @@ async function runImport(
         `[import] DB write ${i + 1}/${total}: "${entry.title}" hc=${hc ? "hit" : "miss"}`,
       );
 
+      // Only accept Hardcover's title if it loosely matches the Goodreads
+      // title. Hardcover can return the wrong book when a foreign-edition ISBN
+      // maps to a different title in their database (e.g. "Vengeful" →
+      // "Victorious"). Goodreads is the source of truth for what the user
+      // actually shelved.
+      const normForCompare = (s: string) =>
+        s.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const hcTitleOk =
+        !hc?.title ||
+        normForCompare(hc.title).startsWith(
+          normForCompare(entry.title).slice(0, 6),
+        ) ||
+        normForCompare(entry.title).startsWith(
+          normForCompare(hc.title).slice(0, 6),
+        );
+      const resolvedTitle = hcTitleOk ? (hc?.title || entry.title) : entry.title;
+      if (hc?.title && !hcTitleOk) {
+        console.log(
+          `[import] Title mismatch — keeping Goodreads title "${entry.title}" over Hardcover "${hc.title}"`,
+        );
+      }
       const resolvedAuthor = entry.author || hc?.author || "";
       const resolvedIsbn = isbn || hc?.isbn || "";
       const coverUrl = hc?.coverUrl ?? "";
       const pageCount = hc?.pageCount ?? null;
       const releaseDate = hc?.releaseDate ?? "";
-      const genres = hc?.genres?.length
-        ? Array.from(new Set([...entry.genres, ...hc.genres]))
-        : entry.genres;
+      // Genres come exclusively from Hardcover — Goodreads "genres" are the
+      // user's custom bookshelves (e.g. "favorites", "my-2024-reads") and
+      // should never be stored as catalog genre metadata.
+      const genres = hc?.genres ?? [];
 
-      // Check if this user already has a user_books entry with this title
-      const { data: existing } = await supabase
-        .from("user_books")
-        .select(
-          "id, status, date_finished, date_shelved, catalog_books(id, genres, release_date, cover_url, isbn)",
-        )
-        .eq("user_id", userId)
-        .ilike("catalog_books.title", entry.title)
-        .maybeSingle();
+      // Two-step duplicate check: find catalog_books by title first, then
+      // look up user_books by catalog_book_id. This avoids relying on
+      // PostgREST embedded-resource filters which don't reliably act as
+      // parent-row join conditions.
+      // Normalize author string for loose comparison (collapse spaces, lowercase)
+      const normalizeAuthor = (a: string) =>
+        a.toLowerCase().replace(/\s+/g, " ").trim();
+
+      const findExisting = async (title: string) => {
+        // Fetch all catalog_books matching this title (case-insensitive).
+        // We intentionally skip the author filter in the DB query because
+        // author formatting varies between Goodreads, Hardcover, and stored
+        // values (e.g. "V.E. Schwab" vs "V. E. Schwab", double spaces).
+        // We filter by author in code after fetching.
+        const { data: cbs } = await supabase
+          .from("catalog_books")
+          .select("id, author, genres, release_date, cover_url, isbn")
+          .ilike("title", title)
+          .limit(10);
+        if (!cbs?.length) return null;
+
+        // Pick the catalog entry whose author best matches. If resolvedAuthor
+        // is set, prefer an entry where the stored author contains or is
+        // contained by the resolved author (handles abbreviations / extra
+        // spaces). Fall back to the first result when author is absent.
+        const normResolved = normalizeAuthor(resolvedAuthor);
+        const cb = resolvedAuthor
+          ? (cbs.find((c) => {
+              const normStored = normalizeAuthor(c.author ?? "");
+              return (
+                normStored === normResolved ||
+                normStored.includes(normResolved) ||
+                normResolved.includes(normStored)
+              );
+            }) ?? cbs[0])
+          : cbs[0];
+
+        const { data: ub } = await supabase
+          .from("user_books")
+          .select("id, status, date_finished, date_shelved")
+          .eq("user_id", userId)
+          .eq("catalog_book_id", cb.id)
+          .maybeSingle();
+        if (!ub) return null;
+        return { ...ub, catalog_books: cb };
+      };
+
+      let existing = await findExisting(resolvedTitle);
+      if (!existing && resolvedTitle !== entry.title) {
+        existing = await findExisting(entry.title);
+      }
 
       if (!existing) {
         const newId = crypto.randomUUID();
@@ -316,7 +383,7 @@ async function runImport(
           supabase,
           userId,
           {
-            title: entry.title,
+            title: resolvedTitle,
             author: resolvedAuthor,
             cover_url: coverUrl,
             isbn: resolvedIsbn,
@@ -341,13 +408,40 @@ async function runImport(
         if (result && ["finished", "reading"].includes(entry.status)) {
           await syncBookSeries(supabase, userId, {
             id: result.userBookId,
-            title: entry.title,
+            title: resolvedTitle,
             author: resolvedAuthor,
             status: entry.status,
             coverUrl: coverUrl,
           });
         }
       } else {
+        // Upgrade status if Goodreads has a higher-priority status than what's
+        // stored. This handles books manually shelved as TBR before the import
+        // that Goodreads knows as finished/reading.
+        // Priority: finished > reading > did-not-finish > want-to-read
+        const STATUS_PRIORITY: Record<string, number> = {
+          finished: 4,
+          reading: 3,
+          "did-not-finish": 2,
+          "want-to-read": 1,
+        };
+        const incomingPriority = STATUS_PRIORITY[entry.status] ?? 0;
+        const existingPriority = STATUS_PRIORITY[existing.status] ?? 0;
+        if (incomingPriority > existingPriority) {
+          await supabase
+            .from("user_books")
+            .update({
+              status: entry.status,
+              date_started: entry.dateStarted || null,
+              date_finished: entry.dateFinished || null,
+              date_shelved: entry.dateShelved || null,
+              rating: entry.rating || undefined,
+              feeling: entry.feeling || undefined,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", existing.id);
+        }
+
         // Patch the catalog entry with any better data we found
         const cb = existing.catalog_books as unknown as {
           id: string;
@@ -358,11 +452,12 @@ async function runImport(
         } | null;
         if (cb) {
           const catalogPatch: Record<string, unknown> = {};
-          const mergedGenres = Array.from(
-            new Set([...(cb.genres ?? []), ...genres]),
-          );
-          if (mergedGenres.length > (cb.genres ?? []).length)
-            catalogPatch.genres = mergedGenres;
+          // Update title to Hardcover canonical version if it differs
+          if (resolvedTitle && resolvedTitle !== entry.title)
+            catalogPatch.title = resolvedTitle;
+          // Only overwrite genres if Hardcover returned some — never merge
+          // with existing values that may have come from Goodreads shelves.
+          if (genres.length) catalogPatch.genres = genres;
           if (!cb.release_date && releaseDate)
             catalogPatch.release_date = releaseDate;
           if (!cb.cover_url && coverUrl) catalogPatch.cover_url = coverUrl;

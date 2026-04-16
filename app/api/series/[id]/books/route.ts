@@ -53,68 +53,50 @@ export async function POST(
   let bookId: string | null = catalog?.bookId ?? null;
 
   if (!bookId) {
-    // Check by ISBN first (most reliable match)
-    if (catalog?.isbn) {
-      const { data: byIsbn } = await supabase
-        .from("user_books")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("catalog_books.isbn", catalog.isbn)
-        .maybeSingle();
-      if (byIsbn) bookId = byIsbn.id;
-    }
-
-    // Fall back to title match
-    if (!bookId) {
-      const { data: byTitle } = await supabase
-        .from("user_books")
-        .select("id")
-        .eq("user_id", user.id)
-        .ilike("catalog_books.title", title.trim())
-        .maybeSingle();
-      if (byTitle) bookId = byTitle.id;
-    }
-
-    // Not in library — create a TBR entry (catalog + user_books)
-    if (!bookId) {
-      const now = new Date().toISOString();
-      const result = await upsertBookForUser(
-        supabase,
-        user.id,
-        {
-          title: title.trim(),
-          author: catalog?.author ?? "",
-          cover_url: coverUrl,
-          isbn: catalog?.isbn ?? "",
-          release_date: catalog?.releaseDate ?? "",
-          genres: catalog?.genres ?? [],
-          page_count: catalog?.pageCount ?? null,
-        },
-        {
-          status: "want-to-read",
-          date_shelved: now.slice(0, 10),
-          bookmarked: false,
-          created_at: now,
-          updated_at: now,
-        },
-      );
-      if (result) bookId = result.userBookId;
-    }
+    // upsertBookForUser handles catalog deduplication (by ISBN with title
+    // validation, then by title+author) and creates a TBR entry if needed.
+    const now = new Date().toISOString();
+    const result = await upsertBookForUser(
+      supabase,
+      user.id,
+      {
+        title: title.trim(),
+        author: catalog?.author ?? "",
+        cover_url: coverUrl,
+        isbn: catalog?.isbn ?? "",
+        release_date: catalog?.releaseDate ?? "",
+        genres: catalog?.genres ?? [],
+        page_count: catalog?.pageCount ?? null,
+      },
+      {
+        status: "want-to-read",
+        date_shelved: now.slice(0, 10),
+        bookmarked: false,
+        created_at: now,
+        updated_at: now,
+      },
+    );
+    if (result) bookId = result.userBookId;
   }
+
+  if (!bookId)
+    return NextResponse.json(
+      { error: "could not resolve book — upsert failed" },
+      { status: 400 },
+    );
 
   const { data, error } = await supabase
     .from("series_books")
     .insert({
       series_id: seriesId,
-      title: title.trim(),
       position,
       cover_url: coverUrl,
       status: resolvedStatus,
       book_id: bookId,
     })
-    .select()
+    .select("id, position, status, cover_url, book_id")
     .single();
   if (error)
     return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data, { status: 201 });
+  return NextResponse.json({ ...data, title: title.trim() }, { status: 201 });
 }

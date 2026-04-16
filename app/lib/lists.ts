@@ -30,6 +30,8 @@ interface ListItemRow {
   type: string;
   sort_order: number;
   created_at: string;
+  book_id: string | null;
+  catalog_books?: { cover_url: string } | null;
 }
 
 function mapItem(row: ListItemRow): ListItem {
@@ -44,6 +46,8 @@ function mapItem(row: ListItemRow): ListItem {
     type: row.type ?? "",
     sortOrder: row.sort_order,
     createdAt: row.created_at,
+    bookId: row.book_id ?? undefined,
+    coverUrl: row.catalog_books?.cover_url ?? undefined,
   };
 }
 
@@ -139,6 +143,7 @@ export async function deleteList(id: string): Promise<void> {
 export async function addListItem(
   listId: string,
   fields: {
+    bookId?: string;
     title: string;
     author?: string;
     releaseDate?: string;
@@ -154,7 +159,7 @@ export async function addListItem(
   const data = await res.json();
   return mapItem(data as ListItemRow);
 }
-
+``;
 export async function updateListItem(
   id: string,
   patch: {

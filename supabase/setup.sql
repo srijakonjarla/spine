@@ -148,7 +148,8 @@ create table if not exists list_items (
   price        text        not null default '',
   type         text        not null default '',
   sort_order   integer     not null default 0,
-  created_at   timestamptz not null default now()
+  created_at   timestamptz not null default now(),
+  book_id      uuid        references catalog_books(id) on delete set null
 );
 
 -- Book series tracker.

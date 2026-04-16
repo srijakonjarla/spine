@@ -12,7 +12,7 @@ export async function POST(
   if (!user)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id: listId } = await params;
-  const { title, author, releaseDate, notes, price, type } = await req.json();
+  const { title, author, releaseDate, notes, price, type, bookId } = await req.json();
 
   const { data, error } = await supabase
     .from("list_items")
@@ -24,8 +24,9 @@ export async function POST(
       notes: notes ?? "",
       price: price ?? "",
       type: type ?? "",
+      book_id: bookId ?? null,
     })
-    .select()
+    .select("*, catalog_books(cover_url)")
     .single();
 
   if (error)

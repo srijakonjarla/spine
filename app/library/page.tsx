@@ -158,7 +158,7 @@ export default function LibraryPage() {
               onChange={(e) => setActiveGenre(e.target.value || null)}
               className="text-xs bg-transparent border-none outline-none cursor-pointer transition-colors text-[var(--fg-faint)] hover:text-[var(--fg-muted)]"
             >
-              <option value="">all genres</option>
+              <option value="">all tags</option>
               {allGenres.map((g) => (
                 <option key={g} value={g}>
                   {g}

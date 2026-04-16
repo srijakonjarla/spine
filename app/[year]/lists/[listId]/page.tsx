@@ -30,6 +30,7 @@ import {
 import { BookmarkButton } from "@/components/BookmarkButton";
 import type { Icon } from "@phosphor-icons/react";
 import { coverGradientStyle } from "@/components/lists/coverConstants";
+import { BookCover } from "@/components/BookCover";
 
 const BULLET_SYMBOLS = ["→", "●", "✦", "◆", "○", "—", "✓", "★"];
 const SPINE_COUNT = 10;
@@ -67,6 +68,7 @@ export default function ListDetailPage() {
   const [showAddBook, setShowAddBook] = useState(false);
   const [draftTitle, setDraftTitle] = useState("");
   const [draftAuthor, setDraftAuthor] = useState("");
+  const [draftBookId, setDraftBookId] = useState("");
   const [inlineText, setInlineText] = useState("");
   const [adding, setAdding] = useState(false);
   const [showCoverModal, setShowCoverModal] = useState(false);
@@ -118,6 +120,7 @@ export default function ListDetailPage() {
     try {
       const item = await addListItem(listId, {
         title,
+        bookId: draftBookId,
         author: draftAuthor.trim(),
       });
       setList((prev) =>
@@ -248,10 +251,11 @@ export default function ListDetailPage() {
 
       {/* Gradient header */}
       <div
-        className="relative overflow-hidden px-9 py-8 mt-3"
+        className="relative overflow-hidden px-15 py-8 mt-3"
         style={coverGradientStyle(list.color)}
       >
         {/* Glow orb */}
+        {/* This doesn't show up */}
         <div className="absolute -bottom-10 -right-10 w-44 h-44 rounded-full pointer-events-none [background-image:var(--cover-glow-orb)]" />
         {(() => {
           const TypeIcon = LIST_TYPE_ICONS[list.listType] ?? BooksIcon;
@@ -428,26 +432,33 @@ export default function ListDetailPage() {
                           </span>
                         )}
 
-                        {/* Colored spine */}
-                        <svg
-                          viewBox="0 0 38 54"
-                          className="shrink-0 rounded-sm w-[38px] h-[54px] shadow-[var(--shadow-spine-card)]"
-                        >
-                          <rect
-                            width="38"
-                            height="54"
-                            rx="3"
-                            fill={spineColor(item.title)}
+                        {item.coverUrl ? (
+                          <BookCover
+                            coverUrl={item.coverUrl}
+                            title={item.title}
+                            className="shrink-0 rounded-sm w-[38px] h-[54px]"
                           />
-                          <rect
-                            x="4"
-                            y="8"
-                            width="30"
-                            height="1.5"
-                            rx="0.75"
-                            fill="var(--spine-gloss-line)"
-                          />
-                        </svg>
+                        ) : (
+                          <svg
+                            viewBox="0 0 38 54"
+                            className="shrink-0 rounded-sm w-[38px] h-[54px] shadow-[var(--shadow-spine-card)]"
+                          >
+                            <rect
+                              width="38"
+                              height="54"
+                              rx="3"
+                              fill={spineColor(item.title)}
+                            />
+                            <rect
+                              x="4"
+                              y="8"
+                              width="30"
+                              height="1.5"
+                              rx="0.75"
+                              fill="var(--spine-gloss-line)"
+                            />
+                          </svg>
+                        )}
 
                         {/* Info */}
                         <div className="flex-1 min-w-0">
@@ -500,9 +511,28 @@ export default function ListDetailPage() {
                   <CatalogSearch
                     value={draftTitle}
                     onChange={(v) => setDraftTitle(v)}
-                    onSelect={(s: CatalogEntry) => {
+                    onSelect={async (s: CatalogEntry) => {
                       setDraftTitle(s.title);
                       setDraftAuthor(s.author);
+                      try {
+                        const res = await fetch("/api/catalog/upsert", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            title: s.title,
+                            author: s.author,
+                            coverUrl: s.coverUrl,
+                            isbn: s.isbn,
+                            releaseDate: s.releaseDate,
+                            genres: s.genres,
+                            pageCount: s.pageCount,
+                          }),
+                        });
+                        const { id } = await res.json();
+                        setDraftBookId(id ?? "");
+                      } catch {
+                        setDraftBookId("");
+                      }
                     }}
                     onSubmit={handleAddBook}
                     placeholder="search for a book to add…"
@@ -530,6 +560,7 @@ export default function ListDetailPage() {
                         setShowAddBook(false);
                         setDraftTitle("");
                         setDraftAuthor("");
+                        setDraftBookId("");
                       }}
                       className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
                     >

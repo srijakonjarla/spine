@@ -127,12 +127,12 @@ export async function syncBookSeries(
       seriesId = created.id;
     }
 
-    // Check if this book is already in the series
+    // Check if this book is already in the series (match by book_id)
     const { data: existingBook } = await supabase
       .from("series_books")
       .select("id")
       .eq("series_id", seriesId)
-      .ilike("title", book.title)
+      .eq("book_id", book.id)
       .maybeSingle();
 
     if (existingBook) {
@@ -152,7 +152,6 @@ export async function syncBookSeries(
 
     await supabase.from("series_books").insert({
       series_id: seriesId,
-      title: book.title,
       position: entry.position ?? (count ?? 0) + 1,
       status: toSeriesStatus(book.status),
       cover_url: book.coverUrl ?? "",

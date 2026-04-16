@@ -13,7 +13,7 @@ export async function GET(
   const { id } = await params;
   const { data, error } = await supabase
     .from("lists")
-    .select("*, list_items(*)")
+    .select("*, list_items(*, catalog_books(cover_url))")
     .eq("id", id)
     .eq("user_id", user.id)
     .single();

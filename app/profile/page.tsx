@@ -421,21 +421,28 @@ function SyncSeries() {
   );
   const [totalSynced, setTotalSynced] = useState(0);
   const [batchMsg, setBatchMsg] = useState("");
-  const stopRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const stop = () => {
+    abortRef.current?.abort();
+    setState("idle");
+  };
 
   const run = async () => {
-    stopRef.current = false;
+    const controller = new AbortController();
+    abortRef.current = controller;
     setState("running");
     setTotalSynced(0);
     let offset = 0;
     let cumulative = 0;
 
     try {
-      while (!stopRef.current) {
+      while (true) {
         setBatchMsg(`scanning books ${offset + 1}–${offset + 20}…`);
         const res = await apiFetch("/api/admin/sync-series", {
           method: "POST",
           body: JSON.stringify({ offset, limit: 20 }),
+          signal: controller.signal,
         });
         const { synced, remaining } = await res.json();
         cumulative += synced;
@@ -443,8 +450,9 @@ function SyncSeries() {
         if (remaining === 0) break;
         offset += 20;
       }
-      setState(stopRef.current ? "idle" : "done");
-    } catch {
+      setState("done");
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") return;
       setState("error");
     }
   };
@@ -477,9 +485,7 @@ function SyncSeries() {
             </p>
           )}
           <button
-            onClick={() => {
-              stopRef.current = true;
-            }}
+            onClick={stop}
             className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
           >
             stop
@@ -518,6 +524,60 @@ function SyncSeries() {
           >
             try again
           </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Backfill series book_id ──────────────────────────────────────────────────
+function BackfillSeries() {
+  const [state, setState] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [result, setResult] = useState<{ linked: number; total: number } | null>(null);
+
+  const run = async () => {
+    setState("running");
+    try {
+      const res = await apiFetch("/api/admin/backfill-series", { method: "POST" });
+      const data = await res.json();
+      setResult(data);
+      setState("done");
+    } catch {
+      setState("error");
+    }
+  };
+
+  return (
+    <div>
+      <p className="text-xs text-[var(--fg-faint)] mb-4">
+        Links existing series books to your library entries and fills in any
+        missing covers. Safe to run multiple times.
+      </p>
+      {state === "idle" && (
+        <button
+          onClick={run}
+          className="text-sm border border-[var(--border-light)] rounded-lg px-4 py-2.5 text-[var(--fg-muted)] hover:border-[var(--fg-muted)] hover:text-[var(--fg)] transition-colors"
+        >
+          backfill series links
+        </button>
+      )}
+      {state === "running" && (
+        <p className="text-xs text-[var(--fg-muted)] animate-pulse">running…</p>
+      )}
+      {state === "done" && result && (
+        <div className="space-y-2">
+          <p className="text-xs text-sage">
+            Done — linked {result.linked} of {result.total} unlinked series books.
+          </p>
+          <button onClick={() => { setState("idle"); setResult(null); }} className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors">
+            run again
+          </button>
+        </div>
+      )}
+      {state === "error" && (
+        <div className="space-y-2">
+          <p className="text-xs text-red-400">Something went wrong.</p>
+          <button onClick={() => setState("idle")} className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors">try again</button>
         </div>
       )}
     </div>
@@ -739,6 +799,11 @@ export default function ProfilePage() {
         {/* ── Sync series ── */}
         <Section title="sync series from hardcover">
           <SyncSeries />
+        </Section>
+
+        {/* ── Backfill series ── */}
+        <Section title="backfill series links">
+          <BackfillSeries />
         </Section>
 
         {/* ── Account ── */}

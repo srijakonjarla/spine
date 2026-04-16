@@ -77,6 +77,8 @@ export interface ListItem {
   type: string; // "bought" | "sold" | "donated" | ""
   sortOrder: number;
   createdAt: string;
+  bookId?: string;
+  coverUrl?: string;
 }
 
 export interface BookList {

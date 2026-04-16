@@ -24,11 +24,14 @@ interface SeriesRow {
   created_at: string;
   series_books: {
     id: string;
-    title: string;
     position: number;
     status: string;
     book_id: string | null;
     cover_url: string;
+    user_books: {
+      title_override: string | null;
+      catalog_books: { title: string } | null;
+    } | null;
   }[];
 }
 
@@ -40,14 +43,18 @@ function mapSeries(row: SeriesRow): Series {
     createdAt: row.created_at,
     books: (row.series_books ?? [])
       .sort((a, b) => a.position - b.position)
-      .map((b) => ({
-        id: b.id,
-        title: b.title,
-        position: b.position,
-        status: b.status as SeriesBook["status"],
-        bookId: b.book_id,
-        coverUrl: b.cover_url ?? "",
-      })),
+      .map((b) => {
+        const ub = b.user_books;
+        const title = ub?.title_override ?? ub?.catalog_books?.title ?? "";
+        return {
+          id: b.id,
+          title,
+          position: b.position,
+          status: b.status as SeriesBook["status"],
+          bookId: b.book_id,
+          coverUrl: b.cover_url ?? "",
+        };
+      }),
   };
 }
 

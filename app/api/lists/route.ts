@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("lists")
-    .select("*, list_items(*)")
+    .select("*, list_items(*, catalog_books(cover_url))")
     .eq("user_id", user.id)
     .eq("year", Number(year))
     .order("sort_order", { ascending: true });
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
       date_label: dateLabel ?? "",
       notes_label: notesLabel ?? "notes",
     })
-    .select("*, list_items(*)")
+    .select("*, list_items(*, catalog_books(cover_url))")
     .single();
 
   if (error)

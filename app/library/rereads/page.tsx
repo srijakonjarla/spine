@@ -15,6 +15,7 @@ function readTimeline(
   entry: BookEntry,
 ): { rating: number; status: string; dateFinished: string }[] {
   const historical = [...entry.reads]
+    .filter((r) => r.status !== "did-not-finish" && (r.dateFinished || r.dateStarted))
     .sort((a, b) => (a.createdAt ?? "").localeCompare(b.createdAt ?? ""))
     .map((r: BookRead) => ({
       rating: r.rating,
@@ -33,7 +34,10 @@ function readTimeline(
 
 /** Total number of times this book has been read (including the current read). */
 function readCount(entry: BookEntry): number {
-  return entry.reads.length + 1;
+  const validReads = entry.reads.filter(
+    (r) => r.status !== "did-not-finish" && (r.dateFinished || r.dateStarted),
+  );
+  return validReads.length + 1;
 }
 
 type Trend = "up" | "down" | "same" | "unknown";
@@ -90,7 +94,17 @@ export default function RereadsPage() {
 
   useEffect(() => {
     getEntries()
-      .then((all) => setEntries(all.filter((b) => b.reads.length > 0)))
+      .then((all) =>
+        setEntries(
+          all.filter((b) => {
+            // Must have at least one historical read that finished (not DNF, has a date)
+            const validReads = b.reads.filter(
+              (r) => r.status !== "did-not-finish" && (r.dateFinished || r.dateStarted),
+            );
+            return validReads.length > 0;
+          }),
+        ),
+      )
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);

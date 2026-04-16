@@ -42,9 +42,9 @@ export async function POST(req: NextRequest) {
       status: ub.status,
       coverUrl: cb?.cover_url ?? "",
     };
-    const before = await countSeriesBooks(supabase, user.id, book.title);
+    const before = await countSeriesBooks(supabase, user.id, book.id);
     await syncBookSeries(supabase, user.id, book);
-    const after = await countSeriesBooks(supabase, user.id, book.title);
+    const after = await countSeriesBooks(supabase, user.id, book.id);
     if (after > before) synced++;
     await sleep(1200);
   }
@@ -62,13 +62,13 @@ export async function POST(req: NextRequest) {
 async function countSeriesBooks(
   supabase: Parameters<typeof syncBookSeries>[0],
   userId: string,
-  title: string,
+  bookId: string,
 ): Promise<number> {
+  void userId;
   const { count } = await supabase
     .from("series_books")
     .select("id", { count: "exact", head: true })
-    .ilike("title", title);
-  void userId;
+    .eq("book_id", bookId);
   return count ?? 0;
 }
 
