@@ -4,8 +4,10 @@ import { QuoteCard } from "@/components/QuoteCard";
 import { getQuotes, addQuote, deleteQuote } from "@/lib/quotes";
 import { Quote } from "@/types";
 import { useState, useEffect } from "react";
+import { useBook } from "@/providers/BookContext";
 
-export default function QuotesTab({ bookId }: { bookId: string }) {
+export default function QuotesTab() {
+  const { entry: { id: bookId } } = useBook();
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [input, setInput] = useState("");
   const [page, setPage] = useState("");

@@ -17,6 +17,7 @@ import type {
 import { localDateStr, dateMonth } from "@/lib/dates";
 import { MONTH_ABBRS, MONTH_NAMES } from "@/lib/constants";
 import MiniMonthCal from "@/components/calendar/MiniMonthCal";
+import { BookCoverThumb } from "@/components/BookCover";
 
 function hashStr(s: string): number {
   return Math.abs(
@@ -96,6 +97,8 @@ export default function YearPage() {
     .sort((a, b) => a.dateFinished!.localeCompare(b.dateFinished!));
 
   const finishedDates = new Set(finishedBooks.map((b) => b.dateFinished!));
+
+  const upNextBooks = allBooks.filter((b) => b.upNext);
 
   const avgRating = (() => {
     const rated = finishedBooks.filter((b) => b.rating > 0);
@@ -199,7 +202,10 @@ export default function YearPage() {
           {(autoGoal || customGoals.length > 0) && (
             <div className="flex flex-wrap gap-3">
               {autoGoal && goalProgress !== null && (
-                <div className="rounded-xl px-4 py-3 min-w-[200px] bg-white/7 border border-white/10">
+                <Link
+                  href={`/${year}/goal`}
+                  className="rounded-xl px-4 py-3 min-w-[200px] bg-white/7 border border-white/10 hover:bg-white/10 transition-colors"
+                >
                   <p className="text-[9px] uppercase tracking-[0.12em] font-semibold mb-1 text-gold/70">
                     {autoGoal.name || "reading goal"}
                   </p>
@@ -213,15 +219,16 @@ export default function YearPage() {
                       className="h-full rounded-full bg-[linear-gradient(90deg,#7B9E87,#C97B5A)]"
                     />
                   </div>
-                </div>
+                </Link>
               )}
               {customGoals.map((g) => {
                 const p =
                   g.target > 0 ? Math.min(1, g.bookIds.length / g.target) : 0;
                 return (
-                  <div
+                  <Link
                     key={g.id}
-                    className="rounded-xl px-4 py-3 min-w-[180px] bg-white/7 border border-white/10"
+                    href={`/${year}/goal`}
+                    className="rounded-xl px-4 py-3 min-w-[180px] bg-white/7 border border-white/10 hover:bg-white/10 transition-colors"
                   >
                     <p className="text-[9px] uppercase tracking-[0.12em] font-semibold mb-1 text-gold/70">
                       {g.name}
@@ -235,7 +242,7 @@ export default function YearPage() {
                         className="h-full rounded-full bg-sage"
                       />
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
@@ -264,12 +271,53 @@ export default function YearPage() {
           </div>
         </div>
 
+        {/* Up next */}
+        {upNextBooks.length > 0 && (
+          <div className="mb-12">
+            <p className="font-[family-name:var(--font-playfair)] text-[17px] italic mb-5 text-[var(--fg-heading)]">
+              up next
+            </p>
+            <div className="flex gap-3 flex-wrap">
+              {upNextBooks.map((b) => (
+                <Link
+                  key={b.id}
+                  href={`/book/${b.id}`}
+                  className="group flex items-center gap-3 rounded-xl px-3 py-2.5 border border-[var(--border-light)] hover:bg-[var(--bg-subtle)] transition-colors"
+                >
+                  <BookCoverThumb
+                    coverUrl={b.coverUrl}
+                    title={b.title}
+                    author={b.author}
+                    width="w-7"
+                    height="h-10"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-semibold leading-tight truncate max-w-[140px] text-[var(--fg-heading)]">
+                      {b.title}
+                    </p>
+                    {b.author && (
+                      <p className="text-[10px] mt-0.5 truncate max-w-[140px] text-[var(--fg-muted)]">
+                        {b.author}
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Bookshelf */}
         {shelfMonths.length > 0 && (
           <div className="mb-12">
-            <p className="font-[family-name:var(--font-playfair)] text-[17px] italic mb-5 text-[var(--fg-heading)]">
-              your {year} bookshelf
-            </p>
+            <div className="flex items-baseline justify-between mb-5">
+              <p className="font-[family-name:var(--font-playfair)] text-[17px] italic text-[var(--fg-heading)]">
+                your {year} bookshelf
+              </p>
+              <Link href={`/${year}/read`} className="back-link">
+                all books read →
+              </Link>
+            </div>
             <div className="rounded-2xl p-5 overflow-x-auto bg-[var(--bg-surface)] border border-[var(--border-light)]">
               <div className="flex items-end gap-1 min-w-0">
                 {shelfMonths.map(({ monthIndex, books }, si) => (

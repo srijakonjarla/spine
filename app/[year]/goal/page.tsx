@@ -344,7 +344,11 @@ export default function GoalPage() {
     Promise.all([getGoals(year), getEntries({ year }), getEntries()])
       .then(async ([gs, yearEntries, allEntries]) => {
         let resolved = gs;
-        const finished = yearEntries.filter((b) => b.status === "finished");
+        const finished = yearEntries.filter(
+          (b) =>
+            b.status === "finished" &&
+            b.dateFinished?.startsWith(`${year}`),
+        );
         setFinishedCount(finished.length);
         setAllEntries(allEntries);
 

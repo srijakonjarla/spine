@@ -39,6 +39,7 @@ export default function MonthSpreadPage() {
 
   const [allBooks, setAllBooks] = useState<BookEntry[]>([]);
   const [reading, setReading] = useState<BookEntry[]>([]);
+  const [upNext, setUpNext] = useState<BookEntry[]>([]);
   const [logEntries, setLogEntries] = useState<ReadingLogEntry[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -57,6 +58,9 @@ export default function MonthSpreadPage() {
           setSelectedDate(null);
           setAllBooks(books);
           setReading(books.filter((b) => b.status === "reading"));
+          setUpNext(
+            books.filter((b) => b.status === "want-to-read" && b.upNext),
+          );
           setLogEntries(log as ReadingLogEntry[]);
           setQuotes(qs);
         } catch (message) {
@@ -326,6 +330,30 @@ export default function MonthSpreadPage() {
                     )}
                   </Link>
                 ))}
+              </div>
+            )}
+
+            {upNext.length > 0 && (
+              <div className="mt-8">
+                <p className="section-label mb-4">up next on the nightstand</p>
+                <div className="space-y-3">
+                  {upNext.map((b) => (
+                    <Link
+                      key={b.id}
+                      href={`/book/${b.id}`}
+                      className="block group py-1"
+                    >
+                      <p className="text-sm font-medium truncate text-[var(--fg)] group-hover:opacity-70 transition-opacity">
+                        {b.title}
+                      </p>
+                      {b.author && (
+                        <p className="text-xs mt-0.5 truncate text-[var(--fg-muted)]">
+                          {b.author}
+                        </p>
+                      )}
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
 

@@ -3,110 +3,40 @@ import { MoodChip } from "@/components/MoodChip";
 import { QuoteCard } from "@/components/QuoteCard";
 import { StarDisplay } from "@/components/StarDisplay";
 import { MOOD_TAGS } from "@/lib/constants";
-import {
-  formatDate,
-  daysApart,
-  localDateStr,
-  dateYear,
-  formatShortDate,
-} from "@/lib/dates";
-import { BookEntry, Quote, ReadingStatus } from "@/types";
-import { TabId, avgPagesPerDay } from "@/lib/books";
+import { formatDate, daysApart, localDateStr } from "@/lib/dates";
+import { avgPagesPerDay } from "@/lib/books";
+import { useBook } from "@/providers/BookContext";
+import type { BookEntry } from "@/types";
+import type { ReadPatch } from "@/providers/BookContext";
 
-// ─── Tab: Reflection ──────────────────────────────────────────────
+// ─── Historical read view (shown when a past read is selected) ────
 
-export default function ReflectionTab({
-  entry,
-  quotes,
-  onUpdate,
-  onTabChange,
-  onReread,
-  rereadLoading,
-  onDeleteRead,
-  onLogRead,
-  onUpdateRead,
+function HistoricalReadView({
+  read,
+  readIndex,
 }: {
-  entry: BookEntry;
-  quotes: Quote[];
-  onUpdate: (patch: Partial<BookEntry>) => void;
-  onTabChange: (tab: TabId) => void;
-  onReread: () => void;
-  rereadLoading: boolean;
-  onDeleteRead: (id: string) => void;
-  onLogRead: (read: {
-    status: string;
-    dateStarted: string;
-    dateFinished: string;
-    rating: number;
-    feeling: string;
-  }) => Promise<void>;
-  onUpdateRead: (
-    readId: string,
-    patch: {
-      status: ReadingStatus;
-      dateStarted: string;
-      dateFinished: string;
-      rating: number;
-      feeling: string;
-    },
-  ) => Promise<void>;
+  read: BookEntry["reads"][number];
+  readIndex: number;
 }) {
+  const { onUpdateRead, onDeleteRead, onReread, rereadLoading } = useBook();
   const feelingRef = useRef<HTMLTextAreaElement>(null);
-  const pace = avgPagesPerDay(entry);
-  const [showLogForm, setShowLogForm] = useState(false);
-  const [logDraft, setLogDraft] = useState({
-    dateStarted: "",
-    dateFinished: "",
-    rating: 0,
-    feeling: "",
+  const [draft, setDraft] = useState({
+    dateStarted: read.dateStarted,
+    dateFinished: read.dateFinished,
+    rating: read.rating,
+    feeling: read.feeling,
   });
-  const [logSaving, setLogSaving] = useState(false);
-  const [editingReadId, setEditingReadId] = useState<string | null>(null);
-  const [editDraft, setEditDraft] = useState({
-    dateStarted: "",
-    dateFinished: "",
-    rating: 0,
-    feeling: "",
-  });
-  const [editSaving, setEditSaving] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const startEditing = (read: BookEntry["reads"][number]) => {
-    setEditingReadId(read.id);
-    setEditDraft({
+  // Reset draft when the selected read changes
+  useEffect(() => {
+    setDraft({
       dateStarted: read.dateStarted,
       dateFinished: read.dateFinished,
       rating: read.rating,
       feeling: read.feeling,
     });
-  };
-
-  const handleEditSubmit = async () => {
-    if (!editingReadId || editSaving) return;
-    setEditSaving(true);
-    try {
-      await onUpdateRead(editingReadId, { ...editDraft, status: "finished" });
-      setEditingReadId(null);
-    } finally {
-      setEditSaving(false);
-    }
-  };
-
-  const handleLogSubmit = async () => {
-    if (logSaving) return;
-    setLogSaving(true);
-    try {
-      await onLogRead({ ...logDraft, status: "finished" });
-      setLogDraft({
-        dateStarted: "",
-        dateFinished: "",
-        rating: 0,
-        feeling: "",
-      });
-      setShowLogForm(false);
-    } finally {
-      setLogSaving(false);
-    }
-  };
+  }, [read.id]);
 
   useEffect(() => {
     if (!feelingRef.current) return;
@@ -114,6 +44,150 @@ export default function ReflectionTab({
     feelingRef.current.style.height = feelingRef.current.scrollHeight + "px";
   });
 
+  const handleSave = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await onUpdateRead(read.id, { ...draft, status: "finished" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      className="grid gap-7 px-10 py-7 bg-cream"
+      style={{ gridTemplateColumns: "2fr 1fr" }}
+    >
+      {/* Left: reflection */}
+      <div>
+        <div className="book-surface p-6">
+          <p className="caveat-label mb-3">my reflection · read {readIndex}</p>
+          <div className="journal-surface p-5" style={{ minHeight: "160px" }}>
+            <textarea
+              ref={feelingRef}
+              value={draft.feeling}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, feeling: e.target.value }))
+              }
+              placeholder="how did this read go?"
+              rows={6}
+              className="journal-text w-full bg-transparent border-none outline-none resize-none"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Right: rating, dates, actions */}
+      <div className="flex flex-col gap-3.5">
+        <div className="book-surface p-5">
+          <p className="caveat-label mb-3">rating</p>
+          <div className="flex gap-1">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button
+                key={n}
+                onClick={() =>
+                  setDraft((d) => ({ ...d, rating: d.rating === n ? 0 : n }))
+                }
+                className={`text-lg transition-colors ${
+                  n <= draft.rating
+                    ? "text-[var(--gold)]"
+                    : "text-stone-200 hover:text-stone-300"
+                }`}
+              >
+                ★
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="book-surface p-5">
+          <p className="caveat-label mb-3">dates</p>
+          <div className="space-y-2.5">
+            <div>
+              <label className="text-[9px] uppercase tracking-widest text-ink-light font-semibold block mb-0.5">
+                Started
+              </label>
+              <input
+                type="date"
+                value={draft.dateStarted}
+                onChange={(e) =>
+                  setDraft((d) => ({ ...d, dateStarted: e.target.value }))
+                }
+                className="text-[11px] bg-transparent border-b border-stone-200 focus:border-plum outline-none w-full pb-0.5 text-[var(--fg)]"
+              />
+            </div>
+            <div>
+              <label className="text-[9px] uppercase tracking-widest text-ink-light font-semibold block mb-0.5">
+                Finished
+              </label>
+              <input
+                type="date"
+                value={draft.dateFinished}
+                onChange={(e) =>
+                  setDraft((d) => ({ ...d, dateFinished: e.target.value }))
+                }
+                className="text-[11px] bg-transparent border-b border-stone-200 focus:border-plum outline-none w-full pb-0.5 text-[var(--fg)]"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="text-xs text-white bg-[var(--plum)] px-4 py-2 rounded-full disabled:opacity-40 hover:opacity-85 transition-opacity font-sans"
+          >
+            {saving ? "saving..." : "save changes"}
+          </button>
+          <button
+            onClick={() => onDeleteRead(read.id)}
+            className="text-xs text-red-400 hover:text-red-600 transition-colors font-sans"
+          >
+            delete this read
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Tab: Reflection ──────────────────────────────────────────────
+
+export default function ReflectionTab() {
+  const {
+    entry,
+    quotes,
+    setActiveTab,
+    selectedReadId,
+    onUpdate,
+  } = useBook();
+
+  // If a historical read is selected, delegate to HistoricalReadView
+  const selectedRead = selectedReadId
+    ? (entry.reads.find((r) => r.id === selectedReadId) ?? null)
+    : null;
+
+  const feelingRef = useRef<HTMLTextAreaElement>(null);
+  const pace = avgPagesPerDay(entry);
+
+  useEffect(() => {
+    if (!feelingRef.current) return;
+    feelingRef.current.style.height = "auto";
+    feelingRef.current.style.height = feelingRef.current.scrollHeight + "px";
+  });
+
+  if (selectedRead) {
+    return (
+      <HistoricalReadView
+        read={selectedRead}
+        readIndex={entry.reads.indexOf(selectedRead) + 1}
+      />
+    );
+  }
+
+  // ── Current read view ────────────────────────────────────────────
   const previewQuotes = quotes.slice(0, 2);
 
   const metaRows = [
@@ -192,7 +266,7 @@ export default function ReflectionTab({
           <div className="flex justify-between items-center mb-4">
             <span className="caveat-label">favorite quotes</span>
             <button
-              onClick={() => onTabChange("quotes")}
+              onClick={() => setActiveTab("quotes")}
               className="text-[11px] text-terra font-semibold font-sans bg-transparent border-none cursor-pointer"
             >
               {quotes.length > 2
@@ -248,279 +322,11 @@ export default function ReflectionTab({
               logged entries ✦
             </p>
             <button
-              onClick={() => onTabChange("timeline")}
+              onClick={() => setActiveTab("timeline")}
               className="mt-3 text-[11px] text-sage font-semibold font-sans bg-[var(--bg-sage-18)] border-none rounded-full px-3 py-[5px] cursor-pointer"
             >
               view timeline →
             </button>
-          </div>
-        )}
-
-        {/* Re-reads */}
-        {(entry.reads.length > 0 ||
-          entry.status === "finished" ||
-          entry.status === "did-not-finish") && (
-          <div className="book-surface p-5">
-            <p className="book-card-heading text-sm">Re-reads</p>
-            <div className="flex flex-col gap-2.5">
-              {[...entry.reads].reverse().map((read, i) => (
-                <div key={read.id}>
-                  {editingReadId === read.id ? (
-                    <div className="space-y-2 border border-stone-200 rounded-lg p-3 bg-stone-50">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-[9px] uppercase tracking-widest text-ink-light font-semibold block mb-0.5">
-                            Started
-                          </label>
-                          <input
-                            type="date"
-                            value={editDraft.dateStarted}
-                            onChange={(e) =>
-                              setEditDraft((d) => ({
-                                ...d,
-                                dateStarted: e.target.value,
-                              }))
-                            }
-                            className="text-[11px] bg-transparent border-b border-stone-200 focus:border-plum outline-none w-full pb-0.5 text-[var(--fg)]"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[9px] uppercase tracking-widest text-ink-light font-semibold block mb-0.5">
-                            Finished
-                          </label>
-                          <input
-                            type="date"
-                            value={editDraft.dateFinished}
-                            onChange={(e) =>
-                              setEditDraft((d) => ({
-                                ...d,
-                                dateFinished: e.target.value,
-                              }))
-                            }
-                            className="text-[11px] bg-transparent border-b border-stone-200 focus:border-plum outline-none w-full pb-0.5 text-[var(--fg)]"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-[9px] uppercase tracking-widest text-ink-light font-semibold block mb-1">
-                          Rating
-                        </label>
-                        <div className="flex gap-1">
-                          {[1, 2, 3, 4, 5].map((n) => (
-                            <button
-                              key={n}
-                              onClick={() =>
-                                setEditDraft((d) => ({
-                                  ...d,
-                                  rating: d.rating === n ? 0 : n,
-                                }))
-                              }
-                              className={`text-sm transition-colors ${n <= editDraft.rating ? "text-[var(--gold)]" : "text-stone-200 hover:text-stone-300"}`}
-                            >
-                              ★
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-[9px] uppercase tracking-widest text-ink-light font-semibold block mb-0.5">
-                          Feelings
-                        </label>
-                        <input
-                          type="text"
-                          value={editDraft.feeling}
-                          onChange={(e) =>
-                            setEditDraft((d) => ({
-                              ...d,
-                              feeling: e.target.value,
-                            }))
-                          }
-                          placeholder="a quick note..."
-                          className="text-[11px] bg-transparent border-b border-stone-200 focus:border-plum outline-none w-full pb-0.5 placeholder:text-stone-300 text-[var(--fg)]"
-                        />
-                      </div>
-                      <div className="flex gap-3 pt-1">
-                        <button
-                          onClick={handleEditSubmit}
-                          disabled={editSaving}
-                          className="text-xs text-white bg-[var(--plum)] px-3 py-1 rounded-full disabled:opacity-40 hover:opacity-85 transition-opacity"
-                        >
-                          {editSaving ? "saving..." : "save"}
-                        </button>
-                        <button
-                          onClick={() => setEditingReadId(null)}
-                          className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
-                        >
-                          cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="group flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-sans text-[10px] font-bold tracking-[0.08em] uppercase text-ink-light mb-0.5">
-                          Read {entry.reads.length - i}
-                          {(read.dateFinished || read.dateStarted) && (
-                            <span className="font-normal normal-case tracking-normal ml-1 opacity-60">
-                              ·{" "}
-                              {dateYear(read.dateFinished || read.dateStarted)}
-                            </span>
-                          )}
-                        </p>
-                        <p className="font-hand text-[13px] text-terra">
-                          {read.dateStarted
-                            ? `${formatShortDate(read.dateStarted)}${read.dateFinished ? ` – ${formatShortDate(read.dateFinished)}` : ""}`
-                            : read.dateFinished
-                              ? formatShortDate(read.dateFinished)
-                              : "—"}
-                        </p>
-                        {read.rating > 0 && (
-                          <StarDisplay rating={read.rating} size={11} />
-                        )}
-                        {read.feeling && (
-                          <p className="font-hand text-xs text-ink-light mt-0.5 leading-snug">
-                            {read.feeling}
-                          </p>
-                        )}
-                      </div>
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 flex gap-1 mt-0.5">
-                        <button
-                          onClick={() => startEditing(read)}
-                          className="w-5 h-5 flex items-center justify-center rounded-full bg-stone-100 hover:bg-stone-200 text-stone-400 hover:text-stone-600 text-[9px] font-bold"
-                          title="Edit this read"
-                        >
-                          ✎
-                        </button>
-                        <button
-                          onClick={() => onDeleteRead(read.id)}
-                          className="w-5 h-5 flex items-center justify-center rounded-full bg-stone-100 hover:bg-red-100 text-stone-400 hover:text-red-500 text-[11px] font-bold"
-                          title="Delete this read"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="mt-3 flex flex-col gap-2">
-              <div className="flex gap-3">
-                <button
-                  onClick={onReread}
-                  disabled={rereadLoading}
-                  className="text-xs text-stone-400 hover:text-stone-700 transition-colors disabled:opacity-50"
-                >
-                  {rereadLoading ? "starting..." : "↺ start a re-read"}
-                </button>
-                <button
-                  onClick={() => setShowLogForm((v) => !v)}
-                  className="text-xs text-stone-400 hover:text-stone-700 transition-colors"
-                >
-                  + log a past read
-                </button>
-              </div>
-
-              {showLogForm && (
-                <div className="mt-1 space-y-2 border-t border-stone-100 pt-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[9px] uppercase tracking-widest text-ink-light font-semibold block mb-0.5">
-                        Started
-                      </label>
-                      <input
-                        type="date"
-                        value={logDraft.dateStarted}
-                        onChange={(e) =>
-                          setLogDraft((d) => ({
-                            ...d,
-                            dateStarted: e.target.value,
-                          }))
-                        }
-                        className="text-[11px] bg-transparent border-b border-stone-200 focus:border-plum outline-none w-full pb-0.5 text-[var(--fg)]"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[9px] uppercase tracking-widest text-ink-light font-semibold block mb-0.5">
-                        Finished
-                      </label>
-                      <input
-                        type="date"
-                        value={logDraft.dateFinished}
-                        onChange={(e) =>
-                          setLogDraft((d) => ({
-                            ...d,
-                            dateFinished: e.target.value,
-                          }))
-                        }
-                        className="text-[11px] bg-transparent border-b border-stone-200 focus:border-plum outline-none w-full pb-0.5 text-[var(--fg)]"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[9px] uppercase tracking-widest text-ink-light font-semibold block mb-1">
-                      Rating
-                    </label>
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <button
-                          key={n}
-                          onClick={() =>
-                            setLogDraft((d) => ({
-                              ...d,
-                              rating: d.rating === n ? 0 : n,
-                            }))
-                          }
-                          className={`text-sm transition-colors ${n <= logDraft.rating ? "text-[var(--gold)]" : "text-stone-200 hover:text-stone-300"}`}
-                        >
-                          ★
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[9px] uppercase tracking-widest text-ink-light font-semibold block mb-0.5">
-                      Notes
-                    </label>
-                    <input
-                      type="text"
-                      value={logDraft.feeling}
-                      onChange={(e) =>
-                        setLogDraft((d) => ({ ...d, feeling: e.target.value }))
-                      }
-                      placeholder="a quick note..."
-                      className="text-[11px] bg-transparent border-b border-stone-200 focus:border-plum outline-none w-full pb-0.5 placeholder:text-stone-300 text-[var(--fg)]"
-                    />
-                  </div>
-                  <div className="flex gap-3 pt-1">
-                    <button
-                      onClick={handleLogSubmit}
-                      disabled={
-                        logSaving ||
-                        (!logDraft.dateFinished && !logDraft.dateStarted)
-                      }
-                      className="text-xs text-white bg-[var(--plum)] px-3 py-1 rounded-full disabled:opacity-40 hover:opacity-85 transition-opacity"
-                    >
-                      {logSaving ? "saving..." : "save"}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowLogForm(false);
-                        setLogDraft({
-                          dateStarted: "",
-                          dateFinished: "",
-                          rating: 0,
-                          feeling: "",
-                        });
-                      }}
-                      className="text-xs text-stone-400 hover:text-stone-600 transition-colors"
-                    >
-                      cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         )}
       </div>

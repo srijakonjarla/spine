@@ -127,6 +127,7 @@ export function parseGoodreadsCSV(text: string): GoodreadsPreview[] {
       const shelf = row["Exclusive Shelf"] ?? "to-read";
       const bookshelves = row["Bookshelves"] ?? "";
       const dateRead = parseGoodreadsDate(row["Date Read"] ?? "");
+      const dateAdded = parseGoodreadsDate(row["Date Added"] ?? "");
       const isDNF = detectDNF(bookshelves);
       const status = isDNF ? "did-not-finish" : mapStatus(shelf);
 
@@ -151,14 +152,15 @@ export function parseGoodreadsCSV(text: string): GoodreadsPreview[] {
         bookshelves: parseGenres(bookshelves),
         moodTags: [],
         status,
-        dateStarted: "",
-        dateFinished: isDNF ? "" : dateRead,
-        dateShelved: isDNF ? dateRead : "",
+        dateStarted: status === "reading" ? dateAdded : "",
+        dateFinished: status === "finished" ? dateRead : "",
+        dateShelved: isDNF ? dateRead : (status === "want-to-read" ? dateAdded : ""),
         rating,
         feeling: row["My Review"] ?? "",
         thoughts: [],
         reads: [],
         bookmarked: false,
+        upNext: false,
         releaseDate: "",
         coverUrl: "",
         isbn: "",

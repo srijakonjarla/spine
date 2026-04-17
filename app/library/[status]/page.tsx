@@ -50,6 +50,7 @@ export default function StatusCatalogPage() {
         genres: enriched?.genres ?? [],
         moodTags: [],
         bookshelves: [],
+        upNext: false,
         status: status as BookEntry["status"],
         dateStarted: status === "reading" ? today : "",
         dateFinished: status === "finished" ? today : "",
@@ -86,6 +87,8 @@ export default function StatusCatalogPage() {
   const allMoods = Array.from(
     new Set(entries.flatMap((e) => e.moodTags)),
   ).sort();
+
+  const upNext = entries.filter((e) => e.upNext);
 
   const filtered = entries.filter((e) => {
     const matchSearch =
@@ -167,6 +170,38 @@ export default function StatusCatalogPage() {
                 onClick={() => setActiveMood(activeMood === mood ? null : mood)}
               />
             ))}
+          </div>
+        )}
+
+        {/* Up next pinned section */}
+        {!loading && upNext.length > 0 && (
+          <div className="mb-8 pb-8 border-b border-[var(--border-light)]">
+            <p className="section-label mb-3">up next</p>
+            <div className="space-y-0.5">
+              {upNext.map((e) => (
+                <Link
+                  key={e.id}
+                  href={`/book/${e.id}`}
+                  className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-lg hover:bg-[var(--bg-plum-trace)] transition-colors group"
+                >
+                  <BookCoverThumb
+                    coverUrl={e.coverUrl}
+                    title={e.title}
+                    author={e.author}
+                    width="w-6"
+                    height="h-9"
+                  />
+                  <span className="text-sm truncate flex-1 text-[var(--fg)]">
+                    {e.title}
+                  </span>
+                  {e.author && (
+                    <span className="text-xs shrink-0 hidden sm:block text-[var(--fg-faint)]">
+                      {e.author}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
           </div>
         )}
 

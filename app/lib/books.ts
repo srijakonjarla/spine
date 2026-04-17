@@ -1,7 +1,7 @@
 import { BookEntry } from "@/types";
 import { localDateStr, daysApart } from "./dates";
 
-export type TabId = "reflection" | "quotes" | "timeline" | "details";
+export type TabId = "reflection" | "quotes" | "timeline" | "details" | `read-${string}`;
 
 /** Average pages read per day given a book entry's page count and date range. */
 export function avgPagesPerDay(entry: BookEntry): number | null {

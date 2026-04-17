@@ -32,6 +32,7 @@ interface BookRow {
   rating: number;
   feeling: string;
   bookmarked: boolean;
+  up_next: boolean;
   cover_url: string;
   isbn: string;
   page_count: number | null;
@@ -81,6 +82,7 @@ function mapBook(row: BookRow): BookEntry {
     rating: row.rating,
     feeling: row.feeling,
     bookmarked: row.bookmarked ?? false,
+    upNext: row.up_next ?? false,
     coverUrl: row.cover_url ?? "",
     isbn: row.isbn ?? "",
     pageCount: row.page_count ?? null,

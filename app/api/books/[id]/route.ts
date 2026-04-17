@@ -79,6 +79,7 @@ export async function PATCH(
   if ("rating" in patch) userRow.rating = patch.rating;
   if ("feeling" in patch) userRow.feeling = patch.feeling;
   if ("bookmarked" in patch) userRow.bookmarked = patch.bookmarked;
+  if ("upNext" in patch) userRow.up_next = patch.upNext;
   if ("moodTags" in patch) userRow.mood_tags = patch.moodTags;
   // Title and author become per-user overrides
   if ("title" in patch) userRow.title_override = patch.title || null;

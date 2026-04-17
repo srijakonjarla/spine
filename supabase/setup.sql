@@ -50,6 +50,7 @@ create table if not exists user_books (
   mood_tags        text[]      not null default '{}',
   bookshelves      text[]      not null default '{}',
   bookmarked       boolean     not null default false,
+  up_next          boolean     not null default false,
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now(),
   unique (user_id, catalog_book_id)

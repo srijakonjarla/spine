@@ -69,6 +69,7 @@ export default function BooksPage() {
         genres: enriched?.genres ?? [],
         moodTags: [],
         bookshelves: [],
+        upNext: false,
         status: "reading",
         dateStarted: localDateStr(now),
         dateFinished: "",

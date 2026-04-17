@@ -1,20 +1,11 @@
 import { StarDisplay } from "@/components/StarDisplay";
 import { formatReadRange } from "@/lib/dates";
-import { BookEntry } from "@/types";
+import { useBook } from "@/providers/BookContext";
 
 // ─── Tab: Details ─────────────────────────────────────────────────
 
-export default function DetailsTab({
-  entry,
-  onUpdate,
-  onDeleteRead,
-  onDelete,
-}: {
-  entry: BookEntry;
-  onUpdate: (patch: Partial<BookEntry>) => void;
-  onDeleteRead: (id: string) => void;
-  onDelete: () => void;
-}) {
+export default function DetailsTab() {
+  const { entry, onUpdate, onDeleteRead, onDelete } = useBook();
   return (
     <div className="px-10 py-7 pb-12 bg-cream">
       <div className="grid gap-7" style={{ gridTemplateColumns: "2fr 1fr" }}>

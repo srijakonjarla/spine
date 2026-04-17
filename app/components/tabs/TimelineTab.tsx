@@ -7,8 +7,9 @@ import {
   daysApart,
 } from "@/lib/dates";
 import { addThought, removeThought } from "@/lib/db";
-import { BookEntry, Thought } from "@/types";
+import { Thought } from "@/types";
 import { useState, useRef, useMemo } from "react";
+import { useBook } from "@/providers/BookContext";
 
 // ─── Tab: Timeline ────────────────────────────────────────────────
 
@@ -21,33 +22,51 @@ function timeOfDayEmoji(iso: string): string {
   return "🌙";
 }
 
-export default function TimelineTab({
-  entry,
-  onUpdate,
-}: {
-  entry: BookEntry;
-  onUpdate: (patch: Partial<BookEntry>) => void;
-}) {
+export default function TimelineTab() {
+  const { entry, onUpdate, selectedReadId } = useBook();
   const [thoughtInput, setThoughtInput] = useState("");
   const [pageInput, setPageInput] = useState("");
   const [isPosting, setIsPosting] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // When a historical read is selected, scope the timeline to that read's date range
+  const viewedRead = selectedReadId
+    ? (entry.reads.find((r) => r.id === selectedReadId) ?? null)
+    : null;
+
+  const dateStarted = viewedRead?.dateStarted ?? entry.dateStarted;
+  const dateFinished = viewedRead?.dateFinished ?? entry.dateFinished;
+
+  // Filter thoughts to the viewed read's date range when a historical read is selected
+  const visibleThoughts = useMemo(() => {
+    if (!viewedRead) return entry.thoughts;
+    const start = viewedRead.dateStarted
+      ? new Date(viewedRead.dateStarted).getTime()
+      : null;
+    const end = viewedRead.dateFinished
+      ? new Date(viewedRead.dateFinished).getTime() + 86400000 // inclusive
+      : null;
+    return entry.thoughts.filter((t) => {
+      const ts = new Date(t.createdAt).getTime();
+      if (start && ts < start) return false;
+      if (end && ts > end) return false;
+      return true;
+    });
+  }, [entry.thoughts, viewedRead]);
+
   const sortedThoughts = useMemo(
     () =>
-      [...entry.thoughts].sort(
+      [...visibleThoughts].sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       ),
-    [entry.thoughts],
+    [visibleThoughts],
   );
 
   const calendarDays = useMemo(() => {
-    if (!entry.dateStarted) return [];
-    const start = parseLocalDate(entry.dateStarted);
-    const end = entry.dateFinished
-      ? parseLocalDate(entry.dateFinished)
-      : new Date();
+    if (!dateStarted) return [];
+    const start = parseLocalDate(dateStarted);
+    const end = dateFinished ? parseLocalDate(dateFinished) : new Date();
     if (!start || !end) return [];
     const days: { date: Date; dateStr: string }[] = [];
     const d = new Date(start);
@@ -56,18 +75,18 @@ export default function TimelineTab({
       d.setDate(d.getDate() + 1);
     }
     return days;
-  }, [entry.dateStarted, entry.dateFinished]);
+  }, [dateStarted, dateFinished]);
 
   const thoughtsByDay = useMemo(() => {
     const map: Record<string, number> = {};
-    for (const t of entry.thoughts) {
-      const key = localDateStr(new Date(t.createdAt)); // createdAt is TIMESTAMPTZ — safe to parse
+    for (const t of visibleThoughts) {
+      const key = localDateStr(new Date(t.createdAt));
       map[key] = (map[key] || 0) + 1;
     }
     return map;
-  }, [entry.thoughts]);
+  }, [visibleThoughts]);
 
-  const finishedDateStr = entry.dateFinished ?? null;
+  const finishedDateStr = dateFinished ?? null;
 
   const postThought = async () => {
     const text = thoughtInput.trim();
@@ -216,8 +235,8 @@ export default function TimelineTab({
           <div ref={bottomRef} />
         </div>
 
-        {/* Add thought */}
-        <div className="flex gap-2 items-start">
+        {/* Add thought — hidden when viewing a historical read */}
+        <div className={`flex gap-2 items-start${viewedRead ? " hidden" : ""}`}>
           <input
             type="number"
             value={pageInput}
@@ -251,7 +270,7 @@ export default function TimelineTab({
             className="timeline-thought-input flex-1"
           />
         </div>
-        <p className="hint-text mt-1.5">↵ to post · shift+↵ for newline</p>
+        {!viewedRead && <p className="hint-text mt-1.5">↵ to post · shift+↵ for newline</p>}
       </div>
 
       {/* Sidebar */}
@@ -259,7 +278,7 @@ export default function TimelineTab({
         <p className="section-label mb-3">Summary</p>
         <div className="grid grid-cols-2 gap-2.5 mb-5">
           {[
-            { val: entry.thoughts.length, lbl: "Entries" },
+            { val: sortedThoughts.length, lbl: "Entries" },
             { val: entry.pageCount ?? "—", lbl: "Pages" },
             ...(avgPagesPerDay(entry) !== null
               ? [{ val: avgPagesPerDay(entry)!, lbl: "Avg p/day" }]
@@ -269,27 +288,22 @@ export default function TimelineTab({
           ))}
         </div>
 
-        {entry.dateStarted && (
+        {dateStarted && (
           <>
             <p className="section-label mb-2.5">Reading period</p>
             <div className="book-surface p-3 mb-5">
               <p className="font-hand text-sm text-plum">
-                {formatShortDate(entry.dateStarted)}
-                {(entry.dateFinished || entry.status === "reading") && (
+                {formatShortDate(dateStarted)}
+                {(dateFinished || (!viewedRead && entry.status === "reading")) && (
                   <>
                     {" "}
                     →{" "}
-                    {entry.dateFinished
-                      ? formatShortDate(entry.dateFinished)
-                      : "now"}
+                    {dateFinished ? formatShortDate(dateFinished) : "now"}
                   </>
                 )}
               </p>
               <p className="text-[11px] text-ink-light font-sans mt-1">
-                {daysApart(
-                  entry.dateStarted,
-                  entry.dateFinished || localDateStr(),
-                ) + 1}{" "}
+                {daysApart(dateStarted, dateFinished || localDateStr()) + 1}{" "}
                 days
               </p>
             </div>

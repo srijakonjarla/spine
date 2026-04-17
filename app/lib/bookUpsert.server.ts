@@ -207,6 +207,7 @@ export function flattenUserBook(row: {
   feeling: string;
   mood_tags: string[];
   bookmarked: boolean;
+  up_next: boolean;
   created_at: string;
   updated_at: string;
   catalog_books: {
@@ -249,6 +250,7 @@ export function flattenUserBook(row: {
     feeling: row.feeling,
     mood_tags: row.mood_tags ?? [],
     bookmarked: row.bookmarked ?? false,
+    up_next: row.up_next ?? false,
     created_at: row.created_at,
     updated_at: row.updated_at,
     thoughts: row.thoughts ?? [],

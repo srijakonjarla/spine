@@ -90,6 +90,7 @@ export default function LibraryPage() {
       genres: enriched?.genres ?? [],
       moodTags: [],
       bookshelves: [],
+      upNext: false,
       status,
       dateStarted: status === "reading" ? localDateStr(now) : "",
       dateFinished: "",

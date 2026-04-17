@@ -25,6 +25,8 @@ import {
   DetailsTab,
 } from "@/components/tabs";
 import { TabId } from "@/lib/books";
+import { BookContext } from "@/providers/BookContext";
+import type { ReadPatch } from "@/providers/BookContext";
 
 /** Deterministic 0-9 index derived from the book title, used to pick a hero gradient CSS class. */
 function heroGradientIndex(title: string): number {
@@ -101,6 +103,7 @@ export default function BookPage() {
   const [entry, setEntry] = useState<BookEntry | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>("reflection");
   const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [selectedReadId, setSelectedReadId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">(
     "idle",
   );
@@ -181,21 +184,11 @@ export default function BookPage() {
     );
   };
 
-  const handleUpdateRead = async (
-    readId: string,
-    patch: {
-      status: ReadingStatus;
-      dateStarted: string;
-      dateFinished: string;
-      rating: number;
-      feeling: string;
-    },
-  ) => {
+  const handleUpdateRead = async (readId: string, patch: ReadPatch): Promise<void> => {
     if (!entry) return;
     await updateBookRead(entry.id, readId, patch);
     setEntry((prev) => {
       if (!prev) return prev;
-
       return {
         ...prev,
         reads: prev.reads.map((read) =>
@@ -208,15 +201,12 @@ export default function BookPage() {
     });
   };
 
-  const handleLogRead = async (read: {
-    status: string;
-    dateStarted: string;
-    dateFinished: string;
-    rating: number;
-    feeling: string;
-  }) => {
+  const handleLogRead = async (read: Omit<ReadPatch, "status">): Promise<void> => {
     if (!entry) return;
-    const newRead = await logHistoricalRead(entry.id, read);
+    const newRead = await logHistoricalRead(entry.id, {
+      ...read,
+      status: "finished",
+    });
     setEntry((prev) =>
       prev ? { ...prev, reads: [...prev.reads, newRead] } : prev,
     );
@@ -245,6 +235,12 @@ export default function BookPage() {
       </div>
     );
 
+  // The currently viewed read (null = current/user_books, else a historical book_read)
+  const viewedRead = selectedReadId
+    ? entry.reads.find((r) => r.id === selectedReadId) ?? null
+    : null;
+
+  // ── Build tab list (always 4) ─────────────────────────────────────
   const tabs: { id: TabId; label: string }[] = [
     { id: "reflection", label: "Reflection" },
     { id: "timeline", label: "Timeline" },
@@ -287,218 +283,322 @@ export default function BookPage() {
     };
   };
 
+  // ── Determine active tab content ──────────────────────────────────
+  const renderTabContent = () => {
+    if (activeTab === "timeline") return <TimelineTab />;
+    if (activeTab === "quotes") return <QuotesTab />;
+    if (activeTab === "details") return <DetailsTab />;
+    return <ReflectionTab />;
+  };
+
   return (
-    <div className="page" style={{ paddingBottom: 0 }}>
-      {/* ── Hero ── */}
-      <div
-        className={`${heroClass} relative overflow-hidden px-10 py-9 grid gap-8`}
-        style={{ gridTemplateColumns: "180px 1fr" }}
-      >
-        {/* Decorative orb */}
+    <BookContext.Provider
+      value={{
+        entry,
+        quotes,
+        activeTab,
+        setActiveTab,
+        selectedReadId,
+        setSelectedReadId,
+        onUpdate: update,
+        onDeleteRead: handleDeleteRead,
+        onUpdateRead: handleUpdateRead,
+        onLogRead: handleLogRead,
+        onReread: handleReread,
+        rereadLoading,
+        onDelete: handleDelete,
+      }}
+    >
+      <div className="page" style={{ paddingBottom: 0 }}>
+        {/* ── Hero ── */}
         <div
-          className="absolute -top-[60px] -right-[60px] w-[240px] h-[240px] rounded-full pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(212,168,67,0.18), transparent 70%)",
-          }}
-        />
-
-        {/* Back link */}
-        <div className="absolute top-4 left-5 z-10">
-          <button
-            onClick={() => router.back()}
-            className="text-xs text-white/55 font-sans bg-transparent border-none cursor-pointer p-0"
-          >
-            ← {backLink.label}
-          </button>
-        </div>
-
-        {/* Save state + bookmark */}
-        <div className="absolute top-3.5 right-5 z-10 flex items-center gap-3">
-          <span className="text-[11px] text-white/40 font-sans">
-            {saveState === "saving"
-              ? "saving..."
-              : saveState === "saved"
-                ? "saved ✓"
-                : ""}
-          </span>
-          <BookmarkButton
-            bookmarked={entry.bookmarked}
-            onToggle={() => update({ bookmarked: !entry.bookmarked })}
+          className={`${heroClass} relative overflow-hidden px-10 py-9 grid gap-8`}
+          style={{ gridTemplateColumns: "180px 1fr" }}
+        >
+          {/* Decorative orb */}
+          <div
+            className="absolute -top-[60px] -right-[60px] w-[240px] h-[240px] rounded-full pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(circle, rgba(212,168,67,0.18), transparent 70%)",
+            }}
           />
-        </div>
 
-        {/* Cover */}
-        <div className="pt-6 relative z-[1]">
-          {entry.coverUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={entry.coverUrl}
-              alt={entry.title}
-              className="w-[180px] rounded-lg block object-cover aspect-[2/3]"
-              style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.45)" }}
-            />
-          ) : (
-            <div
-              className="w-[180px] aspect-[2/3] rounded-lg bg-white/10 flex flex-col justify-end p-4"
-              style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.45)" }}
+          {/* Back link */}
+          <div className="absolute top-4 left-5 z-10">
+            <button
+              onClick={() => router.back()}
+              className="text-xs text-white/55 font-sans bg-transparent border-none cursor-pointer p-0"
             >
-              <p className="font-serif text-[15px] italic text-white/80 leading-[1.3] mb-1.5">
-                {entry.title}
-              </p>
-              <p className="text-[10px] text-white/45 font-sans">
-                {entry.author}
-              </p>
-            </div>
-          )}
-        </div>
+              ← {backLink.label}
+            </button>
+          </div>
 
-        {/* Info */}
-        <div className="flex flex-col justify-center relative z-[1] pt-6">
-          <h1
-            className="font-serif font-bold text-[var(--white)] leading-[1.05] mb-1 tracking-tight"
-            style={{ fontSize: "clamp(26px, 3.5vw, 38px)" }}
-          >
-            {entry.title}
-          </h1>
-          <p className="font-serif text-[15px] italic text-white/55 mb-[18px]">
-            by {entry.author}
-          </p>
+          {/* Save state + bookmark */}
+          <div className="absolute top-3.5 right-5 z-10 flex items-center gap-3">
+            <span className="text-[11px] text-white/40 font-sans">
+              {saveState === "saving"
+                ? "saving..."
+                : saveState === "saved"
+                  ? "saved ✓"
+                  : ""}
+            </span>
+            <button
+              onClick={() => update({ upNext: !entry.upNext })}
+              title={entry.upNext ? "Remove from up next" : "Add to up next"}
+              className={`text-[11px] font-sans px-2.5 py-1 rounded-full border transition-colors ${
+                entry.upNext
+                  ? "bg-gold/20 border-gold/50 text-gold"
+                  : "border-white/20 text-white/40 hover:text-white/70 hover:border-white/40"
+              }`}
+            >
+              {entry.upNext ? "up next ✓" : "up next"}
+            </button>
+            <BookmarkButton
+              bookmarked={entry.bookmarked}
+              onToggle={() => update({ bookmarked: !entry.bookmarked })}
+            />
+          </div>
 
-          {/* Editable card */}
-          <div className="hero-overlay-card">
-            {/* Status pills */}
-            <div className="flex gap-1.5 flex-wrap mb-3.5">
-              {STATUSES.map(({ value, label }) => (
-                <button
-                  key={value}
-                  onClick={() => handleStatusChange(value)}
-                  className="hero-status-pill"
-                  style={statusActiveStyle(value)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {/* Rating */}
-            <div className="mb-3.5">
-              <StarRating
-                rating={entry.rating}
-                onChange={(r) => update({ rating: r })}
+          {/* Cover */}
+          <div className="pt-6 relative z-[1]">
+            {entry.coverUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={entry.coverUrl}
+                alt={entry.title}
+                className="w-[180px] rounded-lg block object-cover aspect-[2/3]"
+                style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.45)" }}
               />
-            </div>
+            ) : (
+              <div
+                className="w-[180px] aspect-[2/3] rounded-lg bg-white/10 flex flex-col justify-end p-4"
+                style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.45)" }}
+              >
+                <p className="font-serif text-[15px] italic text-white/80 leading-[1.3] mb-1.5">
+                  {entry.title}
+                </p>
+                <p className="text-[10px] text-white/45 font-sans">
+                  {entry.author}
+                </p>
+              </div>
+            )}
+          </div>
 
-            {/* Genre chips */}
-            <div className="flex flex-wrap gap-1.5 items-center">
-              {entry.genres.map((g) => (
-                <button
-                  key={g}
-                  onClick={() =>
-                    update({ genres: entry.genres.filter((x) => x !== g) })
-                  }
-                  className="hero-genre-chip"
-                >
-                  {g} ×
-                </button>
-              ))}
-              <HeroGenreAdd
-                genres={entry.genres}
-                onAdd={(genres) => update({ genres })}
-              />
-            </div>
+          {/* Info */}
+          <div className="flex flex-col justify-center relative z-[1] pt-6">
+            <h1
+              className="font-serif font-bold text-[var(--white)] leading-[1.05] mb-1 tracking-tight"
+              style={{ fontSize: "clamp(26px, 3.5vw, 38px)" }}
+            >
+              {entry.title}
+            </h1>
+            <p className="font-serif text-[15px] italic text-white/55 mb-[18px]">
+              by {entry.author}
+            </p>
 
-            {/* Dates */}
-            <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-white/[0.08]">
-              <div className="flex items-center gap-1.5">
-                <span className="hero-date-label">started</span>
-                <input
-                  type="date"
-                  value={entry.dateStarted}
-                  onChange={(e) => update({ dateStarted: e.target.value })}
-                  className="hero-date-input"
+            {/* Editable card */}
+            <div className="hero-overlay-card">
+              {/* Status pills */}
+              <div className="flex gap-1.5 flex-wrap mb-3.5">
+                {STATUSES.map(({ value, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => handleStatusChange(value)}
+                    className="hero-status-pill"
+                    style={statusActiveStyle(value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Rating */}
+              <div className="mb-3.5">
+                <StarRating
+                  rating={entry.rating}
+                  onChange={(r) => update({ rating: r })}
                 />
               </div>
-              {(entry.status === "finished" || entry.dateFinished) && (
-                <div className="flex items-center gap-1.5">
-                  <span className="hero-date-label">finished</span>
-                  <input
-                    type="date"
-                    value={entry.dateFinished}
-                    onChange={(e) => update({ dateFinished: e.target.value })}
-                    className="hero-date-input"
-                  />
-                </div>
+
+              {/* Genre chips */}
+              <div className="flex flex-wrap gap-1.5 items-center">
+                {entry.genres.map((g) => (
+                  <button
+                    key={g}
+                    onClick={() =>
+                      update({ genres: entry.genres.filter((x) => x !== g) })
+                    }
+                    className="hero-genre-chip"
+                  >
+                    {g} ×
+                  </button>
+                ))}
+                <HeroGenreAdd
+                  genres={entry.genres}
+                  onAdd={(genres) => update({ genres })}
+                />
+              </div>
+
+              {/* Dates — reflect the selected read when viewing a historical one */}
+              <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-white/[0.08]">
+                {viewedRead ? (
+                  // Historical read: editable, saves via handleUpdateRead
+                  <>
+                    <div className="flex items-center gap-1.5">
+                      <span className="hero-date-label">started</span>
+                      <input
+                        type="date"
+                        value={viewedRead.dateStarted}
+                        onChange={(e) =>
+                          handleUpdateRead(viewedRead.id, {
+                            ...viewedRead,
+                            dateStarted: e.target.value,
+                          })
+                        }
+                        className="hero-date-input"
+                      />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="hero-date-label">finished</span>
+                      <input
+                        type="date"
+                        value={viewedRead.dateFinished}
+                        onChange={(e) =>
+                          handleUpdateRead(viewedRead.id, {
+                            ...viewedRead,
+                            dateFinished: e.target.value,
+                          })
+                        }
+                        className="hero-date-input"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  // Current read: fully editable
+                  <>
+                    <div className="flex items-center gap-1.5">
+                      <span className="hero-date-label">started</span>
+                      <input
+                        type="date"
+                        value={entry.dateStarted}
+                        onChange={(e) => update({ dateStarted: e.target.value })}
+                        className="hero-date-input"
+                      />
+                    </div>
+                    {(entry.status === "finished" || entry.dateFinished) && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="hero-date-label">finished</span>
+                        <input
+                          type="date"
+                          value={entry.dateFinished}
+                          onChange={(e) =>
+                            update({ dateFinished: e.target.value })
+                          }
+                          className="hero-date-input"
+                        />
+                      </div>
+                    )}
+                    {(entry.status === "did-not-finish" || entry.dateShelved) && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="hero-date-label">shelved</span>
+                        <input
+                          type="date"
+                          value={entry.dateShelved}
+                          onChange={(e) =>
+                            update({ dateShelved: e.target.value })
+                          }
+                          className="hero-date-input"
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Page / quote counts */}
+            <div className="flex gap-4 mt-3 items-center">
+              {(entry.pageCount ?? 0) > 0 && (
+                <span className="text-[11px] text-white/40 font-sans">
+                  📖 {entry.pageCount} pages
+                </span>
               )}
-              {(entry.status === "did-not-finish" || entry.dateShelved) && (
-                <div className="flex items-center gap-1.5">
-                  <span className="hero-date-label">shelved</span>
-                  <input
-                    type="date"
-                    value={entry.dateShelved}
-                    onChange={(e) => update({ dateShelved: e.target.value })}
-                    className="hero-date-input"
-                  />
-                </div>
+              {quotes.length > 0 && (
+                <span className="text-[11px] text-white/40 font-sans">
+                  💬 {quotes.length} quote{quotes.length !== 1 ? "s" : ""}
+                </span>
               )}
             </div>
           </div>
-
-          {/* Page / quote counts */}
-          <div className="flex gap-4 mt-3 items-center">
-            {(entry.pageCount ?? 0) > 0 && (
-              <span className="text-[11px] text-white/40 font-sans">
-                📖 {entry.pageCount} pages
-              </span>
-            )}
-            {quotes.length > 0 && (
-              <span className="text-[11px] text-white/40 font-sans">
-                💬 {quotes.length} quote{quotes.length !== 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
         </div>
-      </div>
 
-      {/* ── Sticky tabs ── */}
-      <div className="sticky top-0 z-20 bg-cream border-b border-[var(--border-light)] shadow-[0_2px_8px_var(--border-light)] flex gap-1 px-10">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`tab-btn${activeTab === tab.id ? " active" : ""}`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+        {/* ── Read selector (shown when re-reads exist) ── */}
+        {entry.reads.length > 0 && (
+          <div className="bg-[var(--bg-plum-trace)] border-b border-[var(--border-light)] px-10 py-2.5 flex items-center gap-2">
+            <span className="text-[10px] text-ink-light font-sans uppercase tracking-widest mr-1">
+              Read
+            </span>
+            {[...entry.reads].map((read, i) => (
+              <button
+                key={read.id}
+                onClick={() => setSelectedReadId(read.id)}
+                className={`text-[11px] font-sans px-3 py-1 rounded-full border transition-colors ${
+                  selectedReadId === read.id
+                    ? "bg-[var(--plum)] border-[var(--plum)] text-white"
+                    : "border-stone-200 text-stone-400 hover:border-stone-300 hover:text-stone-600"
+                }`}
+              >
+                {i + 1}
+                {(read.dateFinished || read.dateStarted) && (
+                  <span className="ml-1 opacity-70">
+                    ·{" "}
+                    {new Date(
+                      read.dateFinished || read.dateStarted,
+                    ).getFullYear()}
+                  </span>
+                )}
+              </button>
+            ))}
+            <button
+              onClick={() => setSelectedReadId(null)}
+              className={`text-[11px] font-sans px-3 py-1 rounded-full border transition-colors ${
+                selectedReadId === null
+                  ? "bg-[var(--plum)] border-[var(--plum)] text-white"
+                  : "border-stone-200 text-stone-400 hover:border-stone-300 hover:text-stone-600"
+              }`}
+            >
+              Current
+            </button>
+            {/* Start a re-read — right-aligned */}
+            <div className="ml-auto">
+              <button
+                onClick={handleReread}
+                disabled={rereadLoading}
+                className="text-[11px] font-sans text-stone-400 hover:text-stone-700 transition-colors disabled:opacity-50"
+              >
+                {rereadLoading ? "starting..." : "↺ start a re-read"}
+              </button>
+            </div>
+          </div>
+        )}
 
-      {/* ── Tab content ── */}
-      {activeTab === "reflection" && (
-        <ReflectionTab
-          entry={entry}
-          quotes={quotes}
-          onUpdate={update}
-          onTabChange={setActiveTab}
-          onReread={handleReread}
-          rereadLoading={rereadLoading}
-          onDeleteRead={handleDeleteRead}
-          onLogRead={handleLogRead}
-          onUpdateRead={handleUpdateRead}
-        />
-      )}
-      {activeTab === "timeline" && (
-        <TimelineTab entry={entry} onUpdate={update} />
-      )}
-      {activeTab === "quotes" && <QuotesTab bookId={entry.id} />}
-      {activeTab === "details" && (
-        <DetailsTab
-          entry={entry}
-          onUpdate={update}
-          onDeleteRead={handleDeleteRead}
-          onDelete={handleDelete}
-        />
-      )}
-    </div>
+        {/* ── Sticky tabs ── */}
+        <div className="sticky top-0 z-20 bg-cream border-b border-[var(--border-light)] shadow-[0_2px_8px_var(--border-light)] flex gap-1 px-10">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`tab-btn${activeTab === tab.id ? " active" : ""}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Tab content ── */}
+        {renderTabContent()}
+      </div>
+    </BookContext.Provider>
   );
 }
