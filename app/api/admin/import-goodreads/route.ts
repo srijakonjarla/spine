@@ -399,6 +399,7 @@ async function runImport(
             date_shelved: entry.dateShelved || null,
             rating: entry.rating,
             feeling: entry.feeling,
+            bookshelves: entry.genres,
             bookmarked: false,
             created_at: entry.createdAt,
             updated_at: entry.updatedAt,
@@ -427,18 +428,22 @@ async function runImport(
         };
         const incomingPriority = STATUS_PRIORITY[entry.status] ?? 0;
         const existingPriority = STATUS_PRIORITY[existing.status] ?? 0;
+        const userBookPatch: Record<string, unknown> = {
+          updated_at: new Date().toISOString(),
+        };
         if (incomingPriority > existingPriority) {
+          userBookPatch.status = entry.status;
+          userBookPatch.date_started = entry.dateStarted || null;
+          userBookPatch.date_finished = entry.dateFinished || null;
+          userBookPatch.date_shelved = entry.dateShelved || null;
+          if (entry.rating) userBookPatch.rating = entry.rating;
+          if (entry.feeling) userBookPatch.feeling = entry.feeling;
+        }
+        if (entry.genres.length) userBookPatch.bookshelves = entry.genres;
+        if (Object.keys(userBookPatch).length > 1) {
           await supabase
             .from("user_books")
-            .update({
-              status: entry.status,
-              date_started: entry.dateStarted || null,
-              date_finished: entry.dateFinished || null,
-              date_shelved: entry.dateShelved || null,
-              rating: entry.rating || undefined,
-              feeling: entry.feeling || undefined,
-              updated_at: new Date().toISOString(),
-            })
+            .update(userBookPatch)
             .eq("id", existing.id);
         }
 

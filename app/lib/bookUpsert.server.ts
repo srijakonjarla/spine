@@ -29,6 +29,7 @@ export interface PersonalFields {
   rating?: number;
   feeling?: string;
   mood_tags?: string[];
+  bookshelves?: string[];
   bookmarked?: boolean;
   created_at?: string;
   updated_at?: string;
@@ -161,6 +162,7 @@ export async function upsertBookForUser(
         rating: personal.rating ?? 0,
         feeling: personal.feeling ?? "",
         mood_tags: personal.mood_tags ?? [],
+        bookshelves: personal.bookshelves ?? [],
         bookmarked: personal.bookmarked ?? false,
         created_at: personal.created_at ?? now,
         updated_at: personal.updated_at ?? now,
@@ -184,7 +186,7 @@ export async function upsertBookForUser(
     userBookId = existing.id;
   }
 
-  return { userBookId, catalogBookId: catalogBookId! };
+  return { userBookId: userBookId!, catalogBookId: catalogBookId! };
 }
 
 /**
@@ -230,6 +232,7 @@ export function flattenUserBook(row: {
   };
   return {
     id: row.id,
+    catalogBookId: row.catalog_book_id,
     user_id: row.user_id,
     title: row.title_override ?? cb.title ?? "",
     author: row.author_override ?? cb.author ?? "",

@@ -83,11 +83,13 @@ export default function LibraryPage() {
     const now = new Date();
     const entry: BookEntry = {
       id: crypto.randomUUID(),
+      catalogBookId: "",
       title: enriched?.title ?? title,
       author: enriched?.author ?? "",
       releaseDate: enriched?.releaseDate ?? "",
       genres: enriched?.genres ?? [],
       moodTags: [],
+      bookshelves: [],
       status,
       dateStarted: status === "reading" ? localDateStr(now) : "",
       dateFinished: "",

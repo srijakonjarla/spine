@@ -118,9 +118,28 @@ export default function ListDetailPage() {
     if (!title || adding) return;
     setAdding(true);
     try {
+      // For book_list type, book_id (user_books.id) is required.
+      // If the user typed a title without selecting from the dropdown,
+      // create a want-to-read entry so we have a user_books.id to link.
+      let bookId = draftBookId;
+      if (!bookId && list?.listType === "book_list") {
+        const res = await fetch("/api/books", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title,
+            author: draftAuthor.trim(),
+            status: "want-to-read",
+          }),
+        });
+        if (res.ok) {
+          const book = await res.json();
+          bookId = book.id ?? "";
+        }
+      }
       const item = await addListItem(listId, {
         title,
-        bookId: draftBookId,
+        bookId,
         author: draftAuthor.trim(),
       });
       setList((prev) =>
@@ -432,7 +451,25 @@ export default function ListDetailPage() {
                           </span>
                         )}
 
-                        {item.coverUrl ? (
+                        {item.bookId ? (
+                          <Link href={`/book/${item.bookId}`} className="shrink-0">
+                            {item.coverUrl ? (
+                              <BookCover
+                                coverUrl={item.coverUrl}
+                                title={item.title}
+                                className="rounded-sm w-[38px] h-[54px]"
+                              />
+                            ) : (
+                              <svg
+                                viewBox="0 0 38 54"
+                                className="rounded-sm w-[38px] h-[54px] shadow-[var(--shadow-spine-card)]"
+                              >
+                                <rect width="38" height="54" rx="3" fill={spineColor(item.title)} />
+                                <rect x="4" y="8" width="30" height="1.5" rx="0.75" fill="var(--spine-gloss-line)" />
+                              </svg>
+                            )}
+                          </Link>
+                        ) : item.coverUrl ? (
                           <BookCover
                             coverUrl={item.coverUrl}
                             title={item.title}
@@ -443,28 +480,22 @@ export default function ListDetailPage() {
                             viewBox="0 0 38 54"
                             className="shrink-0 rounded-sm w-[38px] h-[54px] shadow-[var(--shadow-spine-card)]"
                           >
-                            <rect
-                              width="38"
-                              height="54"
-                              rx="3"
-                              fill={spineColor(item.title)}
-                            />
-                            <rect
-                              x="4"
-                              y="8"
-                              width="30"
-                              height="1.5"
-                              rx="0.75"
-                              fill="var(--spine-gloss-line)"
-                            />
+                            <rect width="38" height="54" rx="3" fill={spineColor(item.title)} />
+                            <rect x="4" y="8" width="30" height="1.5" rx="0.75" fill="var(--spine-gloss-line)" />
                           </svg>
                         )}
 
                         {/* Info */}
                         <div className="flex-1 min-w-0">
+                          {item.bookId ? (
+                            <Link href={`/book/${item.bookId}`} className="font-serif text-[13px] font-semibold text-[var(--fg-heading)] leading-snug hover:text-[var(--terra)] transition-colors">
+                              {item.title}
+                            </Link>
+                          ) : (
                           <p className="font-serif text-[13px] font-semibold text-[var(--fg-heading)] leading-snug">
                             {item.title}
                           </p>
+                          )}
                           {item.author && (
                             <p className="text-[11px] text-[var(--fg-muted)] mt-0.5">
                               {item.author}
@@ -511,28 +542,11 @@ export default function ListDetailPage() {
                   <CatalogSearch
                     value={draftTitle}
                     onChange={(v) => setDraftTitle(v)}
-                    onSelect={async (s: CatalogEntry) => {
+                    onSelect={(s: CatalogEntry) => {
                       setDraftTitle(s.title);
                       setDraftAuthor(s.author);
-                      try {
-                        const res = await fetch("/api/catalog/upsert", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({
-                            title: s.title,
-                            author: s.author,
-                            coverUrl: s.coverUrl,
-                            isbn: s.isbn,
-                            releaseDate: s.releaseDate,
-                            genres: s.genres,
-                            pageCount: s.pageCount,
-                          }),
-                        });
-                        const { id } = await res.json();
-                        setDraftBookId(id ?? "");
-                      } catch {
-                        setDraftBookId("");
-                      }
+                      // bookId is user_books.id — always available for library entries
+                      setDraftBookId(s.bookId ?? "");
                     }}
                     onSubmit={handleAddBook}
                     placeholder="search for a book to add…"

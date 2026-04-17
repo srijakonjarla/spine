@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import {
   getEntry,
   updateEntry,
@@ -306,12 +305,12 @@ export default function BookPage() {
 
         {/* Back link */}
         <div className="absolute top-4 left-5 z-10">
-          <Link
-            href={backLink.href}
-            className="text-xs text-white/55 no-underline font-sans"
+          <button
+            onClick={() => router.back()}
+            className="text-xs text-white/55 font-sans bg-transparent border-none cursor-pointer p-0"
           >
             ← {backLink.label}
-          </Link>
+          </button>
         </div>
 
         {/* Save state + bookmark */}
@@ -447,7 +446,7 @@ export default function BookPage() {
 
           {/* Page / quote counts */}
           <div className="flex gap-4 mt-3 items-center">
-            {entry.pageCount && (
+            {(entry.pageCount ?? 0) > 0 && (
               <span className="text-[11px] text-white/40 font-sans">
                 📖 {entry.pageCount} pages
               </span>

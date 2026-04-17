@@ -7,6 +7,7 @@ export type ReadingStatus =
 export interface Thought {
   id: string;
   text: string;
+  pageNumber?: number | null;
   createdAt: string;
 }
 
@@ -25,11 +26,13 @@ export interface BookRead {
 
 export interface BookEntry {
   id: string;
+  catalogBookId: string;
   title: string;
   author: string;
   releaseDate: string;
   genres: string[];
   moodTags: string[];
+  bookshelves: string[];
   status: ReadingStatus;
   dateStarted: string;
   dateFinished: string;

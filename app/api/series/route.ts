@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("series")
-    .select("*, series_books(id, position, status, cover_url, book_id, user_books!book_id(title_override, catalog_books(title)))")
+    .select("*, series_books(id, position, status, book_id, user_books!book_id(title_override, catalog_books(title, cover_url)))")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
   if (error)
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       name: name.trim(),
       author: author?.trim() ?? "",
     })
-    .select("*, series_books(id, position, status, cover_url, book_id, user_books!book_id(title_override, catalog_books(title)))")
+    .select("*, series_books(id, position, status, book_id, user_books!book_id(title_override, catalog_books(title, cover_url)))")
     .single();
   if (error)
     return NextResponse.json({ error: error.message }, { status: 500 });

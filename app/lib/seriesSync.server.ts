@@ -154,7 +154,6 @@ export async function syncBookSeries(
       series_id: seriesId,
       position: entry.position ?? (count ?? 0) + 1,
       status: toSeriesStatus(book.status),
-      cover_url: book.coverUrl ?? "",
       book_id: book.id,
     });
   }

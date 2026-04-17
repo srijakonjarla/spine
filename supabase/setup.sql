@@ -48,6 +48,7 @@ create table if not exists user_books (
   rating           integer     not null default 0,
   feeling          text        not null default '',
   mood_tags        text[]      not null default '{}',
+  bookshelves      text[]      not null default '{}',
   bookmarked       boolean     not null default false,
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now(),
@@ -56,10 +57,11 @@ create table if not exists user_books (
 
 -- Freeform reflection notes (scoped via user_books).
 create table if not exists thoughts (
-  id         uuid        primary key default gen_random_uuid(),
-  book_id    uuid        not null references user_books(id) on delete cascade,
-  text       text        not null,
-  created_at timestamptz not null default now()
+  id          uuid        primary key default gen_random_uuid(),
+  book_id     uuid        not null references user_books(id) on delete cascade,
+  text        text        not null,
+  page_number integer,
+  created_at  timestamptz not null default now()
 );
 
 -- Re-read history (scoped via user_books).
@@ -141,6 +143,7 @@ create table if not exists lists (
 create table if not exists list_items (
   id           uuid        primary key default gen_random_uuid(),
   list_id      uuid        not null references lists(id) on delete cascade,
+  book_id      uuid        references user_books(id) on delete set null,
   title        text        not null default '',
   author       text        not null default '',
   release_date text        not null default '',
@@ -167,8 +170,6 @@ create table if not exists series_books (
   id         uuid        primary key default gen_random_uuid(),
   series_id  uuid        not null references series(id) on delete cascade,
   book_id    uuid        references user_books(id) on delete set null,
-  title      text        not null,
-  cover_url  text        not null default '',
   position   integer     not null,
   status     text        not null default 'unread',
   created_at timestamptz not null default now()
@@ -298,15 +299,16 @@ grant all on recommendations  to authenticated;
 
 -- Add a reflection note to a book
 create or replace function add_thought(
-  p_id         uuid,
-  p_book_id    uuid,
-  p_text       text,
-  p_created_at timestamptz
+  p_id          uuid,
+  p_book_id     uuid,
+  p_text        text,
+  p_created_at  timestamptz,
+  p_page_number integer default null
 )
 returns void language plpgsql security definer as $$
 begin
-  insert into thoughts (id, book_id, text, created_at)
-  values (p_id, p_book_id, p_text, p_created_at);
+  insert into thoughts (id, book_id, text, created_at, page_number)
+  values (p_id, p_book_id, p_text, p_created_at, p_page_number);
 end;
 $$;
 

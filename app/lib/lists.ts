@@ -31,14 +31,21 @@ interface ListItemRow {
   sort_order: number;
   created_at: string;
   book_id: string | null;
-  catalog_books?: { cover_url: string } | null;
+  user_books?: {
+    title_override: string | null;
+    catalog_books: { title: string; cover_url: string } | null;
+  } | null;
 }
 
 function mapItem(row: ListItemRow): ListItem {
   return {
     id: row.id,
     listId: row.list_id,
-    title: row.title ?? "",
+    title:
+      row.user_books?.title_override ??
+      row.user_books?.catalog_books?.title ??
+      row.title ??
+      "",
     author: row.author ?? "",
     releaseDate: row.item_date,
     notes: row.notes,
@@ -47,7 +54,7 @@ function mapItem(row: ListItemRow): ListItem {
     sortOrder: row.sort_order,
     createdAt: row.created_at,
     bookId: row.book_id ?? undefined,
-    coverUrl: row.catalog_books?.cover_url ?? undefined,
+    coverUrl: row.user_books?.catalog_books?.cover_url ?? undefined,
   };
 }
 
@@ -159,7 +166,7 @@ export async function addListItem(
   const data = await res.json();
   return mapItem(data as ListItemRow);
 }
-``;
+
 export async function updateListItem(
   id: string,
   patch: {

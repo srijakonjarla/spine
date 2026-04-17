@@ -68,6 +68,7 @@ export function CatalogSearch({
               pageCount: b.pageCount,
               status: b.status,
               bookId: b.id,
+              catalogBookId: b.catalogBookId,
             }));
 
           // Remote catalog, deduped against library matches

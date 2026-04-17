@@ -62,11 +62,13 @@ export default function BooksPage() {
       const now = new Date();
       const entry: BookEntry = {
         id: crypto.randomUUID(),
+        catalogBookId: "",
         title: enriched?.title ?? title,
         author: enriched?.author ?? "",
         releaseDate: enriched?.releaseDate ?? "",
         genres: enriched?.genres ?? [],
         moodTags: [],
+        bookshelves: [],
         status: "reading",
         dateStarted: localDateStr(now),
         dateFinished: "",

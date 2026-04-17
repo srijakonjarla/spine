@@ -9,8 +9,10 @@ export interface CatalogEntry {
   pageCount: number | null;
   /** Set when this result comes from the user's own library */
   status?: string;
-  /** The library book id, if this result is from the user's library */
+  /** The library book id (user_books.id), if this result is from the user's library */
   bookId?: string;
+  /** The catalog book id (catalog_books.id), if this result is from the user's library */
+  catalogBookId?: string;
 }
 
 interface BookRow {

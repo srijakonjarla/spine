@@ -29,6 +29,7 @@ export default function TimelineTab({
   onUpdate: (patch: Partial<BookEntry>) => void;
 }) {
   const [thoughtInput, setThoughtInput] = useState("");
+  const [pageInput, setPageInput] = useState("");
   const [isPosting, setIsPosting] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -72,13 +73,16 @@ export default function TimelineTab({
     const text = thoughtInput.trim();
     if (!text || isPosting || !entry) return;
     setIsPosting(true);
+    const pageNumber = pageInput.trim() ? parseInt(pageInput.trim(), 10) : null;
     const thought: Thought = {
       id: crypto.randomUUID(),
       text,
+      pageNumber: pageNumber && !isNaN(pageNumber) ? pageNumber : null,
       createdAt: new Date().toISOString(),
     };
     onUpdate({ thoughts: [...entry.thoughts, thought] });
     setThoughtInput("");
+    setPageInput("");
     setTimeout(
       () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
       50,
@@ -166,47 +170,87 @@ export default function TimelineTab({
             </p>
           ) : (
             <div className="flex flex-col">
-              {sortedThoughts.map((thought) => (
-                <div key={thought.id} className="group thought-row">
-                  <span className="font-hand text-[13px] text-terra w-[110px] shrink-0 pt-0.5">
-                    {formatShortDate(thought.createdAt)} ·{" "}
-                    {timeOfDayEmoji(thought.createdAt)}
-                  </span>
-                  <span className="font-hand text-[15px] text-ink leading-[1.55] flex-1">
-                    {thought.text}
-                  </span>
-                  <button
-                    onClick={() => deleteT(thought.id)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity btn-delete shrink-0"
-                  >
-                    delete
-                  </button>
-                </div>
-              ))}
+              {sortedThoughts.map((thought, i) => {
+                // sortedThoughts is newest-first; slice(i+1) gives older entries
+                const prevPage =
+                  sortedThoughts
+                    .slice(i + 1)
+                    .find((t) => t.pageNumber != null)?.pageNumber ?? null;
+                const currPage = thought.pageNumber ?? null;
+
+                return (
+                  <div key={thought.id} className="group thought-row">
+                    <div className="w-[110px] shrink-0 pt-0.5">
+                      {currPage != null ? (
+                        <span className="font-hand text-[13px] text-terra">
+                          {prevPage != null
+                            ? `p.${prevPage} → ${currPage}`
+                            : `p.${currPage}`}
+                        </span>
+                      ) : (
+                        <span className="font-hand text-[13px] text-terra">
+                          {formatShortDate(thought.createdAt)} ·{" "}
+                          {timeOfDayEmoji(thought.createdAt)}
+                        </span>
+                      )}
+                      {currPage != null && (
+                        <p className="font-hand text-[11px] text-ink-light leading-none mt-0.5">
+                          {formatShortDate(thought.createdAt)}
+                        </p>
+                      )}
+                    </div>
+                    <span className="font-hand text-[15px] text-ink leading-[1.55] flex-1">
+                      {thought.text}
+                    </span>
+                    <button
+                      onClick={() => deleteT(thought.id)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity btn-delete shrink-0"
+                    >
+                      delete
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
           <div ref={bottomRef} />
         </div>
 
         {/* Add thought */}
-        <textarea
-          value={thoughtInput}
-          onChange={(e) => setThoughtInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              postThought();
-            }
-          }}
-          onInput={(e) => {
-            const el = e.currentTarget;
-            el.style.height = "auto";
-            el.style.height = el.scrollHeight + "px";
-          }}
-          placeholder="add a reading note... (enter to post, shift+enter for newline)"
-          rows={2}
-          className="timeline-thought-input"
-        />
+        <div className="flex gap-2 items-start">
+          <input
+            type="number"
+            value={pageInput}
+            onChange={(e) => setPageInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                postThought();
+              }
+            }}
+            placeholder="p."
+            min={1}
+            className="w-16 shrink-0 font-hand text-[13px] text-ink border-b border-[var(--border-light)] bg-transparent outline-none placeholder:text-ink-light/50 pb-1 pt-1 text-center"
+          />
+          <textarea
+            value={thoughtInput}
+            onChange={(e) => setThoughtInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                postThought();
+              }
+            }}
+            onInput={(e) => {
+              const el = e.currentTarget;
+              el.style.height = "auto";
+              el.style.height = el.scrollHeight + "px";
+            }}
+            placeholder="add a reading note... (enter to post, shift+enter for newline)"
+            rows={2}
+            className="timeline-thought-input flex-1"
+          />
+        </div>
         <p className="hint-text mt-1.5">↵ to post · shift+↵ for newline</p>
       </div>
 

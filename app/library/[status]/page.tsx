@@ -43,11 +43,13 @@ export default function StatusCatalogPage() {
       const today = localDateStr(now);
       const entry: BookEntry = {
         id: crypto.randomUUID(),
+        catalogBookId: "",
         title: enriched?.title ?? title,
         author: enriched?.author ?? "",
         releaseDate: enriched?.releaseDate ?? "",
         genres: enriched?.genres ?? [],
         moodTags: [],
+        bookshelves: [],
         status: status as BookEntry["status"],
         dateStarted: status === "reading" ? today : "",
         dateFinished: status === "finished" ? today : "",

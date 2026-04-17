@@ -90,11 +90,10 @@ export async function POST(
     .insert({
       series_id: seriesId,
       position,
-      cover_url: coverUrl,
       status: resolvedStatus,
       book_id: bookId,
     })
-    .select("id, position, status, cover_url, book_id")
+    .select("id, position, status, book_id")
     .single();
   if (error)
     return NextResponse.json({ error: error.message }, { status: 500 });

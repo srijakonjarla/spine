@@ -144,9 +144,11 @@ export function parseGoodreadsCSV(text: string): GoodreadsPreview[] {
 
       const entry: BookEntry = {
         id: crypto.randomUUID(),
+        catalogBookId: "",
         title: row["Title"] ?? "",
         author: row["Author"] ?? "",
         genres: parseGenres(bookshelves),
+        bookshelves: parseGenres(bookshelves),
         moodTags: [],
         status,
         dateStarted: "",

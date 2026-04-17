@@ -1,5 +1,5 @@
 import { apiFetch } from "./api";
-import type { BookEntry, BookRead, ReadingStatus, Thought } from "@/types";
+import type { BookEntry, BookRead, Thought } from "@/types";
 
 // ---- mapping ----
 
@@ -18,11 +18,13 @@ interface BookReadRow {
 
 interface BookRow {
   id: string;
+  catalog_book_id: string;
   title: string;
   author: string;
   release_date: string;
   genres: string[];
   mood_tags: string[];
+  bookshelves: string[];
   status: string;
   date_started: string | null;
   date_finished: string | null;
@@ -43,6 +45,7 @@ interface ThoughtRow {
   id: string;
   book_id: string;
   text: string;
+  page_number?: number | null;
   created_at: string;
 }
 
@@ -64,11 +67,13 @@ function mapBookRead(row: BookReadRow): BookRead {
 function mapBook(row: BookRow): BookEntry {
   return {
     id: row.id,
+    catalogBookId: row.catalog_book_id ?? "",
     title: row.title ?? "",
     author: row.author ?? "",
     releaseDate: row.release_date ?? "",
     genres: row.genres ?? [],
     moodTags: row.mood_tags ?? [],
+    bookshelves: row.bookshelves ?? [],
     status: row.status as BookEntry["status"],
     dateStarted: row.date_started ?? "",
     dateFinished: row.date_finished ?? "",
@@ -80,7 +85,12 @@ function mapBook(row: BookRow): BookEntry {
     isbn: row.isbn ?? "",
     pageCount: row.page_count ?? null,
     thoughts: (row.thoughts ?? [])
-      .map((t) => ({ id: t.id, text: t.text, createdAt: t.created_at }))
+      .map((t) => ({
+        id: t.id,
+        text: t.text,
+        pageNumber: t.page_number ?? null,
+        createdAt: t.created_at,
+      }))
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
     reads: (row.book_reads ?? [])
       .map(mapBookRead)

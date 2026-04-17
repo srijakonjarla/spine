@@ -26,6 +26,17 @@ export async function POST(req: NextRequest) {
     if (existing) return NextResponse.json({ id: existing.id });
   }
 
+  // Deduplicate by title + author before inserting
+  if (title) {
+    const { data: byTitle } = await supabase
+      .from("catalog_books")
+      .select("id")
+      .ilike("title", title)
+      .eq("author", author ?? "")
+      .maybeSingle();
+    if (byTitle) return NextResponse.json({ id: byTitle.id });
+  }
+
   // Insert new catalog entry
   const { data, error } = await supabase
     .from("catalog_books")

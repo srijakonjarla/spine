@@ -21,6 +21,7 @@ export async function POST(
     p_book_id: bookId,
     p_text: thought.text,
     p_created_at: thought.createdAt,
+    p_page_number: thought.pageNumber ?? null,
   });
 
   if (error)
