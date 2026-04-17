@@ -1,12 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getEntries } from "@/lib/db";
 import { getReadingLog } from "@/lib/habits";
 import { getQuotes } from "@/lib/quotes";
 import type { BookEntry, BookRead, ReadingLogEntry, Quote } from "@/types";
+
+// Module-level cache — survives component remounts (e.g. when Next.js
+// refreshes the route on tab focus with staleTimes.dynamic = 0).
+const CACHE_TTL = 30_000;
+let pageCache: {
+  year: number;
+  books: BookEntry[];
+  log: ReadingLogEntry[];
+  quotes: Quote[];
+  ts: number;
+} | null = null;
 import { DayPanel } from "@/components/calendar/DayPanel";
 import { MonthCalendar } from "@/components/calendar/MonthCalendar";
 import {
@@ -46,38 +57,45 @@ export default function MonthSpreadPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // If we have fresh cached data for this year, restore it without hitting
+    // the network. This prevents redundant fetches when Next.js remounts the
+    // page on tab focus (router cache revalidation).
+    if (
+      pageCache &&
+      pageCache.year === year &&
+      Date.now() - pageCache.ts < CACHE_TTL
+    ) {
+      setAllBooks(pageCache.books);
+      setReading(pageCache.books.filter((b) => b.status === "reading"));
+      setUpNext(pageCache.books.filter((b) => b.status === "want-to-read" && b.upNext));
+      setLogEntries(pageCache.log);
+      setQuotes(pageCache.quotes);
+      setLoading(false);
+      return;
+    }
+
     const load = async () => {
       setLoading(true);
       try {
-        try {
-          const [books, log, qs] = await Promise.all([
-            getEntries(),
-            getReadingLog(year),
-            getQuotes(),
-          ]);
-          setSelectedDate(null);
-          setAllBooks(books);
-          setReading(books.filter((b) => b.status === "reading"));
-          setUpNext(
-            books.filter((b) => b.status === "want-to-read" && b.upNext),
-          );
-          setLogEntries(log as ReadingLogEntry[]);
-          setQuotes(qs);
-        } catch (message) {
-          return console.error(message);
-        }
+        const [books, log, qs] = await Promise.all([
+          getEntries(),
+          getReadingLog(year),
+          getQuotes(),
+        ]);
+        pageCache = { year, books, log, quotes: qs, ts: Date.now() };
+        setAllBooks(books);
+        setReading(books.filter((b) => b.status === "reading"));
+        setUpNext(books.filter((b) => b.status === "want-to-read" && b.upNext));
+        setLogEntries(log as ReadingLogEntry[]);
+        setQuotes(qs);
+      } catch (message) {
+        console.error(message);
       } finally {
-        return setLoading(false);
+        setLoading(false);
       }
     };
 
     load();
-
-    const onVisible = () => {
-      if (document.visibilityState === "visible") load();
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
   }, [year]);
 
   const monthKey = `${year}-${pad(monthIndex + 1)}`;
@@ -140,22 +158,31 @@ export default function MonthSpreadPage() {
 
   const handleToggled = (date: string, result: "added" | "removed") => {
     setLogEntries((prev) => {
-      if (result === "added") {
-        if (prev.some((e) => e.logDate === date)) return prev;
-        return [...prev, { id: crypto.randomUUID(), logDate: date, note: "" }];
-      }
-      return prev.filter((e) => e.logDate !== date);
+      const next =
+        result === "added"
+          ? prev.some((e) => e.logDate === date)
+            ? prev
+            : [...prev, { id: crypto.randomUUID(), logDate: date, note: "" }]
+          : prev.filter((e) => e.logDate !== date);
+      if (pageCache) pageCache = { ...pageCache, log: next };
+      return next;
     });
   };
 
   const handleNoteSaved = (date: string, note: string) => {
-    setLogEntries((prev) =>
-      prev.map((e) => (e.logDate === date ? { ...e, note } : e)),
-    );
+    setLogEntries((prev) => {
+      const next = prev.map((e) => (e.logDate === date ? { ...e, note } : e));
+      if (pageCache) pageCache = { ...pageCache, log: next };
+      return next;
+    });
   };
 
   const handleQuoteAdded = (q: Quote) => {
-    setQuotes((prev) => [...prev, q]);
+    setQuotes((prev) => {
+      const next = [...prev, q];
+      if (pageCache) pageCache = { ...pageCache, quotes: next };
+      return next;
+    });
   };
 
   const panelLog = selectedDate
@@ -174,6 +201,7 @@ export default function MonthSpreadPage() {
   const panelStarted = selectedDate
     ? allBooks.filter(
         (b) =>
+          b.status !== "want-to-read" &&
           b.dateStarted === selectedDate &&
           b.dateFinished !== selectedDate &&
           b.dateShelved !== selectedDate,
@@ -186,7 +214,15 @@ export default function MonthSpreadPage() {
     ? allBooks.flatMap((b) => {
         if (panelFinishedIds.has(b.id) || panelStartedIds.has(b.id)) return [];
         return b.reads
-          .filter((r) => localDateStr(new Date(r.createdAt)) === selectedDate)
+          .filter((r) => {
+            const readDate =
+              r.status === "finished"
+                ? r.dateFinished
+                : r.status === "did-not-finish"
+                  ? r.dateShelved
+                  : r.dateStarted;
+            return readDate === selectedDate;
+          })
           .map((r) => ({
             bookTitle: b.title,
             bookId: b.id,

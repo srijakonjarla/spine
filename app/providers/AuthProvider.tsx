@@ -35,7 +35,13 @@ export default function AuthProvider({
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      // Use functional update to avoid creating a new state reference when
+      // the same user is still signed in (e.g. on TOKEN_REFRESHED events).
+      setUser((prev) => {
+        const next = session?.user ?? null;
+        if (prev?.id === next?.id) return prev;
+        return next;
+      });
     });
 
     return () => subscription.unsubscribe();

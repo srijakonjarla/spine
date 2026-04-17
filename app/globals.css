@@ -486,7 +486,7 @@ h3 {
     font-family: var(--font-caveat), cursive;
     font-size: 1.05rem;
     line-height: 1.85;
-    color: var(--fg);
+    color: var(--pen-color, var(--fg));
   }
 
   /* Inputs */

@@ -7,7 +7,6 @@ import { formatDate, daysApart, localDateStr } from "@/lib/dates";
 import { avgPagesPerDay } from "@/lib/books";
 import { useBook } from "@/providers/BookContext";
 import type { BookEntry } from "@/types";
-import type { ReadPatch } from "@/providers/BookContext";
 
 // ─── Historical read view (shown when a past read is selected) ────
 
@@ -18,7 +17,7 @@ function HistoricalReadView({
   read: BookEntry["reads"][number];
   readIndex: number;
 }) {
-  const { onUpdateRead, onDeleteRead, onReread, rereadLoading } = useBook();
+  const { onUpdateRead, onDeleteRead } = useBook();
   const feelingRef = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState({
     dateStarted: read.dateStarted,
@@ -156,13 +155,7 @@ function HistoricalReadView({
 // ─── Tab: Reflection ──────────────────────────────────────────────
 
 export default function ReflectionTab() {
-  const {
-    entry,
-    quotes,
-    setActiveTab,
-    selectedReadId,
-    onUpdate,
-  } = useBook();
+  const { entry, quotes, setActiveTab, selectedReadId, onUpdate } = useBook();
 
   // If a historical read is selected, delegate to HistoricalReadView
   const selectedRead = selectedReadId

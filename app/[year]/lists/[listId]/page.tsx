@@ -274,7 +274,7 @@ export default function ListDetailPage() {
         style={coverGradientStyle(list.color)}
       >
         {/* Glow orb */}
-        {/* This doesn't show up */}
+        {/* TODO: Investigate. This doesn't show up */}
         <div className="absolute -bottom-10 -right-10 w-44 h-44 rounded-full pointer-events-none [background-image:var(--cover-glow-orb)]" />
         {(() => {
           const TypeIcon = LIST_TYPE_ICONS[list.listType] ?? BooksIcon;
@@ -452,7 +452,10 @@ export default function ListDetailPage() {
                         )}
 
                         {item.bookId ? (
-                          <Link href={`/book/${item.bookId}`} className="shrink-0">
+                          <Link
+                            href={`/book/${item.bookId}`}
+                            className="shrink-0"
+                          >
                             {item.coverUrl ? (
                               <BookCover
                                 coverUrl={item.coverUrl}
@@ -464,8 +467,20 @@ export default function ListDetailPage() {
                                 viewBox="0 0 38 54"
                                 className="rounded-sm w-[38px] h-[54px] shadow-[var(--shadow-spine-card)]"
                               >
-                                <rect width="38" height="54" rx="3" fill={spineColor(item.title)} />
-                                <rect x="4" y="8" width="30" height="1.5" rx="0.75" fill="var(--spine-gloss-line)" />
+                                <rect
+                                  width="38"
+                                  height="54"
+                                  rx="3"
+                                  fill={spineColor(item.title)}
+                                />
+                                <rect
+                                  x="4"
+                                  y="8"
+                                  width="30"
+                                  height="1.5"
+                                  rx="0.75"
+                                  fill="var(--spine-gloss-line)"
+                                />
                               </svg>
                             )}
                           </Link>
@@ -480,21 +495,36 @@ export default function ListDetailPage() {
                             viewBox="0 0 38 54"
                             className="shrink-0 rounded-sm w-[38px] h-[54px] shadow-[var(--shadow-spine-card)]"
                           >
-                            <rect width="38" height="54" rx="3" fill={spineColor(item.title)} />
-                            <rect x="4" y="8" width="30" height="1.5" rx="0.75" fill="var(--spine-gloss-line)" />
+                            <rect
+                              width="38"
+                              height="54"
+                              rx="3"
+                              fill={spineColor(item.title)}
+                            />
+                            <rect
+                              x="4"
+                              y="8"
+                              width="30"
+                              height="1.5"
+                              rx="0.75"
+                              fill="var(--spine-gloss-line)"
+                            />
                           </svg>
                         )}
 
                         {/* Info */}
                         <div className="flex-1 min-w-0">
                           {item.bookId ? (
-                            <Link href={`/book/${item.bookId}`} className="font-serif text-[13px] font-semibold text-[var(--fg-heading)] leading-snug hover:text-[var(--terra)] transition-colors">
+                            <Link
+                              href={`/book/${item.bookId}`}
+                              className="font-serif text-[13px] font-semibold text-[var(--fg-heading)] leading-snug hover:text-[var(--terra)] transition-colors"
+                            >
                               {item.title}
                             </Link>
                           ) : (
-                          <p className="font-serif text-[13px] font-semibold text-[var(--fg-heading)] leading-snug">
-                            {item.title}
-                          </p>
+                            <p className="font-serif text-[13px] font-semibold text-[var(--fg-heading)] leading-snug">
+                              {item.title}
+                            </p>
                           )}
                           {item.author && (
                             <p className="text-[11px] text-[var(--fg-muted)] mt-0.5">

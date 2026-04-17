@@ -1,5 +1,24 @@
 import { apiFetch } from "./api";
+import { supabase } from "./supabase";
 import type { BookEntry, BookRead, Thought } from "@/types";
+import {
+  createEntryAction,
+  updateEntryAction,
+  deleteEntryAction,
+  addThoughtAction,
+  removeThoughtAction,
+  startNewReadAction,
+  deleteBookReadAction,
+  logHistoricalReadAction,
+  updateBookReadAction,
+} from "./actions";
+
+async function getToken(): Promise<string> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session?.access_token ?? "";
+}
 
 // ---- mapping ----
 
@@ -151,24 +170,18 @@ export async function getEntry(id: string): Promise<BookEntry | null> {
 }
 
 export async function createEntry(entry: BookEntry): Promise<void> {
-  await apiFetch("/api/books", {
-    method: "POST",
-    body: JSON.stringify({ entry }),
-  });
+  await createEntryAction(await getToken(), entry);
 }
 
 export async function updateEntry(
   id: string,
   patch: Partial<BookEntry>,
 ): Promise<void> {
-  await apiFetch(`/api/books/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify(patch),
-  });
+  await updateEntryAction(await getToken(), id, patch);
 }
 
 export async function deleteEntry(id: string): Promise<void> {
-  await apiFetch(`/api/books/${id}`, { method: "DELETE" });
+  await deleteEntryAction(await getToken(), id);
 }
 
 // ---- thoughts ----
@@ -177,33 +190,24 @@ export async function addThought(
   bookId: string,
   thought: Thought,
 ): Promise<void> {
-  await apiFetch(`/api/books/${bookId}/thoughts`, {
-    method: "POST",
-    body: JSON.stringify({ thought }),
-  });
+  await addThoughtAction(await getToken(), bookId, thought);
 }
 
 export async function removeThought(
   thoughtId: string,
   bookId: string,
 ): Promise<void> {
-  await apiFetch(`/api/books/${bookId}/thoughts`, {
-    method: "DELETE",
-    body: JSON.stringify({ thoughtId }),
-  });
+  await removeThoughtAction(await getToken(), thoughtId, bookId);
 }
 
 // ---- re-reads ----
 
 export async function startNewRead(entry: BookEntry): Promise<void> {
-  await apiFetch(`/api/books/${entry.id}/reads`, {
-    method: "POST",
-    body: JSON.stringify({ entry }),
-  });
+  await startNewReadAction(await getToken(), entry);
 }
 
 export async function deleteBookRead(id: string): Promise<void> {
-  await apiFetch(`/api/reads/${id}`, { method: "DELETE" });
+  await deleteBookReadAction(await getToken(), id);
 }
 
 export async function logHistoricalRead(
@@ -216,12 +220,7 @@ export async function logHistoricalRead(
     feeling: string;
   },
 ): Promise<BookRead> {
-  const res = await apiFetch(`/api/books/${bookId}/reads`, {
-    method: "PUT",
-    body: JSON.stringify(read),
-  });
-  const row: BookReadRow = await res.json();
-  return mapBookRead(row);
+  return logHistoricalReadAction(await getToken(), bookId, read);
 }
 
 export async function updateBookRead(
@@ -235,10 +234,5 @@ export async function updateBookRead(
     feeling: string;
   },
 ): Promise<BookRead> {
-  const res = await apiFetch(`/api/books/${bookId}/reads/${readId}`, {
-    method: "PATCH",
-    body: JSON.stringify(patch),
-  });
-  const row: BookReadRow = await res.json();
-  return mapBookRead(row);
+  return updateBookReadAction(await getToken(), readId, patch);
 }

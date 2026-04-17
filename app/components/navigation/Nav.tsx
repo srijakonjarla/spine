@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/providers/AuthProvider";
 import { signOut } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import { apiFetch } from "@/lib/api";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   HouseIcon,
@@ -55,75 +55,17 @@ export default function Nav() {
     wantToRead: 0,
   });
 
+  const userId = user?.id;
   useEffect(() => {
-    if (!user) return;
-    async function loadNav() {
-      const [booksRes, listsRes, readingRes, finishedRes, wantRes] =
-        await Promise.all([
-          supabase
-            .from("user_books")
-            .select("id, title_override, catalog_books(title)")
-            .eq("user_id", user!.id)
-            .eq("bookmarked", true)
-            .order("updated_at", { ascending: false })
-            .limit(8),
-          supabase
-            .from("lists")
-            .select("id, title, year")
-            .eq("user_id", user!.id)
-            .eq("bookmarked", true)
-            .order("updated_at", { ascending: false })
-            .limit(8),
-          supabase
-            .from("user_books")
-            .select("id", { count: "exact", head: true })
-            .eq("user_id", user!.id)
-            .eq("status", "reading"),
-          supabase
-            .from("user_books")
-            .select("id", { count: "exact", head: true })
-            .eq("user_id", user!.id)
-            .eq("status", "finished"),
-          supabase
-            .from("user_books")
-            .select("id", { count: "exact", head: true })
-            .eq("user_id", user!.id)
-            .eq("status", "want-to-read"),
-        ]);
-
-      setBookmarks([
-        ...(booksRes.data ?? []).map(
-          (b: {
-            id: string;
-            title_override: string | null;
-            catalog_books: { title: string } | { title: string }[] | null;
-          }) => {
-            const cb = Array.isArray(b.catalog_books)
-              ? b.catalog_books[0]
-              : b.catalog_books;
-            return {
-              id: b.id,
-              title: b.title_override ?? cb?.title ?? "untitled",
-              href: `/book/${b.id}`,
-            };
-          },
-        ),
-        ...(listsRes.data ?? []).map(
-          (l: { id: string; title: string; year: number }) => ({
-            id: l.id,
-            title: l.title,
-            href: `/${l.year}/lists/${l.id}`,
-          }),
-        ),
-      ]);
-      setShelfCounts({
-        reading: readingRes.count ?? 0,
-        finished: finishedRes.count ?? 0,
-        wantToRead: wantRes.count ?? 0,
-      });
-    }
-    loadNav().catch(console.error);
-  }, [user]);
+    if (!userId) return;
+    apiFetch("/api/nav")
+      .then((res) => res.json())
+      .then(({ bookmarks, shelfCounts }) => {
+        setBookmarks(bookmarks);
+        setShelfCounts(shelfCounts);
+      })
+      .catch(console.error);
+  }, [userId]);
 
   return (
     <>

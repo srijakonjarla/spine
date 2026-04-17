@@ -155,6 +155,7 @@ export default function BookPage() {
 
   const handleStatusChange = (status: ReadingStatus) => {
     const patch: Partial<BookEntry> = { status };
+    // TODO: Fix this. The dateFinished isn't updating on the page immediately
     if (status === "finished" && entry && !entry.dateFinished)
       patch.dateFinished = localDateStr();
     if (status === "did-not-finish" && entry && !entry.dateShelved)
@@ -184,7 +185,10 @@ export default function BookPage() {
     );
   };
 
-  const handleUpdateRead = async (readId: string, patch: ReadPatch): Promise<void> => {
+  const handleUpdateRead = async (
+    readId: string,
+    patch: ReadPatch,
+  ): Promise<void> => {
     if (!entry) return;
     await updateBookRead(entry.id, readId, patch);
     setEntry((prev) => {
@@ -201,7 +205,9 @@ export default function BookPage() {
     });
   };
 
-  const handleLogRead = async (read: Omit<ReadPatch, "status">): Promise<void> => {
+  const handleLogRead = async (
+    read: Omit<ReadPatch, "status">,
+  ): Promise<void> => {
     if (!entry) return;
     const newRead = await logHistoricalRead(entry.id, {
       ...read,
@@ -237,7 +243,7 @@ export default function BookPage() {
 
   // The currently viewed read (null = current/user_books, else a historical book_read)
   const viewedRead = selectedReadId
-    ? entry.reads.find((r) => r.id === selectedReadId) ?? null
+    ? (entry.reads.find((r) => r.id === selectedReadId) ?? null)
     : null;
 
   // ── Build tab list (always 4) ─────────────────────────────────────
@@ -309,7 +315,12 @@ export default function BookPage() {
         onDelete: handleDelete,
       }}
     >
-      <div className="page" style={{ paddingBottom: 0 }}>
+      <div
+        className="page"
+        style={{
+          paddingBottom: 0,
+        }}
+      >
         {/* ── Hero ── */}
         <div
           className={`${heroClass} relative overflow-hidden px-10 py-9 grid gap-8`}
@@ -434,6 +445,8 @@ export default function BookPage() {
                     {g} ×
                   </button>
                 ))}
+                {/* TODO: The seperation of genres. The genres added here should go into the user_books table. 
+                The genres in the catalog_books should only be from hardcover*/}
                 <HeroGenreAdd
                   genres={entry.genres}
                   onAdd={(genres) => update({ genres })}
@@ -441,6 +454,8 @@ export default function BookPage() {
               </div>
 
               {/* Dates — reflect the selected read when viewing a historical one */}
+              {/* TODO: Add validation that start date isn't after finished date and vice versa */}
+              {/* TODO: Don't show months that are in the future */}
               <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-white/[0.08]">
                 {viewedRead ? (
                   // Historical read: editable, saves via handleUpdateRead
@@ -482,7 +497,9 @@ export default function BookPage() {
                       <input
                         type="date"
                         value={entry.dateStarted}
-                        onChange={(e) => update({ dateStarted: e.target.value })}
+                        onChange={(e) =>
+                          update({ dateStarted: e.target.value })
+                        }
                         className="hero-date-input"
                       />
                     </div>
@@ -499,7 +516,8 @@ export default function BookPage() {
                         />
                       </div>
                     )}
-                    {(entry.status === "did-not-finish" || entry.dateShelved) && (
+                    {(entry.status === "did-not-finish" ||
+                      entry.dateShelved) && (
                       <div className="flex items-center gap-1.5">
                         <span className="hero-date-label">shelved</span>
                         <input
@@ -518,7 +536,7 @@ export default function BookPage() {
             </div>
 
             {/* Page / quote counts */}
-            <div className="flex gap-4 mt-3 items-center">
+            <div className="flex gap-4 mt-3 items-center flex-wrap">
               {(entry.pageCount ?? 0) > 0 && (
                 <span className="text-[11px] text-white/40 font-sans">
                   📖 {entry.pageCount} pages

@@ -28,6 +28,7 @@ export default function DetailsTab() {
             onChange={(e) => onUpdate({ author: e.target.value })}
             className="underline-input text-sm mb-4"
           />
+
         </div>
 
         {/* Right: read history + delete */}

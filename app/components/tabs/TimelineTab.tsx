@@ -218,7 +218,7 @@ export default function TimelineTab() {
                         </p>
                       )}
                     </div>
-                    <span className="font-hand text-[15px] text-ink leading-[1.55] flex-1">
+                    <span className="font-hand text-[15px] leading-[1.55] flex-1" style={{ color: "var(--pen-color, var(--ink))" }}>
                       {thought.text}
                     </span>
                     <button

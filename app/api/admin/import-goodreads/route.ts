@@ -170,6 +170,7 @@ function parseEditionAlias(
 function parseSearchAlias(
   alias: unknown,
   title: string,
+  authorHint?: string,
 ): (HCBook & { bookId?: number }) | null {
   const result = alias as { results?: unknown } | undefined;
   if (!result?.results) return null;
@@ -192,7 +193,32 @@ function parseSearchAlias(
   const d = parsed?.hits?.[0]?.document;
   if (!d?.title) return null;
   const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
-  if (!norm(d.title).includes(norm(title).slice(0, 5))) return null;
+  const normTitle = norm(title);
+  const normResult = norm(d.title);
+  // For short titles (≤8 normalized chars) require the result to start with
+  // the full title, not just a prefix slice — prevents e.g. the wrong "Bound"
+  // from matching when there are multiple books with the same short title.
+  if (normTitle.length <= 8) {
+    if (!normResult.startsWith(normTitle)) return null;
+  } else {
+    if (!normResult.includes(normTitle.slice(0, 6))) return null;
+  }
+  // When the caller supplied an author, verify at least one result author
+  // shares a last-name token with it. This catches wrong-book matches where
+  // the title happens to be the same (e.g. "Bound" by two different authors).
+  if (authorHint && d.author_names?.length) {
+    const normAuthor = norm(authorHint);
+    // Extract last-name token: split on non-alpha boundary, take the last segment
+    const lastName = (s: string) => {
+      const tokens = norm(s).match(/[a-z0-9]+/g) ?? [];
+      return tokens[tokens.length - 1] ?? norm(s);
+    };
+    const hintLastName = lastName(authorHint);
+    const authorMatches = hintLastName.length >= 3 && d.author_names.some((a) =>
+      lastName(a) === hintLastName || norm(a).includes(normAuthor) || normAuthor.includes(norm(a)),
+    );
+    if (!authorMatches) return null;
+  }
   return {
     title: d.title,
     coverUrl: d.cover_image_url ?? "",
@@ -230,7 +256,7 @@ async function fetchHCBatch(
       console.log(`[import] ISBN edition miss for "${entry.title}"`);
       return null;
     }
-    return parseSearchAlias(alias, entry.title);
+    return parseSearchAlias(alias, entry.title, entry.author);
   });
 
   const bookIds = rawResults
@@ -301,14 +327,14 @@ async function runImport(
       // actually shelved.
       const normForCompare = (s: string) =>
         s.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const normEntry = normForCompare(entry.title);
+      const normHc = hc?.title ? normForCompare(hc.title) : "";
+      // For short titles (≤8 chars) require a full prefix match, not a 6-char slice
+      const prefixLen = Math.max(normEntry.length, 6);
       const hcTitleOk =
         !hc?.title ||
-        normForCompare(hc.title).startsWith(
-          normForCompare(entry.title).slice(0, 6),
-        ) ||
-        normForCompare(entry.title).startsWith(
-          normForCompare(hc.title).slice(0, 6),
-        );
+        normHc.startsWith(normEntry.slice(0, prefixLen)) ||
+        normEntry.startsWith(normHc.slice(0, prefixLen));
       const resolvedTitle = hcTitleOk ? (hc?.title || entry.title) : entry.title;
       if (hc?.title && !hcTitleOk) {
         console.log(
