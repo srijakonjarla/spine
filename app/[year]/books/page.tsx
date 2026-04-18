@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import BookCard from "@/components/BookCard";
 import { CatalogSearch } from "@/components/CatalogSearch";
-import { getEntries, createEntry } from "@/lib/db";
+import { createEntry } from "@/lib/db";
 import { type CatalogEntry, lookupBook } from "@/lib/catalog";
 import type { BookEntry } from "@/types";
 import { localDateStr, formatDate } from "@/lib/dates";
+import { useYear } from "@/providers/YearContext";
 import { toast } from "@/lib/toast";
 
 function effectiveDate(e: BookEntry): string {
@@ -32,27 +33,13 @@ function sectionId(key: string) {
 }
 
 export default function BooksPage() {
-  const { year: yearParam } = useParams<{ year: string }>();
-  const year = Number(yearParam);
+  const { year, loading, yearEntries, allEntries } = useYear();
   const router = useRouter();
-  const [entries, setEntries] = useState<BookEntry[]>([]);
-  const [activeBooks, setActiveBooks] = useState<BookEntry[]>([]);
   const [addValue, setAddValue] = useState("");
   const [adding, setAdding] = useState(false);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    Promise.all([
-      getEntries({ year }),
-      getEntries(), // unfiltered — to catch currently-reading books started in prior years
-    ])
-      .then(([yearEntries, allEntries]) => {
-        setEntries(yearEntries);
-        setActiveBooks(allEntries.filter((e) => e.status === "reading"));
-      })
-      .catch(() => toast("Failed to load data. Please refresh."))
-      .finally(() => setLoading(false));
-  }, [year]);
+  const entries = yearEntries;
+  const activeBooks = allEntries.filter((e) => e.status === "reading");
 
   const addBook = async (catalog?: CatalogEntry) => {
     const title = (catalog?.title ?? addValue).trim();

@@ -1,24 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
 import Link from "next/link";
-import { getEntries } from "@/lib/db";
-import { getReadingLog } from "@/lib/habits";
-import { getGoals } from "@/lib/goals";
-import { getQuotes } from "@/lib/quotes";
-import { getLists } from "@/lib/lists";
-import type {
-  BookEntry,
-  BookList,
-  ReadingLogEntry,
-  ReadingGoal,
-} from "@/types";
+import { useYear } from "@/providers/YearContext";
+import type { BookEntry } from "@/types";
 import { localDateStr, dateMonth } from "@/lib/dates";
 import { MONTH_ABBRS, MONTH_NAMES } from "@/lib/constants";
 import MiniMonthCal from "@/components/calendar/MiniMonthCal";
 import { BookCoverThumb } from "@/components/BookCover";
-import { toast } from "@/lib/toast";
 
 import { hashStr } from "@/lib/spineUtils";
 
@@ -51,51 +39,22 @@ function spineHeightPx(title: string) {
 }
 
 export default function YearPage() {
-  const { year: yearParam } = useParams<{ year: string }>();
-  const year = Number(yearParam);
+  const {
+    year,
+    loading,
+    allEntries,
+    finishedBooks,
+    loggedDates,
+    goals,
+    lists,
+    quoteCount,
+  } = useYear();
+
   const now = new Date();
   const isCurrentYear = year === now.getFullYear();
   const todayStr = localDateStr(now);
 
-  const [allBooks, setAllBooks] = useState<BookEntry[]>([]);
-  const [logEntries, setLogEntries] = useState<ReadingLogEntry[]>([]);
-  const [goals, setGoals] = useState<ReadingGoal[]>([]);
-  const [quoteCount, setQuoteCount] = useState(0);
-  const [lists, setLists] = useState<BookList[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    Promise.all([
-      getEntries(),
-      getReadingLog(year),
-      getGoals(year),
-      getQuotes(),
-      getLists(year),
-    ])
-      .then(([books, log, gs, quotes, ls]) => {
-        setAllBooks(books);
-        setLogEntries(log as ReadingLogEntry[]);
-        setGoals(gs);
-        setQuoteCount(
-          quotes.filter((q) => q.createdAt.startsWith(`${year}`)).length,
-        );
-        setLists(ls);
-      })
-      .catch(() => toast("Failed to load data. Please refresh."))
-      .finally(() => setLoading(false));
-  }, [year]);
-
-  const loggedDates = new Set(logEntries.map((e) => e.logDate));
-
-  const finishedBooks = allBooks
-    .filter(
-      (b) => b.status === "finished" && b.dateFinished?.startsWith(`${year}`),
-    )
-    .sort((a, b) => a.dateFinished!.localeCompare(b.dateFinished!));
-
-  const finishedDates = new Set(finishedBooks.map((b) => b.dateFinished!));
-
-  const upNextBooks = allBooks.filter((b) => b.upNext);
+  const upNextBooks = allEntries.filter((b: BookEntry) => b.upNext);
 
   const avgRating = (() => {
     const rated = finishedBooks.filter((b) => b.rating > 0);
@@ -110,6 +69,8 @@ export default function YearPage() {
     autoGoal && autoGoal.target > 0
       ? Math.min(1, finishedBooks.length / autoGoal.target)
       : null;
+
+  const finishedDates = new Set(finishedBooks.map((b) => b.dateFinished!));
 
   const booksByMonth: BookEntry[][] = Array.from({ length: 12 }, () => []);
   finishedBooks.forEach((b) => {

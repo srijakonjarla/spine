@@ -1,29 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { getLists, createList } from "@/lib/lists";
-import type { BookList } from "@/types";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createList } from "@/lib/lists";
+import { useYear } from "@/providers/YearContext";
 import { ListCard } from "@/components/lists/ListCard";
 import { ListCreateModal } from "@/components/lists/ListCreateModal";
 import { toast } from "@/lib/toast";
 
 export default function ListsPage() {
-  const { year: yearParam } = useParams<{ year: string }>();
-  const year = Number(yearParam);
+  const { year, loading, lists, setLists } = useYear();
   const router = useRouter();
 
-  const [lists, setLists] = useState<BookList[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getLists(year)
-      .then(setLists)
-      .catch(() => toast("Failed to load data. Please refresh."))
-      .finally(() => setLoading(false));
-  }, [year]);
 
   const handleCreate = async (opts: {
     name: string;
@@ -41,6 +31,7 @@ export default function ListsPage() {
         emoji: opts.emoji,
         description: opts.description,
       });
+      setLists((prev) => [...prev, list]);
       router.push(`/${year}/lists/${list.id}`);
     } catch {
       toast("Something went wrong. Please try again.");

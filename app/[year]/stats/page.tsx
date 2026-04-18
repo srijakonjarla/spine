@@ -1,43 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
 import Link from "next/link";
-import { getEntries } from "@/lib/db";
-import { getReadingLog } from "@/lib/habits";
-import { getQuotes } from "@/lib/quotes";
+import { useYear } from "@/providers/YearContext";
 import { StarIcon } from "@phosphor-icons/react";
-import type { BookEntry } from "@/types";
 import { StatCard } from "@/components/StatCard";
 import { formatDate } from "@/lib/dates";
 import { ProgressBar } from "@/components/ProgressBar";
 import { EmptyState } from "@/components/EmptyState";
-import { toast } from "@/lib/toast";
 
 export default function StatsPage() {
-  const { year: yearParam } = useParams<{ year: string }>();
-  const year = Number(yearParam);
+  const { year, loading, yearEntries, finishedBooks, loggedDates, quoteCount } =
+    useYear();
 
-  const [books, setBooks] = useState<BookEntry[]>([]);
-  const [daysRead, setDaysRead] = useState(0);
-  const [quoteCount, setQuoteCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    Promise.all([getEntries({ year }), getReadingLog(year), getQuotes()])
-      .then(([b, log, qs]) => {
-        setBooks(b);
-        setDaysRead(log.length);
-        setQuoteCount(
-          qs.filter((q) => q.createdAt.startsWith(`${year}`)).length,
-        );
-      })
-      .catch(() => toast("Failed to load data. Please refresh."))
-      .finally(() => setLoading(false));
-  }, [year]);
-
-  const finished = books.filter((b) => b.status === "finished");
-  const rated = finished.filter((b) => b.rating > 0);
+  const daysRead = loggedDates.size;
+  const rated = finishedBooks.filter((b) => b.rating > 0);
   const avgRating =
     rated.length > 0
       ? rated.reduce((s, b) => s + b.rating, 0) / rated.length
@@ -45,7 +21,7 @@ export default function StatsPage() {
 
   // Genre breakdown
   const genreCounts: Record<string, number> = {};
-  books.forEach((b) =>
+  yearEntries.forEach((b) =>
     b.genres.forEach((g) => {
       genreCounts[g] = (genreCounts[g] ?? 0) + 1;
     }),
@@ -57,7 +33,7 @@ export default function StatsPage() {
 
   // Mood breakdown
   const moodCounts: Record<string, number> = {};
-  books.forEach((b) =>
+  yearEntries.forEach((b) =>
     b.moodTags.forEach((m) => {
       moodCounts[m] = (moodCounts[m] ?? 0) + 1;
     }),
@@ -66,7 +42,7 @@ export default function StatsPage() {
 
   // Monthly reading pace
   const monthlyFinished: Record<string, number> = {};
-  finished.forEach((b) => {
+  finishedBooks.forEach((b) => {
     if (b.dateFinished) {
       const m = b.dateFinished.slice(0, 7);
       monthlyFinished[m] = (monthlyFinished[m] ?? 0) + 1;
@@ -82,7 +58,7 @@ export default function StatsPage() {
   });
   const maxMonthly = Math.max(...months.map((m) => m.count), 1);
 
-  const topBooks = [...finished]
+  const topBooks = [...finishedBooks]
     .filter((b) => b.rating >= 4)
     .sort((a, b) => b.rating - a.rating)
     .slice(0, 6);
@@ -127,10 +103,10 @@ export default function StatsPage() {
           <h1 className="font-[family-name:var(--font-playfair)] text-5xl font-bold italic text-white tracking-tight">
             {year}
           </h1>
-          {finished.length > 0 && (
+          {finishedBooks.length > 0 && (
             <p className="text-white/70 text-sm mt-3">
-              {finished.length} {finished.length === 1 ? "book" : "books"}{" "}
-              finished
+              {finishedBooks.length}{" "}
+              {finishedBooks.length === 1 ? "book" : "books"} finished
               {daysRead > 0 && ` · ${daysRead} days read`}
             </p>
           )}
@@ -143,7 +119,7 @@ export default function StatsPage() {
           {[
             {
               label: "books read",
-              value: finished.length,
+              value: finishedBooks.length,
               accentClass: "border-t-[var(--stat-border-books)]",
             },
             {
@@ -281,7 +257,7 @@ export default function StatsPage() {
           </div>
         )}
 
-        {finished.length === 0 && (
+        {finishedBooks.length === 0 && (
           <EmptyState message="No finished books this year yet." />
         )}
       </div>

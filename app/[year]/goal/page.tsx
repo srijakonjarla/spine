@@ -1,19 +1,17 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
-  getGoals,
   setGoal,
   updateGoal,
   deleteGoal,
   addBookToGoal,
   removeBookFromGoal,
 } from "@/lib/goals";
-import { getEntries } from "@/lib/db";
+import { useYear } from "@/providers/YearContext";
 import { toast } from "@/lib/toast";
-import type { ReadingGoal, BookEntry } from "@/types";
+import type { ReadingGoal } from "@/types";
 import { ProgressBar } from "@/components/ProgressBar";
 import { PageHeader } from "@/components/PageHeader";
 
@@ -329,55 +327,61 @@ function CustomGoalCard({
 const CURRENT_YEAR = new Date().getFullYear();
 
 export default function GoalPage() {
-  const { year: yearParam } = useParams<{ year: string }>();
-  const year = Number(yearParam);
+  const {
+    year,
+    loading: yearLoading,
+    goals: contextGoals,
+    setGoals,
+    allEntries,
+    finishedBooks,
+  } = useYear();
 
-  const [goals, setGoals] = useState<ReadingGoal[]>([]);
-  const [allEntries, setAllEntries] = useState<BookEntry[]>([]);
-  const [finishedCount, setFinishedCount] = useState(0);
+  const [goals, setLocalGoals] = useState<ReadingGoal[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [setupTarget, setSetupTarget] = useState("");
   const [setupName, setSetupName] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Initialize local goals from context; auto-create yearly goal if needed
   useEffect(() => {
-    Promise.all([getGoals(year), getEntries({ year }), getEntries()])
-      .then(async ([gs, yearEntries, allEntries]) => {
-        let resolved = gs;
-        const finished = yearEntries.filter(
-          (b) =>
-            b.status === "finished" &&
-            b.dateFinished?.startsWith(`${year}`),
-        );
-        setFinishedCount(finished.length);
-        setAllEntries(allEntries);
+    if (yearLoading) return;
 
-        // Auto-create the yearly goal if this is the current year and none exists
-        if (year === CURRENT_YEAR && !gs.some((g) => g.isAuto)) {
+    async function init() {
+      let resolved = contextGoals;
+      if (year === CURRENT_YEAR && !contextGoals.some((g) => g.isAuto)) {
+        try {
           const created = await setGoal(year, 12, `${year} reading goal`, true);
-          resolved = [created, ...gs];
+          resolved = [created, ...contextGoals];
+          setGoals(resolved);
+        } catch {
+          toast("Something went wrong. Please try again.");
         }
+      }
+      setLocalGoals(resolved);
+      setLoading(false);
+    }
 
-        setGoals(resolved);
-      })
-      .catch(() => toast("Failed to load data. Please refresh."))
-      .finally(() => setLoading(false));
-  }, [year]);
+    init();
+  }, [yearLoading, contextGoals, year, setGoals]);
+
+  const finishedCount = finishedBooks.length;
 
   const handleUpdate = (
     id: string,
     patch: { target?: number; name?: string },
   ) => {
-    setGoals((prev) => prev.map((g) => (g.id === id ? { ...g, ...patch } : g)));
+    setLocalGoals((prev) =>
+      prev.map((g) => (g.id === id ? { ...g, ...patch } : g)),
+    );
   };
 
   const handleDelete = (id: string) => {
-    setGoals((prev) => prev.filter((g) => g.id !== id));
+    setLocalGoals((prev) => prev.filter((g) => g.id !== id));
   };
 
   const handleBookAdded = (goalId: string, bookId: string) => {
-    setGoals((prev) =>
+    setLocalGoals((prev) =>
       prev.map((g) =>
         g.id === goalId ? { ...g, bookIds: [...g.bookIds, bookId] } : g,
       ),
@@ -385,7 +389,7 @@ export default function GoalPage() {
   };
 
   const handleBookRemoved = (goalId: string, bookId: string) => {
-    setGoals((prev) =>
+    setLocalGoals((prev) =>
       prev.map((g) =>
         g.id === goalId
           ? { ...g, bookIds: g.bookIds.filter((id) => id !== bookId) }
@@ -401,7 +405,7 @@ export default function GoalPage() {
     setSaving(true);
     try {
       const created = await setGoal(year, target, setupName.trim(), false);
-      setGoals((prev) => [...prev, created]);
+      setLocalGoals((prev) => [...prev, created]);
       setSetupTarget("");
       setSetupName("");
       setShowAdd(false);

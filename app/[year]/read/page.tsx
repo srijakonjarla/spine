@@ -1,49 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useState } from "react";
 import Link from "next/link";
-import { getEntries } from "@/lib/db";
+import { useYear } from "@/providers/YearContext";
 import { BookCover } from "@/components/BookCover";
 import { StarDisplay } from "@/components/StarDisplay";
-import type { BookEntry } from "@/types";
 import { formatDate } from "@/lib/dates";
 import { MONTH_NAMES } from "@/lib/constants";
-import { toast } from "@/lib/toast";
 
 function monthIndex(iso: string): number {
   return parseInt(iso.slice(5, 7), 10) - 1;
 }
 
 export default function ReadThisYearPage() {
-  const { year: yearParam } = useParams<{ year: string }>();
-  const year = Number(yearParam);
-
-  const [books, setBooks] = useState<BookEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { year, loading, finishedBooks } = useYear();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  useEffect(() => {
-    getEntries({ year })
-      .then((entries) => {
-        const finished = entries
-          .filter(
-            (e) =>
-              e.status === "finished" &&
-              e.dateFinished?.startsWith(`${year}`),
-          )
-          .sort((a, b) =>
-            (a.dateFinished ?? "").localeCompare(b.dateFinished ?? ""),
-          );
-        setBooks(finished);
-      })
-      .catch(() => toast("Failed to load data. Please refresh."))
-      .finally(() => setLoading(false));
-  }, [year]);
-
   // Group by month
-  const byMonth = new Map<number, BookEntry[]>();
-  books.forEach((b) => {
+  const byMonth = new Map<number, typeof finishedBooks>();
+  finishedBooks.forEach((b) => {
     const m = b.dateFinished ? monthIndex(b.dateFinished) : -1;
     if (m < 0) return;
     if (!byMonth.has(m)) byMonth.set(m, []);
@@ -58,7 +33,10 @@ export default function ReadThisYearPage() {
           <div className="h-4 w-28 bg-[var(--bg-hover)] rounded mb-8" />
           <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
             {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="aspect-[2/3] bg-[var(--bg-hover)] rounded" />
+              <div
+                key={i}
+                className="aspect-[2/3] bg-[var(--bg-hover)] rounded"
+              />
             ))}
           </div>
         </div>
@@ -81,14 +59,15 @@ export default function ReadThisYearPage() {
           <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold text-[var(--fg-heading)] tracking-tight">
             books i read
           </h1>
-          {books.length > 0 && (
+          {finishedBooks.length > 0 && (
             <p className="text-xs text-[var(--fg-muted)] mt-3">
-              {books.length} {books.length === 1 ? "book" : "books"}
+              {finishedBooks.length}{" "}
+              {finishedBooks.length === 1 ? "book" : "books"}
             </p>
           )}
         </div>
 
-        {books.length === 0 ? (
+        {finishedBooks.length === 0 ? (
           <p className="text-xs text-[var(--fg-faint)]">
             no finished books logged for {year} yet.
           </p>
