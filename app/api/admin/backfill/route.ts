@@ -5,119 +5,68 @@ const HC_ENDPOINT = "https://api.hardcover.app/v1/graphql";
 const DELAY_MS = 1100;
 const BATCH_SIZE = 10;
 
-const DEFAULT_EDITIONS_QUERY = `
-  query DefaultEditions($ids: [Int!]!) {
-    books(where: { id: { _in: $ids } }) {
-      id
-      default_physical_edition_id
-      images { url }
-      cached_tags
-      editions {
-        id
-        isbn_13
-        isbn_10
-        image { url }
-      }
-    }
-  }
+const BOOK_FIELDS = `
+  id title pages release_date
+  images { url }
+  contributions { author { name } }
+  cached_tags
+  default_physical_edition_id
+  editions { id isbn_13 isbn_10 image { url } }
 `;
 
-function buildBatchQuery(
-  books: { title: string; author: string; isbn?: string }[],
-) {
-  const fragments = books.map((b, i) => {
-    if (b.isbn) {
-      return `
-        b${i}: editions(where: {
-          _or: [{ isbn_10: { _eq: "${b.isbn}" } }, { isbn_13: { _eq: "${b.isbn}" } }]
-        }, limit: 1) {
-          isbn_10 isbn_13
-          image { url }
-          book { id title pages release_date images { url } contributions { author { name } } cached_tags }
-        }
-      `;
-    }
-    const q = [b.title, b.author].filter(Boolean).join(" ").replace(/"/g, "");
-    return `
-      b${i}: search(query: "${q}", query_type: "Book", per_page: 1) {
-        results
-      }
-    `;
-  });
-  return `query BatchLookup { ${fragments.join("\n")} }`;
+function gqlStr(s: string, maxLen = 120): string {
+  return s
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/[\n\r]/g, " ")
+    .trim()
+    .slice(0, maxLen);
 }
 
-interface HardcoverDocument {
-  id?: number | string;
-  title?: string;
-  author_names?: string[];
-  cover_image_url?: string;
-  pages?: number;
-  cached_tags?: string[] | Record<string, { tag?: string }[]>;
-  release_year?: number | string;
-  release_date?: string;
+function authorLastName(author: string): string {
+  const clean = author.replace(/[^a-zA-Z\s''-]/g, "").trim();
+  if (author.includes(",")) return (clean.split(/\s+/)[0] ?? "").slice(0, 30);
+  const parts = clean.split(/\s+/);
+  return (parts[parts.length - 1] ?? "").slice(0, 30);
 }
 
-interface EnrichResult {
-  coverUrl: string;
-  isbn: string;
-  pageCount: number | null;
-  genres: string[];
+function stripTitle(title: string): string {
+  let t = title.trim().replace(/\bvol\.?\b/gi, "Volume");
+  t = t.replace(/\s*\([^)]*\)\s*$/, "");
+  t = t.replace(/\s*:\s*.+$/, "");
+  t = t.replace(/\s+by\s+[A-Z][\w.'\-]+(?:\s+[\w.'\-]+)*$/, "");
+  t = t.replace(/,\s+[A-Z][\w.'\-]+(?:\s+[A-Z][\w.'\-]+)+\s*$/, "");
+  return t.trim();
 }
 
-interface BookEnrichment {
-  isbn: string;
-  coverUrl: string;
-  genres: string[];
+function normTitle(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-async function fetchDefaultEditionData(
-  bookIds: number[],
-): Promise<Map<number, BookEnrichment>> {
-  if (!bookIds.length) return new Map();
-  const json = await hcPost(DEFAULT_EDITIONS_QUERY, { ids: bookIds });
-  const books: {
-    id: number;
-    default_physical_edition_id: number;
-    images?: { url?: string }[];
-    cached_tags?: unknown;
-    editions: {
-      id: number;
-      isbn_13?: string;
-      isbn_10?: string;
-      image?: { url?: string };
-    }[];
-  }[] = json?.data?.books ?? [];
-  const map = new Map<number, BookEnrichment>();
-  for (const book of books) {
-    const edition = book.editions.find(
-      (e) => e.id === book.default_physical_edition_id,
-    );
-    map.set(book.id, {
-      isbn: edition?.isbn_13 || edition?.isbn_10 || "",
-      coverUrl: edition?.image?.url || book.images?.[0]?.url || "",
-      genres: extractGenres(
-        book.cached_tags as HardcoverDocument["cached_tags"],
-      ),
-    });
-  }
-  return map;
+function titlesMatch(hcTitle: string, csvTitle: string): boolean {
+  if (!hcTitle || !csvTitle) return false;
+  const hc = normTitle(stripTitle(hcTitle));
+  const csv = normTitle(stripTitle(csvTitle));
+  if (!hc || !csv) return false;
+  if (hc === csv) return true;
+  const shorter = hc.length <= csv.length ? hc : csv;
+  const longer = hc.length <= csv.length ? csv : hc;
+  if (!longer.startsWith(shorter) || shorter.length < 6) return false;
+  const BOX = /\b(boxed? set|box set|omnibus|collection|trilogy|the complete|\d-book)\b/i;
+  if (BOX.test(hcTitle) && !BOX.test(csvTitle)) return false;
+  return true;
 }
 
-async function hcPost(query: string, variables?: Record<string, unknown>) {
+async function hcPost(query: string) {
   const token = process.env.HARDCOVER_API_TOKEN;
   if (!token) {
     console.warn("[backfill] HARDCOVER_API_TOKEN not set");
     return null;
   }
-  console.log("[backfill] POST Hardcover API");
   const res = await fetch(HC_ENDPOINT, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ query, variables }),
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ query }),
   });
   if (!res.ok) {
     console.error(`[backfill] Hardcover error: ${res.status}`);
@@ -126,330 +75,263 @@ async function hcPost(query: string, variables?: Record<string, unknown>) {
   return res.json();
 }
 
-function extractGenres(
-  cached_tags: HardcoverDocument["cached_tags"],
-): string[] {
+function extractGenres(cached_tags: unknown): string[] {
   if (!cached_tags) return [];
   if (Array.isArray(cached_tags)) return cached_tags as string[];
-  return Object.values(cached_tags as Record<string, { tag?: string }[]>)
-    .flat()
-    .map((t) => t?.tag ?? "")
-    .filter(Boolean)
-    .slice(0, 5);
+  if (typeof cached_tags === "object") {
+    return Object.values(cached_tags as Record<string, { tag?: string }[]>)
+      .flat()
+      .map((t) => t?.tag ?? "")
+      .filter(Boolean)
+      .slice(0, 5);
+  }
+  return [];
 }
 
-function parseEditionResult(alias: unknown, isbn: string): EnrichResult | null {
-  const editions = alias as
-    | {
-        isbn_10?: string;
-        isbn_13?: string;
-        image?: { url?: string };
-        book?: {
-          title?: string;
-          images?: { url?: string }[];
-          pages?: number;
-          cached_tags?: unknown;
-        };
-      }[]
-    | undefined;
-  const edition = editions?.[0];
-  if (!edition?.book?.title) return null;
-  const b = edition.book;
-  return {
-    coverUrl: edition.image?.url || b.images?.[0]?.url || "",
-    isbn: edition.isbn_13 || edition.isbn_10 || isbn,
-    pageCount: b.pages ?? null,
-    genres: extractGenres(b.cached_tags as HardcoverDocument["cached_tags"]),
-  };
+function collectIsbns(editions: { isbn_13?: string; isbn_10?: string }[]): string[] {
+  return [
+    ...new Set(
+      editions
+        .flatMap((e) => [e.isbn_13, e.isbn_10])
+        .filter((isbn): isbn is string => !!isbn && isbn.length > 0),
+    ),
+  ];
 }
 
-function parseSearchResult(
-  alias: unknown,
-  title: string,
-): (EnrichResult & { bookId?: number }) | null {
-  const searchResult = alias as { results?: unknown } | undefined;
-  if (!searchResult?.results) return null;
-  const parsed: { hits?: { document: HardcoverDocument }[] } =
-    typeof searchResult.results === "string"
-      ? JSON.parse(searchResult.results)
-      : searchResult.results;
-  const d = parsed?.hits?.[0]?.document;
-  if (!d?.title) return null;
-  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
-  if (!norm(d.title).includes(norm(title).slice(0, 6))) return null;
-  return {
-    coverUrl: d.cover_image_url ?? "",
-    isbn: "",
-    pageCount: d.pages ?? null,
-    genres: extractGenres(d.cached_tags),
-    bookId:
-      d.id !== undefined && !isNaN(Number(d.id)) ? Number(d.id) : undefined,
-  };
-}
-
-async function googleFallback(
-  title: string,
-  author: string,
-  isbn?: string,
-): Promise<Pick<EnrichResult, "coverUrl" | "isbn"> | null> {
-  const key = process.env.GOOGLE_BOOKS_API_KEY;
-  const query = isbn ? `isbn:${isbn}` : `${title} ${author}`.trim();
-  const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=1&printType=books${key ? `&key=${key}` : ""}`;
-  console.log(`[backfill] Google Books fallback for "${title}"`);
-  const res = await fetch(url);
-  if (!res.ok) return null;
-  const json = await res.json();
-  const item = json.items?.[0];
-  if (!item) return null;
-  const identifiers = item.volumeInfo?.industryIdentifiers ?? [];
-  const isbn13 =
-    identifiers.find(
-      (i: { type: string; identifier: string }) => i.type === "ISBN_13",
-    )?.identifier ?? "";
-  const isbn10 =
-    identifiers.find(
-      (i: { type: string; identifier: string }) => i.type === "ISBN_10",
-    )?.identifier ?? "";
-  const thumbnail =
-    item.volumeInfo?.imageLinks?.thumbnail ??
-    item.volumeInfo?.imageLinks?.smallThumbnail ??
-    "";
-  return {
-    coverUrl: thumbnail.replace(/^http:/, "https:"),
-    isbn: isbn13 || isbn10,
-  };
-}
-
-// ── catalog_books row shape returned from user_books join ──────────────────
-interface CatalogBookRow {
+interface StaleRow {
   id: string;
   title: string;
   author: string;
+  release_date: string;
   cover_url: string;
-  isbn: string;
   page_count: number | null;
-  genres: string[];
+  genres: string[] | null;
+  isbns: string[] | null;
 }
 
-async function processAllBooks(
+interface HCDoc {
+  id?: number | string;
+  title?: string;
+  author_names?: string[];
+}
+
+interface HCBookRow {
+  id?: number;
+  title?: string;
+  pages?: number;
+  release_date?: string;
+  images?: { url?: string }[];
+  contributions?: { author: { name: string } }[];
+  cached_tags?: unknown;
+  default_physical_edition_id?: number;
+  editions?: { id?: number; isbn_13?: string; isbn_10?: string; image?: { url?: string } }[];
+}
+
+/**
+ * Selection criteria for enrichment: any catalog_book that the user owns and
+ * is missing core metadata. Covers:
+ *  - empty cover_url (classic "no cover" case)
+ *  - empty isbns (can't dedupe imports across ISBN editions)
+ *  - empty genres (search-path fallback doesn't fetch cached_tags)
+ *  - release_date ending in "-01-01" (year-only, from search-path fallback)
+ */
+async function fetchStaleBooks(
+  supabase: ReturnType<typeof createServerClient>,
+  userId: string,
+): Promise<StaleRow[]> {
+  const { data, error } = await supabase
+    .from("user_books")
+    .select(
+      "catalog_books!inner(id, title, author, release_date, cover_url, page_count, genres, isbns)",
+    )
+    .eq("user_id", userId)
+    .or(
+      "cover_url.eq.,isbns.is.null,isbns.eq.{},genres.is.null,genres.eq.{},release_date.like.%-01-01",
+      { referencedTable: "catalog_books" },
+    );
+  if (error) {
+    console.error("[backfill] query error:", error.message);
+    return [];
+  }
+  const seen = new Set<string>();
+  const rows: StaleRow[] = [];
+  for (const ub of data ?? []) {
+    const cb = ub.catalog_books as unknown as StaleRow;
+    if (!cb?.id || !cb.title || !cb.author) continue;
+    if (seen.has(cb.id)) continue;
+    seen.add(cb.id);
+    rows.push(cb);
+  }
+  return rows;
+}
+
+async function runBackfill(
   supabase: ReturnType<typeof createServerClient>,
   userId: string,
 ) {
-  let offset = 0;
-  let totalProcessed = 0;
-  let totalUpdated = 0;
+  const stale = await fetchStaleBooks(supabase, userId);
+  console.log(`[backfill] ${stale.length} catalog rows to enrich for user ${userId}`);
 
-  console.log(`[backfill] Starting for user ${userId}`);
+  for (let start = 0; start < stale.length; start += BATCH_SIZE) {
+    const batch = stale.slice(start, start + BATCH_SIZE);
 
-  while (true) {
-    // Fetch user_books with their catalog data; filter to those whose catalog entry
-    // is missing a cover (the shared catalog enrichment benefits all users).
-    const { data: userBookRows } = await supabase
-      .from("user_books")
-      .select(
-        "id, catalog_books!inner(id, title, author, cover_url, isbn, page_count, genres)",
-      )
-      .eq("user_id", userId)
-      .filter("catalog_books.cover_url", "eq", "")
-      .order("created_at", { ascending: true })
-      .range(offset, offset + 39);
+    // Step 1: for each row, look up by ISBN if available, else search by
+    // title+author. Both paths feed the same follow-up `books` enrichment.
+    const fragments = batch.map((row, i) => {
+      const firstIsbn = row.isbns?.[0];
+      if (firstIsbn) {
+        const isbn = gqlStr(firstIsbn);
+        return `b${i}: books(where: { _or: [
+          { editions: { isbn_13: { _eq: "${isbn}" } } },
+          { editions: { isbn_10: { _eq: "${isbn}" } } }
+        ]}, limit: 1) { ${BOOK_FIELDS} }`;
+      }
+      const base = stripTitle(row.title);
+      const last = authorLastName(row.author);
+      const q = gqlStr(last ? `${base} ${last}` : base, 120);
+      return `b${i}: search(query: "${q}", query_type: "Book", per_page: 3) { results }`;
+    });
+    const batchQuery = `query BackfillBatch { ${fragments.join("\n")} }`;
+    const batchJson = await hcPost(batchQuery);
+    const batchData = batchJson?.data ?? {};
 
-    if (!userBookRows?.length) break;
+    // Collect hits: direct books (ISBN path) and search → id (search path).
+    const directHits: { idx: number; row: StaleRow; book: HCBookRow }[] = [];
+    const searchHits: { idx: number; row: StaleRow; bookId: number }[] = [];
 
-    // Flatten to catalog book info (deduplicate by catalog_book_id within this page)
-    const seen = new Set<string>();
-    const books: CatalogBookRow[] = [];
-    for (const row of userBookRows) {
-      const cb = row.catalog_books as unknown as CatalogBookRow;
-      if (!seen.has(cb.id)) {
-        seen.add(cb.id);
-        books.push(cb);
+    for (let i = 0; i < batch.length; i++) {
+      const row = batch[i];
+      const raw = batchData[`b${i}`];
+      const firstIsbn = row.isbns?.[0];
+      if (firstIsbn) {
+        const books: HCBookRow[] = Array.isArray(raw) ? raw : [];
+        const book = books.find((b) => titlesMatch(b.title ?? "", row.title));
+        if (book) {
+          directHits.push({ idx: i, row, book });
+          console.log(`[backfill]   ISBN hit "${row.title}"`);
+        } else {
+          console.log(`[backfill]   ISBN miss "${row.title}"`);
+        }
+        continue;
+      }
+      const rawResults = raw?.results;
+      if (!rawResults) continue;
+      let parsed: { hits?: { document: HCDoc }[] };
+      try {
+        parsed = typeof rawResults === "string" ? JSON.parse(rawResults) : rawResults;
+      } catch {
+        continue;
+      }
+      const docs = parsed?.hits ?? [];
+      const hintLast = normTitle(authorLastName(row.author));
+      for (const { document: doc } of docs) {
+        if (!doc.title) continue;
+        if (!titlesMatch(doc.title, row.title)) continue;
+        if (hintLast.length >= 3 && doc.author_names?.length) {
+          const ok = doc.author_names.some((a) => normTitle(a).includes(hintLast));
+          if (!ok) continue;
+        }
+        const hcId = typeof doc.id === "string" ? Number(doc.id) : doc.id;
+        if (typeof hcId === "number" && Number.isFinite(hcId)) {
+          searchHits.push({ idx: i, row, bookId: hcId });
+          console.log(`[backfill]   search "${row.title}" → HC book ${hcId}`);
+        }
+        break;
       }
     }
 
-    console.log(
-      `[backfill] Fetched ${books.length} catalog books needing enrichment at offset ${offset}`,
-    );
-
-    for (
-      let batchStart = 0;
-      batchStart < books.length;
-      batchStart += BATCH_SIZE
-    ) {
-      const batch = books.slice(batchStart, batchStart + BATCH_SIZE);
-      console.log(
-        `[backfill] Batch HC lookup: ${batch.map((b) => b.title).join(", ")}`,
+    // Step 2: follow-up books query for search-path hits (same BOOK_FIELDS).
+    const searchBooks = new Map<number, HCBookRow>();
+    if (searchHits.length) {
+      const followUpFragments = searchHits.map(
+        ({ idx, bookId }) =>
+          `b${idx}: books(where: {id: {_eq: ${bookId}}}, limit: 1) { ${BOOK_FIELDS} }`,
       );
-
-      const batchQuery = buildBatchQuery(
-        batch.map((b) => ({
-          title: b.title,
-          author: b.author,
-          isbn: b.isbn || undefined,
-        })),
-      );
-      const json = await hcPost(batchQuery);
-      const data = json?.data ?? {};
-      if (json?.errors)
-        console.error(
-          "[backfill] GraphQL errors:",
-          JSON.stringify(json.errors),
-        );
-
-      const searchBookIds: number[] = [];
-      const batchResults: ((EnrichResult & { bookId?: number }) | null)[] = [];
-
-      for (let i = 0; i < batch.length; i++) {
-        const book = batch[i];
-        const alias = data[`b${i}`];
-        let result: (EnrichResult & { bookId?: number }) | null = null;
-
-        if (book.isbn) {
-          result = parseEditionResult(alias, book.isbn);
-          if (!result) {
-            console.log(
-              `[backfill] HC ISBN miss for "${book.title}", trying text search`,
-            );
-            const fallbackJson = await hcPost(
-              `query { b0: search(query: "${[book.title, book.author].join(" ").replace(/"/g, "")}", query_type: "Book", per_page: 1) { results } }`,
-            );
-            if (fallbackJson?.data?.b0)
-              result = parseSearchResult(fallbackJson.data.b0, book.title);
-            await sleep(DELAY_MS);
-          }
-        } else {
-          result = parseSearchResult(alias, book.title);
-        }
-
-        if (result?.bookId) searchBookIds.push(result.bookId);
-        batchResults.push(result);
+      const followUpQuery = `query BackfillFollowUp { ${followUpFragments.join("\n")} }`;
+      const followUpJson = await hcPost(followUpQuery);
+      const followUpData = followUpJson?.data ?? {};
+      for (const { idx, bookId } of searchHits) {
+        const raw = followUpData[`b${idx}`];
+        const books: HCBookRow[] = Array.isArray(raw) ? raw : [];
+        if (books[0]) searchBooks.set(bookId, books[0]);
       }
+    }
 
-      const enrichMap = await fetchDefaultEditionData(searchBookIds);
-      if (searchBookIds.length)
-        console.log(
-          `[backfill] enrichment follow-up: ${enrichMap.size}/${searchBookIds.length} resolved`,
-        );
+    // Step 3: apply enrichment patches.
+    const applyPatch = async (row: StaleRow, book: HCBookRow) => {
+      const editions = book.editions ?? [];
+      const defaultEdition = editions.find((e) => e.id === book.default_physical_edition_id);
+      const isbns = collectIsbns(editions);
+      const coverUrl = defaultEdition?.image?.url || book.images?.[0]?.url || "";
+      const genres = extractGenres(book.cached_tags);
 
-      for (let i = 0; i < batch.length; i++) {
-        const book = batch[i];
-        let result = batchResults[i];
+      const patch: Record<string, unknown> = {};
+      if (isbns.length && !(row.isbns?.length)) patch.isbns = isbns;
+      if (genres.length && !(row.genres?.length)) patch.genres = genres;
+      if (book.release_date && book.release_date !== row.release_date) {
+        patch.release_date = book.release_date;
+      }
+      if (book.pages && !row.page_count) patch.page_count = book.pages;
+      if (coverUrl) patch.cover_url = coverUrl;
 
-        if (result?.bookId) {
-          const enrich = enrichMap.get(result.bookId);
-          if (enrich) {
-            result = {
-              ...result,
-              isbn: enrich.isbn || result.isbn,
-              coverUrl: enrich.coverUrl || result.coverUrl,
-              genres: enrich.genres.length ? enrich.genres : result.genres,
-            };
-          }
-        }
-
-        const needsCover = !result?.coverUrl;
-        const needsIsbn = !result?.isbn && !book.isbn;
-        if (needsCover || needsIsbn) {
-          const gb = await googleFallback(
-            book.title,
-            book.author,
-            book.isbn || undefined,
-          );
-          if (gb) {
-            console.log(
-              `[backfill] Google Books filled in for "${book.title}"`,
-            );
-            result = {
-              coverUrl: result?.coverUrl || gb.coverUrl,
-              isbn: result?.isbn || gb.isbn,
-              pageCount: result?.pageCount ?? null,
-              genres: result?.genres ?? [],
-            };
-          }
-        }
-
-        if (!result) {
-          console.log(`[backfill] No result for "${book.title}"`);
-          totalProcessed++;
-          continue;
-        }
-
-        // Update catalog_books — shared, benefits every user who owns this book
-        const patch: Record<string, unknown> = {};
-        if (result.coverUrl) patch.cover_url = result.coverUrl;
-        if (!book.isbn && result.isbn) patch.isbn = result.isbn;
-        if (!book.page_count && result.pageCount)
-          patch.page_count = result.pageCount;
-        if (!book.genres?.length && result.genres.length)
-          patch.genres = result.genres;
-
-        if (Object.keys(patch).length) {
-          patch.updated_at = new Date().toISOString();
+      if (Object.keys(patch).length) {
+        patch.updated_at = new Date().toISOString();
+        const { error } = await supabase
+          .from("catalog_books")
+          .update(patch)
+          .eq("id", row.id);
+        if (error) console.error(`[backfill]   update error ${row.id}: ${error.message}`);
+        else
           console.log(
-            `[backfill] Updating catalog "${book.title}": ${Object.keys(patch).join(", ")}`,
+            `[backfill]   ✓ ${row.title} → ${Object.keys(patch).filter((k) => k !== "updated_at").join(", ")}`,
           );
-          await supabase.from("catalog_books").update(patch).eq("id", book.id);
-          totalUpdated++;
-        } else {
-          console.log(`[backfill] No changes for "${book.title}"`);
-        }
-
-        totalProcessed++;
+      } else {
+        console.log(`[backfill]   (no patch) ${row.title}`);
       }
+    };
 
-      await sleep(DELAY_MS);
+    for (const { row, book } of directHits) await applyPatch(row, book);
+    for (const { row, bookId } of searchHits) {
+      const book = searchBooks.get(bookId);
+      if (book) await applyPatch(row, book);
     }
 
-    if (userBookRows.length < 40) break;
-    offset += 40;
+    await sleep(DELAY_MS);
   }
 
-  console.log(
-    `[backfill] Done. Processed: ${totalProcessed}, Updated: ${totalUpdated}`,
-  );
+  console.log(`[backfill] done for user ${userId}`);
+}
+
+async function countStale(
+  supabase: ReturnType<typeof createServerClient>,
+  userId: string,
+): Promise<number> {
+  const rows = await fetchStaleBooks(supabase, userId);
+  return rows.length;
 }
 
 export async function GET(req: NextRequest) {
   const supabase = createServerClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const { count } = await supabase
-    .from("user_books")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .filter("catalog_books.cover_url", "eq", "");
-
-  console.log(`[backfill] GET remaining for user ${user.id}: ${count}`);
-  return NextResponse.json({ remaining: count ?? 0 });
+  const remaining = await countStale(supabase, user.id);
+  return NextResponse.json({ remaining });
 }
 
 export async function POST(req: NextRequest) {
   const supabase = createServerClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const { count: total } = await supabase
-    .from("user_books")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .filter("catalog_books.cover_url", "eq", "");
-
-  console.log(
-    `[backfill] POST started for user ${user.id}, needing enrichment: ${total}`,
-  );
+  const total = await countStale(supabase, user.id);
+  console.log(`[backfill] POST started for user ${user.id}, ${total} stale rows`);
 
   after(async () => {
-    await processAllBooks(supabase, user.id);
+    await runBackfill(supabase, user.id);
   });
 
-  return NextResponse.json({ started: true, total: total ?? 0 });
+  return NextResponse.json({ started: true, total });
 }
 
 function sleep(ms: number) {

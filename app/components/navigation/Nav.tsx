@@ -174,6 +174,11 @@ export default function Nav() {
             />
             <SidebarLink
               href={`/${CURRENT_YEAR}/stats`}
+              label="stats"
+              icon={ChartBarIcon}
+            />
+            <SidebarLink
+              href={`/${CURRENT_YEAR}/review`}
               label="year in review"
               icon={ChartBarIcon}
             />

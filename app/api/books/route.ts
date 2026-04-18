@@ -84,6 +84,9 @@ export async function POST(req: NextRequest) {
       release_date: entry.releaseDate ?? "",
       genres: entry.genres ?? [],
       page_count: entry.pageCount ?? null,
+      publisher: entry.publisher ?? "",
+      audio_duration_minutes: entry.audioDurationMinutes ?? null,
+      diversity_tags: entry.diversityTags ?? [],
     },
     {
       id: entry.id,

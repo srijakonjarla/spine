@@ -81,6 +81,8 @@ export async function PATCH(
   if ("bookmarked" in patch) userRow.bookmarked = patch.bookmarked;
   if ("upNext" in patch) userRow.up_next = patch.upNext;
   if ("moodTags" in patch) userRow.mood_tags = patch.moodTags;
+  if ("format" in patch) userRow.format = patch.format;
+  if ("diversityTags" in patch) userRow.diversity_tags = patch.diversityTags;
   // Title and author become per-user overrides
   if ("title" in patch) userRow.title_override = patch.title || null;
   if ("author" in patch) userRow.author_override = patch.author || null;
@@ -96,10 +98,22 @@ export async function PATCH(
   // ── Catalog fields → catalog_books (shared, benefits all users) ───────────
   const catalogRow: Record<string, unknown> = {};
   if ("coverUrl" in patch) catalogRow.cover_url = patch.coverUrl;
-  if ("isbn" in patch) catalogRow.isbn = patch.isbn;
   if ("pageCount" in patch) catalogRow.page_count = patch.pageCount;
   if ("releaseDate" in patch) catalogRow.release_date = patch.releaseDate;
   if ("genres" in patch) catalogRow.genres = patch.genres;
+  if ("publisher" in patch) catalogRow.publisher = patch.publisher;
+  if ("audioDurationMinutes" in patch) catalogRow.audio_duration_minutes = patch.audioDurationMinutes ?? null;
+  // ISBN edits merge into the isbns[] array rather than replacing a singular column.
+  if ("isbn" in patch && patch.isbn) {
+    const { data: cb } = await supabase
+      .from("catalog_books")
+      .select("isbns")
+      .eq("id", ub.catalog_book_id)
+      .single();
+    const stored = (cb?.isbns as string[] | null) ?? [];
+    const merged = [...new Set([...stored, patch.isbn])];
+    if (merged.length !== stored.length) catalogRow.isbns = merged;
+  }
 
   if (Object.keys(catalogRow).length) {
     catalogRow.updated_at = now;

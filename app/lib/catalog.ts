@@ -4,9 +4,12 @@ export interface CatalogEntry {
   author: string;
   releaseDate: string;
   genres: string[];
+  diversityTags: string[];
   coverUrl: string;
   isbn: string;
   pageCount: number | null;
+  publisher: string;
+  audioDurationMinutes: number | null;
   /** Set when this result comes from the user's own library */
   status?: string;
   /** The library book id (user_books.id), if this result is from the user's library */
@@ -21,9 +24,12 @@ interface BookRow {
   author: string;
   release_date: string;
   genres: string[];
+  diversity_tags?: string[];
   cover_url?: string;
   isbn?: string;
   page_count?: number | null;
+  publisher?: string;
+  audio_duration_minutes?: number | null;
 }
 
 function mapEntry(row: BookRow): CatalogEntry {
@@ -33,9 +39,12 @@ function mapEntry(row: BookRow): CatalogEntry {
     author: row.author,
     releaseDate: row.release_date,
     genres: row.genres ?? [],
+    diversityTags: row.diversity_tags ?? [],
     coverUrl: row.cover_url ?? "",
     isbn: row.isbn ?? "",
     pageCount: row.page_count ?? null,
+    publisher: row.publisher ?? "",
+    audioDurationMinutes: row.audio_duration_minutes ?? null,
   };
 }
 

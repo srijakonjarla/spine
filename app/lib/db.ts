@@ -40,12 +40,17 @@ interface BookRow {
   catalog_book_id: string;
   title: string;
   author: string;
+  publisher: string;
   release_date: string;
   genres: string[];
   user_genres: string[];
   mood_tags: string[];
+  diversity_tags: string[];
+  user_diversity_tags: string[];
   bookshelves: string[];
   status: string;
+  format: string;
+  audio_duration_minutes: number | null;
   date_started: string | null;
   date_finished: string | null;
   date_shelved: string | null;
@@ -91,12 +96,17 @@ function mapBook(row: BookRow): BookEntry {
     catalogBookId: row.catalog_book_id ?? "",
     title: row.title ?? "",
     author: row.author ?? "",
+    publisher: row.publisher ?? "",
     releaseDate: row.release_date ?? "",
     genres: row.genres ?? [],
     userGenres: row.user_genres ?? [],
     moodTags: row.mood_tags ?? [],
+    diversityTags: row.diversity_tags ?? [],
+    userDiversityTags: row.user_diversity_tags ?? [],
     bookshelves: row.bookshelves ?? [],
     status: row.status as BookEntry["status"],
+    format: row.format ?? "",
+    audioDurationMinutes: row.audio_duration_minutes ?? null,
     dateStarted: row.date_started ?? "",
     dateFinished: row.date_finished ?? "",
     dateShelved: row.date_shelved ?? "",

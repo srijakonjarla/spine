@@ -54,7 +54,6 @@ An online reading bullet journal. Log books, write reflections, track reading ha
 | `GET  /api/admin/import-goodreads` | Poll import progress from `user_metadata`                                     |
 | `POST /api/admin/backfill`         | Enrich all library books with Hardcover metadata (cover, ISBN, pages, genres) |
 | `GET  /api/admin/backfill`         | Count books still missing cover/page count/ISBN                               |
-| `POST /api/admin/sync-series`      | Bulk-populate series tracker from Hardcover for all finished/reading books    |
 
 ## Setup
 

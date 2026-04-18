@@ -58,7 +58,6 @@ export async function POST(req: NextRequest) {
       title: title ?? "",
       author: author ?? "",
       cover_url: coverUrl ?? "",
-      isbn: isbn ?? "",
       isbns: allIsbns,
       release_date: releaseDate ?? "",
       genres: genres ?? [],

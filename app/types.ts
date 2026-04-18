@@ -29,12 +29,19 @@ export interface BookEntry {
   catalogBookId: string;
   title: string;
   author: string;
+  publisher: string;
   releaseDate: string;
   genres: string[];
   userGenres: string[];
   moodTags: string[];
+  /** Merged catalog (Hardcover) + user diversity tags */
+  diversityTags: string[];
+  /** User-added diversity tags only (editable) */
+  userDiversityTags: string[];
   bookshelves: string[];
   status: ReadingStatus;
+  format: string;
+  audioDurationMinutes: number | null;
   dateStarted: string;
   dateFinished: string;
   dateShelved: string;

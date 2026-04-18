@@ -7,11 +7,14 @@ interface BookResult {
   author: string;
   release_date: string;
   genres: string[];
+  diversity_tags: string[];
   cover_url: string;
   isbn: string;
   /** All known edition ISBNs (isbn_13 and isbn_10 across all editions). */
   isbns: string[];
   page_count: number | null;
+  publisher: string;
+  audio_duration_minutes: number | null;
 }
 
 // ── Hardcover (primary) ────────────────────────────────────────────────────
@@ -43,7 +46,7 @@ const HARDCOVER_ISBN_QUERY = `
       pages
       release_date
       images { url }
-      contributions { author { name } }
+      contributions { author { name gender nationality } }
       cached_tags
       default_physical_edition_id
       editions {
@@ -51,6 +54,8 @@ const HARDCOVER_ISBN_QUERY = `
         isbn_13
         isbn_10
         image { url }
+        audio_seconds
+        publisher { name }
       }
     }
   }
@@ -76,6 +81,8 @@ const HARDCOVER_DEFAULT_EDITIONS_QUERY = `
         isbn_13
         isbn_10
         image { url }
+        audio_seconds
+        publisher { name }
       }
     }
   }
@@ -106,6 +113,23 @@ async function hcPost(query: string, variables: Record<string, unknown>) {
   return res.json();
 }
 
+function extractHcTagsForKeys(
+  cached_tags: unknown,
+  keys: string[],
+): string[] {
+  if (!cached_tags || typeof cached_tags !== "object" || Array.isArray(cached_tags))
+    return [];
+  const obj = cached_tags as Record<string, { tag?: string }[]>;
+  const results: string[] = [];
+  for (const key of keys) {
+    const entries = obj[key] ?? [];
+    for (const e of entries) {
+      if (e?.tag) results.push(e.tag);
+    }
+  }
+  return results;
+}
+
 function extractHcGenres(cached_tags: unknown): string[] {
   if (!cached_tags) return [];
   if (Array.isArray(cached_tags)) return cached_tags as string[];
@@ -120,6 +144,43 @@ function extractHcGenres(cached_tags: unknown): string[] {
   return [];
 }
 
+/** Extract diversity tags from Hardcover representation tags + author identity. */
+function extractHcDiversityTags(
+  cached_tags: unknown,
+  contributions: { author: { name: string; gender?: string; nationality?: string } }[],
+): string[] {
+  const tags = new Set<string>();
+
+  // Representation and diversity-related categories from cached_tags
+  const repTags = extractHcTagsForKeys(cached_tags, [
+    "Representation",
+    "Diverse Voices",
+    "Identity",
+    "Own Voices",
+  ]);
+  for (const t of repTags) tags.add(t);
+
+  // Author identity fields
+  for (const { author } of contributions) {
+    if (author.gender) {
+      const g = author.gender.toLowerCase();
+      if (g === "female" || g === "woman") tags.add("woman author");
+      else if (g === "non-binary" || g === "nonbinary" || g === "non binary")
+        tags.add("non-binary author");
+      else if (g === "male" || g === "man") {
+        // Don't add "man author" — not typically a diversity tag
+      } else if (g) {
+        tags.add(`${g} author`);
+      }
+    }
+    if (author.nationality) {
+      tags.add(`${author.nationality} author`);
+    }
+  }
+
+  return [...tags];
+}
+
 /** Parse a raw HC book row (from the `books` table query) into a BookResult. */
 function parseHcBook(
   book: {
@@ -128,7 +189,7 @@ function parseHcBook(
     pages?: number;
     release_date?: string;
     images?: { url?: string }[];
-    contributions?: { author: { name: string } }[];
+    contributions?: { author: { name: string; gender?: string; nationality?: string } }[];
     cached_tags?: unknown;
     default_physical_edition_id?: number;
     editions?: {
@@ -136,11 +197,14 @@ function parseHcBook(
       isbn_13?: string;
       isbn_10?: string;
       image?: { url?: string };
+      audio_seconds?: number | null;
+      publisher?: { name?: string } | null;
     }[];
   },
   fallbackIsbn = "",
 ): BookResult {
   const editions = book.editions ?? [];
+  const contributions = book.contributions ?? [];
   const defaultEdition = editions.find(
     (e) => e.id === book.default_physical_edition_id,
   );
@@ -151,16 +215,28 @@ function parseHcBook(
     isbns[0] ||
     fallbackIsbn;
   const coverUrl = defaultEdition?.image?.url || book.images?.[0]?.url || "";
+
+  // Audio duration: prefer default edition, fall back to any audiobook edition
+  const audioEdition =
+    defaultEdition ??
+    editions.find((e) => (e.audio_seconds ?? 0) > 0) ??
+    null;
+  const audioSeconds = audioEdition?.audio_seconds ?? null;
+
   return {
     id: `hc-${book.id}`,
     title: book.title ?? "",
-    author: (book.contributions ?? []).map((c) => c.author.name).join(", "),
+    author: contributions.map((c) => c.author.name).join(", "),
     release_date: book.release_date ?? "",
     genres: extractHcGenres(book.cached_tags),
+    diversity_tags: extractHcDiversityTags(book.cached_tags, contributions),
     cover_url: coverUrl,
     isbn: primaryIsbn,
     isbns,
     page_count: book.pages ?? null,
+    publisher: defaultEdition?.publisher?.name ?? "",
+    audio_duration_minutes:
+      audioSeconds != null ? Math.round(audioSeconds / 60) : null,
   };
 }
 
@@ -176,6 +252,9 @@ interface BookEnrichment {
   isbns: string[];
   coverUrl: string;
   genres: string[];
+  diversityTags: string[];
+  publisher: string;
+  audioDurationMinutes: number | null;
 }
 
 /** Shared helper: collect all isbn_13/isbn_10 values from a list of editions. */
@@ -206,6 +285,8 @@ async function fetchDefaultEditionData(
       isbn_13?: string;
       isbn_10?: string;
       image?: { url?: string };
+      audio_seconds?: number | null;
+      publisher?: { name?: string } | null;
     }[];
   }[] = json?.data?.books ?? [];
   const map = new Map<number, BookEnrichment>();
@@ -214,11 +295,16 @@ async function fetchDefaultEditionData(
       (e) => e.id === book.default_physical_edition_id,
     );
     const isbns = collectIsbns(book.editions);
+    const audioSeconds = edition?.audio_seconds ?? null;
     map.set(book.id, {
       isbn: edition?.isbn_13 || edition?.isbn_10 || isbns[0] || "",
       isbns,
       coverUrl: edition?.image?.url || book.images?.[0]?.url || "",
       genres: extractHcGenres(book.cached_tags),
+      diversityTags: extractHcDiversityTags(book.cached_tags, []),
+      publisher: edition?.publisher?.name ?? "",
+      audioDurationMinutes:
+        audioSeconds != null ? Math.round(audioSeconds / 60) : null,
     });
   }
   return map;
@@ -242,10 +328,13 @@ async function searchHardcover(query: string): Promise<BookResult[]> {
         author: (d.author_names ?? []).join(", "),
         release_date: d.release_date ?? String(d.release_year ?? ""),
         genres: extractHcGenres(d.cached_tags),
+        diversity_tags: [],
         cover_url: d.cover_image_url ?? "",
         isbn: "",
         isbns: [],
         page_count: d.pages ?? null,
+        publisher: "",
+        audio_duration_minutes: null,
         _bookId: bookId !== undefined && !isNaN(bookId) ? bookId : undefined,
       };
     })
@@ -268,6 +357,12 @@ async function searchHardcover(query: string): Promise<BookResult[]> {
       isbns: enrich?.isbns ?? r.isbns,
       cover_url: enrich?.coverUrl || r.cover_url,
       genres: enrich?.genres?.length ? enrich.genres : r.genres,
+      diversity_tags: enrich?.diversityTags?.length
+        ? enrich.diversityTags
+        : r.diversity_tags,
+      publisher: enrich?.publisher ?? r.publisher,
+      audio_duration_minutes:
+        enrich?.audioDurationMinutes ?? r.audio_duration_minutes,
     };
   });
 }
@@ -315,10 +410,13 @@ async function searchGoogle(query: string): Promise<BookResult[]> {
       author: (item.volumeInfo.authors ?? []).join(", "),
       release_date: item.volumeInfo.publishedDate ?? "",
       genres: item.volumeInfo.categories ?? [],
+      diversity_tags: [],
       cover_url: thumbnail.replace(/^http:/, "https:"),
       isbn: isbn13 || isbn10,
       isbns: [isbn13, isbn10].filter(Boolean),
       page_count: item.volumeInfo.pageCount ?? null,
+      publisher: "",
+      audio_duration_minutes: null,
     };
   });
 }

@@ -36,6 +36,9 @@ export async function createEntryAction(
       release_date: entry.releaseDate ?? "",
       genres: entry.genres ?? [],
       page_count: entry.pageCount ?? null,
+      publisher: entry.publisher ?? "",
+      audio_duration_minutes: entry.audioDurationMinutes ?? null,
+      diversity_tags: entry.diversityTags ?? [],
     },
     {
       id: entry.id,
@@ -78,8 +81,11 @@ export async function updateEntryAction(
   if ("bookmarked" in patch) userRow.bookmarked = patch.bookmarked;
   if ("upNext" in patch) userRow.up_next = patch.upNext;
   if ("moodTags" in patch) userRow.mood_tags = patch.moodTags;
+  if ("diversityTags" in patch) userRow.diversity_tags = patch.diversityTags;
   if ("bookshelves" in patch) userRow.bookshelves = patch.bookshelves;
   if ("userGenres" in patch) userRow.user_genres = patch.userGenres;
+  if ("format" in patch) userRow.format = patch.format;
+  if ("diversityTags" in patch) userRow.diversity_tags = patch.diversityTags;
   if ("title" in patch) userRow.title_override = patch.title || null;
   if ("author" in patch) userRow.author_override = patch.author || null;
 
@@ -92,10 +98,21 @@ export async function updateEntryAction(
 
   const catalogRow: Record<string, unknown> = {};
   if ("coverUrl" in patch) catalogRow.cover_url = patch.coverUrl;
-  if ("isbn" in patch) catalogRow.isbn = patch.isbn;
   if ("pageCount" in patch) catalogRow.page_count = patch.pageCount;
   if ("releaseDate" in patch) catalogRow.release_date = patch.releaseDate;
   if ("genres" in patch) catalogRow.genres = patch.genres;
+  if ("publisher" in patch) catalogRow.publisher = patch.publisher;
+  if ("audioDurationMinutes" in patch) catalogRow.audio_duration_minutes = patch.audioDurationMinutes ?? null;
+  if ("isbn" in patch && patch.isbn) {
+    const { data: cb } = await supabase
+      .from("catalog_books")
+      .select("isbns")
+      .eq("id", ub.catalog_book_id)
+      .single();
+    const stored = (cb?.isbns as string[] | null) ?? [];
+    const merged = [...new Set([...stored, patch.isbn as string])];
+    if (merged.length !== stored.length) catalogRow.isbns = merged;
+  }
 
   if (Object.keys(catalogRow).length) {
     catalogRow.updated_at = now;
