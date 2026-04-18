@@ -8,6 +8,7 @@ import {
 import "@/globals.css";
 import AuthProvider from "@/providers/AuthProvider";
 import Nav from "@/components/navigation/Nav";
+import { Toaster } from "@/components/Toaster";
 import { NavigationProvider } from "@/providers/NavigationProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 
@@ -63,6 +64,7 @@ export default function RootLayout({
             <NavigationProvider>
               <Nav />
               <div className="pt-14 lg:pl-[220px]">{children}</div>
+              <Toaster />
             </NavigationProvider>
           </AuthProvider>
         </ThemeProvider>

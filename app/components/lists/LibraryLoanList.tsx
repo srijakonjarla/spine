@@ -6,6 +6,7 @@ import { CatalogSearch } from "@/components/CatalogSearch";
 import { addListItem } from "@/lib/lists";
 import type { ListItem, BookEntry } from "@/types";
 import type { CatalogEntry } from "@/lib/catalog";
+import { toast } from "@/lib/toast";
 
 interface Props {
   listId: string;
@@ -68,8 +69,8 @@ export function LibraryLoanList({
       setDraftDueDate("");
       setDraftLoanPrice("");
       setShowAdd(false);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast("Something went wrong. Please try again.");
     } finally {
       setAdding(false);
     }

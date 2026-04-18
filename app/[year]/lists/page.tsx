@@ -6,6 +6,7 @@ import { getLists, createList } from "@/lib/lists";
 import type { BookList } from "@/types";
 import { ListCard } from "@/components/lists/ListCard";
 import { ListCreateModal } from "@/components/lists/ListCreateModal";
+import { toast } from "@/lib/toast";
 
 export default function ListsPage() {
   const { year: yearParam } = useParams<{ year: string }>();
@@ -20,7 +21,7 @@ export default function ListsPage() {
   useEffect(() => {
     getLists(year)
       .then(setLists)
-      .catch(console.error)
+      .catch(() => toast("Failed to load data. Please refresh."))
       .finally(() => setLoading(false));
   }, [year]);
 
@@ -41,8 +42,8 @@ export default function ListsPage() {
         description: opts.description,
       });
       router.push(`/${year}/lists/${list.id}`);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast("Something went wrong. Please try again.");
       setSaving(false);
     }
   };

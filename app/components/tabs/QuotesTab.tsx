@@ -1,6 +1,7 @@
 // ─── Tab: Quotes ──────────────────────────────────────────────────
 
 import { QuoteCard } from "@/components/QuoteCard";
+import { toast } from "@/lib/toast";
 import { getQuotes, addQuote, deleteQuote } from "@/lib/quotes";
 import { Quote } from "@/types";
 import { useState, useEffect } from "react";
@@ -15,7 +16,7 @@ export default function QuotesTab() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    getQuotes(bookId).then(setQuotes).catch(console.error);
+    getQuotes(bookId).then(setQuotes).catch(() => toast("Failed to load data. Please refresh."));
   }, [bookId]);
 
   const handleAdd = async () => {

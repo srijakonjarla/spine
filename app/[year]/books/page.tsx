@@ -9,6 +9,7 @@ import { getEntries, createEntry } from "@/lib/db";
 import { type CatalogEntry, lookupBook } from "@/lib/catalog";
 import type { BookEntry } from "@/types";
 import { localDateStr, formatDate } from "@/lib/dates";
+import { toast } from "@/lib/toast";
 
 function effectiveDate(e: BookEntry): string {
   if (e.status === "finished" && e.dateFinished) return e.dateFinished;
@@ -49,7 +50,7 @@ export default function BooksPage() {
         setEntries(yearEntries);
         setActiveBooks(allEntries.filter((e) => e.status === "reading"));
       })
-      .catch(console.error)
+      .catch(() => toast("Failed to load data. Please refresh."))
       .finally(() => setLoading(false));
   }, [year]);
 
@@ -88,8 +89,8 @@ export default function BooksPage() {
       };
       await createEntry(entry);
       router.push(`/book/${entry.id}`);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast("Something went wrong. Please try again.");
       setAdding(false);
     }
   };

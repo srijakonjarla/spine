@@ -20,6 +20,7 @@ import { IdeaList } from "@/components/lists/IdeaList";
 import { BookListItems } from "@/components/lists/BookListItems";
 import { ListSidebar } from "@/components/lists/ListSidebar";
 import type { BookList, BookEntry, ListItem } from "@/types";
+import { toast } from "@/lib/toast";
 import {
   BooksIcon,
   LightbulbIcon,
@@ -88,7 +89,7 @@ export default function ListDetailPage() {
         setList(l);
         setLibraryEntries(entries);
       })
-      .catch(console.error)
+      .catch(() => toast("Failed to load data. Please refresh."))
       .finally(() => setLoading(false));
   }, [listId, year, router]);
 

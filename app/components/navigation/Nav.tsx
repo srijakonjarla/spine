@@ -23,6 +23,7 @@ import {
   BooksIcon,
 } from "@phosphor-icons/react";
 import { MONTH_ABBRS } from "@/lib/constants";
+import { toast } from "@/lib/toast";
 import {
   SidebarLink,
   SidebarSection,
@@ -64,7 +65,7 @@ export default function Nav() {
         setBookmarks(bookmarks);
         setShelfCounts(shelfCounts);
       })
-      .catch(console.error);
+      .catch(() => toast("Failed to load data. Please refresh."));
   }, [userId]);
 
   return (

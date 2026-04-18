@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { searchCatalog, type CatalogEntry } from "@/lib/catalog";
+import { toast } from "@/lib/toast";
 import { STATUS_SYMBOL, STATUS_COLOR } from "@/lib/statusMeta";
 import type { BookEntry } from "@/types";
 
@@ -85,8 +86,8 @@ export function CatalogSearch({
           );
 
           setSuggestions([...libMatches, ...deduped]);
-        } catch (err) {
-          console.error("[CatalogSearch] error:", err);
+        } catch {
+          toast("Search failed. Please try again.");
           setSearchError(true);
           setSuggestions([]);
         }
@@ -203,8 +204,8 @@ export function useCatalogSearch(delay = 250) {
       timer.current = setTimeout(async () => {
         try {
           setSuggestions(await searchCatalog(value));
-        } catch (err) {
-          console.error("[CatalogSearch]", err);
+        } catch {
+          toast("Search failed. Please try again.");
           setSuggestions([]);
         }
       }, delay);

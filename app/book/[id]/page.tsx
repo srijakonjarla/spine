@@ -17,6 +17,7 @@ import { StarRating } from "@/components/StarRating";
 import { usePreviousRoute } from "@/providers/NavigationProvider";
 import type { BookEntry, ReadingStatus, Quote } from "@/types";
 import { localDateStr } from "@/lib/dates";
+import { toast } from "@/lib/toast";
 import { STATUSES } from "@/lib/statusMeta";
 import {
   ReflectionTab,
@@ -123,7 +124,7 @@ export default function BookPage() {
   }, [id, router]);
 
   useEffect(() => {
-    getQuotes(id).then(setQuotes).catch(console.error);
+    getQuotes(id).then(setQuotes).catch(() => toast("Failed to load data. Please refresh."));
   }, [id]);
 
   const save = useCallback(

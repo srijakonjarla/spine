@@ -5,6 +5,7 @@ import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
 import { getEntries, createEntry } from "@/lib/db";
 import { type CatalogEntry, lookupBook } from "@/lib/catalog";
+import { toast } from "@/lib/toast";
 import { CatalogSearch } from "@/components/CatalogSearch";
 import { STATUS_LABEL } from "@/lib/statusMeta";
 import { StarDisplay } from "@/components/StarDisplay";
@@ -71,8 +72,8 @@ export default function StatusCatalogPage() {
       await createEntry(entry);
       setEntries((prev) => [entry, ...prev]);
       setAddValue("");
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast("Something went wrong. Please try again.");
     } finally {
       setAdding(false);
     }
@@ -81,7 +82,7 @@ export default function StatusCatalogPage() {
   useEffect(() => {
     getEntries({ status })
       .then((all) => setEntries(all.filter((e) => e.status === status)))
-      .catch(console.error)
+      .catch(() => toast("Failed to load data. Please refresh."))
       .finally(() => setLoading(false));
   }, [status]);
 

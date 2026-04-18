@@ -12,6 +12,7 @@ import {
   removeBookFromGoal,
 } from "@/lib/goals";
 import { getEntries } from "@/lib/db";
+import { toast } from "@/lib/toast";
 import type { ReadingGoal, BookEntry } from "@/types";
 import { ProgressBar } from "@/components/ProgressBar";
 import { PageHeader } from "@/components/PageHeader";
@@ -33,7 +34,7 @@ function AutoGoalCard({
   const scheduleSave = (val: number) => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(
-      () => updateGoal(goal.id, { target: val }).catch(console.error),
+      () => updateGoal(goal.id, { target: val }).catch(() => toast("Something went wrong. Please try again.")),
       600,
     );
   };
@@ -128,7 +129,7 @@ function CustomGoalCard({
   const scheduleSave = (patch: { target?: number; name?: string }) => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(
-      () => updateGoal(goal.id, patch).catch(console.error),
+      () => updateGoal(goal.id, patch).catch(() => toast("Something went wrong. Please try again.")),
       600,
     );
   };
@@ -139,8 +140,8 @@ function CustomGoalCard({
     try {
       await deleteGoal(goal.id);
       onDelete(goal.id);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast("Something went wrong. Please try again.");
       setDeleting(false);
     }
   };
@@ -153,8 +154,8 @@ function CustomGoalCard({
       onBookAdded(goal.id, bookId);
       setSearch("");
       setShowPicker(false);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast("Something went wrong. Please try again.");
     } finally {
       setBusy(null);
     }
@@ -166,8 +167,8 @@ function CustomGoalCard({
     try {
       await removeBookFromGoal(goal.id, bookId);
       onBookRemoved(goal.id, bookId);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast("Something went wrong. Please try again.");
     } finally {
       setBusy(null);
     }
@@ -360,7 +361,7 @@ export default function GoalPage() {
 
         setGoals(resolved);
       })
-      .catch(console.error)
+      .catch(() => toast("Failed to load data. Please refresh."))
       .finally(() => setLoading(false));
   }, [year]);
 

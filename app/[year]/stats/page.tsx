@@ -12,6 +12,7 @@ import { StatCard } from "@/components/StatCard";
 import { formatDate } from "@/lib/dates";
 import { ProgressBar } from "@/components/ProgressBar";
 import { EmptyState } from "@/components/EmptyState";
+import { toast } from "@/lib/toast";
 
 export default function StatsPage() {
   const { year: yearParam } = useParams<{ year: string }>();
@@ -31,7 +32,7 @@ export default function StatsPage() {
           qs.filter((q) => q.createdAt.startsWith(`${year}`)).length,
         );
       })
-      .catch(console.error)
+      .catch(() => toast("Failed to load data. Please refresh."))
       .finally(() => setLoading(false));
   }, [year]);
 

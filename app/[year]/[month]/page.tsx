@@ -27,6 +27,7 @@ import {
   formatMonthYear,
 } from "@/lib/dates";
 import { MONTH_ABBRS } from "@/lib/constants";
+import { toast } from "@/lib/toast";
 
 function pad(n: number) {
   return String(n).padStart(2, "0");
@@ -89,7 +90,7 @@ export default function MonthSpreadPage() {
         setLogEntries(log as ReadingLogEntry[]);
         setQuotes(qs);
       } catch (message) {
-        console.error(message);
+        toast(message as string);
       } finally {
         setLoading(false);
       }

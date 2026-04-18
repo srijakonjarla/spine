@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getEntries } from "@/lib/db";
+import { toast } from "@/lib/toast";
 import { BookCover } from "@/components/BookCover";
 import { EmptyState } from "@/components/EmptyState";
 import type { BookEntry, BookRead } from "@/types";
@@ -105,7 +106,7 @@ export default function RereadsPage() {
           }),
         ),
       )
-      .catch(console.error)
+      .catch(() => toast("Failed to load data. Please refresh."))
       .finally(() => setLoading(false));
   }, []);
 

@@ -8,6 +8,7 @@ import type { Quote } from "@/types";
 import { QuoteCard } from "@/components/QuoteCard";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
+import { toast } from "@/lib/toast";
 
 export default function QuoteCollectionPage() {
   const { year: yearParam } = useParams<{ year: string }>();
@@ -19,7 +20,7 @@ export default function QuoteCollectionPage() {
   useEffect(() => {
     getQuotes()
       .then(setQuotes)
-      .catch(console.error)
+      .catch(() => toast("Failed to load data. Please refresh."))
       .finally(() => setLoading(false));
   }, [year]);
 

@@ -16,6 +16,7 @@ import {
 import { BookEntry } from "@/types";
 import Link from "next/link";
 import { useState, useRef } from "react";
+import { toast } from "@/lib/toast";
 
 const STATUS_BG_CLS: Record<SeriesBook["status"], string> = {
   read: "bg-sage border-sage",
@@ -135,8 +136,8 @@ export default function SeriesCard({
       onBookAdd(series.id, book);
       setDraftTitle("");
       setAddingBook(false);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast("Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -147,8 +148,8 @@ export default function SeriesCard({
     try {
       await deleteSeries(series.id);
       onDelete(series.id);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast("Something went wrong. Please try again.");
       setDeleting(false);
     }
   };

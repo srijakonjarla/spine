@@ -7,6 +7,7 @@ import { getReadingLog } from "@/lib/habits";
 import { getGoals } from "@/lib/goals";
 import { getDisplayName, hasImportedGoodreads } from "@/lib/auth";
 import { useAuth } from "@/providers/AuthProvider";
+import { toast } from "@/lib/toast";
 import type { BookEntry, ReadingLogEntry, ReadingGoal } from "@/types";
 import { FireIcon, LeafIcon, StarIcon } from "@phosphor-icons/react";
 import { MoodChip } from "@/components/MoodChip";
@@ -126,7 +127,7 @@ export default function Home() {
       );
     }
     load()
-      .catch(console.error)
+      .catch(() => toast("Failed to load data. Please refresh."))
       .finally(() => setLoading(false));
     hasImportedGoodreads().then(setGoodreadsImported);
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -9,6 +9,7 @@ import {
   type SeriesBook,
 } from "@/lib/series";
 import { getEntries } from "@/lib/db";
+import { toast } from "@/lib/toast";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
 import type { BookEntry } from "@/types";
@@ -29,7 +30,7 @@ export default function SeriesPage() {
         setSeriesList(series);
         setLibrary(books);
       })
-      .catch(console.error)
+      .catch(() => toast("Failed to load data. Please refresh."))
       .finally(() => setLoading(false));
   }, []);
 

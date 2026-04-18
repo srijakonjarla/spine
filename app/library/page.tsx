@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getEntries, createEntry } from "@/lib/db";
 import { type CatalogEntry, lookupBook } from "@/lib/catalog";
+import { toast } from "@/lib/toast";
 import { StarDisplay } from "@/components/StarDisplay";
 import { BookCoverThumb } from "@/components/BookCover";
 import { MoodChip, AllMoodsChip } from "@/components/MoodChip";
@@ -25,7 +26,7 @@ export default function LibraryPage() {
   useEffect(() => {
     getEntries()
       .then(setEntries)
-      .catch(console.error)
+      .catch(() => toast("Failed to load data. Please refresh."))
       .finally(() => setLoading(false));
   }, []);
 

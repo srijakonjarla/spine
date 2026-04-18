@@ -6,6 +6,7 @@ import { CatalogSearch } from "@/components/CatalogSearch";
 import { addListItem } from "@/lib/lists";
 import type { ListItem, BookEntry } from "@/types";
 import type { CatalogEntry } from "@/lib/catalog";
+import { toast } from "@/lib/toast";
 
 export const TX_TYPES = ["bought", "sold", "gifted", "donated"] as const;
 export type TxType = (typeof TX_TYPES)[number];
@@ -74,8 +75,8 @@ export function BookLedgerList({
       setDraftSource("");
       setDraftTxDate("");
       setShowAdd(false);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast("Something went wrong. Please try again.");
     } finally {
       setAdding(false);
     }

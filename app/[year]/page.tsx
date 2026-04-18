@@ -18,6 +18,7 @@ import { localDateStr, dateMonth } from "@/lib/dates";
 import { MONTH_ABBRS, MONTH_NAMES } from "@/lib/constants";
 import MiniMonthCal from "@/components/calendar/MiniMonthCal";
 import { BookCoverThumb } from "@/components/BookCover";
+import { toast } from "@/lib/toast";
 
 import { hashStr } from "@/lib/spineUtils";
 
@@ -80,7 +81,7 @@ export default function YearPage() {
         );
         setLists(ls);
       })
-      .catch(console.error)
+      .catch(() => toast("Failed to load data. Please refresh."))
       .finally(() => setLoading(false));
   }, [year]);
 

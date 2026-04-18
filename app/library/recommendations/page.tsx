@@ -10,6 +10,7 @@ import {
 } from "@/lib/recommendations";
 import { CatalogSearch } from "@/components/CatalogSearch";
 import { type CatalogEntry } from "@/lib/catalog";
+import { toast } from "@/lib/toast";
 
 export default function RecommendationsPage() {
   const [recs, setRecs] = useState<Recommendation[]>([]);
@@ -27,7 +28,7 @@ export default function RecommendationsPage() {
   useEffect(() => {
     getRecommendations()
       .then(setRecs)
-      .catch(console.error)
+      .catch(() => toast("Failed to load data. Please refresh."))
       .finally(() => setLoading(false));
   }, []);
 

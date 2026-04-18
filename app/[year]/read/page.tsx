@@ -9,6 +9,7 @@ import { StarDisplay } from "@/components/StarDisplay";
 import type { BookEntry } from "@/types";
 import { formatDate } from "@/lib/dates";
 import { MONTH_NAMES } from "@/lib/constants";
+import { toast } from "@/lib/toast";
 
 function monthIndex(iso: string): number {
   return parseInt(iso.slice(5, 7), 10) - 1;
@@ -36,7 +37,7 @@ export default function ReadThisYearPage() {
           );
         setBooks(finished);
       })
-      .catch(console.error)
+      .catch(() => toast("Failed to load data. Please refresh."))
       .finally(() => setLoading(false));
   }, [year]);
 

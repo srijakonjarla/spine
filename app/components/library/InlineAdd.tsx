@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { CatalogEntry } from "@/lib/catalog";
+import { toast } from "@/lib/toast";
 import { CatalogSearch } from "../CatalogSearch";
 
 export default function InlineAdd({
@@ -22,8 +23,8 @@ export default function InlineAdd({
       await onAdd(catalog, value);
       setValue("");
       setOpen(false);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast("Something went wrong. Please try again.");
     } finally {
       setAdding(false);
     }

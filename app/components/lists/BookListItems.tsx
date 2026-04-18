@@ -10,6 +10,7 @@ import type { ListItem, BookEntry } from "@/types";
 import type { CatalogEntry } from "@/lib/catalog";
 
 import { spineColor } from "@/lib/spineUtils";
+import { toast } from "@/lib/toast";
 
 interface Props {
   listId: string;
@@ -91,8 +92,8 @@ export function BookListItems({
       setDraftAuthor("");
       setDraftBookId("");
       setShowAdd(false);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast("Something went wrong. Please try again.");
     } finally {
       setAdding(false);
     }

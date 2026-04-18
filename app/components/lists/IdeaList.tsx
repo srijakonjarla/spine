@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { addListItem } from "@/lib/lists";
+import { toast } from "@/lib/toast";
 import type { ListItem } from "@/types";
 
 const BULLET_SYMBOLS = ["→", "●", "✦", "◆", "○", "—", "✓", "★"];
@@ -44,8 +45,8 @@ export function IdeaList({
       onItemAdded(item);
       setInlineText("");
       setTimeout(() => inlineRef.current?.focus(), 50);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast("Something went wrong. Please try again.");
     } finally {
       setAdding(false);
     }
