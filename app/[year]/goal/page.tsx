@@ -32,7 +32,10 @@ function AutoGoalCard({
   const scheduleSave = (val: number) => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(
-      () => updateGoal(goal.id, { target: val }).catch(() => toast("Something went wrong. Please try again.")),
+      () =>
+        updateGoal(goal.id, { target: val }).catch(() =>
+          toast("Something went wrong. Please try again."),
+        ),
       600,
     );
   };
@@ -127,7 +130,10 @@ function CustomGoalCard({
   const scheduleSave = (patch: { target?: number; name?: string }) => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(
-      () => updateGoal(goal.id, patch).catch(() => toast("Something went wrong. Please try again.")),
+      () =>
+        updateGoal(goal.id, patch).catch(() =>
+          toast("Something went wrong. Please try again."),
+        ),
       600,
     );
   };

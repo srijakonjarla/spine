@@ -82,13 +82,15 @@ function titlesMatch(hcTitle: string, csvTitle: string): boolean {
   const longer = hc.length <= csv.length ? csv : hc;
   if (!longer.startsWith(shorter) || shorter.length < 6) return false;
 
-  const BOX = /\b(boxed? set|box set|omnibus|collection|trilogy|the complete|\d-book)\b/i;
+  const BOX =
+    /\b(boxed? set|box set|omnibus|collection|trilogy|the complete|\d-book)\b/i;
   if (BOX.test(hcTitle) && !BOX.test(csvTitle)) return false;
 
-  const shortFull = hcStripped.length <= csvStripped.length ? hcStripped : csvStripped;
-  const longFull = hcStripped.length <= csvStripped.length ? csvStripped : hcStripped;
+  const shortFull =
+    hcStripped.length <= csvStripped.length ? hcStripped : csvStripped;
+  const longFull =
+    hcStripped.length <= csvStripped.length ? csvStripped : hcStripped;
   const tail = longFull.slice(shortFull.length);
-  // eslint-disable-next-line no-control-regex
   if (tail.length > 6 && /[^\x00-\x7f]/.test(tail)) return false;
 
   return true;
@@ -124,7 +126,9 @@ function buildBatchQuery(
 }
 
 /** Collect all isbn_13/isbn_10 values from a list of editions. */
-function collectIsbns(editions: { isbn_13?: string; isbn_10?: string }[]): string[] {
+function collectIsbns(
+  editions: { isbn_13?: string; isbn_10?: string }[],
+): string[] {
   return [
     ...new Set(
       editions
@@ -203,7 +207,12 @@ type RawHCBook = {
   contributions?: { author: { name: string } }[];
   cached_tags?: unknown;
   default_physical_edition_id?: number;
-  editions?: { id?: number; isbn_13?: string; isbn_10?: string; image?: { url?: string } }[];
+  editions?: {
+    id?: number;
+    isbn_13?: string;
+    isbn_10?: string;
+    image?: { url?: string };
+  }[];
 };
 
 /**
@@ -217,9 +226,15 @@ function parseBookRow(
 ): (HCBook & { bookId: number }) | null {
   if (!book?.title) return null;
   const editions = book.editions ?? [];
-  const defaultEdition = editions.find((e) => e.id === book.default_physical_edition_id);
+  const defaultEdition = editions.find(
+    (e) => e.id === book.default_physical_edition_id,
+  );
   const isbns = collectIsbns(editions);
-  const primaryIsbn = defaultEdition?.isbn_13 || defaultEdition?.isbn_10 || isbns[0] || fallbackIsbn;
+  const primaryIsbn =
+    defaultEdition?.isbn_13 ||
+    defaultEdition?.isbn_10 ||
+    isbns[0] ||
+    fallbackIsbn;
   const coverUrl = defaultEdition?.image?.url || book.images?.[0]?.url || "";
 
   return {
@@ -277,14 +292,13 @@ function bestMatchFromBooks(
 }
 
 /** Parse a HC search result document into an HCBook (best-effort, no editions). */
-function parseSearchDoc(
-  doc: HardcoverDocument,
-  fallbackIsbn: string,
-): HCBook {
+function parseSearchDoc(doc: HardcoverDocument, fallbackIsbn: string): HCBook {
   const rawIsbn13 = Array.isArray(doc.isbn_13) ? doc.isbn_13[0] : doc.isbn_13;
   const rawIsbn10 = Array.isArray(doc.isbn_10) ? doc.isbn_10[0] : doc.isbn_10;
   const isbn = rawIsbn13 || rawIsbn10 || fallbackIsbn;
-  const isbns = [...new Set([rawIsbn13, rawIsbn10].filter((v): v is string => !!v))];
+  const isbns = [
+    ...new Set([rawIsbn13, rawIsbn10].filter((v): v is string => !!v)),
+  ];
   const releaseDate = doc.release_date
     ? String(doc.release_date)
     : doc.release_year
@@ -328,33 +342,45 @@ async function fetchHCBatch(
     if (isbn) {
       // ISBN path — response is books[]
       const books: RawHCBook[] = Array.isArray(raw) ? raw : [];
-      console.log(`[import] b${i} ISBN="${isbn}" title="${entry.title}" → ${books.length} book(s) from HC`);
+      console.log(
+        `[import] b${i} ISBN="${isbn}" title="${entry.title}" → ${books.length} book(s) from HC`,
+      );
       const result = bestMatchFromBooks(books, entry.title, entry.author, isbn);
       if (!result) {
-        console.log(`[import]   └─ no match (${books.map((b) => b.title).join(", ") || "empty"})`);
+        console.log(
+          `[import]   └─ no match (${books.map((b) => b.title).join(", ") || "empty"})`,
+        );
       } else {
-        console.log(`[import]   └─ matched "${result.title}" isbn=${result.isbn}`);
+        console.log(
+          `[import]   └─ matched "${result.title}" isbn=${result.isbn}`,
+        );
       }
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { bookId: _, ...rest } = result ?? ({} as HCBook & { bookId: number });
+      const { bookId: _, ...rest } =
+        result ?? ({} as HCBook & { bookId: number });
       return result ? rest : null;
     } else {
       // No-ISBN path — response is { results: JSON blob }
       const rawResults = raw?.results;
-      console.log(`[import] b${i} search title="${entry.title}" → raw=${JSON.stringify(raw)?.slice(0, 200)}`);
+      console.log(
+        `[import] b${i} search title="${entry.title}" → raw=${JSON.stringify(raw)?.slice(0, 200)}`,
+      );
       if (!rawResults) {
         console.log(`[import]   └─ no results field`);
         return null;
       }
       let parsed: { hits?: { document: HardcoverDocument }[] };
       try {
-        parsed = typeof rawResults === "string" ? JSON.parse(rawResults) : rawResults;
+        parsed =
+          typeof rawResults === "string" ? JSON.parse(rawResults) : rawResults;
       } catch {
         console.error(`[import]   └─ failed to parse search results`);
         return null;
       }
       const hits = parsed?.hits ?? [];
-      console.log(`[import]   └─ ${hits.length} hit(s): ${hits.map((h: { document?: HardcoverDocument }) => h.document?.title).join(", ")}`);
+      console.log(
+        `[import]   └─ ${hits.length} hit(s): ${hits.map((h: { document?: HardcoverDocument }) => h.document?.title).join(", ")}`,
+      );
 
       const hintLast = normTitle(authorLastName(entry.author));
 
@@ -362,7 +388,9 @@ async function fetchHCBatch(
         if (!doc.title) continue;
         if (!titlesMatch(doc.title, entry.title)) continue;
         if (hintLast.length >= 3 && doc.author_names?.length) {
-          const authorOk = doc.author_names.some((a) => normTitle(a).includes(hintLast));
+          const authorOk = doc.author_names.some((a) =>
+            normTitle(a).includes(hintLast),
+          );
           if (!authorOk) continue;
         }
         const book = parseSearchDoc(doc, isbn);
@@ -488,7 +516,13 @@ async function runImport(
       const genres = safeHc?.genres ?? [];
 
       const normalizeAuthor = (a: string) =>
-        a.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter(Boolean).sort().join(" ");
+        a
+          .toLowerCase()
+          .replace(/[^a-z0-9\s]/g, "")
+          .split(/\s+/)
+          .filter(Boolean)
+          .sort()
+          .join(" ");
 
       // findExisting: checks ISBN array first (catches different-edition imports),
       // then falls back to title+author text match. Title is validated on the
@@ -506,7 +540,10 @@ async function runImport(
             .contains("isbns", [isbnToCheck])
             .maybeSingle();
           if (byIsbn) {
-            const titleOk = titlesMatch(title, (byIsbn as { title?: string }).title ?? "");
+            const titleOk = titlesMatch(
+              title,
+              (byIsbn as { title?: string }).title ?? "",
+            );
             if (!titleOk) {
               csvIsbnBelongsToOtherBook = true;
               console.log(
@@ -530,7 +567,9 @@ async function runImport(
         // "Roots: The Saga..."). Apostrophes become _ so straight/curly variants
         // both match. JS-side compares stripped+normalized keys.
         const baseTitle = stripTitle(title);
-        const ilikePattern = baseTitle.replace(/[%_\\]/g, "\\$&").replace(/['']/g, "_");
+        const ilikePattern = baseTitle
+          .replace(/[%_\\]/g, "\\$&")
+          .replace(/['']/g, "_");
         const firstWord = baseTitle.split(/\s+/)[0] ?? "";
         const [prefixRes, shortRes] = await Promise.all([
           supabase
@@ -541,15 +580,18 @@ async function runImport(
           firstWord
             ? supabase
                 .from("catalog_books")
-                .select("id, title, author, genres, release_date, cover_url, isbns")
+                .select(
+                  "id, title, author, genres, release_date, cover_url, isbns",
+                )
                 .ilike("title", `${firstWord}%`)
                 .limit(20)
             : Promise.resolve({ data: [] }),
         ]);
         const seenIds = new Set<string>();
-        const cbs = [...(prefixRes.data ?? []), ...(shortRes.data ?? [])].filter(
-          (c) => !seenIds.has(c.id) && seenIds.add(c.id),
-        );
+        const cbs = [
+          ...(prefixRes.data ?? []),
+          ...(shortRes.data ?? []),
+        ].filter((c) => !seenIds.has(c.id) && seenIds.add(c.id));
         if (!cbs.length) return null;
 
         // Bidirectional title match on stripped+normalized keys.
@@ -558,7 +600,8 @@ async function runImport(
         const cb = cbs.find((c) => {
           const cKey = normTitle(stripTitle(c.title ?? ""));
           const titleOk =
-            !inKey || !cKey ||
+            !inKey ||
+            !cKey ||
             cKey === inKey ||
             cKey.startsWith(inKey) ||
             inKey.startsWith(cKey);
@@ -590,7 +633,10 @@ async function runImport(
         return { ...ub, catalog_books: cb };
       };
 
-      let existing = await findExisting(resolvedTitle, resolvedIsbn || undefined);
+      let existing = await findExisting(
+        resolvedTitle,
+        resolvedIsbn || undefined,
+      );
       if (!existing && resolvedTitle !== entry.title) {
         existing = await findExisting(entry.title);
       }
@@ -604,7 +650,7 @@ async function runImport(
         const safeIsbn = csvIsbnBelongsToOtherBook ? "" : resolvedIsbn;
         const safeIsbns = csvIsbnBelongsToOtherBook
           ? []
-          : safeHc?.isbns ?? (resolvedIsbn ? [resolvedIsbn] : []);
+          : (safeHc?.isbns ?? (resolvedIsbn ? [resolvedIsbn] : []));
         await upsertBookForUser(
           supabase,
           userId,
@@ -688,7 +734,9 @@ async function runImport(
           if (!csvIsbnBelongsToOtherBook) {
             const incomingIsbns = [
               ...new Set(
-                [resolvedIsbn, ...(safeHc?.isbns ?? [])].filter((v): v is string => !!v),
+                [resolvedIsbn, ...(safeHc?.isbns ?? [])].filter(
+                  (v): v is string => !!v,
+                ),
               ),
             ];
             if (incomingIsbns.length) {

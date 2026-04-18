@@ -102,7 +102,8 @@ export async function PATCH(
   if ("releaseDate" in patch) catalogRow.release_date = patch.releaseDate;
   if ("genres" in patch) catalogRow.genres = patch.genres;
   if ("publisher" in patch) catalogRow.publisher = patch.publisher;
-  if ("audioDurationMinutes" in patch) catalogRow.audio_duration_minutes = patch.audioDurationMinutes ?? null;
+  if ("audioDurationMinutes" in patch)
+    catalogRow.audio_duration_minutes = patch.audioDurationMinutes ?? null;
   // ISBN edits merge into the isbns[] array rather than replacing a singular column.
   if ("isbn" in patch && patch.isbn) {
     const { data: cb } = await supabase

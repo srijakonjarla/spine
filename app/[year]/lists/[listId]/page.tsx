@@ -114,7 +114,9 @@ export default function ListDetailPage() {
   };
 
   const handleItemAdded = (item: ListItem) => {
-    setList((prev) => (prev ? { ...prev, items: [...prev.items, item] } : prev));
+    setList((prev) =>
+      prev ? { ...prev, items: [...prev.items, item] } : prev,
+    );
   };
 
   const handleDelete = async () => {
@@ -143,7 +145,9 @@ export default function ListDetailPage() {
 
   if (!list) return <div className="page" />;
 
-  const isIdeaType = ["idea_list", "bullet_list", "checklist"].includes(list.listType);
+  const isIdeaType = ["idea_list", "bullet_list", "checklist"].includes(
+    list.listType,
+  );
   const isChecklist = list.listType === "checklist";
   const isLibraryLoan = list.listType === "library_loan";
   const isBookLedger = list.listType === "book_ledger";
@@ -248,7 +252,9 @@ export default function ListDetailPage() {
               onRemove={handleRemoveItem}
               onItemAdded={handleItemAdded}
               onBulletSymbolChange={(sym) => {
-                setList((prev) => prev ? { ...prev, bulletSymbol: sym } : prev);
+                setList((prev) =>
+                  prev ? { ...prev, bulletSymbol: sym } : prev,
+                );
                 saveListField({ bulletSymbol: sym });
               }}
             />

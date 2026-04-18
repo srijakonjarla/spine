@@ -124,7 +124,9 @@ export default function BookPage() {
   }, [id, router]);
 
   useEffect(() => {
-    getQuotes(id).then(setQuotes).catch(() => toast("Failed to load data. Please refresh."));
+    getQuotes(id)
+      .then(setQuotes)
+      .catch(() => toast("Failed to load data. Please refresh."));
   }, [id]);
 
   const save = useCallback(
@@ -449,7 +451,10 @@ export default function BookPage() {
                       {g} ×
                     </button>
                   ) : (
-                    <span key={g} className="hero-genre-chip opacity-60 cursor-default">
+                    <span
+                      key={g}
+                      className="hero-genre-chip opacity-60 cursor-default"
+                    >
                       {g}
                     </span>
                   );
@@ -507,7 +512,11 @@ export default function BookPage() {
                       <input
                         type="date"
                         value={entry.dateStarted}
-                        max={entry.dateFinished || entry.dateShelved || localDateStr()}
+                        max={
+                          entry.dateFinished ||
+                          entry.dateShelved ||
+                          localDateStr()
+                        }
                         onChange={(e) =>
                           update({ dateStarted: e.target.value })
                         }

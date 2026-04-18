@@ -33,7 +33,8 @@ export const BookContext = createContext<BookContextValue | null>(null);
 
 export function useBook(): BookContextValue {
   const ctx = useContext(BookContext);
-  if (!ctx) throw new Error("useBook must be used within a BookContext.Provider");
+  if (!ctx)
+    throw new Error("useBook must be used within a BookContext.Provider");
   return ctx;
 }
 

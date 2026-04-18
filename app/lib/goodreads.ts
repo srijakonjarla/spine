@@ -160,7 +160,11 @@ export function parseGoodreadsCSV(text: string): GoodreadsPreview[] {
         status,
         dateStarted: status === "reading" ? dateAdded : "",
         dateFinished: status === "finished" ? dateRead : "",
-        dateShelved: isDNF ? dateRead : (status === "want-to-read" ? dateAdded : ""),
+        dateShelved: isDNF
+          ? dateRead
+          : status === "want-to-read"
+            ? dateAdded
+            : "",
         rating,
         feeling: row["My Review"] ?? "",
         thoughts: [],

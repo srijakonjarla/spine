@@ -84,7 +84,9 @@ export async function upsertBookForUser(
       catalog.title &&
       catalog.title !== existing.title &&
       (!existing.title ||
-        catalog.title.toLowerCase().startsWith((existing.title ?? "").toLowerCase()))
+        catalog.title
+          .toLowerCase()
+          .startsWith((existing.title ?? "").toLowerCase()))
     ) {
       patch.title = catalog.title;
     }
@@ -93,14 +95,16 @@ export async function upsertBookForUser(
     const mergedIsbns = [...new Set([...storedIsbns, ...allIncomingIsbns])];
     if (mergedIsbns.length > storedIsbns.length) patch.isbns = mergedIsbns;
 
-    if (catalog.cover_url && !existing.cover_url) patch.cover_url = catalog.cover_url;
+    if (catalog.cover_url && !existing.cover_url)
+      patch.cover_url = catalog.cover_url;
     if (catalog.genres?.length) patch.genres = catalog.genres;
     if (catalog.page_count != null) patch.page_count = catalog.page_count;
     if (catalog.release_date) patch.release_date = catalog.release_date;
     if (catalog.publisher) patch.publisher = catalog.publisher;
     if (catalog.audio_duration_minutes != null)
       patch.audio_duration_minutes = catalog.audio_duration_minutes;
-    if (catalog.diversity_tags?.length) patch.diversity_tags = catalog.diversity_tags;
+    if (catalog.diversity_tags?.length)
+      patch.diversity_tags = catalog.diversity_tags;
 
     if (Object.keys(patch).length) {
       patch.updated_at = new Date().toISOString();
@@ -173,7 +177,9 @@ export async function upsertBookForUser(
   if (!catalogBookId && catalog.title) {
     const baseTitle = stripTitle(catalog.title);
     // Apostrophe becomes _ so straight/curly variants both match via ilike.
-    const ilikePattern = baseTitle.replace(/[%_\\]/g, "\\$&").replace(/['']/g, "_");
+    const ilikePattern = baseTitle
+      .replace(/[%_\\]/g, "\\$&")
+      .replace(/['']/g, "_");
     // Also fetch candidates shorter than baseTitle (stored is the shorter form).
     // Use the first word of baseTitle as a loose prefix — author filter narrows it.
     const firstWord = baseTitle.split(/\s+/)[0] ?? "";
@@ -191,16 +197,18 @@ export async function upsertBookForUser(
       : { data: [] };
 
     const seen = new Set<string>();
-    const candidates = [...(prefixCandidates ?? []), ...(shortCandidates ?? [])].filter(
-      (c) => !seen.has(c.id) && seen.add(c.id),
-    );
+    const candidates = [
+      ...(prefixCandidates ?? []),
+      ...(shortCandidates ?? []),
+    ].filter((c) => !seen.has(c.id) && seen.add(c.id));
 
     const inKey = titleKey(catalog.title);
     const inAuthor = norm(catalog.author);
     const byTitle = candidates.find((c) => {
       const cKey = titleKey(c.title ?? "");
       const titleOk =
-        !inKey || !cKey ||
+        !inKey ||
+        !cKey ||
         cKey === inKey ||
         cKey.startsWith(inKey) ||
         inKey.startsWith(cKey);

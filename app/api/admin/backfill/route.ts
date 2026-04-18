@@ -52,7 +52,8 @@ function titlesMatch(hcTitle: string, csvTitle: string): boolean {
   const shorter = hc.length <= csv.length ? hc : csv;
   const longer = hc.length <= csv.length ? csv : hc;
   if (!longer.startsWith(shorter) || shorter.length < 6) return false;
-  const BOX = /\b(boxed? set|box set|omnibus|collection|trilogy|the complete|\d-book)\b/i;
+  const BOX =
+    /\b(boxed? set|box set|omnibus|collection|trilogy|the complete|\d-book)\b/i;
   if (BOX.test(hcTitle) && !BOX.test(csvTitle)) return false;
   return true;
 }
@@ -65,7 +66,10 @@ async function hcPost(query: string) {
   }
   const res = await fetch(HC_ENDPOINT, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify({ query }),
   });
   if (!res.ok) {
@@ -88,7 +92,9 @@ function extractGenres(cached_tags: unknown): string[] {
   return [];
 }
 
-function collectIsbns(editions: { isbn_13?: string; isbn_10?: string }[]): string[] {
+function collectIsbns(
+  editions: { isbn_13?: string; isbn_10?: string }[],
+): string[] {
   return [
     ...new Set(
       editions
@@ -124,7 +130,12 @@ interface HCBookRow {
   contributions?: { author: { name: string } }[];
   cached_tags?: unknown;
   default_physical_edition_id?: number;
-  editions?: { id?: number; isbn_13?: string; isbn_10?: string; image?: { url?: string } }[];
+  editions?: {
+    id?: number;
+    isbn_13?: string;
+    isbn_10?: string;
+    image?: { url?: string };
+  }[];
 }
 
 /**
@@ -170,7 +181,9 @@ async function runBackfill(
   userId: string,
 ) {
   const stale = await fetchStaleBooks(supabase, userId);
-  console.log(`[backfill] ${stale.length} catalog rows to enrich for user ${userId}`);
+  console.log(
+    `[backfill] ${stale.length} catalog rows to enrich for user ${userId}`,
+  );
 
   for (let start = 0; start < stale.length; start += BATCH_SIZE) {
     const batch = stale.slice(start, start + BATCH_SIZE);
@@ -218,7 +231,8 @@ async function runBackfill(
       if (!rawResults) continue;
       let parsed: { hits?: { document: HCDoc }[] };
       try {
-        parsed = typeof rawResults === "string" ? JSON.parse(rawResults) : rawResults;
+        parsed =
+          typeof rawResults === "string" ? JSON.parse(rawResults) : rawResults;
       } catch {
         continue;
       }
@@ -228,7 +242,9 @@ async function runBackfill(
         if (!doc.title) continue;
         if (!titlesMatch(doc.title, row.title)) continue;
         if (hintLast.length >= 3 && doc.author_names?.length) {
-          const ok = doc.author_names.some((a) => normTitle(a).includes(hintLast));
+          const ok = doc.author_names.some((a) =>
+            normTitle(a).includes(hintLast),
+          );
           if (!ok) continue;
         }
         const hcId = typeof doc.id === "string" ? Number(doc.id) : doc.id;
@@ -260,14 +276,17 @@ async function runBackfill(
     // Step 3: apply enrichment patches.
     const applyPatch = async (row: StaleRow, book: HCBookRow) => {
       const editions = book.editions ?? [];
-      const defaultEdition = editions.find((e) => e.id === book.default_physical_edition_id);
+      const defaultEdition = editions.find(
+        (e) => e.id === book.default_physical_edition_id,
+      );
       const isbns = collectIsbns(editions);
-      const coverUrl = defaultEdition?.image?.url || book.images?.[0]?.url || "";
+      const coverUrl =
+        defaultEdition?.image?.url || book.images?.[0]?.url || "";
       const genres = extractGenres(book.cached_tags);
 
       const patch: Record<string, unknown> = {};
-      if (isbns.length && !(row.isbns?.length)) patch.isbns = isbns;
-      if (genres.length && !(row.genres?.length)) patch.genres = genres;
+      if (isbns.length && !row.isbns?.length) patch.isbns = isbns;
+      if (genres.length && !row.genres?.length) patch.genres = genres;
       if (book.release_date && book.release_date !== row.release_date) {
         patch.release_date = book.release_date;
       }
@@ -280,10 +299,15 @@ async function runBackfill(
           .from("catalog_books")
           .update(patch)
           .eq("id", row.id);
-        if (error) console.error(`[backfill]   update error ${row.id}: ${error.message}`);
+        if (error)
+          console.error(
+            `[backfill]   update error ${row.id}: ${error.message}`,
+          );
         else
           console.log(
-            `[backfill]   ✓ ${row.title} → ${Object.keys(patch).filter((k) => k !== "updated_at").join(", ")}`,
+            `[backfill]   ✓ ${row.title} → ${Object.keys(patch)
+              .filter((k) => k !== "updated_at")
+              .join(", ")}`,
           );
       } else {
         console.log(`[backfill]   (no patch) ${row.title}`);
@@ -312,8 +336,11 @@ async function countStale(
 
 export async function GET(req: NextRequest) {
   const supabase = createServerClient(req);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user)
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const remaining = await countStale(supabase, user.id);
   return NextResponse.json({ remaining });
@@ -321,11 +348,16 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const supabase = createServerClient(req);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user)
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const total = await countStale(supabase, user.id);
-  console.log(`[backfill] POST started for user ${user.id}, ${total} stale rows`);
+  console.log(
+    `[backfill] POST started for user ${user.id}, ${total} stale rows`,
+  );
 
   after(async () => {
     await runBackfill(supabase, user.id);

@@ -192,9 +192,8 @@ export default function TimelineTab() {
               {sortedThoughts.map((thought, i) => {
                 // sortedThoughts is newest-first; slice(i+1) gives older entries
                 const prevPage =
-                  sortedThoughts
-                    .slice(i + 1)
-                    .find((t) => t.pageNumber != null)?.pageNumber ?? null;
+                  sortedThoughts.slice(i + 1).find((t) => t.pageNumber != null)
+                    ?.pageNumber ?? null;
                 const currPage = thought.pageNumber ?? null;
 
                 return (
@@ -218,7 +217,10 @@ export default function TimelineTab() {
                         </p>
                       )}
                     </div>
-                    <span className="font-hand text-[15px] leading-[1.55] flex-1" style={{ color: "var(--pen-color, var(--ink))" }}>
+                    <span
+                      className="font-hand text-[15px] leading-[1.55] flex-1"
+                      style={{ color: "var(--pen-color, var(--ink))" }}
+                    >
                       {thought.text}
                     </span>
                     <button
@@ -270,7 +272,9 @@ export default function TimelineTab() {
             className="timeline-thought-input flex-1"
           />
         </div>
-        {!viewedRead && <p className="hint-text mt-1.5">↵ to post · shift+↵ for newline</p>}
+        {!viewedRead && (
+          <p className="hint-text mt-1.5">↵ to post · shift+↵ for newline</p>
+        )}
       </div>
 
       {/* Sidebar */}
@@ -294,12 +298,9 @@ export default function TimelineTab() {
             <div className="book-surface p-3 mb-5">
               <p className="font-hand text-sm text-plum">
                 {formatShortDate(dateStarted)}
-                {(dateFinished || (!viewedRead && entry.status === "reading")) && (
-                  <>
-                    {" "}
-                    →{" "}
-                    {dateFinished ? formatShortDate(dateFinished) : "now"}
-                  </>
+                {(dateFinished ||
+                  (!viewedRead && entry.status === "reading")) && (
+                  <> → {dateFinished ? formatShortDate(dateFinished) : "now"}</>
                 )}
               </p>
               <p className="text-[11px] text-ink-light font-sans mt-1">

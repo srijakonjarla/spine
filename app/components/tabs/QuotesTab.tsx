@@ -8,7 +8,9 @@ import { useState, useEffect } from "react";
 import { useBook } from "@/providers/BookContext";
 
 export default function QuotesTab() {
-  const { entry: { id: bookId } } = useBook();
+  const {
+    entry: { id: bookId },
+  } = useBook();
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [input, setInput] = useState("");
   const [page, setPage] = useState("");
@@ -16,7 +18,9 @@ export default function QuotesTab() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    getQuotes(bookId).then(setQuotes).catch(() => toast("Failed to load data. Please refresh."));
+    getQuotes(bookId)
+      .then(setQuotes)
+      .catch(() => toast("Failed to load data. Please refresh."));
   }, [bookId]);
 
   const handleAdd = async () => {

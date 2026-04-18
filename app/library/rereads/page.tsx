@@ -16,7 +16,9 @@ function readTimeline(
   entry: BookEntry,
 ): { rating: number; status: string; dateFinished: string }[] {
   const historical = [...entry.reads]
-    .filter((r) => r.status !== "did-not-finish" && (r.dateFinished || r.dateStarted))
+    .filter(
+      (r) => r.status !== "did-not-finish" && (r.dateFinished || r.dateStarted),
+    )
     .sort((a, b) => (a.createdAt ?? "").localeCompare(b.createdAt ?? ""))
     .map((r: BookRead) => ({
       rating: r.rating,
@@ -100,7 +102,9 @@ export default function RereadsPage() {
           all.filter((b) => {
             // Must have at least one historical read that finished (not DNF, has a date)
             const validReads = b.reads.filter(
-              (r) => r.status !== "did-not-finish" && (r.dateFinished || r.dateStarted),
+              (r) =>
+                r.status !== "did-not-finish" &&
+                (r.dateFinished || r.dateStarted),
             );
             return validReads.length > 0;
           }),

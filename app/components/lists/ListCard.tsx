@@ -13,15 +13,49 @@ import {
 } from "@phosphor-icons/react";
 import { COVER_ICONS, coverGradientStyle } from "./coverConstants";
 
-const LIST_TYPES: ReadonlyArray<{ value: string; icon: Icon; label: string; itemLabel: string }> =
-  [
-    { value: "book_list", icon: BooksIcon, label: "Book List", itemLabel: "books" },
-    { value: "idea_list", icon: LightbulbIcon, label: "Idea List", itemLabel: "ideas" },
-    { value: "checklist", icon: CheckSquareIcon, label: "Checklist", itemLabel: "items" },
-    { value: "bullet_list", icon: ListBulletsIcon, label: "Bullet Points", itemLabel: "points" },
-    { value: "library_loan", icon: BookOpenIcon, label: "Library Loans", itemLabel: "loans" },
-    { value: "book_ledger", icon: TagIcon, label: "Book Ledger", itemLabel: "entries" },
-  ];
+const LIST_TYPES: ReadonlyArray<{
+  value: string;
+  icon: Icon;
+  label: string;
+  itemLabel: string;
+}> = [
+  {
+    value: "book_list",
+    icon: BooksIcon,
+    label: "Book List",
+    itemLabel: "books",
+  },
+  {
+    value: "idea_list",
+    icon: LightbulbIcon,
+    label: "Idea List",
+    itemLabel: "ideas",
+  },
+  {
+    value: "checklist",
+    icon: CheckSquareIcon,
+    label: "Checklist",
+    itemLabel: "items",
+  },
+  {
+    value: "bullet_list",
+    icon: ListBulletsIcon,
+    label: "Bullet Points",
+    itemLabel: "points",
+  },
+  {
+    value: "library_loan",
+    icon: BookOpenIcon,
+    label: "Library Loans",
+    itemLabel: "loans",
+  },
+  {
+    value: "book_ledger",
+    icon: TagIcon,
+    label: "Book Ledger",
+    itemLabel: "entries",
+  },
+];
 
 function listTypeMeta(listType: string) {
   return LIST_TYPES.find((t) => t.value === listType) ?? LIST_TYPES[0];
@@ -35,7 +69,11 @@ interface ListCardProps {
 export function ListCard({ list, year }: ListCardProps) {
   const isIdeaType = ["idea_list", "bullet_list"].includes(list.listType);
   const bullet = list.bulletSymbol || "→";
-  const { icon: TypeIcon, label: typeLabel, itemLabel } = listTypeMeta(list.listType);
+  const {
+    icon: TypeIcon,
+    label: typeLabel,
+    itemLabel,
+  } = listTypeMeta(list.listType);
   const CoverIcon = COVER_ICONS[list.emoji] ?? BooksIcon;
 
   return (

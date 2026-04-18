@@ -74,7 +74,8 @@ export async function updateEntryAction(
   const userRow: Record<string, unknown> = { updated_at: now };
   if ("status" in patch) userRow.status = patch.status;
   if ("dateStarted" in patch) userRow.date_started = patch.dateStarted || null;
-  if ("dateFinished" in patch) userRow.date_finished = patch.dateFinished || null;
+  if ("dateFinished" in patch)
+    userRow.date_finished = patch.dateFinished || null;
   if ("dateShelved" in patch) userRow.date_shelved = patch.dateShelved || null;
   if ("rating" in patch) userRow.rating = patch.rating;
   if ("feeling" in patch) userRow.feeling = patch.feeling;
@@ -102,7 +103,8 @@ export async function updateEntryAction(
   if ("releaseDate" in patch) catalogRow.release_date = patch.releaseDate;
   if ("genres" in patch) catalogRow.genres = patch.genres;
   if ("publisher" in patch) catalogRow.publisher = patch.publisher;
-  if ("audioDurationMinutes" in patch) catalogRow.audio_duration_minutes = patch.audioDurationMinutes ?? null;
+  if ("audioDurationMinutes" in patch)
+    catalogRow.audio_duration_minutes = patch.audioDurationMinutes ?? null;
   if ("isbn" in patch && patch.isbn) {
     const { data: cb } = await supabase
       .from("catalog_books")
@@ -123,7 +125,11 @@ export async function updateEntryAction(
   }
 
   const READING_ACTIVITY = new Set([
-    "status", "dateStarted", "dateFinished", "rating", "feeling",
+    "status",
+    "dateStarted",
+    "dateFinished",
+    "rating",
+    "feeling",
   ]);
   if (Object.keys(patch).some((k) => READING_ACTIVITY.has(k))) {
     await autoLogToday(supabase, user.id);
@@ -133,12 +139,16 @@ export async function updateEntryAction(
     after(async () => {
       const { data: book } = await supabase
         .from("user_books")
-        .select("id, status, title_override, author_override, catalog_books(title, author, cover_url)")
+        .select(
+          "id, status, title_override, author_override, catalog_books(title, author, cover_url)",
+        )
         .eq("id", id)
         .single();
       if (book) {
         const cb = book.catalog_books as unknown as {
-          title: string; author: string; cover_url: string;
+          title: string;
+          author: string;
+          cover_url: string;
         } | null;
         await syncBookSeries(supabase, user.id, {
           id: book.id,

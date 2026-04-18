@@ -9,12 +9,25 @@ import { createServerClient } from "@/lib/supabase-server";
  */
 export async function POST(req: NextRequest) {
   const supabase = createServerClient(req);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user)
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const { title, author, coverUrl, isbn, isbns: incomingIsbns, releaseDate, genres, pageCount } = await req.json();
+  const {
+    title,
+    author,
+    coverUrl,
+    isbn,
+    isbns: incomingIsbns,
+    releaseDate,
+    genres,
+    pageCount,
+  } = await req.json();
 
-  if (!title) return NextResponse.json({ error: "title required" }, { status: 400 });
+  if (!title)
+    return NextResponse.json({ error: "title required" }, { status: 400 });
 
   const allIsbns: string[] = [
     ...new Set([...(incomingIsbns ?? []), isbn].filter(Boolean)),
@@ -66,6 +79,7 @@ export async function POST(req: NextRequest) {
     .select("id")
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ id: data.id }, { status: 201 });
 }

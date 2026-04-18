@@ -18,7 +18,10 @@ interface Props {
   items: ListItem[];
   libraryEntries: BookEntry[];
   draggingId: string | null;
-  itemProps: (index: number, id: string) => React.HTMLAttributes<HTMLDivElement> & { draggable?: boolean };
+  itemProps: (
+    index: number,
+    id: string,
+  ) => React.HTMLAttributes<HTMLDivElement> & { draggable?: boolean };
   onUpdateNotes: (id: string, notes: string) => void;
   onRemove: (id: string) => void;
   onItemAdded: (item: ListItem) => void;

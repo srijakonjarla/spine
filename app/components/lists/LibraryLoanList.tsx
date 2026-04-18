@@ -13,7 +13,10 @@ interface Props {
   items: ListItem[];
   libraryEntries: BookEntry[];
   draggingId: string | null;
-  itemProps: (index: number, id: string) => React.HTMLAttributes<HTMLDivElement> & { draggable?: boolean };
+  itemProps: (
+    index: number,
+    id: string,
+  ) => React.HTMLAttributes<HTMLDivElement> & { draggable?: boolean };
   today: string;
   onUpdateNotes: (id: string, notes: string) => void;
   onUpdateDate: (id: string, date: string) => void;

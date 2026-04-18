@@ -113,11 +113,12 @@ async function hcPost(query: string, variables: Record<string, unknown>) {
   return res.json();
 }
 
-function extractHcTagsForKeys(
-  cached_tags: unknown,
-  keys: string[],
-): string[] {
-  if (!cached_tags || typeof cached_tags !== "object" || Array.isArray(cached_tags))
+function extractHcTagsForKeys(cached_tags: unknown, keys: string[]): string[] {
+  if (
+    !cached_tags ||
+    typeof cached_tags !== "object" ||
+    Array.isArray(cached_tags)
+  )
     return [];
   const obj = cached_tags as Record<string, { tag?: string }[]>;
   const results: string[] = [];
@@ -147,7 +148,9 @@ function extractHcGenres(cached_tags: unknown): string[] {
 /** Extract diversity tags from Hardcover representation tags + author identity. */
 function extractHcDiversityTags(
   cached_tags: unknown,
-  contributions: { author: { name: string; gender?: string; nationality?: string } }[],
+  contributions: {
+    author: { name: string; gender?: string; nationality?: string };
+  }[],
 ): string[] {
   const tags = new Set<string>();
 
@@ -189,7 +192,9 @@ function parseHcBook(
     pages?: number;
     release_date?: string;
     images?: { url?: string }[];
-    contributions?: { author: { name: string; gender?: string; nationality?: string } }[];
+    contributions?: {
+      author: { name: string; gender?: string; nationality?: string };
+    }[];
     cached_tags?: unknown;
     default_physical_edition_id?: number;
     editions?: {
@@ -218,9 +223,7 @@ function parseHcBook(
 
   // Audio duration: prefer default edition, fall back to any audiobook edition
   const audioEdition =
-    defaultEdition ??
-    editions.find((e) => (e.audio_seconds ?? 0) > 0) ??
-    null;
+    defaultEdition ?? editions.find((e) => (e.audio_seconds ?? 0) > 0) ?? null;
   const audioSeconds = audioEdition?.audio_seconds ?? null;
 
   return {

@@ -81,17 +81,25 @@ export function ListSidebar({
           <p className="section-label mb-2">Activity</p>
           <div className="rounded-xl px-4 py-3 border border-[var(--border-light)] bg-[var(--bg-surface)] mb-4 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-[var(--fg-muted)]">checked out</span>
-              <span className="text-xs font-semibold text-terra">{loansOut}</span>
+              <span className="text-xs text-[var(--fg-muted)]">
+                checked out
+              </span>
+              <span className="text-xs font-semibold text-terra">
+                {loansOut}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-xs text-[var(--fg-muted)]">returned</span>
-              <span className="text-xs font-semibold text-sage">{loansReturned}</span>
+              <span className="text-xs font-semibold text-sage">
+                {loansReturned}
+              </span>
             </div>
             {loansOverdue > 0 && (
               <div className="flex items-center justify-between border-t border-[var(--border-light)] pt-2">
                 <span className="text-xs text-[var(--fg-muted)]">overdue</span>
-                <span className="text-xs font-semibold text-red-400">{loansOverdue}</span>
+                <span className="text-xs font-semibold text-red-400">
+                  {loansOverdue}
+                </span>
               </div>
             )}
           </div>

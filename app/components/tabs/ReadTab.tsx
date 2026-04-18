@@ -79,7 +79,12 @@ export default function ReadTab({
     setLogSaving(true);
     try {
       await onLogRead(logDraft);
-      setLogDraft({ dateStarted: "", dateFinished: "", rating: 0, feeling: "" });
+      setLogDraft({
+        dateStarted: "",
+        dateFinished: "",
+        rating: 0,
+        feeling: "",
+      });
       setShowLogForm(false);
     } finally {
       setLogSaving(false);

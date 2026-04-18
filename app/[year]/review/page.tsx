@@ -10,10 +10,7 @@ import type { BookEntry } from "@/types";
 
 // ─── helpers ──────────────────────────────────────────────────────
 
-function countBy<T>(
-  items: T[],
-  key: (item: T) => string,
-): [string, number][] {
+function countBy<T>(items: T[], key: (item: T) => string): [string, number][] {
   const counts: Record<string, number> = {};
   for (const item of items) {
     const k = key(item);
@@ -254,8 +251,9 @@ export default function YearReviewPage() {
   );
 
   // ── Shortest / longest print ────────────────────────────────────
-  const withPages = uniqueById(printBooks.filter((b) => (b.pageCount ?? 0) > 0))
-    .sort((a, b) => (a.pageCount ?? 0) - (b.pageCount ?? 0));
+  const withPages = uniqueById(
+    printBooks.filter((b) => (b.pageCount ?? 0) > 0),
+  ).sort((a, b) => (a.pageCount ?? 0) - (b.pageCount ?? 0));
   const shortestPrint = withPages[0] ?? null;
   const longestPrint = withPages[withPages.length - 1] ?? null;
 
@@ -460,7 +458,9 @@ export default function YearReviewPage() {
                   {genreCounts.map(([genre, count]) => (
                     <div key={genre}>
                       <div className="flex items-baseline justify-between mb-1">
-                        <span className="text-xs text-[var(--fg)]">{genre}</span>
+                        <span className="text-xs text-[var(--fg)]">
+                          {genre}
+                        </span>
                         <span className="text-xs text-[var(--fg-faint)]">
                           {count}
                         </span>
@@ -620,11 +620,7 @@ export default function YearReviewPage() {
                 </SectionLabel>
                 <div className="space-y-0.5">
                   {uniqueById(libraryFinished).map((b) => (
-                    <BookRow
-                      key={b.id}
-                      book={b}
-                      meta={b.format || undefined}
-                    />
+                    <BookRow key={b.id} book={b} meta={b.format || undefined} />
                   ))}
                 </div>
               </div>

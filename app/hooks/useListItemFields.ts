@@ -7,7 +7,10 @@ type SetList = React.Dispatch<React.SetStateAction<BookList | null>>;
 function patchItem(setList: SetList, id: string, patch: Partial<ListItem>) {
   setList((prev) =>
     prev
-      ? { ...prev, items: prev.items.map((i) => (i.id === id ? { ...i, ...patch } : i)) }
+      ? {
+          ...prev,
+          items: prev.items.map((i) => (i.id === id ? { ...i, ...patch } : i)),
+        }
       : prev,
   );
 }
@@ -43,7 +46,8 @@ export function useListItemFields(setList: SetList) {
   );
 
   const updateDate = useCallback(
-    (id: string, releaseDate: string) => debounce(id + "_date", id, { releaseDate }),
+    (id: string, releaseDate: string) =>
+      debounce(id + "_date", id, { releaseDate }),
     [debounce],
   );
 

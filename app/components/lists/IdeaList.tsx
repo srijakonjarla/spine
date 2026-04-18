@@ -13,7 +13,10 @@ interface Props {
   isChecklist: boolean;
   bullet: string;
   draggingId: string | null;
-  itemProps: (index: number, id: string) => React.HTMLAttributes<HTMLDivElement> & { draggable?: boolean };
+  itemProps: (
+    index: number,
+    id: string,
+  ) => React.HTMLAttributes<HTMLDivElement> & { draggable?: boolean };
   onToggleCheck: (id: string, type: string) => void;
   onRemove: (id: string) => void;
   onItemAdded: (item: ListItem) => void;
@@ -107,7 +110,9 @@ export function IdeaList({
             )}
             <span
               className={`font-[family-name:var(--font-caveat)] text-base flex-1 leading-snug text-[var(--terra)] ${
-                isChecklist && item.type === "done" ? "line-through opacity-45" : ""
+                isChecklist && item.type === "done"
+                  ? "line-through opacity-45"
+                  : ""
               }`}
             >
               {item.title}
