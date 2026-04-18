@@ -42,6 +42,7 @@ interface BookRow {
   author: string;
   release_date: string;
   genres: string[];
+  user_genres: string[];
   mood_tags: string[];
   bookshelves: string[];
   status: string;
@@ -92,6 +93,7 @@ function mapBook(row: BookRow): BookEntry {
     author: row.author ?? "",
     releaseDate: row.release_date ?? "",
     genres: row.genres ?? [],
+    userGenres: row.user_genres ?? [],
     moodTags: row.mood_tags ?? [],
     bookshelves: row.bookshelves ?? [],
     status: row.status as BookEntry["status"],

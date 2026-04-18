@@ -79,6 +79,7 @@ export async function updateEntryAction(
   if ("upNext" in patch) userRow.up_next = patch.upNext;
   if ("moodTags" in patch) userRow.mood_tags = patch.moodTags;
   if ("bookshelves" in patch) userRow.bookshelves = patch.bookshelves;
+  if ("userGenres" in patch) userRow.user_genres = patch.userGenres;
   if ("title" in patch) userRow.title_override = patch.title || null;
   if ("author" in patch) userRow.author_override = patch.author || null;
 

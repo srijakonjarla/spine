@@ -88,6 +88,7 @@ export default function LibraryPage() {
       author: enriched?.author ?? "",
       releaseDate: enriched?.releaseDate ?? "",
       genres: enriched?.genres ?? [],
+      userGenres: [],
       moodTags: [],
       bookshelves: [],
       upNext: false,

@@ -8,83 +8,73 @@ const HC_ENDPOINT = "https://api.hardcover.app/v1/graphql";
 const DELAY_MS = 1100;
 const BATCH_SIZE = 10;
 
-const DEFAULT_EDITIONS_QUERY = `
-  query DefaultEditions($ids: [Int!]!) {
-    books(where: { id: { _in: $ids } }) {
-      id
-      default_physical_edition_id
-      images { url }
-      cached_tags
-      editions {
-        id
-        isbn_13
-        isbn_10
-        image { url }
-      }
-    }
-  }
+// Shared field set for both ISBN and title+author batch fragments.
+const BOOK_FIELDS = `
+  id title pages release_date
+  images { url }
+  contributions { author { name } }
+  cached_tags
+  default_physical_edition_id
+  editions { id isbn_13 isbn_10 image { url } }
 `;
+
+/** Sanitize a string for safe inline embedding in a GQL query literal. */
+function gqlStr(s: string, maxLen = 120): string {
+  return s
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/[\n\r]/g, " ")
+    .trim()
+    .slice(0, maxLen);
+}
+
+/** Extract the last word of an author name (surname) for a partial match filter. */
+function authorLastName(author: string): string {
+  const clean = author.replace(/[^a-zA-Z\s''-]/g, "").trim();
+  const parts = clean.split(/\s+/);
+  return (parts[parts.length - 1] ?? "").slice(0, 30);
+}
 
 function buildBatchQuery(
   books: { title: string; author: string; isbn?: string }[],
 ) {
   const fragments = books.map((b, i) => {
     if (b.isbn) {
+      const isbn = gqlStr(b.isbn);
       return `
-        b${i}: editions(where: {
-          _or: [{ isbn_10: { _eq: "${b.isbn}" } }, { isbn_13: { _eq: "${b.isbn}" } }]
-        }, limit: 1) {
-          isbn_10 isbn_13
-          image { url }
-          book { id title pages release_date images { url } contributions { author { name } } cached_tags }
-        }
+        b${i}: books(where: {
+          _or: [
+            { editions: { isbn_13: { _eq: "${isbn}" } } },
+            { editions: { isbn_10: { _eq: "${isbn}" } } }
+          ]
+        }, limit: 1) { ${BOOK_FIELDS} }
       `;
     }
-    const q = [b.title, b.author].filter(Boolean).join(" ").replace(/"/g, "");
+    // No ISBN — use structured title + author query for deterministic results.
+    const title = gqlStr(b.title);
+    const lastName = gqlStr(authorLastName(b.author));
+    const authorFilter = lastName
+      ? `, contributions: { author: { name: { _ilike: "%${lastName}%" } } }`
+      : "";
     return `
-      b${i}: search(query: "${q}", query_type: "Book", per_page: 1) {
-        results
-      }
+      b${i}: books(where: {
+        title: { _ilike: "%${title}%" }
+        ${authorFilter}
+      }, limit: 3) { ${BOOK_FIELDS} }
     `;
   });
   return `query BatchLookup { ${fragments.join("\n")} }`;
 }
 
-interface BookEnrichment {
-  isbn: string;
-  coverUrl: string;
-  genres: string[];
-}
-
-async function fetchDefaultEditionData(
-  bookIds: number[],
-): Promise<Map<number, BookEnrichment>> {
-  if (!bookIds.length) return new Map();
-  const json = await hcPost(DEFAULT_EDITIONS_QUERY, { ids: bookIds });
-  const books: {
-    id: number;
-    default_physical_edition_id: number;
-    images?: { url?: string }[];
-    cached_tags?: unknown;
-    editions: {
-      id: number;
-      isbn_13?: string;
-      isbn_10?: string;
-      image?: { url?: string };
-    }[];
-  }[] = json?.data?.books ?? [];
-  const map = new Map<number, BookEnrichment>();
-  for (const book of books) {
-    const edition = book.editions.find(
-      (e) => e.id === book.default_physical_edition_id,
-    );
-    map.set(book.id, {
-      isbn: edition?.isbn_13 || edition?.isbn_10 || "",
-      coverUrl: edition?.image?.url || book.images?.[0]?.url || "",
-      genres: extractGenres(book.cached_tags),
-    });
-  }
-  return map;
+/** Collect all isbn_13/isbn_10 values from a list of editions. */
+function collectIsbns(editions: { isbn_13?: string; isbn_10?: string }[]): string[] {
+  return [
+    ...new Set(
+      editions
+        .flatMap((e) => [e.isbn_13, e.isbn_10])
+        .filter((isbn): isbn is string => !!isbn && isbn.length > 0),
+    ),
+  ];
 }
 
 async function hcPost(query: string, variables?: Record<string, unknown>) {
@@ -126,113 +116,105 @@ interface HCBook {
   title: string;
   coverUrl: string;
   isbn: string;
+  /** All known edition ISBNs for this book. */
+  isbns: string[];
   pageCount: number | null;
   genres: string[];
   releaseDate: string;
   author: string;
 }
 
-function parseEditionAlias(
-  alias: unknown,
-  fallbackIsbn: string,
-): HCBook | null {
-  const editions = alias as
-    | {
-        isbn_10?: string;
-        isbn_13?: string;
-        image?: { url?: string };
-        book?: {
-          title?: string;
-          images?: { url?: string }[];
-          pages?: number;
-          release_date?: string;
-          cached_tags?: unknown;
-          contributions?: { author: { name: string } }[];
-        };
-      }[]
-    | undefined;
-  const edition = editions?.[0];
-  if (!edition?.book?.title) return null;
-  const b = edition.book;
+type RawHCBook = {
+  id?: number;
+  title?: string;
+  pages?: number;
+  release_date?: string;
+  images?: { url?: string }[];
+  contributions?: { author: { name: string } }[];
+  cached_tags?: unknown;
+  default_physical_edition_id?: number;
+  editions?: { id?: number; isbn_13?: string; isbn_10?: string; image?: { url?: string } }[];
+};
+
+/**
+ * Parse a raw HC `books` table row into our internal HCBook shape.
+ * Both ISBN and title+author batch fragments now return the same `books` shape,
+ * so a single parser handles both paths.
+ */
+function parseBookRow(
+  book: RawHCBook,
+  fallbackIsbn = "",
+): (HCBook & { bookId: number }) | null {
+  if (!book?.title) return null;
+  const editions = book.editions ?? [];
+  const defaultEdition = editions.find((e) => e.id === book.default_physical_edition_id);
+  const isbns = collectIsbns(editions);
+  const primaryIsbn = defaultEdition?.isbn_13 || defaultEdition?.isbn_10 || isbns[0] || fallbackIsbn;
+  const coverUrl = defaultEdition?.image?.url || book.images?.[0]?.url || "";
+
   return {
-    title: b.title ?? "",
-    coverUrl: edition.image?.url || b.images?.[0]?.url || "",
-    isbn: edition.isbn_13 || edition.isbn_10 || fallbackIsbn,
-    pageCount: b.pages ?? null,
-    genres: extractGenres(b.cached_tags),
-    releaseDate: b.release_date ?? "",
-    author: (b.contributions ?? [])
-      .map((c: { author: { name: string } }) => c.author.name)
-      .join(", "),
+    title: book.title,
+    coverUrl,
+    isbn: primaryIsbn,
+    isbns,
+    pageCount: book.pages ?? null,
+    genres: extractGenres(book.cached_tags),
+    releaseDate: book.release_date ?? "",
+    author: (book.contributions ?? []).map((c) => c.author.name).join(", "),
+    bookId: book.id!,
   };
 }
 
-function parseSearchAlias(
-  alias: unknown,
-  title: string,
-  authorHint?: string,
-): (HCBook & { bookId?: number }) | null {
-  const result = alias as { results?: unknown } | undefined;
-  if (!result?.results) return null;
-  const parsed: {
-    hits?: {
-      document: {
-        title?: string;
-        author_names?: string[];
-        cover_image_url?: string;
-        pages?: number;
-        cached_tags?: unknown;
-        release_date?: string;
-        release_year?: string | number;
-      };
-    }[];
-  } =
-    typeof result.results === "string"
-      ? JSON.parse(result.results)
-      : result.results;
-  const d = parsed?.hits?.[0]?.document;
-  if (!d?.title) return null;
+/**
+ * Validate that a HC result actually matches the Goodreads title + author.
+ * Returns the matching book or null.
+ */
+function bestMatchFromBooks(
+  books: RawHCBook[],
+  titleHint: string,
+  authorHint: string,
+  fallbackIsbn = "",
+): (HCBook & { bookId: number }) | null {
+  if (!books.length) return null;
   const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
-  const normTitle = norm(title);
-  const normResult = norm(d.title);
-  // For short titles (≤8 normalized chars) require the result to start with
-  // the full title, not just a prefix slice — prevents e.g. the wrong "Bound"
-  // from matching when there are multiple books with the same short title.
-  if (normTitle.length <= 8) {
-    if (!normResult.startsWith(normTitle)) return null;
-  } else {
-    if (!normResult.includes(normTitle.slice(0, 6))) return null;
-  }
-  // When the caller supplied an author, verify at least one result author
-  // shares a last-name token with it. This catches wrong-book matches where
-  // the title happens to be the same (e.g. "Bound" by two different authors).
-  if (authorHint && d.author_names?.length) {
-    const normAuthor = norm(authorHint);
-    // Extract last-name token: split on non-alpha boundary, take the last segment
-    const lastName = (s: string) => {
-      const tokens = norm(s).match(/[a-z0-9]+/g) ?? [];
-      return tokens[tokens.length - 1] ?? norm(s);
-    };
-    const hintLastName = lastName(authorHint);
-    const authorMatches = hintLastName.length >= 3 && d.author_names.some((a) =>
-      lastName(a) === hintLastName || norm(a).includes(normAuthor) || normAuthor.includes(norm(a)),
-    );
-    if (!authorMatches) return null;
-  }
-  return {
-    title: d.title,
-    coverUrl: d.cover_image_url ?? "",
-    isbn: "",
-    pageCount: d.pages ?? null,
-    genres: extractGenres(d.cached_tags),
-    releaseDate: d.release_date ?? String(d.release_year ?? ""),
-    author: (d.author_names ?? []).join(", "),
-    bookId:
-      (d as { id?: unknown }).id !== undefined &&
-      !isNaN(Number((d as { id?: unknown }).id))
-        ? Number((d as { id?: unknown }).id)
-        : undefined,
+  const nt = norm(titleHint);
+  const lastName = (s: string) => {
+    const tokens = norm(s).match(/[a-z0-9]+/g) ?? [];
+    return tokens[tokens.length - 1] ?? norm(s);
   };
+  const hintLast = lastName(authorHint);
+
+  for (const book of books) {
+    if (!book.title) continue;
+    const nr = norm(book.title);
+
+    // Title check — for short titles require full prefix match to avoid
+    // "Bound" matching "Bound by Honor", etc.
+    const titleOk =
+      nt.length <= 8
+        ? nr.startsWith(nt) || nt.startsWith(nr)
+        : nr.includes(nt.slice(0, 6)) || nt.includes(nr.slice(0, 6));
+    if (!titleOk) continue;
+
+    // Author check — verify surname overlap when author is known
+    if (authorHint && book.contributions?.length) {
+      const authorOk =
+        hintLast.length < 3 ||
+        book.contributions.some((c) => {
+          const an = norm(c.author.name);
+          return (
+            lastName(c.author.name) === hintLast ||
+            an.includes(norm(authorHint)) ||
+            norm(authorHint).includes(an)
+          );
+        });
+      if (!authorOk) continue;
+    }
+
+    const parsed = parseBookRow(book, fallbackIsbn);
+    if (parsed) return parsed;
+  }
+  return null;
 }
 
 async function fetchHCBatch(
@@ -248,38 +230,18 @@ async function fetchHCBatch(
   if (json?.errors)
     console.error("[import] GraphQL errors:", JSON.stringify(json.errors));
 
-  const rawResults = previews.map(({ entry, isbn }, i) => {
-    const alias = data[`b${i}`];
-    if (isbn) {
-      const result = parseEditionAlias(alias, isbn);
-      if (result) return result;
-      console.log(`[import] ISBN edition miss for "${entry.title}"`);
-      return null;
+  // Both ISBN and title+author fragments return `books[]` rows with editions
+  // inline — no second enrichment pass needed.
+  return previews.map(({ entry, isbn }, i) => {
+    const books: RawHCBook[] = data[`b${i}`] ?? [];
+    const result = bestMatchFromBooks(books, entry.title, entry.author, isbn);
+    if (!result) {
+      if (isbn) console.log(`[import] ISBN miss for "${entry.title}" (${isbn})`);
+      else console.log(`[import] Title/author miss for "${entry.title}"`);
     }
-    return parseSearchAlias(alias, entry.title, entry.author);
-  });
-
-  const bookIds = rawResults
-    .map((r) => (r as (HCBook & { bookId?: number }) | null)?.bookId)
-    .filter((id): id is number => id !== undefined);
-  const enrichMap = await fetchDefaultEditionData(bookIds);
-  if (bookIds.length)
-    console.log(
-      `[import] enrichment follow-up: ${enrichMap.size}/${bookIds.length} resolved`,
-    );
-
-  return rawResults.map((r) => {
-    if (!r) return null;
-    const bookId = (r as HCBook & { bookId?: number }).bookId;
-    const enrich = bookId ? enrichMap.get(bookId) : undefined;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { bookId: _, ...rest } = r as HCBook & { bookId?: number };
-    return {
-      ...rest,
-      isbn: enrich?.isbn || rest.isbn,
-      coverUrl: enrich?.coverUrl || rest.coverUrl,
-      genres: enrich?.genres?.length ? enrich.genres : rest.genres,
-    };
+    const { bookId: _, ...rest } = result ?? ({} as HCBook & { bookId: number });
+    return result ? rest : null;
   });
 }
 
@@ -359,23 +321,35 @@ async function runImport(
       const normalizeAuthor = (a: string) =>
         a.toLowerCase().replace(/\s+/g, " ").trim();
 
-      const findExisting = async (title: string) => {
-        // Fetch all catalog_books matching this title (case-insensitive).
-        // We intentionally skip the author filter in the DB query because
-        // author formatting varies between Goodreads, Hardcover, and stored
-        // values (e.g. "V.E. Schwab" vs "V. E. Schwab", double spaces).
-        // We filter by author in code after fetching.
+      // findExisting: checks ISBN array first (catches different-edition imports),
+      // then falls back to title+author text match.
+      const findExisting = async (title: string, isbnToCheck?: string) => {
+        // 1. ISBN array lookup — most reliable, handles edition mismatches
+        if (isbnToCheck) {
+          const { data: byIsbn } = await supabase
+            .from("catalog_books")
+            .select("id, author, genres, release_date, cover_url, isbn, isbns")
+            .contains("isbns", [isbnToCheck])
+            .maybeSingle();
+          if (byIsbn) {
+            const { data: ub } = await supabase
+              .from("user_books")
+              .select("id, status, date_finished, date_shelved")
+              .eq("user_id", userId)
+              .eq("catalog_book_id", byIsbn.id)
+              .maybeSingle();
+            if (ub) return { ...ub, catalog_books: byIsbn };
+          }
+        }
+
+        // 2. Title+author text match
         const { data: cbs } = await supabase
           .from("catalog_books")
-          .select("id, author, genres, release_date, cover_url, isbn")
+          .select("id, author, genres, release_date, cover_url, isbn, isbns")
           .ilike("title", title)
           .limit(10);
         if (!cbs?.length) return null;
 
-        // Pick the catalog entry whose author best matches. If resolvedAuthor
-        // is set, prefer an entry where the stored author contains or is
-        // contained by the resolved author (handles abbreviations / extra
-        // spaces). Fall back to the first result when author is absent.
         const normResolved = normalizeAuthor(resolvedAuthor);
         const cb = resolvedAuthor
           ? (cbs.find((c) => {
@@ -398,7 +372,7 @@ async function runImport(
         return { ...ub, catalog_books: cb };
       };
 
-      let existing = await findExisting(resolvedTitle);
+      let existing = await findExisting(resolvedTitle, resolvedIsbn || undefined);
       if (!existing && resolvedTitle !== entry.title) {
         existing = await findExisting(entry.title);
       }
@@ -413,6 +387,7 @@ async function runImport(
             author: resolvedAuthor,
             cover_url: coverUrl,
             isbn: resolvedIsbn,
+            isbns: hc?.isbns ?? (resolvedIsbn ? [resolvedIsbn] : []),
             release_date: releaseDate,
             genres,
             page_count: pageCount,

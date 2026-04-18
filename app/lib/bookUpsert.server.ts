@@ -14,6 +14,8 @@ export interface CatalogFields {
   author: string;
   cover_url: string;
   isbn: string;
+  /** All known edition ISBNs for this book (isbn_10 and isbn_13 across editions). */
+  isbns?: string[];
   release_date: string;
   genres: string[];
   page_count: number | null;
@@ -52,11 +54,18 @@ export async function upsertBookForUser(
 
   const normTitle = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
+  const allIncomingIsbns = [
+    ...new Set([...(catalog.isbns ?? []), catalog.isbn].filter(Boolean)),
+  ];
+
   if (catalog.isbn) {
+    // Dedup against the isbns array — matches any known edition of a book.
+    // Falls back to the legacy eq("isbn") check for rows created before the
+    // isbns column was added.
     const { data: existing } = await supabase
       .from("catalog_books")
-      .select("id, title, cover_url")
-      .eq("isbn", catalog.isbn)
+      .select("id, title, cover_url, isbns")
+      .contains("isbns", [catalog.isbn])
       .maybeSingle();
 
     if (existing) {
@@ -83,13 +92,16 @@ export async function upsertBookForUser(
         if (
           catalog.title &&
           catalog.title !== existing.title &&
-          (
-            !existing.title ||
-            catalog.title.toLowerCase().startsWith(existing.title.toLowerCase())
-          )
+          (!existing.title ||
+            catalog.title.toLowerCase().startsWith(existing.title.toLowerCase()))
         ) {
           patch.title = catalog.title;
         }
+
+        // Merge any newly discovered ISBNs into the stored array
+        const storedIsbns = existing.isbns ?? [];
+        const mergedIsbns = [...new Set([...storedIsbns, ...allIncomingIsbns])];
+        if (mergedIsbns.length > storedIsbns.length) patch.isbns = mergedIsbns;
 
         if (catalog.cover_url && !existing.cover_url) patch.cover_url = catalog.cover_url;
         if (catalog.genres?.length) patch.genres = catalog.genres;
@@ -112,11 +124,22 @@ export async function upsertBookForUser(
   if (!catalogBookId && catalog.title) {
     const { data: byTitle } = await supabase
       .from("catalog_books")
-      .select("id")
+      .select("id, isbns")
       .ilike("title", catalog.title)
       .eq("author", catalog.author)
       .maybeSingle();
-    if (byTitle) catalogBookId = byTitle.id;
+    if (byTitle) {
+      catalogBookId = byTitle.id;
+      // Add any new ISBNs we have for this book
+      const storedIsbns = byTitle.isbns ?? [];
+      const mergedIsbns = [...new Set([...storedIsbns, ...allIncomingIsbns])];
+      if (mergedIsbns.length > storedIsbns.length) {
+        await supabase
+          .from("catalog_books")
+          .update({ isbns: mergedIsbns, updated_at: new Date().toISOString() })
+          .eq("id", byTitle.id);
+      }
+    }
   }
 
   if (!catalogBookId) {
@@ -128,6 +151,7 @@ export async function upsertBookForUser(
         author: catalog.author,
         cover_url: catalog.cover_url,
         isbn: catalog.isbn,
+        isbns: allIncomingIsbns,
         release_date: catalog.release_date,
         genres: catalog.genres,
         page_count: catalog.page_count,
@@ -206,6 +230,7 @@ export function flattenUserBook(row: {
   rating: number;
   feeling: string;
   mood_tags: string[];
+  user_genres: string[];
   bookmarked: boolean;
   up_next: boolean;
   created_at: string;
@@ -238,7 +263,8 @@ export function flattenUserBook(row: {
     title: row.title_override ?? cb.title ?? "",
     author: row.author_override ?? cb.author ?? "",
     release_date: cb.release_date ?? "",
-    genres: cb.genres ?? [],
+    genres: [...new Set([...(cb.genres ?? []), ...(row.user_genres ?? [])])],
+    user_genres: row.user_genres ?? [],
     cover_url: cb.cover_url ?? "",
     isbn: cb.isbn ?? "",
     page_count: cb.page_count ?? null,

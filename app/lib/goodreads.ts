@@ -149,6 +149,7 @@ export function parseGoodreadsCSV(text: string): GoodreadsPreview[] {
         title: row["Title"] ?? "",
         author: row["Author"] ?? "",
         genres: parseGenres(bookshelves),
+        userGenres: [],
         bookshelves: parseGenres(bookshelves),
         moodTags: [],
         status,

@@ -48,6 +48,7 @@ export default function StatusCatalogPage() {
         author: enriched?.author ?? "",
         releaseDate: enriched?.releaseDate ?? "",
         genres: enriched?.genres ?? [],
+        userGenres: [],
         moodTags: [],
         bookshelves: [],
         upNext: false,

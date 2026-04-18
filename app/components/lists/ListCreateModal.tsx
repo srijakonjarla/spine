@@ -6,6 +6,8 @@ import {
   LightbulbIcon,
   CheckSquareIcon,
   ListBulletsIcon,
+  BookOpenIcon,
+  TagIcon,
 } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 import { ColorPicker } from "./ColorPicker";
@@ -41,6 +43,18 @@ const LIST_TYPES: ReadonlyArray<{
     icon: ListBulletsIcon,
     label: "Bullet Points",
     desc: "bullet points with custom symbols",
+  },
+  {
+    value: "library_loan",
+    icon: BookOpenIcon,
+    label: "Library Loans",
+    desc: "track books checked out from the library",
+  },
+  {
+    value: "book_ledger",
+    icon: TagIcon,
+    label: "Book Ledger",
+    desc: "log books bought and sold, with prices",
   },
 ];
 
@@ -111,7 +125,7 @@ export function ListCreateModal({
           {/* Type */}
           <div className="mb-5">
             <label className="section-label block mb-2">List type</label>
-            <div className="grid grid-cols-4 gap-2 mb-3">
+            <div className="grid grid-cols-3 gap-2 mb-3">
               {LIST_TYPES.map((t) => (
                 <button
                   type="button"

@@ -19,11 +19,7 @@ import { MONTH_ABBRS, MONTH_NAMES } from "@/lib/constants";
 import MiniMonthCal from "@/components/calendar/MiniMonthCal";
 import { BookCoverThumb } from "@/components/BookCover";
 
-function hashStr(s: string): number {
-  return Math.abs(
-    s.split("").reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0),
-  );
-}
+import { hashStr } from "@/lib/spineUtils";
 
 const SPINE_COLOR_CLASSES = [
   "bg-[var(--year-shelf-0)]",

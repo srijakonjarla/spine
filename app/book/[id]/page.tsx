@@ -43,14 +43,14 @@ function HeroGenreAdd({
   onAdd,
 }: {
   genres: string[];
-  onAdd: (g: string[]) => void;
+  onAdd: (g: string) => void;
 }) {
   const [adding, setAdding] = useState(false);
   const [input, setInput] = useState("");
 
   const commit = () => {
     const val = input.trim();
-    if (val && !genres.includes(val)) onAdd([...genres, val]);
+    if (val && !genres.includes(val)) onAdd(val);
     setInput("");
     setAdding(false);
   };
@@ -155,7 +155,6 @@ export default function BookPage() {
 
   const handleStatusChange = (status: ReadingStatus) => {
     const patch: Partial<BookEntry> = { status };
-    // TODO: Fix this. The dateFinished isn't updating on the page immediately
     if (status === "finished" && entry && !entry.dateFinished)
       patch.dateFinished = localDateStr();
     if (status === "did-not-finish" && entry && !entry.dateShelved)
@@ -432,30 +431,37 @@ export default function BookPage() {
                 />
               </div>
 
-              {/* Genre chips */}
+              {/* Genre chips — catalog genres are read-only, user genres are removable */}
               <div className="flex flex-wrap gap-1.5 items-center">
-                {entry.genres.map((g) => (
-                  <button
-                    key={g}
-                    onClick={() =>
-                      update({ genres: entry.genres.filter((x) => x !== g) })
-                    }
-                    className="hero-genre-chip"
-                  >
-                    {g} ×
-                  </button>
-                ))}
-                {/* TODO: The seperation of genres. The genres added here should go into the user_books table. 
-                The genres in the catalog_books should only be from hardcover*/}
+                {entry.genres.map((g) => {
+                  const isUserGenre = entry.userGenres.includes(g);
+                  return isUserGenre ? (
+                    <button
+                      key={g}
+                      onClick={() =>
+                        update({
+                          userGenres: entry.userGenres.filter((x) => x !== g),
+                        })
+                      }
+                      className="hero-genre-chip"
+                    >
+                      {g} ×
+                    </button>
+                  ) : (
+                    <span key={g} className="hero-genre-chip opacity-60 cursor-default">
+                      {g}
+                    </span>
+                  );
+                })}
                 <HeroGenreAdd
                   genres={entry.genres}
-                  onAdd={(genres) => update({ genres })}
+                  onAdd={(g) =>
+                    update({ userGenres: [...entry.userGenres, g] })
+                  }
                 />
               </div>
 
               {/* Dates — reflect the selected read when viewing a historical one */}
-              {/* TODO: Add validation that start date isn't after finished date and vice versa */}
-              {/* TODO: Don't show months that are in the future */}
               <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-white/[0.08]">
                 {viewedRead ? (
                   // Historical read: editable, saves via handleUpdateRead
@@ -465,6 +471,7 @@ export default function BookPage() {
                       <input
                         type="date"
                         value={viewedRead.dateStarted}
+                        max={viewedRead.dateFinished || localDateStr()}
                         onChange={(e) =>
                           handleUpdateRead(viewedRead.id, {
                             ...viewedRead,
@@ -479,6 +486,8 @@ export default function BookPage() {
                       <input
                         type="date"
                         value={viewedRead.dateFinished}
+                        min={viewedRead.dateStarted || undefined}
+                        max={localDateStr()}
                         onChange={(e) =>
                           handleUpdateRead(viewedRead.id, {
                             ...viewedRead,
@@ -497,6 +506,7 @@ export default function BookPage() {
                       <input
                         type="date"
                         value={entry.dateStarted}
+                        max={entry.dateFinished || entry.dateShelved || localDateStr()}
                         onChange={(e) =>
                           update({ dateStarted: e.target.value })
                         }
@@ -509,6 +519,8 @@ export default function BookPage() {
                         <input
                           type="date"
                           value={entry.dateFinished}
+                          min={entry.dateStarted || undefined}
+                          max={localDateStr()}
                           onChange={(e) =>
                             update({ dateFinished: e.target.value })
                           }
@@ -523,6 +535,8 @@ export default function BookPage() {
                         <input
                           type="date"
                           value={entry.dateShelved}
+                          min={entry.dateStarted || undefined}
+                          max={localDateStr()}
                           onChange={(e) =>
                             update({ dateShelved: e.target.value })
                           }

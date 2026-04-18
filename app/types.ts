@@ -31,6 +31,7 @@ export interface BookEntry {
   author: string;
   releaseDate: string;
   genres: string[];
+  userGenres: string[];
   moodTags: string[];
   bookshelves: string[];
   status: ReadingStatus;

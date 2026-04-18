@@ -1,23 +1,5 @@
 import { useMemo } from "react";
-
-const SPINE_COLORS = [
-  "var(--spine-1)",
-  "var(--spine-2)",
-  "var(--spine-3)",
-  "var(--spine-4)",
-  "var(--spine-5)",
-  "var(--spine-6)",
-  "var(--spine-7)",
-  "var(--spine-8)",
-  "var(--spine-9)",
-  "var(--spine-10)",
-];
-
-function hashTitle(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return Math.abs(h);
-}
+import { spineColor } from "@/lib/spineUtils";
 
 interface BookCoverProps {
   coverUrl?: string;
@@ -33,10 +15,7 @@ export function BookCover({
   author,
   className = "w-16",
 }: BookCoverProps) {
-  const spineColor = useMemo(
-    () => SPINE_COLORS[hashTitle(title || " ") % SPINE_COLORS.length],
-    [title],
-  );
+  const color = useMemo(() => spineColor(title), [title]);
 
   if (coverUrl) {
     return (
@@ -52,7 +31,7 @@ export function BookCover({
   return (
     <div
       className={`${className} rounded shadow-sm shrink-0 self-start aspect-[2/3] flex flex-col justify-end p-1.5`}
-      style={{ backgroundColor: spineColor }}
+      style={{ backgroundColor: color }}
     >
       <p className="text-[9px] font-semibold leading-tight line-clamp-3 text-white/80 break-words">
         {title}
@@ -80,10 +59,7 @@ export function BookCoverThumb({
   width?: string;
   height?: string;
 }) {
-  const spineColor = useMemo(
-    () => SPINE_COLORS[hashTitle(title || " ") % SPINE_COLORS.length],
-    [title],
-  );
+  const color = useMemo(() => spineColor(title), [title]);
 
   if (coverUrl) {
     return (
@@ -99,7 +75,7 @@ export function BookCoverThumb({
   return (
     <div
       className={`${width} ${height} rounded-sm shrink-0 flex flex-col justify-end p-1.5`}
-      style={{ backgroundColor: spineColor }}
+      style={{ backgroundColor: color }}
     >
       <p className="text-[8px] font-semibold leading-tight line-clamp-3 text-white/80 break-words">
         {title}

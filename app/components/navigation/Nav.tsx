@@ -167,11 +167,6 @@ export default function Nav() {
 
           <SidebarSection label="milestones">
             <SidebarLink
-              href={`/${CURRENT_YEAR}/read`}
-              label={`${CURRENT_YEAR} reads`}
-              icon={BookBookmarkIcon}
-            />
-            <SidebarLink
               href={`/${CURRENT_YEAR}/goal`}
               label={`${CURRENT_YEAR} goals`}
               icon={TargetIcon}

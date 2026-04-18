@@ -12,18 +12,32 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const { title, author, coverUrl, isbn, releaseDate, genres, pageCount } = await req.json();
+  const { title, author, coverUrl, isbn, isbns: incomingIsbns, releaseDate, genres, pageCount } = await req.json();
 
   if (!title) return NextResponse.json({ error: "title required" }, { status: 400 });
 
-  // Try to find by ISBN first
+  const allIsbns: string[] = [
+    ...new Set([...(incomingIsbns ?? []), isbn].filter(Boolean)),
+  ];
+
+  // Try to find by ISBN array first (catches any known edition)
   if (isbn) {
     const { data: existing } = await supabase
       .from("catalog_books")
-      .select("id")
-      .eq("isbn", isbn)
+      .select("id, isbns")
+      .contains("isbns", [isbn])
       .maybeSingle();
-    if (existing) return NextResponse.json({ id: existing.id });
+    if (existing) {
+      // Merge any new ISBNs
+      const merged = [...new Set([...(existing.isbns ?? []), ...allIsbns])];
+      if (merged.length > (existing.isbns ?? []).length) {
+        await supabase
+          .from("catalog_books")
+          .update({ isbns: merged, updated_at: new Date().toISOString() })
+          .eq("id", existing.id);
+      }
+      return NextResponse.json({ id: existing.id });
+    }
   }
 
   // Deduplicate by title + author before inserting
@@ -45,6 +59,7 @@ export async function POST(req: NextRequest) {
       author: author ?? "",
       cover_url: coverUrl ?? "",
       isbn: isbn ?? "",
+      isbns: allIsbns,
       release_date: releaseDate ?? "",
       genres: genres ?? [],
       page_count: pageCount ?? null,
