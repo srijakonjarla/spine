@@ -64,7 +64,6 @@ export function YearProvider({
   const [quoteCount, setQuoteCount] = useState(0);
 
   useEffect(() => {
-    setLoading(true);
     Promise.all([
       getEntries(),
       getEntries({ year }),

@@ -56,31 +56,6 @@ const HARDCOVER_ISBN_QUERY = `
   }
 `;
 
-// Structured title + author lookup — more deterministic than the search endpoint.
-const HARDCOVER_TITLE_AUTHOR_QUERY = `
-  query LookupByTitleAuthor($title: String!, $author: String!) {
-    books(where: {
-      title: { _ilike: $title },
-      contributions: { author: { name: { _ilike: $author } } }
-    }, limit: 3) {
-      id
-      title
-      pages
-      release_date
-      images { url }
-      contributions { author { name } }
-      cached_tags
-      default_physical_edition_id
-      editions {
-        id
-        isbn_13
-        isbn_10
-        image { url }
-      }
-    }
-  }
-`;
-
 const HARDCOVER_SEARCH_QUERY = `
   query SearchBooks($query: String!) {
     search(query: $query, query_type: "Book", per_page: 8) {
@@ -156,21 +131,30 @@ function parseHcBook(
     contributions?: { author: { name: string } }[];
     cached_tags?: unknown;
     default_physical_edition_id?: number;
-    editions?: { id?: number; isbn_13?: string; isbn_10?: string; image?: { url?: string } }[];
+    editions?: {
+      id?: number;
+      isbn_13?: string;
+      isbn_10?: string;
+      image?: { url?: string };
+    }[];
   },
   fallbackIsbn = "",
 ): BookResult {
   const editions = book.editions ?? [];
-  const defaultEdition = editions.find((e) => e.id === book.default_physical_edition_id);
+  const defaultEdition = editions.find(
+    (e) => e.id === book.default_physical_edition_id,
+  );
   const isbns = collectIsbns(editions);
-  const primaryIsbn = defaultEdition?.isbn_13 || defaultEdition?.isbn_10 || isbns[0] || fallbackIsbn;
+  const primaryIsbn =
+    defaultEdition?.isbn_13 ||
+    defaultEdition?.isbn_10 ||
+    isbns[0] ||
+    fallbackIsbn;
   const coverUrl = defaultEdition?.image?.url || book.images?.[0]?.url || "";
   return {
     id: `hc-${book.id}`,
     title: book.title ?? "",
-    author: (book.contributions ?? [])
-      .map((c) => c.author.name)
-      .join(", "),
+    author: (book.contributions ?? []).map((c) => c.author.name).join(", "),
     release_date: book.release_date ?? "",
     genres: extractHcGenres(book.cached_tags),
     cover_url: coverUrl,
@@ -185,26 +169,6 @@ async function lookupHardcoverByIsbn(isbn: string): Promise<BookResult | null> {
   const book = json?.data?.books?.[0];
   if (!book?.title) return null;
   return parseHcBook(book, isbn);
-}
-
-async function lookupHardcoverByTitleAuthor(
-  title: string,
-  author: string,
-): Promise<BookResult | null> {
-  const json = await hcPost(HARDCOVER_TITLE_AUTHOR_QUERY, {
-    title: `%${title}%`,
-    author: `%${author}%`,
-  });
-  const books: typeof json.data.books = json?.data?.books ?? [];
-  if (!books.length) return null;
-
-  // Prefer an exact title match; otherwise take first result
-  const normTitle = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
-  const nt = normTitle(title);
-  const best =
-    books.find((b: { title?: string }) => normTitle(b.title ?? "") === nt) ??
-    books[0];
-  return parseHcBook(best);
 }
 
 interface BookEnrichment {
@@ -380,11 +344,15 @@ export async function GET(req: NextRequest) {
 
   const hardcover = await searchHardcover(q);
   if (hardcover.length > 0) {
-    console.log(`[catalog] Hardcover search returned ${hardcover.length} results`);
+    console.log(
+      `[catalog] Hardcover search returned ${hardcover.length} results`,
+    );
     return NextResponse.json(hardcover);
   }
 
-  console.log(`[catalog] Hardcover search returned 0 results, falling back to Google Books`);
+  console.log(
+    `[catalog] Hardcover search returned 0 results, falling back to Google Books`,
+  );
   const google = await searchGoogle(q);
   console.log(`[catalog] Google Books returned ${google.length} results`);
   return NextResponse.json(google);

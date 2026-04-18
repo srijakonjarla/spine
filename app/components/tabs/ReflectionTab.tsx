@@ -19,6 +19,7 @@ function HistoricalReadView({
 }) {
   const { onUpdateRead, onDeleteRead } = useBook();
   const feelingRef = useRef<HTMLTextAreaElement>(null);
+  const [prevReadId, setPrevReadId] = useState(read.id);
   const [draft, setDraft] = useState({
     dateStarted: read.dateStarted,
     dateFinished: read.dateFinished,
@@ -27,15 +28,16 @@ function HistoricalReadView({
   });
   const [saving, setSaving] = useState(false);
 
-  // Reset draft when the selected read changes
-  useEffect(() => {
+  // Reset draft when the selected read changes without triggering an effect cycle
+  if (prevReadId !== read.id) {
+    setPrevReadId(read.id);
     setDraft({
       dateStarted: read.dateStarted,
       dateFinished: read.dateFinished,
       rating: read.rating,
       feeling: read.feeling,
     });
-  }, [read.id]);
+  }
 
   useEffect(() => {
     if (!feelingRef.current) return;

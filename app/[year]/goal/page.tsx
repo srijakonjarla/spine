@@ -11,7 +11,7 @@ import {
 } from "@/lib/goals";
 import { useYear } from "@/providers/YearContext";
 import { toast } from "@/lib/toast";
-import type { ReadingGoal } from "@/types";
+import type { ReadingGoal, BookEntry } from "@/types";
 import { ProgressBar } from "@/components/ProgressBar";
 import { PageHeader } from "@/components/PageHeader";
 

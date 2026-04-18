@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getEntries } from "@/lib/db";
@@ -68,7 +68,9 @@ export default function MonthSpreadPage() {
     ) {
       setAllBooks(pageCache.books);
       setReading(pageCache.books.filter((b) => b.status === "reading"));
-      setUpNext(pageCache.books.filter((b) => b.status === "want-to-read" && b.upNext));
+      setUpNext(
+        pageCache.books.filter((b) => b.status === "want-to-read" && b.upNext),
+      );
       setLogEntries(pageCache.log);
       setQuotes(pageCache.quotes);
       setLoading(false);
