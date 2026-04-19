@@ -15,8 +15,8 @@ export function GenreSection({ items }: GenreSectionProps) {
         {items.map(([genre, count]) => (
           <div key={genre}>
             <div className="flex items-baseline justify-between mb-1">
-              <span className="text-xs text-[var(--fg)]">{genre}</span>
-              <span className="text-xs text-[var(--fg-faint)]">{count}</span>
+              <span className="text-xs text-fg">{genre}</span>
+              <span className="text-xs text-fg-faint">{count}</span>
             </div>
             <ProgressBar value={count / (items[0][1] || 1)} color="gradient" />
           </div>

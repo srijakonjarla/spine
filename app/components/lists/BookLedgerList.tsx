@@ -11,11 +11,11 @@ import { toast } from "@/lib/toast";
 export const TX_TYPES = ["bought", "sold", "gifted", "donated"] as const;
 export type TxType = (typeof TX_TYPES)[number];
 export const TX_COLORS: Record<TxType, string> = {
-  bought: "text-[var(--plum)] bg-[var(--plum)]/10 border-[var(--plum)]/30",
+  bought: "text-plum bg-plum/10 border-plum/30",
   sold: "text-sage bg-sage/10 border-sage/30",
   gifted: "text-gold bg-gold/10 border-gold/30",
   donated:
-    "text-[var(--fg-muted)] bg-[var(--bg-hover)] border-[var(--border-light)]",
+    "text-fg-muted bg-hover border-line",
 };
 
 interface Props {
@@ -104,7 +104,7 @@ export function BookLedgerList({
       )}
       <div className="mb-3">
         {items.length > 0 && (
-          <div className="flex gap-3 items-center px-1 pb-1.5 mb-1 border-b border-[var(--border-light)] text-[10px] uppercase tracking-widest font-semibold text-[var(--fg-faint)]">
+          <div className="flex gap-3 items-center px-1 pb-1.5 mb-1 border-b border-line text-detail uppercase tracking-widest font-semibold text-fg-faint">
             <span className="flex-1">book</span>
             <span className="w-20 shrink-0">type</span>
             <span className="w-16 shrink-0">price</span>
@@ -116,24 +116,24 @@ export function BookLedgerList({
         {filtered.map((item) => (
           <div
             key={item.id}
-            className="group flex gap-3 items-center py-2.5 border-b border-[var(--border-light)] last:border-none hover:bg-[var(--bg-plum-trace)] -mx-1 px-1 rounded-lg transition-colors"
+            className="group flex gap-3 items-center py-2.5 border-b border-line last:border-none hover:bg-plum-trace -mx-1 px-1 rounded-lg transition-colors"
           >
             {/* Title + author */}
             <div className="flex-1 min-w-0">
               {item.bookId ? (
                 <Link
                   href={`/book/${item.bookId}`}
-                  className="text-[13px] font-semibold text-[var(--fg-heading)] hover:text-[var(--terra)] transition-colors leading-snug truncate block"
+                  className="text-note font-semibold text-fg-heading hover:text-terra transition-colors leading-snug truncate block"
                 >
                   {item.title}
                 </Link>
               ) : (
-                <p className="text-[13px] font-semibold text-[var(--fg-heading)] leading-snug truncate">
+                <p className="text-note font-semibold text-fg-heading leading-snug truncate">
                   {item.title}
                 </p>
               )}
               {item.author && (
-                <p className="text-[11px] text-[var(--fg-muted)] truncate">
+                <p className="text-caption text-fg-muted truncate">
                   {item.author}
                 </p>
               )}
@@ -143,7 +143,7 @@ export function BookLedgerList({
               <select
                 value={item.type || "bought"}
                 onChange={(e) => onUpdateType(item.id, e.target.value)}
-                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border cursor-pointer bg-transparent outline-none ${TX_COLORS[(item.type as TxType) || "bought"]}`}
+                className={`text-detail font-semibold px-2 py-0.5 rounded-full border cursor-pointer bg-transparent outline-none ${TX_COLORS[(item.type as TxType) || "bought"]}`}
               >
                 {TX_TYPES.map((t) => (
                   <option key={t} value={t}>
@@ -154,13 +154,13 @@ export function BookLedgerList({
             </div>
             {/* Price */}
             <div className="w-16 shrink-0 flex items-center gap-0.5">
-              <span className="text-[11px] text-[var(--fg-faint)]">$</span>
+              <span className="text-caption text-fg-faint">$</span>
               <input
                 type="text"
                 value={item.price ?? ""}
                 onChange={(e) => onUpdatePrice(item.id, e.target.value)}
                 placeholder="0.00"
-                className="text-xs text-[var(--fg-muted)] bg-transparent border-none outline-none w-full placeholder:text-[var(--fg-faint)]/50"
+                className="text-xs text-fg-muted bg-transparent border-none outline-none w-full placeholder:text-fg-faint/50"
               />
             </div>
             {/* Source / destination */}
@@ -169,18 +169,18 @@ export function BookLedgerList({
               value={item.notes ?? ""}
               onChange={(e) => onUpdateNotes(item.id, e.target.value)}
               placeholder="from / to…"
-              className="w-28 shrink-0 hidden sm:block text-xs text-[var(--fg-muted)] bg-transparent border-none outline-none placeholder:text-[var(--fg-faint)]/50"
+              className="w-28 shrink-0 hidden sm:block text-xs text-fg-muted bg-transparent border-none outline-none placeholder:text-fg-faint/50"
             />
             {/* Date */}
             <input
               type="date"
               value={item.releaseDate ?? ""}
               onChange={(e) => onUpdateDate(item.id, e.target.value)}
-              className="w-24 shrink-0 hidden md:block text-xs text-[var(--fg-faint)] bg-transparent border-none outline-none"
+              className="w-24 shrink-0 hidden md:block text-xs text-fg-faint bg-transparent border-none outline-none"
             />
             <button
               onClick={() => onRemove(item.id)}
-              className="w-4 shrink-0 text-lg text-[var(--fg-faint)] hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+              className="w-4 shrink-0 text-lg text-fg-faint hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
             >
               ×
             </button>
@@ -190,7 +190,7 @@ export function BookLedgerList({
 
       {/* Add entry */}
       {showAdd ? (
-        <div className="rounded-xl px-4 py-3 border border-dashed border-[var(--border-light)] bg-[var(--bg-surface)] space-y-2">
+        <div className="rounded-xl px-4 py-3 border border-dashed border-line bg-surface space-y-2">
           <CatalogSearch
             value={draftTitle}
             onChange={(v) => setDraftTitle(v)}
@@ -208,7 +208,7 @@ export function BookLedgerList({
             value={draftAuthor}
             onChange={(e) => setDraftAuthor(e.target.value)}
             placeholder="author"
-            className="text-xs text-[var(--fg-muted)] bg-transparent border-none outline-none w-full placeholder:text-[var(--fg-faint)]"
+            className="text-xs text-fg-muted bg-transparent border-none outline-none w-full placeholder:text-fg-faint"
           />
           <div className="flex gap-1.5 flex-wrap">
             {TX_TYPES.map((t) => (
@@ -216,7 +216,7 @@ export function BookLedgerList({
                 key={t}
                 type="button"
                 onClick={() => setDraftTxType(t)}
-                className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-colors ${draftTxType === t ? TX_COLORS[t] : "border-[var(--border-light)] text-[var(--fg-faint)]"}`}
+                className={`text-detail font-semibold px-2.5 py-1 rounded-full border transition-colors ${draftTxType === t ? TX_COLORS[t] : "border-line text-fg-faint"}`}
               >
                 {t}
               </button>
@@ -224,13 +224,13 @@ export function BookLedgerList({
           </div>
           <div className="flex gap-3 items-center">
             <div className="flex items-center gap-0.5">
-              <span className="text-[11px] text-[var(--fg-faint)]">$</span>
+              <span className="text-caption text-fg-faint">$</span>
               <input
                 type="text"
                 value={draftPrice}
                 onChange={(e) => setDraftPrice(e.target.value)}
                 placeholder="0.00"
-                className="text-xs text-[var(--fg-muted)] bg-transparent border-b border-[var(--border-light)] outline-none w-16 pb-0.5 placeholder:text-[var(--fg-faint)]"
+                className="text-xs text-fg-muted bg-transparent border-b border-line outline-none w-16 pb-0.5 placeholder:text-fg-faint"
               />
             </div>
             <input
@@ -238,20 +238,20 @@ export function BookLedgerList({
               value={draftSource}
               onChange={(e) => setDraftSource(e.target.value)}
               placeholder="from / to…"
-              className="flex-1 text-xs text-[var(--fg-muted)] bg-transparent border-b border-[var(--border-light)] outline-none pb-0.5 placeholder:text-[var(--fg-faint)]"
+              className="flex-1 text-xs text-fg-muted bg-transparent border-b border-line outline-none pb-0.5 placeholder:text-fg-faint"
             />
             <input
               type="date"
               value={draftTxDate}
               onChange={(e) => setDraftTxDate(e.target.value)}
-              className="text-xs text-[var(--fg-faint)] bg-transparent border-none outline-none"
+              className="text-xs text-fg-faint bg-transparent border-none outline-none"
             />
           </div>
-          <div className="flex gap-3 pt-2 border-t border-[var(--border-light)]">
+          <div className="flex gap-3 pt-2 border-t border-line">
             <button
               onClick={handleAdd}
               disabled={!draftTitle.trim() || adding}
-              className="text-xs font-semibold text-[var(--plum)] hover:text-[var(--plum-light)] transition-colors disabled:opacity-30"
+              className="text-xs font-semibold text-plum hover:text-plum-light transition-colors disabled:opacity-30"
             >
               add ↵
             </button>
@@ -266,7 +266,7 @@ export function BookLedgerList({
                 setDraftSource("");
                 setDraftTxDate("");
               }}
-              className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
+              className="text-xs text-fg-faint hover:text-fg-muted transition-colors"
             >
               cancel
             </button>
@@ -275,7 +275,7 @@ export function BookLedgerList({
       ) : (
         <button
           onClick={() => setShowAdd(true)}
-          className="w-full flex gap-2.5 items-center px-4 py-3 rounded-xl border border-dashed border-[var(--border-light)] hover:border-[var(--terra)] hover:bg-[var(--terra)]/4 transition-all font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)] hover:text-[var(--terra)]"
+          className="w-full flex gap-2.5 items-center px-4 py-3 rounded-xl border border-dashed border-line hover:border-terra hover:bg-terra/4 transition-all font-hand text-note text-fg-muted hover:text-terra"
         >
           <span className="text-lg">＋</span>
           log a transaction…

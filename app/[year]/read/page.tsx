@@ -30,12 +30,12 @@ export default function ReadThisYearPage() {
     return (
       <div className="page">
         <div className="page-content animate-pulse">
-          <div className="h-4 w-28 bg-[var(--bg-hover)] rounded mb-8" />
+          <div className="h-4 w-28 bg-hover rounded mb-8" />
           <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
             {Array.from({ length: 12 }).map((_, i) => (
               <div
                 key={i}
-                className="aspect-[2/3] bg-[var(--bg-hover)] rounded"
+                className="aspect-[2/3] bg-hover rounded"
               />
             ))}
           </div>
@@ -52,15 +52,15 @@ export default function ReadThisYearPage() {
           </Link>
         </div>
 
-        <div className="mb-10 pb-8 border-b border-[var(--border-light)]">
-          <p className="text-xs text-[var(--fg-faint)] mb-2 tracking-widest uppercase">
+        <div className="mb-10 pb-8 border-b border-line">
+          <p className="text-xs text-fg-faint mb-2 tracking-widest uppercase">
             {year} · finished
           </p>
-          <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold text-[var(--fg-heading)] tracking-tight">
+          <h1 className="font-serif text-3xl font-semibold text-fg-heading tracking-tight">
             books i read
           </h1>
           {finishedBooks.length > 0 && (
-            <p className="text-xs text-[var(--fg-muted)] mt-3">
+            <p className="text-xs text-fg-muted mt-3">
               {finishedBooks.length}{" "}
               {finishedBooks.length === 1 ? "book" : "books"}
             </p>
@@ -68,7 +68,7 @@ export default function ReadThisYearPage() {
         </div>
 
         {finishedBooks.length === 0 ? (
-          <p className="text-xs text-[var(--fg-faint)]">
+          <p className="text-xs text-fg-faint">
             no finished books logged for {year} yet.
           </p>
         ) : (
@@ -78,11 +78,11 @@ export default function ReadThisYearPage() {
               return (
                 <section key={m}>
                   <div className="flex items-baseline gap-3 mb-5">
-                    <h2 className="text-sm font-semibold tracking-wider uppercase text-[var(--fg-muted)]">
+                    <h2 className="text-sm font-semibold tracking-wider uppercase text-fg-muted">
                       {MONTH_NAMES[m]}
                     </h2>
-                    <span className="flex-1 border-b border-dotted border-[var(--border-light)] mb-0.5" />
-                    <span className="text-xs text-[var(--fg-faint)]">
+                    <span className="flex-1 border-b border-dotted border-line mb-0.5" />
+                    <span className="text-xs text-fg-faint">
                       {monthBooks.length}
                     </span>
                   </div>
@@ -103,12 +103,12 @@ export default function ReadThisYearPage() {
                         />
                         {/* Tooltip */}
                         {hoveredId === b.id && (
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-10 w-40 rounded-lg p-2.5 shadow-lg pointer-events-none bg-[var(--bg-surface)] border border-[var(--border-light)]">
-                            <p className="text-[11px] font-semibold leading-snug mb-0.5 text-[var(--fg-heading)] line-clamp-2">
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-10 w-40 rounded-lg p-2.5 shadow-lg pointer-events-none bg-surface border border-line">
+                            <p className="text-caption font-semibold leading-snug mb-0.5 text-fg-heading line-clamp-2">
                               {b.title}
                             </p>
                             {b.author && (
-                              <p className="text-[10px] truncate text-[var(--fg-muted)] mb-1">
+                              <p className="text-detail truncate text-fg-muted mb-1">
                                 {b.author}
                               </p>
                             )}
@@ -116,7 +116,7 @@ export default function ReadThisYearPage() {
                               <StarDisplay rating={b.rating} size={10} />
                             )}
                             {b.dateFinished && (
-                              <p className="text-[9px] mt-1 text-[var(--fg-faint)]">
+                              <p className="text-label mt-1 text-fg-faint">
                                 {formatDate(b.dateFinished, {
                                   month: "short",
                                   day: "numeric",

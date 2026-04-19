@@ -32,6 +32,9 @@
   --ch-mood-whimsical: 139 92 246;
   --ch-mood-escapist: 21 101 192;
 
+  /* Layout */
+  --nav-height: 3.5rem;
+
   /* Semantic tokens — light mode */
   --bg-page: #faf6f0;
   --bg-surface: #fdfaf5;
@@ -245,9 +248,65 @@
   --color-cream: var(--cream);
   --color-ink: var(--ink);
   --color-ink-light: var(--ink-light);
+  --color-fg: var(--fg);
   --color-fg-muted: var(--fg-muted);
   --color-fg-faint: var(--fg-faint);
+  --color-fg-heading: var(--fg-heading);
+
+  /* Surfaces — enables bg-surface, bg-hover, bg-page, etc. */
   --color-surface: var(--bg-surface);
+  --color-hover: var(--bg-hover);
+  --color-page: var(--bg-page);
+  --color-subtle: var(--bg-subtle);
+  --color-faintest: var(--bg-faintest);
+  --color-overlay: var(--bg-overlay);
+  --color-muted-tag: var(--bg-muted-tag);
+  --color-selected: var(--bg-selected);
+  --color-plum-trace: var(--bg-plum-trace);
+  --color-plum-soft: var(--bg-plum-soft);
+  --color-plum-mid: var(--bg-plum-mid);
+  --color-nav-hover: var(--bg-nav-hover);
+  --color-gold-pill: var(--bg-gold-pill);
+  --color-sage-pill: var(--bg-sage-pill);
+  --color-sage-18: var(--bg-sage-18);
+
+  /* Border shades — enables border-line, border-edge */
+  --color-line: var(--border-light);
+  --color-edge: var(--border);
+  --color-border-sage: var(--border-sage);
+  --color-border-gold: var(--border-gold);
+  --color-border-terra-soft: var(--border-terra-soft);
+
+  /* Stat card accent borders */
+  --color-stat-books: var(--stat-border-books);
+  --color-stat-days: var(--stat-border-days);
+  --color-stat-rating: var(--stat-border-rating);
+  --color-stat-quotes: var(--stat-border-quotes);
+
+  /* Misc */
+  --color-danger-hover: var(--danger-hover);
+  --color-lavender-muted: var(--lavender-muted);
+
+  /* Font sizes — fills gaps in the default Tailwind scale */
+  --text-micro: 7px;       /* spine / cover micro text */
+  --text-micro-plus: 8px;  /* spine labels, tiny badges */
+  --text-label: 9px;       /* uppercase micro labels */
+  --text-detail: 10px;     /* field labels, small pills */
+  --text-caption: 11px;    /* meta text, captions */
+  --text-note: 13px;       /* body-small, notes, sidebar */
+  --text-body-md: 15px;    /* card headings, body-medium */
+  --text-subhead: 17px;    /* section headings */
+  --text-title: 22px;      /* large headings */
+  --text-display: 28px;    /* hero stat numbers */
+
+  /* Letter spacing — semantic names for recurring values */
+  --tracking-micro: 0.06em;
+  --tracking-mid: 0.07em;
+  --tracking-caps: 0.08em;
+  --tracking-caps-wide: 0.1em;
+  --tracking-label: 0.12em;
+  --tracking-spread: 0.14em;
+  --tracking-ultra: 0.15em;
 }
 
 /* ─── Base ───────────────────────────────────────────────────── */
@@ -959,10 +1018,20 @@ h3 {
 
   /* Handwritten sidebar section label (Timeline) */
   .timeline-section-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     font-family: var(--font-caveat), cursive;
     font-size: 17px;
     letter-spacing: 0;
     line-height: 1;
+  }
+
+  .timeline-section-label::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border-light);
   }
 
   /* Quoted passage block */

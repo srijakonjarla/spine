@@ -31,7 +31,7 @@ function SpinePlaceholder({ title }: { title: string }) {
   return (
     <svg
       viewBox="0 0 38 54"
-      className="rounded-sm w-[38px] h-[54px] shadow-[var(--shadow-spine-card)]"
+      className="rounded-sm w-9.5 h-13.5 shadow-[var(--shadow-spine-card)]"
     >
       <rect width="38" height="54" rx="3" fill={spineColor(title)} />
       <rect
@@ -134,11 +134,11 @@ export function BookListItems({
           return (
             <div
               key={item.id}
-              className={`group flex gap-3.5 items-center bg-[var(--bg-surface)] rounded-xl px-4 py-3 border border-[var(--border-light)] transition-all ${draggingId === item.id ? "opacity-40" : "hover:translate-x-1"}`}
+              className={`group flex gap-3.5 items-center bg-surface rounded-xl px-4 py-3 border border-line transition-all ${draggingId === item.id ? "opacity-40" : "hover:translate-x-1"}`}
               {...(itemSearch.trim() ? {} : itemProps(index, item.id))}
             >
               {!itemSearch.trim() && (
-                <span className="cursor-grab active:cursor-grabbing text-[var(--fg-faint)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0 select-none text-base">
+                <span className="cursor-grab active:cursor-grabbing text-fg-faint opacity-0 group-hover:opacity-100 transition-opacity shrink-0 select-none text-base">
                   ⠿
                 </span>
               )}
@@ -150,7 +150,7 @@ export function BookListItems({
                     <BookCover
                       coverUrl={item.coverUrl}
                       title={item.title}
-                      className="rounded-sm w-[38px] h-[54px]"
+                      className="rounded-sm w-9.5 h-13.5"
                     />
                   ) : (
                     <SpinePlaceholder title={item.title} />
@@ -160,7 +160,7 @@ export function BookListItems({
                 <BookCover
                   coverUrl={item.coverUrl}
                   title={item.title}
-                  className="shrink-0 rounded-sm w-[38px] h-[54px]"
+                  className="shrink-0 rounded-sm w-9.5 h-13.5"
                 />
               ) : (
                 <span className="shrink-0">
@@ -173,17 +173,17 @@ export function BookListItems({
                 {item.bookId ? (
                   <Link
                     href={`/book/${item.bookId}`}
-                    className="font-serif text-[13px] font-semibold text-[var(--fg-heading)] leading-snug hover:text-[var(--terra)] transition-colors"
+                    className="font-serif text-note font-semibold text-fg-heading leading-snug hover:text-terra transition-colors"
                   >
                     {item.title}
                   </Link>
                 ) : (
-                  <p className="font-serif text-[13px] font-semibold text-[var(--fg-heading)] leading-snug">
+                  <p className="font-serif text-note font-semibold text-fg-heading leading-snug">
                     {item.title}
                   </p>
                 )}
                 {item.author && (
-                  <p className="text-[11px] text-[var(--fg-muted)] mt-0.5">
+                  <p className="text-caption text-fg-muted mt-0.5">
                     {item.author}
                   </p>
                 )}
@@ -192,14 +192,14 @@ export function BookListItems({
                   value={item.notes ?? ""}
                   onChange={(e) => onUpdateNotes(item.id, e.target.value)}
                   placeholder="add a note…"
-                  className="font-[family-name:var(--font-caveat)] text-xs text-[var(--terra)] bg-transparent border-none outline-none w-full mt-1 placeholder:text-[var(--terra)]/40"
+                  className="font-hand text-xs text-terra bg-transparent border-none outline-none w-full mt-1 placeholder:text-terra/40"
                 />
               </div>
 
               {/* Status pill */}
               {status && (
                 <span
-                  className={`shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full border opacity-70 group-hover:opacity-100 transition-opacity ${STATUS_COLOR[status]} border-current`}
+                  className={`shrink-0 text-detail font-medium px-2 py-0.5 rounded-full border opacity-70 group-hover:opacity-100 transition-opacity ${STATUS_COLOR[status]} border-current`}
                 >
                   {STATUS_SYMBOL[status]}{" "}
                   {STATUS_LABEL[status] === "want to read"
@@ -210,7 +210,7 @@ export function BookListItems({
 
               <button
                 onClick={() => onRemove(item.id)}
-                className="text-lg text-[var(--fg-faint)] hover:text-red-400 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
+                className="text-lg text-fg-faint hover:text-red-400 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
               >
                 ×
               </button>
@@ -221,7 +221,7 @@ export function BookListItems({
 
       {/* Add book row */}
       {showAdd ? (
-        <div className="rounded-xl px-4 py-3 border border-dashed border-[var(--border-light)] bg-[var(--bg-surface)]">
+        <div className="rounded-xl px-4 py-3 border border-dashed border-line bg-surface">
           <CatalogSearch
             value={draftTitle}
             onChange={(v) => setDraftTitle(v)}
@@ -241,13 +241,13 @@ export function BookListItems({
             onChange={(e) => setDraftAuthor(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             placeholder="author"
-            className="text-xs text-[var(--fg-muted)] bg-transparent border-none outline-none w-full placeholder:text-[var(--fg-faint)]"
+            className="text-xs text-fg-muted bg-transparent border-none outline-none w-full placeholder:text-fg-faint"
           />
-          <div className="flex gap-3 mt-2 pt-2 border-t border-[var(--border-light)]">
+          <div className="flex gap-3 mt-2 pt-2 border-t border-line">
             <button
               onClick={handleAdd}
               disabled={!draftTitle.trim() || adding}
-              className="text-xs font-semibold text-[var(--plum)] hover:text-[var(--plum-light)] transition-colors disabled:opacity-30"
+              className="text-xs font-semibold text-plum hover:text-plum-light transition-colors disabled:opacity-30"
             >
               add ↵
             </button>
@@ -258,7 +258,7 @@ export function BookListItems({
                 setDraftAuthor("");
                 setDraftBookId("");
               }}
-              className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
+              className="text-xs text-fg-faint hover:text-fg-muted transition-colors"
             >
               cancel
             </button>
@@ -267,7 +267,7 @@ export function BookListItems({
       ) : (
         <button
           onClick={() => setShowAdd(true)}
-          className="w-full flex gap-2.5 items-center px-4 py-3 rounded-xl border border-dashed border-[var(--border-light)] hover:border-[var(--terra)] hover:bg-[var(--terra)]/4 transition-all font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)] hover:text-[var(--terra)]"
+          className="w-full flex gap-2.5 items-center px-4 py-3 rounded-xl border border-dashed border-line hover:border-terra hover:bg-terra/4 transition-all font-hand text-note text-fg-muted hover:text-terra"
         >
           <span className="text-lg">＋</span>
           search for a book to add…

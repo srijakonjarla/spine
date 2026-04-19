@@ -26,12 +26,12 @@ export default function SummaryStats({
         {items.map(({ val, lbl }) => (
           <div
             key={lbl}
-            className="rounded-xl px-4 py-3 bg-[var(--bg-surface)] border border-[var(--border-light)]"
+            className="rounded-xl px-4 py-3 bg-surface border border-line"
           >
-            <p className="font-serif text-[22px] font-bold text-plum leading-none">
+            <p className="font-serif text-title font-bold text-plum leading-none">
               {val}
             </p>
-            <p className="font-sans text-[10px] tracking-[0.14em] uppercase text-ink-light mt-2">
+            <p className="font-sans text-detail tracking-spread uppercase text-ink-light mt-2">
               {lbl}
             </p>
           </div>

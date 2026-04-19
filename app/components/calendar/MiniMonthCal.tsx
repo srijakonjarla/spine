@@ -42,23 +42,23 @@ export default function MiniMonthCal({
   return (
     <Link
       href={`/${year}/${MONTH_ABBRS[monthIndex]}`}
-      className={`flex flex-col rounded-xl p-3 transition-opacity hover:opacity-80 bg-[var(--bg-surface)] ${
+      className={`flex flex-col rounded-xl p-3 transition-opacity hover:opacity-80 bg-surface ${
         isThisMonth
-          ? "border-[1.5px] border-[var(--border-terra-soft)]"
-          : "border border-[var(--border-light)]"
+          ? "border-[1.5px] border-border-terra-soft"
+          : "border border-line"
       } ${isFutureMonth ? "opacity-[0.45]" : "aspect-4/3"}`}
     >
       <div className="flex items-baseline justify-between mb-2">
-        <p className="text-[11px] font-semibold text-[var(--fg-muted)]">
+        <p className="text-caption font-semibold text-fg-muted">
           {MONTH_NAMES[monthIndex]}
         </p>
         {booksThisMonth > 0 && (
-          <p className="text-[9px] text-sage">
+          <p className="text-label text-sage">
             {booksThisMonth} {booksThisMonth === 1 ? "book" : "books"}
           </p>
         )}
         {isFutureMonth && (
-          <p className="text-md font-[family-name:var(--font-caveat)] text-[var(--fg-faint)]">
+          <p className="text-md font-hand text-fg-faint">
             not yet written
           </p>
         )}
@@ -80,8 +80,8 @@ export default function MiniMonthCal({
                 : isLogged
                   ? "bg-[var(--bg-sage-50)]"
                   : isFuture
-                    ? "bg-[var(--bg-plum-trace)]"
-                    : "bg-[var(--bg-plum-soft)]";
+                    ? "bg-plum-trace"
+                    : "bg-plum-soft";
 
             return (
               <div
@@ -94,7 +94,7 @@ export default function MiniMonthCal({
       )}
 
       {!isFutureMonth && !monthHasActivity && (
-        <p className="text-[9px] font-[family-name:var(--font-caveat)] mt-1 text-[var(--fg-faint)]">
+        <p className="text-label font-hand mt-1 text-fg-faint">
           no days logged
         </p>
       )}

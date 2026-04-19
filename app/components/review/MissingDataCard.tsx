@@ -13,17 +13,17 @@ export function MissingDataCard({
 }: MissingDataCardProps) {
   if (!printMissingPages.length && !audioMissingHours.length) return null;
   return (
-    <div className="mb-14 rounded-2xl border border-[var(--border-light)] bg-[var(--bg-surface)] p-5">
-      <p className="text-sm text-[var(--fg)] mb-2">
+    <div className="mb-14 rounded-2xl border border-line bg-surface p-5">
+      <p className="text-sm text-fg mb-2">
         Add missing details to make these counts accurate.
       </p>
-      <p className="text-xs text-[var(--fg-faint)] mb-4">
+      <p className="text-xs text-fg-faint mb-4">
         Tap a book to fill in the length.
       </p>
       <div className="grid sm:grid-cols-2 gap-x-10 gap-y-4">
         {printMissingPages.length > 0 && (
           <div>
-            <p className="text-[11px] text-[var(--fg-faint)] uppercase tracking-wide mb-2">
+            <p className="text-caption text-fg-faint uppercase tracking-wide mb-2">
               missing page count · {printMissingPages.length}
             </p>
             <div className="space-y-0.5">
@@ -35,7 +35,7 @@ export function MissingDataCard({
         )}
         {audioMissingHours.length > 0 && (
           <div>
-            <p className="text-[11px] text-[var(--fg-faint)] uppercase tracking-wide mb-2">
+            <p className="text-caption text-fg-faint uppercase tracking-wide mb-2">
               missing audio length · {audioMissingHours.length}
             </p>
             <div className="space-y-0.5">

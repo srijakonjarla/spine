@@ -34,7 +34,7 @@ export default function InlineAdd({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors mt-2"
+        className="text-xs text-fg-faint hover:text-fg-muted transition-colors mt-2"
       >
         + add
       </button>

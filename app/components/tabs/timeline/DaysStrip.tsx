@@ -107,7 +107,7 @@ export default function DaysStrip({
 
   return (
     <div className="mb-7">
-      <p className="font-hand text-[13px] text-ink-light mb-2.5">
+      <p className="font-hand text-note text-ink-light mb-2.5">
         days you spent with this book
       </p>
       <div className="flex gap-[5px] flex-wrap items-center">{chips}</div>
@@ -115,7 +115,7 @@ export default function DaysStrip({
         {LEGEND.map(({ bg, label }) => (
           <span
             key={label}
-            className="flex items-center gap-[5px] text-[10px] text-ink-light font-sans"
+            className="flex items-center gap-[5px] text-detail text-ink-light font-sans"
           >
             <span
               className="w-2.5 h-2.5 rounded-[2px] inline-block"

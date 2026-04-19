@@ -27,13 +27,13 @@ export function MonthCalendar({
   onSelectDate,
 }: MonthCalendarProps) {
   return (
-    <div className="mb-10 rounded-2xl overflow-hidden border border-[var(--border-light)]">
+    <div className="mb-10 rounded-2xl overflow-hidden border border-line">
       {/* Day headers */}
-      <div className="grid grid-cols-7 border-b border-[var(--border-light)] bg-[var(--bg-surface)]">
+      <div className="grid grid-cols-7 border-b border-line bg-surface">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div
             key={d}
-            className="text-center py-2 text-[10px] uppercase tracking-wider text-[var(--fg-faint)]"
+            className="text-center py-2 text-detail uppercase tracking-wider text-fg-faint"
           >
             {d}
           </div>
@@ -41,13 +41,13 @@ export function MonthCalendar({
       </div>
 
       {/* Day cells */}
-      <div className="grid grid-cols-7 bg-[var(--bg-page)]">
+      <div className="grid grid-cols-7 bg-page">
         {cells.map((cell, i) => {
           if (!cell.day) {
             return (
               <div
                 key={i}
-                className="aspect-square border-r border-b border-[var(--border-light)] opacity-30"
+                className="aspect-square border-r border-b border-line opacity-30"
               />
             );
           }
@@ -62,7 +62,7 @@ export function MonthCalendar({
           const isSelected = selectedDate === dateStr;
 
           const bgClass = isSelected
-            ? "bg-[var(--bg-selected)]"
+            ? "bg-selected"
             : isToday
               ? "bg-plum"
               : finished
@@ -74,31 +74,31 @@ export function MonthCalendar({
                     : "bg-transparent";
 
           const dayNumColor = isFuture
-            ? "text-[var(--fg-faint)]"
+            ? "text-fg-faint"
             : isToday
               ? "text-white"
-              : "text-[var(--fg)]";
+              : "text-fg";
 
           const inner = (
             <>
               <span
-                className={`text-[11px] font-medium leading-none mb-1 w-5 h-5 flex items-center justify-center rounded-full ${dayNumColor}`}
+                className={`text-caption font-medium leading-none mb-1 w-5 h-5 flex items-center justify-center rounded-full ${dayNumColor}`}
               >
                 {cell.day}
               </span>
               {finished && (
-                <span className="text-[8px] leading-tight truncate w-full text-terra">
+                <span className="text-micro-plus leading-tight truncate w-full text-terra">
                   {finished.title.slice(0, 10)}
                   {finished.title.length > 10 ? "…" : ""}
                 </span>
               )}
               {isLogged && !finished && (
                 <span
-                  className={`w-1 h-1 rounded-full absolute bottom-1.5 left-1/2 -translate-x-1/2 ${isStreak ? "bg-sage" : "bg-[var(--fg-faint)]"}`}
+                  className={`w-1 h-1 rounded-full absolute bottom-1.5 left-1/2 -translate-x-1/2 ${isStreak ? "bg-sage" : "bg-fg-faint"}`}
                 />
               )}
               {hasQuote && (
-                <span className="text-[8px] absolute top-1 right-1 text-gold">
+                <span className="text-micro-plus absolute top-1 right-1 text-gold">
                   ✦
                 </span>
               )}
@@ -109,7 +109,7 @@ export function MonthCalendar({
             return (
               <div
                 key={i}
-                className={`aspect-square border-r border-b border-[var(--border-light)] flex flex-col items-start justify-start p-1.5 relative opacity-45 cursor-default ${bgClass}`}
+                className={`aspect-square border-r border-b border-line flex flex-col items-start justify-start p-1.5 relative opacity-45 cursor-default ${bgClass}`}
               >
                 {inner}
               </div>
@@ -120,7 +120,7 @@ export function MonthCalendar({
             <button
               key={i}
               onClick={() => onSelectDate(dateStr)}
-              className={`aspect-square border-r border-b border-[var(--border-light)] flex flex-col items-start justify-start p-1.5 transition-colors hover:bg-[var(--bg-subtle)] relative text-left ${bgClass}`}
+              className={`aspect-square border-r border-b border-line flex flex-col items-start justify-start p-1.5 transition-colors hover:bg-subtle relative text-left ${bgClass}`}
             >
               {inner}
             </button>

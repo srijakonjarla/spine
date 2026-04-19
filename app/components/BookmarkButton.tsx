@@ -10,7 +10,7 @@ export function BookmarkButton({ bookmarked, onToggle }: BookmarkButtonProps) {
     <button
       onClick={onToggle}
       title={bookmarked ? "remove bookmark" : "bookmark"}
-      className={`transition-colors ${bookmarked ? "text-[var(--fg-heading)]" : "text-[var(--fg-faint)] hover:text-[var(--fg-muted)]"}`}
+      className={`transition-colors ${bookmarked ? "text-fg-heading" : "text-fg-faint hover:text-fg-muted"}`}
     >
       <BookmarkSimpleIcon size={18} weight={bookmarked ? "fill" : "regular"} />
     </button>

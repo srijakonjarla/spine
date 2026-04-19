@@ -166,7 +166,7 @@ export default function SeriesCard({
   };
 
   return (
-    <div className="border border-[var(--border-light)] rounded-xl p-6">
+    <div className="border border-line rounded-xl p-6">
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-4">
         <div className="flex-1 min-w-0">
@@ -175,24 +175,24 @@ export default function SeriesCard({
             value={name}
             onChange={(e) => handleFieldChange({ name: e.target.value })}
             placeholder="series name"
-            className="font-[family-name:var(--font-playfair)] text-lg font-semibold text-[var(--fg-heading)] bg-transparent border-none outline-none w-full placeholder:text-[var(--fg-faint)]"
+            className="font-serif text-lg font-semibold text-fg-heading bg-transparent border-none outline-none w-full placeholder:text-fg-faint"
           />
           <input
             type="text"
             value={author}
             onChange={(e) => handleFieldChange({ author: e.target.value })}
             placeholder="author"
-            className="text-xs text-[var(--fg-faint)] bg-transparent border-none outline-none w-full mt-0.5 placeholder:text-[var(--fg-faint)]/50"
+            className="text-xs text-fg-faint bg-transparent border-none outline-none w-full mt-0.5 placeholder:text-fg-faint/50"
           />
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <span className="text-xs text-[var(--fg-faint)]">
+          <span className="text-xs text-fg-faint">
             {readCount}/{total}
           </span>
           <button
             onClick={handleDelete}
             disabled={deleting}
-            className="text-xs text-[var(--fg-faint)] hover:text-red-400 transition-colors"
+            className="text-xs text-fg-faint hover:text-red-400 transition-colors"
           >
             delete
           </button>
@@ -213,10 +213,10 @@ export default function SeriesCard({
               className={`flex items-center gap-3 py-1 group transition-opacity ${draggingId === book.id ? "opacity-40" : ""}`}
               {...itemProps(index, book.id)}
             >
-              <span className="cursor-grab active:cursor-grabbing text-[var(--fg-faint)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0 select-none">
+              <span className="cursor-grab active:cursor-grabbing text-fg-faint opacity-0 group-hover:opacity-100 transition-opacity shrink-0 select-none">
                 ⠿
               </span>
-              <span className="text-xs text-[var(--fg-faint)] w-5 shrink-0 font-mono">
+              <span className="text-xs text-fg-faint w-5 shrink-0 font-mono">
                 {index + 1}.
               </span>
 
@@ -230,16 +230,16 @@ export default function SeriesCard({
                 title={`Mark as ${STATUS_CYCLE[book.status]}`}
               >
                 {book.status === "read" && (
-                  <span className="text-white text-[8px]">✓</span>
+                  <span className="text-white text-micro-plus">✓</span>
                 )}
                 {book.status === "reading" && (
-                  <span className="text-white text-[8px]">○</span>
+                  <span className="text-white text-micro-plus">○</span>
                 )}
               </button>
 
               {/* Title */}
               <span
-                className={`flex-1 text-sm truncate ${book.status === "read" ? "text-[var(--fg-faint)]" : "text-[var(--fg)]"} ${book.status === "skipped" ? "line-through" : ""}`}
+                className={`flex-1 text-sm truncate ${book.status === "read" ? "text-fg-faint" : "text-fg"} ${book.status === "skipped" ? "line-through" : ""}`}
               >
                 {book.title}
               </span>
@@ -248,7 +248,7 @@ export default function SeriesCard({
               {libraryBook && (
                 <Link
                   href={`/book/${libraryBook.id}`}
-                  className={`text-[10px] shrink-0 px-1.5 py-0.5 rounded-full border transition-colors ${STATUS_TEXT_CLS[book.status]} border-current hover:opacity-70`}
+                  className={`text-detail shrink-0 px-1.5 py-0.5 rounded-full border transition-colors ${STATUS_TEXT_CLS[book.status]} border-current hover:opacity-70`}
                   title="View in your library"
                 >
                   {libraryBook.status === "finished"
@@ -270,7 +270,7 @@ export default function SeriesCard({
 
               <button
                 onClick={() => handleBookDelete(book)}
-                className="text-xs text-[var(--fg-faint)] hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                className="text-xs text-fg-faint hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
               >
                 ×
               </button>
@@ -292,7 +292,7 @@ export default function SeriesCard({
             libraryEntries={library}
           />
           {draftTitle.trim() && !saving && (
-            <p className="text-[11px] text-[var(--fg-faint)] mt-1">
+            <p className="text-caption text-fg-faint mt-1">
               ↵ to add without catalog match
             </p>
           )}
@@ -302,7 +302,7 @@ export default function SeriesCard({
               setAddingBook(false);
               setDraftTitle("");
             }}
-            className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors mt-2"
+            className="text-xs text-fg-faint hover:text-fg-muted transition-colors mt-2"
           >
             cancel
           </button>
@@ -310,7 +310,7 @@ export default function SeriesCard({
       ) : (
         <button
           onClick={() => setAddingBook(true)}
-          className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
+          className="text-xs text-fg-faint hover:text-fg-muted transition-colors"
         >
           + add book
         </button>

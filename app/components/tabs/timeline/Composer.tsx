@@ -31,7 +31,7 @@ export default function Composer({
           }}
           placeholder="p."
           min={1}
-          className="w-16 shrink-0 font-hand text-[13px] text-ink border-b border-[var(--border-light)] bg-transparent outline-none placeholder:text-ink-light/50 pb-1 pt-1 text-center"
+          className="w-16 shrink-0 font-hand text-note text-ink border-b border-line bg-transparent outline-none placeholder:text-ink-light/50 pb-1 pt-1 text-center"
         />
         <textarea
           value={thoughtInput}

@@ -32,11 +32,11 @@ export function RatingsAndFormats({
           ))}
         </div>
         {dnfs.length > 0 && (
-          <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[var(--border-light)]">
-            <span className="text-[11px] text-[var(--fg-faint)] w-5 text-right shrink-0">
+          <div className="flex items-center gap-2 mt-4 pt-4 border-t border-line">
+            <span className="text-caption text-fg-faint w-5 text-right shrink-0">
               dnf
             </span>
-            <div className="flex-1 h-4 rounded bg-[var(--border)] overflow-hidden">
+            <div className="flex-1 h-4 rounded bg-edge overflow-hidden">
               <div
                 style={{
                   width: `${(dnfs.length / Math.max(maxRatingCount, dnfs.length)) * 100}%`,
@@ -44,7 +44,7 @@ export function RatingsAndFormats({
                 className="h-full rounded bg-terra/50 transition-all duration-500"
               />
             </div>
-            <span className="text-[11px] text-[var(--fg-faint)] w-4 shrink-0">
+            <span className="text-caption text-fg-faint w-4 shrink-0">
               {dnfs.length}
             </span>
           </div>

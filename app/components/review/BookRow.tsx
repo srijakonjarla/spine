@@ -14,16 +14,16 @@ export function BookRow({ book, meta }: BookRowProps) {
       href={`/book/${book.id}`}
       className="flex items-baseline gap-3 py-1.5 group"
     >
-      <p className="text-sm font-medium flex-1 truncate group-hover:opacity-70 transition-opacity text-[var(--fg)]">
+      <p className="text-sm font-medium flex-1 truncate group-hover:opacity-70 transition-opacity text-fg">
         {book.title}
       </p>
       {book.author && (
-        <p className="text-xs shrink-0 hidden sm:block truncate text-[var(--fg-faint)]">
+        <p className="text-xs shrink-0 hidden sm:block truncate text-fg-faint">
           {book.author}
         </p>
       )}
       {meta && (
-        <span className="text-xs shrink-0 text-[var(--fg-faint)]">{meta}</span>
+        <span className="text-xs shrink-0 text-fg-faint">{meta}</span>
       )}
     </Link>
   );

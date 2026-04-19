@@ -16,7 +16,7 @@ export default function TopNavLink({
   return (
     <Link
       href={href}
-      className={`text-[13px] font-medium transition-colors ${active ? "text-white" : "text-white/60 hover:text-white"}`}
+      className={`text-note font-medium transition-colors ${active ? "text-white" : "text-white/60 hover:text-white"}`}
     >
       {label}
     </Link>

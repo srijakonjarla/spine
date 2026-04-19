@@ -28,7 +28,7 @@ export default function BestReadingDay({ bestDay }: BestReadingDayProps) {
         <p className="font-serif text-[26px] font-bold text-plum leading-none">
           {headline}
         </p>
-        <p className="font-hand text-[13px] text-terra mt-1.5 leading-snug">
+        <p className="font-hand text-note text-terra mt-1.5 leading-snug">
           {formatShortDate(bestDay.dateStr)}
           {bestDay.note && (
             <>

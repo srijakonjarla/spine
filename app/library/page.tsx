@@ -136,17 +136,17 @@ export default function LibraryPage() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setView("grid")}
-                className={`text-xs px-2 py-1 rounded transition-colors ${view === "grid" ? "bg-[var(--bg-hover)] text-[var(--fg)]" : "text-[var(--fg-faint)]"}`}
+                className={`text-xs px-2 py-1 rounded transition-colors ${view === "grid" ? "bg-hover text-fg" : "text-fg-faint"}`}
               >
                 ▦
               </button>
               <button
                 onClick={() => setView("list")}
-                className={`text-xs px-2 py-1 rounded transition-colors ${view === "list" ? "bg-[var(--bg-hover)] text-[var(--fg)]" : "text-[var(--fg-faint)]"}`}
+                className={`text-xs px-2 py-1 rounded transition-colors ${view === "list" ? "bg-hover text-fg" : "text-fg-faint"}`}
               >
                 ☰
               </button>
-              <span className="text-xs text-[var(--fg-faint)]">
+              <span className="text-xs text-fg-faint">
                 {entries.length} books
               </span>
             </div>
@@ -166,7 +166,7 @@ export default function LibraryPage() {
             <select
               value={activeGenre ?? ""}
               onChange={(e) => setActiveGenre(e.target.value || null)}
-              className="text-xs bg-transparent border-none outline-none cursor-pointer transition-colors text-[var(--fg-faint)] hover:text-[var(--fg-muted)]"
+              className="text-xs bg-transparent border-none outline-none cursor-pointer transition-colors text-fg-faint hover:text-fg-muted"
             >
               <option value="">all tags</option>
               {allGenres.map((g) => (
@@ -196,7 +196,7 @@ export default function LibraryPage() {
           </div>
         )}
 
-        <div className="mb-8 pb-8 border-b border-[var(--border-light)]">
+        <div className="mb-8 pb-8 border-b border-line">
           {/* Currently reading */}
           {currentlyReading.length > 0 && (
             <div className="mb-6">
@@ -206,14 +206,14 @@ export default function LibraryPage() {
                   <Link
                     key={e.id}
                     href={`/book/${e.id}`}
-                    className="flex items-center gap-3 py-1.5 px-2 -mx-2 rounded-lg hover:bg-[var(--bg-plum-trace)] transition-colors group"
+                    className="flex items-center gap-3 py-1.5 px-2 -mx-2 rounded-lg hover:bg-plum-trace transition-colors group"
                   >
                     <span className="text-xs shrink-0 text-terra">○</span>
-                    <span className="text-sm flex-1 truncate text-[var(--fg)]">
+                    <span className="text-sm flex-1 truncate text-fg">
                       {e.title}
                     </span>
                     {e.author && (
-                      <span className="text-xs shrink-0 hidden sm:block text-[var(--fg-faint)]">
+                      <span className="text-xs shrink-0 hidden sm:block text-fg-faint">
                         {e.author}
                       </span>
                     )}
@@ -246,7 +246,7 @@ export default function LibraryPage() {
                 <p className="section-label">want to read</p>
                 <Link
                   href="/library/want-to-read"
-                  className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
+                  className="text-xs text-fg-faint hover:text-fg-muted transition-colors"
                 >
                   all{" "}
                   {entries.filter((e) => e.status === "want-to-read").length} →
@@ -257,16 +257,14 @@ export default function LibraryPage() {
                   <Link
                     key={e.id}
                     href={`/book/${e.id}`}
-                    className="flex items-center gap-3 py-1.5 px-2 -mx-2 rounded-lg hover:bg-[var(--bg-plum-trace)] transition-colors group"
+                    className="flex items-center gap-3 py-1.5 px-2 -mx-2 rounded-lg hover:bg-plum-trace transition-colors group"
                   >
-                    <span className="text-xs shrink-0 text-[var(--fg-faint)]">
-                      ◌
-                    </span>
-                    <span className="text-sm flex-1 truncate text-[var(--fg)]">
+                    <span className="text-xs shrink-0 text-fg-faint">◌</span>
+                    <span className="text-sm flex-1 truncate text-fg">
                       {e.title}
                     </span>
                     {e.author && (
-                      <span className="text-xs shrink-0 hidden sm:block text-[var(--fg-faint)]">
+                      <span className="text-xs shrink-0 hidden sm:block text-fg-faint">
                         {e.author}
                       </span>
                     )}
@@ -298,9 +296,9 @@ export default function LibraryPage() {
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4 animate-pulse">
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i}>
-                <div className="rounded-lg mb-2 aspect-[2/3] bg-[var(--border)]" />
-                <div className="h-2.5 rounded mb-1 w-4/5 bg-[var(--border)]" />
-                <div className="h-2 rounded w-1/2 bg-[var(--border)]" />
+                <div className="rounded-lg mb-2 aspect-[2/3] bg-edge" />
+                <div className="h-2.5 rounded mb-1 w-4/5 bg-edge" />
+                <div className="h-2 rounded w-1/2 bg-edge" />
               </div>
             ))}
           </div>
@@ -311,9 +309,7 @@ export default function LibraryPage() {
           !search &&
           !activeMood &&
           !activeGenre && (
-            <p className="text-xs text-[var(--fg-faint)]">
-              no finished books yet.
-            </p>
+            <p className="text-xs text-fg-faint">no finished books yet.</p>
           )}
 
         {!loading &&
@@ -325,7 +321,7 @@ export default function LibraryPage() {
                 <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4">
                   {books.map((e) => (
                     <Link key={e.id} href={`/book/${e.id}`} className="group">
-                      <div className="relative mb-2 rounded-lg overflow-hidden group-hover:-translate-y-1 transition-transform h-[130px] shadow-sm">
+                      <div className="relative mb-2 rounded-lg overflow-hidden group-hover:-translate-y-1 transition-transform h-32.5 shadow-sm">
                         <BookCoverThumb
                           coverUrl={e.coverUrl}
                           title={e.title}
@@ -335,22 +331,22 @@ export default function LibraryPage() {
                         />
                         {/* Top-left: first mood tag */}
                         {e.moodTags[0] && (
-                          <span className="absolute top-1.5 left-1.5 z-10 text-[9px] px-1.5 py-0.5 rounded-md bg-white/90 text-[var(--fg)] leading-none">
+                          <span className="absolute top-1.5 left-1.5 z-10 text-label px-1.5 py-0.5 rounded-md bg-white/90 text-fg leading-none">
                             {e.moodTags[0]}
                           </span>
                         )}
                         {/* Top-right: rating */}
                         {e.rating > 0 && (
-                          <span className="absolute top-1.5 right-1.5 z-10 text-[9px] px-1.5 py-0.5 rounded-md bg-black/40 text-gold leading-none tracking-tight">
+                          <span className="absolute top-1.5 right-1.5 z-10 text-label px-1.5 py-0.5 rounded-md bg-black/40 text-gold leading-none tracking-tight">
                             {"★".repeat(Math.round(e.rating))}
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] font-medium leading-tight truncate text-[var(--fg)]">
+                      <p className="text-caption font-medium leading-tight truncate text-fg">
                         {e.title || "untitled"}
                       </p>
                       {e.author && (
-                        <p className="text-[10px] mt-0.5 truncate text-[var(--fg-faint)]">
+                        <p className="text-detail mt-0.5 truncate text-fg-faint">
                           {e.author}
                         </p>
                       )}
@@ -363,7 +359,7 @@ export default function LibraryPage() {
                     <Link
                       key={e.id}
                       href={`/book/${e.id}`}
-                      className="flex items-center gap-3 py-1.5 px-2 -mx-2 rounded-lg hover:bg-[var(--bg-plum-trace)] transition-colors group"
+                      className="flex items-center gap-3 py-1.5 px-2 -mx-2 rounded-lg hover:bg-plum-trace transition-colors group"
                     >
                       <BookCoverThumb
                         coverUrl={e.coverUrl}
@@ -371,11 +367,11 @@ export default function LibraryPage() {
                         width="w-6"
                         height="h-9"
                       />
-                      <span className="text-sm flex-1 truncate text-[var(--fg)]">
+                      <span className="text-sm flex-1 truncate text-fg">
                         {e.title || "untitled"}
                       </span>
                       {e.author && (
-                        <span className="text-xs shrink-0 hidden sm:block text-[var(--fg-faint)]">
+                        <span className="text-xs shrink-0 hidden sm:block text-fg-faint">
                           {e.author}
                         </span>
                       )}

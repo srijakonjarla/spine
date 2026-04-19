@@ -101,16 +101,16 @@ export default function BooksPage() {
     return (
       <div className="page">
         <div className="page-content animate-pulse">
-          <div className="h-5 w-20 bg-[var(--bg-hover)] rounded mb-8" />
+          <div className="h-5 w-20 bg-hover rounded mb-8" />
           <div className="space-y-8">
             {[1, 2, 3].map((i) => (
               <div key={i}>
-                <div className="h-3.5 w-16 bg-[var(--bg-hover)] rounded mb-3" />
+                <div className="h-3.5 w-16 bg-hover rounded mb-3" />
                 <div className="space-y-2">
                   {[1, 2, 3].map((j) => (
                     <div
                       key={j}
-                      className="h-9 bg-[var(--bg-hover)] rounded-lg"
+                      className="h-9 bg-hover rounded-lg"
                     />
                   ))}
                 </div>
@@ -134,7 +134,7 @@ export default function BooksPage() {
           <p className="text-xs text-stone-300 mb-2 tracking-widest uppercase">
             reading journal · {year}
           </p>
-          <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold text-[var(--fg-heading)] tracking-tight">
+          <h1 className="font-serif text-3xl font-semibold text-fg-heading tracking-tight">
             reading log
           </h1>
           {loggable.length > 0 && (

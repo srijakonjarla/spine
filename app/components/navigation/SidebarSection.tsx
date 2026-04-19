@@ -7,7 +7,7 @@ export default function SidebarSection({
 }) {
   return (
     <div className="mb-7">
-      <p className="text-[10px] font-bold uppercase tracking-[0.12em] mb-2.5 px-2.5 text-[var(--fg-muted)]">
+      <p className="text-detail font-bold uppercase tracking-label mb-2.5 px-2.5 text-fg-muted">
         {label}
       </p>
       <div className="space-y-0.5">{children}</div>

@@ -42,11 +42,11 @@ export function CoverChangeModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-[400px] rounded-2xl p-6 shadow-2xl bg-[var(--bg-surface)] border border-[var(--border-light)]">
-        <h3 className="font-serif text-lg font-bold text-[var(--fg-heading)] mb-1">
+      <div className="w-full max-w-100 rounded-2xl p-6 shadow-2xl bg-surface border border-line">
+        <h3 className="font-serif text-lg font-bold text-fg-heading mb-1">
           Change cover
         </h3>
-        <p className="font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)] mb-5">
+        <p className="font-hand text-note text-fg-muted mb-5">
           pick a new color and icon
         </p>
 
@@ -73,14 +73,14 @@ export function CoverChangeModal({
             <button
               type="button"
               onClick={onClose}
-              className="text-[13px] px-4 py-2 rounded-full text-[var(--fg-muted)] hover:bg-[var(--bg-hover)] transition-colors"
+              className="text-note px-4 py-2 rounded-full text-fg-muted hover:bg-hover transition-colors"
             >
               cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="text-[13px] font-semibold px-5 py-2 rounded-full text-white bg-[var(--plum)] hover:bg-[var(--plum-light)] transition-colors disabled:opacity-40"
+              className="text-note font-semibold px-5 py-2 rounded-full text-white bg-plum hover:bg-plum-light transition-colors disabled:opacity-40"
             >
               {saving ? "saving…" : "save"}
             </button>

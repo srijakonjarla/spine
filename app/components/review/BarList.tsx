@@ -13,8 +13,8 @@ export function BarList({ items, max, color = "gradient" }: BarListProps) {
       {items.map(([label, count]) => (
         <div key={label}>
           <div className="flex items-baseline justify-between mb-1">
-            <span className="text-xs text-[var(--fg)] capitalize">{label}</span>
-            <span className="text-xs text-[var(--fg-faint)]">{count}</span>
+            <span className="text-xs text-fg capitalize">{label}</span>
+            <span className="text-xs text-fg-faint">{count}</span>
           </div>
           <ProgressBar value={count / max} color={color} />
         </div>

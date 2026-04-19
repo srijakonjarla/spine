@@ -18,7 +18,7 @@ function PanelSection({
 }) {
   return (
     <div>
-      <p className="text-[9px] uppercase tracking-[0.14em] font-semibold mb-3 text-[var(--fg-faint)]">
+      <p className="text-label uppercase tracking-spread font-semibold mb-3 text-fg-faint">
         {label}
       </p>
       <div className="space-y-3">{children}</div>
@@ -52,30 +52,30 @@ function BookLink({
   return (
     <div>
       <Link href={`/book/${id}`} className="block group" onClick={onClose}>
-        <p className="text-[13px] font-medium truncate text-[var(--fg)] group-hover:opacity-70 transition-opacity">
+        <p className="text-note font-medium truncate text-fg group-hover:opacity-70 transition-opacity">
           {title}
         </p>
         {author && (
-          <p className="text-[11px] mt-0.5 truncate text-[var(--fg-muted)]">
+          <p className="text-caption mt-0.5 truncate text-fg-muted">
             {author}
           </p>
         )}
         {rating != null && rating > 0 && (
-          <p className="text-[10px] mt-0.5 text-[var(--gold)]">
+          <p className="text-detail mt-0.5 text-gold">
             {"★".repeat(Math.round(rating))}
           </p>
         )}
         {meta && (
-          <p className="text-[10px] mt-0.5 text-[var(--fg-faint)]">{meta}</p>
+          <p className="text-detail mt-0.5 text-fg-faint">{meta}</p>
         )}
       </Link>
       {feelingSnippet && (
-        <p className="text-xs mt-1.5 leading-relaxed text-[var(--fg-muted)] font-serif italic">
+        <p className="text-xs mt-1.5 leading-relaxed text-fg-muted font-serif italic">
           &ldquo;{feelingSnippet}&rdquo;
           {isTruncated && (
             <Link
               href={`/book/${id}#reflection`}
-              className="not-italic ml-1.5 text-[10px] text-[var(--fg-faint)] hover:opacity-70 transition-opacity"
+              className="not-italic ml-1.5 text-detail text-fg-faint hover:opacity-70 transition-opacity"
               onClick={onClose}
             >
               read more →
@@ -224,22 +224,22 @@ export function DayPanel({
     localLogged || localQuotes.length > 0 || dayFinished.length > 0;
 
   return (
-    <div className="h-full flex flex-col bg-[var(--bg-surface)]">
+    <div className="h-full flex flex-col bg-surface">
       {/* Header */}
-      <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-[var(--border-light)]">
+      <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-line">
         <div>
           {isToday && (
-            <p className="text-[9px] uppercase tracking-[0.15em] mb-1 font-semibold text-[var(--sage)]">
+            <p className="text-label uppercase tracking-ultra mb-1 font-semibold text-sage">
               today
             </p>
           )}
-          <h2 className="font-serif text-lg font-semibold leading-tight text-[var(--fg-heading)]">
+          <h2 className="font-serif text-lg font-semibold leading-tight text-fg-heading">
             {dateLabel}
           </h2>
         </div>
         <button
           onClick={onClose}
-          className="mt-0.5 text-[22px] leading-none w-7 h-7 flex items-center justify-center rounded-full hover:bg-[var(--bg-subtle)] transition-colors text-[var(--fg-muted)]"
+          className="mt-0.5 text-title leading-none w-7 h-7 flex items-center justify-center rounded-full hover:bg-subtle transition-colors text-fg-muted"
         >
           ×
         </button>
@@ -249,13 +249,13 @@ export function DayPanel({
       <div className="flex-1 overflow-y-auto px-6 py-5 space-y-7">
         {/* Reading day toggle */}
         <div className="flex items-center justify-between">
-          <span className="text-xs text-[var(--fg-muted)]">Reading day</span>
+          <span className="text-xs text-fg-muted">Reading day</span>
           <button
             onClick={handleToggleClick}
-            className={`text-[11px] px-3 py-1 rounded-full transition-all font-medium border ${
+            className={`text-caption px-3 py-1 rounded-full transition-all font-medium border ${
               localLogged
-                ? "bg-[var(--bg-sage-pill)] text-[var(--sage)] border-[var(--border-sage)]"
-                : "bg-[var(--bg-hover)] text-[var(--fg-muted)] border-[var(--border-light)]"
+                ? "bg-sage-pill text-sage border-border-sage"
+                : "bg-hover text-fg-muted border-line"
             }`}
           >
             {localLogged ? "✓ logged" : "mark as reading day"}
@@ -281,23 +281,23 @@ export function DayPanel({
                   ? "add a note for this day..."
                   : "Nothing logged this day — want to add a note?"
               }
-              className="w-full resize-none focus:outline-none text-[13px] leading-[1.75em] bg-transparent text-[var(--fg)] font-serif pb-[1.75em] caret-plum bg-local [background-image:var(--ruled-note-line)]"
+              className="w-full resize-none focus:outline-none text-note leading-[1.75em] bg-transparent text-fg font-serif pb-[1.75em] caret-plum bg-local [background-image:var(--ruled-note-line)]"
             />
           ) : draft ? (
             <div
-              className="cursor-text -mx-1 px-1 py-1 rounded-lg hover:bg-[var(--bg-faintest)] transition-colors"
+              className="cursor-text -mx-1 px-1 py-1 rounded-lg hover:bg-faintest transition-colors"
               onClick={() => {
                 setEditMode(true);
                 setTimeout(() => textareaRef.current?.focus(), 10);
               }}
             >
-              <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-[var(--fg)] font-serif">
+              <p className="text-note leading-relaxed whitespace-pre-wrap text-fg font-serif">
                 {draft}
               </p>
             </div>
           ) : (
             <button
-              className="text-left text-[13px] italic text-[var(--fg-faint)] font-serif"
+              className="text-left text-note italic text-fg-faint font-serif"
               onClick={() => {
                 setEditMode(true);
                 setTimeout(() => textareaRef.current?.focus(), 10);
@@ -314,7 +314,7 @@ export function DayPanel({
             {moodTags.map((tag) => (
               <span
                 key={tag}
-                className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-muted-tag)] text-[var(--fg-muted)]"
+                className="text-detail px-2 py-0.5 rounded-full bg-muted-tag text-fg-muted"
               >
                 {tag}
               </span>
@@ -404,20 +404,20 @@ export function DayPanel({
         {/* Quotes saved on this day */}
         {localQuotes.length > 0 && (
           <div>
-            <p className="text-[9px] uppercase tracking-[0.14em] font-semibold mb-3 text-[var(--fg-faint)]">
+            <p className="text-label uppercase tracking-spread font-semibold mb-3 text-fg-faint">
               quotes ✦
             </p>
             <div className="space-y-4">
               {localQuotes.map((q) => (
                 <div
                   key={q.id}
-                  className="pl-3 border-l-2 border-l-[var(--lavender)]"
+                  className="pl-3 border-l-2 border-l-lavender"
                 >
-                  <p className="text-[13px] italic leading-relaxed text-[var(--fg)] font-serif">
+                  <p className="text-note italic leading-relaxed text-fg font-serif">
                     &ldquo;{q.text}&rdquo;
                   </p>
                   {(q.bookTitle || q.pageNumber) && (
-                    <p className="text-[10px] mt-1.5 text-[var(--fg-faint)]">
+                    <p className="text-detail mt-1.5 text-fg-faint">
                       {q.bookTitle}
                       {q.pageNumber ? ` · p. ${q.pageNumber}` : ""}
                     </p>
@@ -433,12 +433,12 @@ export function DayPanel({
           <PanelSection label="thoughts">
             {dayThoughts.map((t) => (
               <div key={t.id}>
-                <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-[var(--fg)] font-serif">
+                <p className="text-note leading-relaxed whitespace-pre-wrap text-fg font-serif">
                   {t.text}
                 </p>
                 <Link
                   href={`/book/${t.bookId}`}
-                  className="text-[10px] mt-1 block hover:opacity-70 transition-opacity text-[var(--fg-faint)]"
+                  className="text-detail mt-1 block hover:opacity-70 transition-opacity text-fg-faint"
                   onClick={onClose}
                 >
                   {t.bookTitle}
@@ -455,13 +455,13 @@ export function DayPanel({
               setShowQuoteForm(true);
               setTimeout(() => quoteRef.current?.focus(), 40);
             }}
-            className="text-[11px] font-medium flex items-center gap-1.5 transition-opacity hover:opacity-60 text-[var(--fg-faint)]"
+            className="text-caption font-medium flex items-center gap-1.5 transition-opacity hover:opacity-60 text-fg-faint"
           >
-            <span className="text-[var(--gold)]">✦</span> save a quote
+            <span className="text-gold">✦</span> save a quote
           </button>
         ) : (
           <form onSubmit={handleSaveQuote} className="space-y-2.5">
-            <p className="text-[9px] uppercase tracking-[0.14em] font-semibold text-[var(--fg-faint)]">
+            <p className="text-label uppercase tracking-spread font-semibold text-fg-faint">
               save a quote
             </p>
             <textarea
@@ -476,14 +476,14 @@ export function DayPanel({
               }}
               rows={4}
               placeholder="type the quote here..."
-              className="w-full resize-none focus:outline-none text-[13px] leading-relaxed rounded-lg px-3 py-2.5 border border-[var(--border-light)] bg-[var(--bg-page)] text-[var(--fg)] font-serif italic"
+              className="w-full resize-none focus:outline-none text-note leading-relaxed rounded-lg px-3 py-2.5 border border-line bg-page text-fg font-serif italic"
             />
             <div className="flex gap-2">
               {activeDayBooks.length > 0 && (
                 <select
                   value={quoteBookId}
                   onChange={(e) => setQuoteBookId(e.target.value)}
-                  className="flex-1 text-[11px] px-2.5 py-1.5 rounded-lg border border-[var(--border-light)] focus:outline-none bg-[var(--bg-page)] text-[var(--fg-muted)]"
+                  className="flex-1 text-caption px-2.5 py-1.5 rounded-lg border border-line focus:outline-none bg-page text-fg-muted"
                 >
                   <option value="">no book</option>
                   {activeDayBooks.map((b) => (
@@ -498,14 +498,14 @@ export function DayPanel({
                 value={quotePage}
                 onChange={(e) => setQuotePage(e.target.value)}
                 placeholder="p."
-                className="w-14 text-[11px] px-2.5 py-1.5 rounded-lg border border-[var(--border-light)] focus:outline-none text-center bg-[var(--bg-page)] text-[var(--fg-muted)]"
+                className="w-14 text-caption px-2.5 py-1.5 rounded-lg border border-line focus:outline-none text-center bg-page text-fg-muted"
               />
             </div>
             <div className="flex items-center gap-3">
               <button
                 type="submit"
                 disabled={!quoteText.trim() || savingQuote}
-                className="text-[11px] font-semibold px-4 py-1.5 rounded-full transition-opacity disabled:opacity-40 bg-[var(--bg-gold-pill)] text-[var(--gold)] border border-[var(--border-gold)]"
+                className="text-caption font-semibold px-4 py-1.5 rounded-full transition-opacity disabled:opacity-40 bg-gold-pill text-gold border border-border-gold"
               >
                 {savingQuote ? "saving…" : "save ✦"}
               </button>
@@ -517,7 +517,7 @@ export function DayPanel({
                   setQuotePage("");
                   setQuoteBookId("");
                 }}
-                className="text-[11px] transition-opacity hover:opacity-60 text-[var(--fg-faint)]"
+                className="text-caption transition-opacity hover:opacity-60 text-fg-faint"
               >
                 cancel
               </button>

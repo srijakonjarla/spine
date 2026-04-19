@@ -43,10 +43,10 @@ export default function ListsPage() {
     return (
       <div className="page">
         <div className="mx-auto px-6 py-12 animate-pulse">
-          <div className="h-5 w-16 bg-[var(--bg-hover)] rounded mb-8" />
+          <div className="h-5 w-16 bg-hover rounded mb-8" />
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-40 bg-[var(--bg-hover)] rounded-xl" />
+              <div key={i} className="h-40 bg-hover rounded-xl" />
             ))}
           </div>
         </div>
@@ -58,21 +58,21 @@ export default function ListsPage() {
       <div className="mx-auto px-6 py-12">
         <div className="flex items-baseline justify-between mb-8">
           <div>
-            <p className="text-xs uppercase tracking-widest mb-1 text-[var(--fg-faint)]">
+            <p className="text-xs uppercase tracking-widest mb-1 text-fg-faint">
               reading journal · {year}
             </p>
-            <h1 className="font-serif text-3xl font-semibold tracking-tight text-[var(--fg-heading)]">
+            <h1 className="font-serif text-3xl font-semibold tracking-tight text-fg-heading">
               lists
             </h1>
             {lists.length > 0 && (
-              <p className="font-[family-name:var(--font-caveat)] text-[15px] text-[var(--terra)] mt-1">
+              <p className="font-hand text-body-md text-terra mt-1">
                 {lists.length} collections — make as many as you need
               </p>
             )}
           </div>
           <button
             onClick={() => setShowForm(true)}
-            className="text-[13px] font-semibold px-4 py-2 rounded-full text-white bg-[var(--plum)] hover:bg-[var(--plum-light)] transition-colors"
+            className="text-note font-semibold px-4 py-2 rounded-full text-white bg-plum hover:bg-plum-light transition-colors"
           >
             + new list
           </button>
@@ -87,13 +87,13 @@ export default function ListsPage() {
           {/* New list CTA card */}
           <button
             onClick={() => setShowForm(true)}
-            className="rounded-2xl flex flex-col items-center justify-center gap-2 min-h-[180px] transition-all border-2 border-dashed border-[var(--border-light)] hover:border-[var(--terra)] hover:bg-[var(--terra)]/4"
+            className="rounded-2xl flex flex-col items-center justify-center gap-2 min-h-45 transition-all border-2 border-dashed border-line hover:border-terra hover:bg-terra/4"
           >
-            <span className="text-[28px] text-[var(--fg-faint)]">＋</span>
-            <span className="font-[family-name:var(--font-caveat)] text-sm text-[var(--fg-muted)]">
+            <span className="text-display text-fg-faint">＋</span>
+            <span className="font-hand text-sm text-fg-muted">
               create a new list
             </span>
-            <span className="text-[11px] text-[var(--fg-faint)] text-center leading-relaxed">
+            <span className="text-caption text-fg-faint text-center leading-relaxed">
               books, ideas, bullet points — anything
             </span>
           </button>

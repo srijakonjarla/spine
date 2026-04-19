@@ -30,7 +30,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
           onClick={() => onChange(c)}
           className={`w-7 h-7 rounded-full transition-transform hover:scale-110 outline-offset-2 ${
             SWATCH_CLASS[c]
-          } ${value === c ? "outline-2 outline-[var(--fg-heading)]" : "outline-none"}`}
+          } ${value === c ? "outline-2 outline-fg-heading" : "outline-none"}`}
         />
       ))}
     </div>

@@ -125,7 +125,7 @@ export default function SeriesPage() {
         {loading && (
           <div className="space-y-4 animate-pulse">
             {[1, 2].map((i) => (
-              <div key={i} className="h-40 bg-[var(--bg-hover)] rounded-xl" />
+              <div key={i} className="h-40 bg-hover rounded-xl" />
             ))}
           </div>
         )}
@@ -155,11 +155,11 @@ export default function SeriesPage() {
         {showAdd ? (
           <form
             onSubmit={handleCreate}
-            className="border border-[var(--border-light)] rounded-xl p-6 space-y-4"
+            className="border border-line rounded-xl p-6 space-y-4"
           >
             <p className="section-label">new series</p>
             <div>
-              <label className="text-xs text-[var(--fg-faint)] block mb-1">
+              <label className="text-xs text-fg-faint block mb-1">
                 series name
               </label>
               <input
@@ -172,7 +172,7 @@ export default function SeriesPage() {
               />
             </div>
             <div>
-              <label className="text-xs text-[var(--fg-faint)] block mb-1">
+              <label className="text-xs text-fg-faint block mb-1">
                 author
               </label>
               <input
@@ -187,7 +187,7 @@ export default function SeriesPage() {
               <button
                 type="submit"
                 disabled={!newName.trim() || saving}
-                className="text-sm text-white bg-[var(--plum)] px-5 py-2 rounded-full hover:opacity-85 transition-opacity disabled:opacity-50"
+                className="text-sm text-white bg-plum px-5 py-2 rounded-full hover:opacity-85 transition-opacity disabled:opacity-50"
               >
                 {saving ? "saving..." : "add series"}
               </button>
@@ -198,7 +198,7 @@ export default function SeriesPage() {
                   setNewName("");
                   setNewAuthor("");
                 }}
-                className="text-sm text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors px-4 py-2"
+                className="text-sm text-fg-faint hover:text-fg-muted transition-colors px-4 py-2"
               >
                 cancel
               </button>
@@ -208,7 +208,7 @@ export default function SeriesPage() {
           !loading && (
             <button
               onClick={() => setShowAdd(true)}
-              className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
+              className="text-xs text-fg-faint hover:text-fg-muted transition-colors"
             >
               + add series
             </button>

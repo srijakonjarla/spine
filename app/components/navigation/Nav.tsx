@@ -74,7 +74,7 @@ export default function Nav() {
       <header className="fixed top-0 left-0 right-0 z-30 h-14 bg-plum-dark flex items-center justify-between px-6">
         <Link
           href="/"
-          className="font-[family-name:var(--font-playfair)] text-[22px] font-bold text-white tracking-tight leading-none"
+          className="font-serif text-title font-bold text-white tracking-tight leading-none"
         >
           spine<span className="text-gold italic">.</span>
         </Link>
@@ -88,7 +88,7 @@ export default function Nav() {
               </nav>
               <Link
                 href={`/${CURRENT_YEAR}/books`}
-                className="hidden lg:inline-block text-[13px] font-semibold text-white bg-terra px-4 py-1.5 rounded-full hover:bg-terra-light transition-colors"
+                className="hidden lg:inline-block text-note font-semibold text-white bg-terra px-4 py-1.5 rounded-full hover:bg-terra-light transition-colors"
               >
                 + log
               </Link>
@@ -108,7 +108,7 @@ export default function Nav() {
 
       {/* Desktop sidebar */}
       {user && (
-        <nav className="hidden lg:flex flex-col fixed top-14 left-0 h-[calc(100vh-3.5rem)] w-[220px] px-4 py-6 overflow-y-auto z-20 border-r transition-colors bg-[var(--bg-page)] border-[var(--border-light)]">
+        <nav className="hidden lg:flex flex-col fixed top-14 left-0 h-[calc(100dvh-var(--nav-height))] w-55 px-4 py-6 overflow-y-auto z-20 border-r transition-colors bg-page border-line">
           <SidebarSection label={CURRENT_MONTH_LABEL}>
             <SidebarLink
               href={`/${CURRENT_YEAR}`}

@@ -130,15 +130,15 @@ export default function RereadsPage() {
     return (
       <div className="page">
         <div className="page-content animate-pulse">
-          <div className="h-4 w-16 bg-[var(--bg-hover)] rounded mb-8" />
-          <div className="h-6 w-24 bg-[var(--bg-hover)] rounded mb-2" />
-          <div className="h-4 w-56 bg-[var(--bg-hover)] rounded mb-8" />
+          <div className="h-4 w-16 bg-hover rounded mb-8" />
+          <div className="h-6 w-24 bg-hover rounded mb-2" />
+          <div className="h-4 w-56 bg-hover rounded mb-8" />
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="space-y-2">
-                <div className="aspect-[2/3] bg-[var(--bg-hover)] rounded" />
-                <div className="h-3 bg-[var(--bg-hover)] rounded w-3/4" />
-                <div className="h-3 bg-[var(--bg-hover)] rounded w-1/2" />
+                <div className="aspect-[2/3] bg-hover rounded" />
+                <div className="h-3 bg-hover rounded w-3/4" />
+                <div className="h-3 bg-hover rounded w-1/2" />
               </div>
             ))}
           </div>
@@ -158,13 +158,13 @@ export default function RereadsPage() {
         <div className="flex items-baseline justify-between mb-1">
           <h1 className="page-title">re-reads</h1>
           {entries.length > 0 && (
-            <span className="text-xs text-[var(--fg-faint)]">
+            <span className="text-xs text-fg-faint">
               {entries.length} {entries.length === 1 ? "book" : "books"}
             </span>
           )}
         </div>
         {entries.length > 0 && (
-          <p className="font-[family-name:var(--font-caveat)] text-[15px] text-terra mb-8">
+          <p className="font-hand text-body-md text-terra mb-8">
             {"books you've returned to · each one a different conversation"}
           </p>
         )}
@@ -179,8 +179,8 @@ export default function RereadsPage() {
                   onClick={() => setFilter(f)}
                   className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                     filter === f
-                      ? "bg-[var(--plum)] text-white border-[var(--plum)]"
-                      : "bg-transparent text-[var(--fg-muted)] border-[var(--border-light)] hover:border-[var(--fg-faint)]"
+                      ? "bg-plum text-white border-plum"
+                      : "bg-transparent text-fg-muted border-line hover:border-fg-faint"
                   }`}
                 >
                   {f === "all"
@@ -227,10 +227,10 @@ export default function RereadsPage() {
                     />
                     {/* Re-read badge */}
                     <div
-                      className={`absolute top-1.5 right-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none ${
+                      className={`absolute top-1.5 right-1.5 text-label font-bold px-1.5 py-0.5 rounded-full leading-none ${
                         isGold
-                          ? "bg-[var(--gold)] text-[var(--plum)]"
-                          : "bg-[var(--plum)] text-white"
+                          ? "bg-gold text-plum"
+                          : "bg-plum text-white"
                       }`}
                     >
                       ↺ {count}×
@@ -238,11 +238,11 @@ export default function RereadsPage() {
                   </div>
 
                   {/* Title + author */}
-                  <p className="text-sm font-medium leading-snug truncate text-[var(--fg)] group-hover:opacity-70 transition-opacity">
+                  <p className="text-sm font-medium leading-snug truncate text-fg group-hover:opacity-70 transition-opacity">
                     {book.title}
                   </p>
                   {book.author && (
-                    <p className="text-[10px] text-[var(--fg-faint)] truncate mt-0.5">
+                    <p className="text-detail text-fg-faint truncate mt-0.5">
                       {book.author}
                     </p>
                   )}
@@ -254,14 +254,14 @@ export default function RereadsPage() {
                       return (
                         <span key={i} className="flex items-center gap-1">
                           <span
-                            className={`font-[family-name:var(--font-caveat)] text-[11px] leading-none ${
+                            className={`font-hand text-caption leading-none ${
                               isLast && isGold
-                                ? "text-[var(--gold)]"
+                                ? "text-gold"
                                 : isLast && trend === "up"
-                                  ? "text-[var(--sage)]"
+                                  ? "text-sage"
                                   : isLast && trend === "down"
-                                    ? "text-[var(--terra)]"
-                                    : "text-[var(--fg-muted)]"
+                                    ? "text-terra"
+                                    : "text-fg-muted"
                             }`}
                           >
                             {r.rating > 0 ? (
@@ -273,7 +273,7 @@ export default function RereadsPage() {
                             )}
                           </span>
                           {!isLast && (
-                            <span className="text-[9px] text-[var(--fg-muted)]">
+                            <span className="text-label text-fg-muted">
                               →
                             </span>
                           )}
@@ -281,10 +281,10 @@ export default function RereadsPage() {
                       );
                     })}
                     {trend === "up" && (
-                      <span className="text-[10px] text-[var(--sage)]">↑</span>
+                      <span className="text-detail text-sage">↑</span>
                     )}
                     {trend === "down" && (
-                      <span className="text-[10px] text-[var(--terra)]">↓</span>
+                      <span className="text-detail text-terra">↓</span>
                     )}
                   </div>
                 </Link>
@@ -295,13 +295,13 @@ export default function RereadsPage() {
 
         {/* Insight callout */}
         {insight && entries.length >= 2 && (
-          <div className="flex gap-4 items-start rounded-xl border-l-[3px] border-l-[var(--lavender)] bg-[rgba(196,181,212,0.08)] px-5 py-4 mt-4">
-            <span className="text-lg shrink-0 text-[var(--lavender)]">✦</span>
+          <div className="flex gap-4 items-start rounded-xl border-l-[3px] border-l-lavender bg-[rgba(196,181,212,0.08)] px-5 py-4 mt-4">
+            <span className="text-lg shrink-0 text-lavender">✦</span>
             <div>
-              <p className="font-[family-name:var(--font-caveat)] text-[13px] text-[var(--lavender)] mb-1">
+              <p className="font-hand text-note text-lavender mb-1">
                 a pattern in your re-reads
               </p>
-              <p className="font-serif text-[13px] italic leading-relaxed text-[var(--fg)]">
+              <p className="font-serif text-note italic leading-relaxed text-fg">
                 {insight}
               </p>
             </div>

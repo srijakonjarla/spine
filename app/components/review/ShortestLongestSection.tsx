@@ -23,13 +23,13 @@ export function ShortestLongestSection({
       <SectionLabel>shortest & longest reads</SectionLabel>
       <div className="grid sm:grid-cols-2 gap-6">
         {(shortestPrint || longestPrint) && (
-          <div className="rounded-2xl border border-[var(--border-light)] bg-[var(--bg-surface)] p-5 space-y-3">
-            <p className="text-[11px] text-[var(--fg-faint)] uppercase tracking-wide">
+          <div className="rounded-2xl border border-line bg-surface p-5 space-y-3">
+            <p className="text-caption text-fg-faint uppercase tracking-wide">
               print
             </p>
             {shortestPrint && (
               <div>
-                <p className="text-[10px] text-[var(--fg-faint)] mb-0.5">
+                <p className="text-detail text-fg-faint mb-0.5">
                   shortest
                 </p>
                 <BookRow
@@ -40,7 +40,7 @@ export function ShortestLongestSection({
             )}
             {longestPrint && longestPrint.id !== shortestPrint?.id && (
               <div>
-                <p className="text-[10px] text-[var(--fg-faint)] mb-0.5">
+                <p className="text-detail text-fg-faint mb-0.5">
                   longest
                 </p>
                 <BookRow
@@ -52,13 +52,13 @@ export function ShortestLongestSection({
           </div>
         )}
         {(shortestAudio || longestAudio) && (
-          <div className="rounded-2xl border border-[var(--border-light)] bg-[var(--bg-surface)] p-5 space-y-3">
-            <p className="text-[11px] text-[var(--fg-faint)] uppercase tracking-wide">
+          <div className="rounded-2xl border border-line bg-surface p-5 space-y-3">
+            <p className="text-caption text-fg-faint uppercase tracking-wide">
               audio
             </p>
             {shortestAudio && (
               <div>
-                <p className="text-[10px] text-[var(--fg-faint)] mb-0.5">
+                <p className="text-detail text-fg-faint mb-0.5">
                   shortest
                 </p>
                 <BookRow
@@ -69,7 +69,7 @@ export function ShortestLongestSection({
             )}
             {longestAudio && longestAudio.id !== shortestAudio?.id && (
               <div>
-                <p className="text-[10px] text-[var(--fg-faint)] mb-0.5">
+                <p className="text-detail text-fg-faint mb-0.5">
                   longest
                 </p>
                 <BookRow

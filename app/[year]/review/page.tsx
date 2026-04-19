@@ -143,7 +143,7 @@ export default function YearReviewPage() {
         <div className="page-content">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-20 bg-[var(--bg-hover)] rounded-xl" />
+              <div key={i} className="h-20 bg-hover rounded-xl" />
             ))}
           </div>
         </div>
@@ -161,10 +161,10 @@ export default function YearReviewPage() {
           >
             ← {year}
           </Link>
-          <p className="text-white/60 text-[11px] mb-1 tracking-widest uppercase">
+          <p className="text-white/60 text-caption mb-1 tracking-widest uppercase">
             year in review
           </p>
-          <h1 className="font-[family-name:var(--font-playfair)] text-5xl font-bold italic text-white tracking-tight">
+          <h1 className="font-serif text-5xl font-bold italic text-white tracking-tight">
             {year}
           </h1>
           {hasData && (
@@ -182,7 +182,7 @@ export default function YearReviewPage() {
 
       <div className="page-content">
         {!hasData ? (
-          <p className="text-sm text-[var(--fg-faint)] text-center py-16">
+          <p className="text-sm text-fg-faint text-center py-16">
             No finished books for {year} yet.
           </p>
         ) : (
@@ -192,44 +192,44 @@ export default function YearReviewPage() {
               <StatCard
                 label="books finished"
                 value={finishedBooks.length}
-                accentClass="border-t-[var(--stat-border-books)]"
+                accentClass="border-t-stat-books"
               />
               <StatCard
                 label="pages read"
                 value={totalPages > 0 ? fmtPages(totalPages) : "—"}
-                accentClass="border-t-[var(--stat-border-days)]"
+                accentClass="border-t-stat-days"
               />
               <StatCard
                 label="hours listened"
                 value={
                   totalAudioMinutes > 0 ? fmtHours(totalAudioMinutes) : "—"
                 }
-                accentClass="border-t-[var(--stat-border-rating)]"
+                accentClass="border-t-stat-rating"
               />
               <StatCard
                 label="days read"
                 value={loggedDates.size}
-                accentClass="border-t-[var(--stat-border-quotes)]"
+                accentClass="border-t-stat-quotes"
               />
               <StatCard
                 label="re-reads"
                 value={rereads.length}
-                accentClass="border-t-[var(--stat-border-books)]"
+                accentClass="border-t-stat-books"
               />
               <StatCard
                 label="library checkouts"
                 value={libraryFinished.length}
-                accentClass="border-t-[var(--stat-border-days)]"
+                accentClass="border-t-stat-days"
               />
               <StatCard
                 label="did not finish"
                 value={dnfs.length}
-                accentClass="border-t-[var(--stat-border-rating)]"
+                accentClass="border-t-stat-rating"
               />
               <StatCard
                 label="avg rating"
                 value={avgRating > 0 ? `${avgRating.toFixed(1)}★` : "—"}
-                accentClass="border-t-[var(--stat-border-quotes)]"
+                accentClass="border-t-stat-quotes"
               />
             </div>
 

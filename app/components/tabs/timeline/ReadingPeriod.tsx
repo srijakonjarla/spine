@@ -21,13 +21,13 @@ export default function ReadingPeriod({
     <>
       <p className="timeline-section-label mb-2.5">Reading period</p>
       <div className="book-surface p-3">
-        <p className="font-hand text-[15px] text-plum">
+        <p className="font-hand text-body-md text-plum">
           {formatShortDate(dateStarted)}
           {hasRange && (
             <> → {dateFinished ? formatShortDate(dateFinished) : "now"}</>
           )}
         </p>
-        <p className="font-serif text-[11px] tracking-[0.12em] uppercase text-ink-light mt-1.5">
+        <p className="font-serif text-caption tracking-label uppercase text-ink-light mt-1.5">
           {totalDays} days
         </p>
       </div>

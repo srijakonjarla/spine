@@ -211,7 +211,7 @@ export default function TimelineTab() {
       </div>
 
       {/* Sidebar */}
-      <div className="px-[22px] py-[22px] bg-[var(--bg-plum-trace)] border-l border-[var(--border-light)] overflow-y-auto">
+      <div className="px-[22px] py-[22px] bg-plum-trace border-l border-line overflow-y-auto">
         <SummaryStats
           sessions={sortedThoughts.length}
           pages={entry.pageCount ?? "—"}

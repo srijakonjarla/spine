@@ -59,17 +59,17 @@ export function IdeaList({
     <>
       {/* Bullet symbol picker (not for checklist) */}
       {!isChecklist && (
-        <div className="flex items-center gap-3 mb-5 font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)]">
+        <div className="flex items-center gap-3 mb-5 font-hand text-note text-fg-muted">
           symbol
           <div className="flex gap-1.5">
             {BULLET_SYMBOLS.map((sym) => (
               <button
                 key={sym}
                 onClick={() => onBulletSymbolChange(sym)}
-                className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm transition-all font-[family-name:var(--font-caveat)] ${
+                className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm transition-all font-hand ${
                   bullet === sym
-                    ? "text-white bg-[var(--terra)]"
-                    : "text-[var(--terra)] bg-[var(--bg-surface)] border border-[var(--border-light)] hover:border-[var(--terra)]"
+                    ? "text-white bg-terra"
+                    : "text-terra bg-surface border border-line hover:border-terra"
                 }`}
               >
                 {sym}
@@ -80,14 +80,14 @@ export function IdeaList({
       )}
 
       {/* Dotted grid */}
-      <div className="rounded-xl px-7 py-6 min-h-[280px] bg-[var(--bg-surface)] border border-[var(--border-light)] bg-[size:18px_18px] bg-[radial-gradient(circle,_var(--bg-muted-tag)_1px,_transparent_1px)]">
+      <div className="rounded-xl px-7 py-6 min-h-70 bg-surface border border-line bg-[size:18px_18px] bg-[radial-gradient(circle,_var(--bg-muted-tag)_1px,_transparent_1px)]">
         {items.map((item: ListItem, index: number) => (
           <div
             key={item.id}
-            className={`group flex gap-3 items-start py-1.5 border-b border-[var(--border-light)] last:border-none transition-opacity ${draggingId === item.id ? "opacity-40" : ""}`}
+            className={`group flex gap-3 items-start py-1.5 border-b border-line last:border-none transition-opacity ${draggingId === item.id ? "opacity-40" : ""}`}
             {...itemProps(index, item.id)}
           >
-            <span className="cursor-grab active:cursor-grabbing text-[var(--fg-faint)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0 select-none mt-0.5">
+            <span className="cursor-grab active:cursor-grabbing text-fg-faint opacity-0 group-hover:opacity-100 transition-opacity shrink-0 select-none mt-0.5">
               ⠿
             </span>
             {isChecklist ? (
@@ -95,21 +95,21 @@ export function IdeaList({
                 onClick={() => onToggleCheck(item.id, item.type)}
                 className={`shrink-0 mt-1 w-4 h-4 rounded border-[1.5px] flex items-center justify-center transition-colors ${
                   item.type === "done"
-                    ? "bg-[var(--terra)] border-[var(--terra)]"
-                    : "border-[var(--terra)] bg-transparent"
+                    ? "bg-terra border-terra"
+                    : "border-terra bg-transparent"
                 }`}
               >
                 {item.type === "done" && (
-                  <span className="text-white text-[9px] leading-none">✓</span>
+                  <span className="text-white text-label leading-none">✓</span>
                 )}
               </button>
             ) : (
-              <span className="shrink-0 text-[15px] w-5 mt-0.5 text-[var(--terra)]">
+              <span className="shrink-0 text-body-md w-5 mt-0.5 text-terra">
                 {bullet}
               </span>
             )}
             <span
-              className={`font-[family-name:var(--font-caveat)] text-base flex-1 leading-snug text-[var(--terra)] ${
+              className={`font-hand text-base flex-1 leading-snug text-terra ${
                 isChecklist && item.type === "done"
                   ? "line-through opacity-45"
                   : ""
@@ -119,7 +119,7 @@ export function IdeaList({
             </span>
             <button
               onClick={() => onRemove(item.id)}
-              className="text-base text-[var(--fg-faint)] hover:text-red-400 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
+              className="text-base text-fg-faint hover:text-red-400 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
             >
               ×
             </button>
@@ -129,9 +129,9 @@ export function IdeaList({
         {/* Inline add row */}
         <div className="flex gap-3 items-start py-1.5 opacity-40 focus-within:opacity-100 transition-opacity">
           {isChecklist ? (
-            <span className="shrink-0 mt-1 w-4 h-4 rounded border-[1.5px] border-[var(--terra)]" />
+            <span className="shrink-0 mt-1 w-4 h-4 rounded border-[1.5px] border-terra" />
           ) : (
-            <span className="shrink-0 text-[15px] w-5 mt-0.5 text-[var(--fg-faint)]">
+            <span className="shrink-0 text-body-md w-5 mt-0.5 text-fg-faint">
               {bullet}
             </span>
           )}
@@ -142,7 +142,7 @@ export function IdeaList({
             onChange={(e) => setInlineText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             placeholder={isChecklist ? "add an item…" : "add an idea…"}
-            className="font-[family-name:var(--font-caveat)] text-base flex-1 bg-transparent border-none outline-none text-[var(--terra)] placeholder:text-[var(--terra)]"
+            className="font-hand text-base flex-1 bg-transparent border-none outline-none text-terra placeholder:text-terra"
           />
         </div>
       </div>

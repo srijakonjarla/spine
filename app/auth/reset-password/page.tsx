@@ -123,7 +123,7 @@ function ResetPasswordForm() {
                 this reset link is invalid or has expired.
               </p>
               {supabaseError && (
-                <p className="text-[11px] text-stone-400">{supabaseError}</p>
+                <p className="text-caption text-stone-400">{supabaseError}</p>
               )}
             </div>
 

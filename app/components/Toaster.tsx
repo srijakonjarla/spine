@@ -5,8 +5,8 @@ import { getToasts, subscribeToasts, dismissToast } from "@/lib/toast";
 
 const COLORS = {
   error: "bg-red-500/95 text-white",
-  info: "bg-[var(--plum)]/95 text-white",
-  success: "bg-[var(--sage)]/95 text-white",
+  info: "bg-plum/95 text-white",
+  success: "bg-sage/95 text-white",
 };
 
 export function Toaster() {

@@ -120,21 +120,19 @@ export default function StatusCatalogPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setView("grid")}
-              className={`text-xs px-2 py-1 rounded transition-colors ${view === "grid" ? "bg-[var(--bg-hover)] text-[var(--fg)]" : "bg-transparent text-[var(--fg-faint)]"}`}
+              className={`text-xs px-2 py-1 rounded transition-colors ${view === "grid" ? "bg-hover text-fg" : "bg-transparent text-fg-faint"}`}
             >
               ▦
             </button>
             <button
               onClick={() => setView("list")}
-              className={`text-xs px-2 py-1 rounded transition-colors ${view === "list" ? "bg-[var(--bg-hover)] text-[var(--fg)]" : "bg-transparent text-[var(--fg-faint)]"}`}
+              className={`text-xs px-2 py-1 rounded transition-colors ${view === "list" ? "bg-hover text-fg" : "bg-transparent text-fg-faint"}`}
             >
               ☰
             </button>
           </div>
         </div>
-        <p className="text-xs mb-8 text-[var(--fg-faint)]">
-          {entries.length} books
-        </p>
+        <p className="text-xs mb-8 text-fg-faint">{entries.length} books</p>
 
         {/* Add book */}
         <div className="mb-6">
@@ -182,14 +180,14 @@ export default function StatusCatalogPage() {
 
         {/* Up next pinned section */}
         {!loading && upNext.length > 0 && (
-          <div className="mb-8 pb-8 border-b border-[var(--border-light)]">
+          <div className="mb-8 pb-8 border-b border-line">
             <p className="section-label mb-3">up next</p>
             <div className="space-y-0.5">
               {upNext.map((e) => (
                 <Link
                   key={e.id}
                   href={`/book/${e.id}`}
-                  className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-lg hover:bg-[var(--bg-plum-trace)] transition-colors group"
+                  className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-lg hover:bg-plum-trace transition-colors group"
                 >
                   <BookCoverThumb
                     coverUrl={e.coverUrl}
@@ -198,11 +196,11 @@ export default function StatusCatalogPage() {
                     width="w-6"
                     height="h-9"
                   />
-                  <span className="text-sm truncate flex-1 text-[var(--fg)]">
+                  <span className="text-sm truncate flex-1 text-fg">
                     {e.title}
                   </span>
                   {e.author && (
-                    <span className="text-xs shrink-0 hidden sm:block text-[var(--fg-faint)]">
+                    <span className="text-xs shrink-0 hidden sm:block text-fg-faint">
                       {e.author}
                     </span>
                   )}
@@ -216,9 +214,9 @@ export default function StatusCatalogPage() {
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4 animate-pulse">
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i}>
-                <div className="rounded-lg mb-2 aspect-[2/3] bg-[var(--border)]" />
-                <div className="h-2.5 rounded mb-1 w-4/5 bg-[var(--border)]" />
-                <div className="h-2 rounded w-1/2 bg-[var(--border)]" />
+                <div className="rounded-lg mb-2 aspect-[2/3] bg-edge" />
+                <div className="h-2.5 rounded mb-1 w-4/5 bg-edge" />
+                <div className="h-2 rounded w-1/2 bg-edge" />
               </div>
             ))}
           </div>
@@ -236,7 +234,7 @@ export default function StatusCatalogPage() {
                 href={`/book/${e.id}`}
                 className="group relative"
               >
-                <div className="relative mb-2 rounded-lg overflow-hidden group-hover:opacity-85 transition-opacity h-[130px]">
+                <div className="relative mb-2 rounded-lg overflow-hidden group-hover:opacity-85 transition-opacity h-32.5">
                   <BookCoverThumb
                     coverUrl={e.coverUrl}
                     title={e.title}
@@ -245,16 +243,16 @@ export default function StatusCatalogPage() {
                     height="h-full"
                   />
                   {e.rating > 0 && (
-                    <span className="absolute bottom-1.5 right-1.5 text-[10px] text-gold drop-shadow">
+                    <span className="absolute bottom-1.5 right-1.5 text-detail text-gold drop-shadow">
                       {"★".repeat(Math.round(e.rating))}
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] font-medium leading-tight truncate text-[var(--fg)]">
+                <p className="text-caption font-medium leading-tight truncate text-fg">
                   {e.title || "untitled"}
                 </p>
                 {e.author && (
-                  <p className="text-[10px] mt-0.5 truncate text-[var(--fg-faint)]">
+                  <p className="text-detail mt-0.5 truncate text-fg-faint">
                     {e.author}
                   </p>
                 )}
@@ -269,13 +267,13 @@ export default function StatusCatalogPage() {
               <Link
                 key={e.id}
                 href={`/book/${e.id}`}
-                className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-lg hover:bg-[var(--bg-plum-trace)] transition-colors group"
+                className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-lg hover:bg-plum-trace transition-colors group"
               >
-                <span className="text-sm truncate flex-1 text-[var(--fg)]">
+                <span className="text-sm truncate flex-1 text-fg">
                   {e.title || "untitled"}
                 </span>
                 {e.author && (
-                  <span className="text-xs shrink-0 hidden sm:block text-[var(--fg-faint)]">
+                  <span className="text-xs shrink-0 hidden sm:block text-fg-faint">
                     {e.author}
                   </span>
                 )}

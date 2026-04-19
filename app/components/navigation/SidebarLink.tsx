@@ -22,10 +22,10 @@ export default function SidebarLink({
   return (
     <Link
       href={href}
-      className={`flex items-center gap-2 px-2.5 py-[7px] rounded-[10px] text-[13px] transition-colors ${
+      className={`flex items-center gap-2 px-2.5 py-[7px] rounded-[10px] text-note transition-colors ${
         active
-          ? "font-semibold bg-[var(--bg-hover)] text-[var(--fg-heading)]"
-          : "font-medium hover:bg-[var(--bg-nav-hover)] text-[var(--fg)]"
+          ? "font-semibold bg-hover text-fg-heading"
+          : "font-medium hover:bg-nav-hover text-fg"
       }`}
     >
       {IconComp && (

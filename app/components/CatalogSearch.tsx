@@ -145,34 +145,34 @@ export function CatalogSearch({
         className="underline-input"
       />
       {searchError && (
-        <p className="absolute left-0 right-0 top-full mt-1.5 text-[11px] text-[var(--fg-faint)] px-1">
+        <p className="absolute left-0 right-0 top-full mt-1.5 text-caption text-fg-faint px-1">
           search unavailable
         </p>
       )}
       {suggestions.length > 0 && (
-        <div className="absolute left-0 right-0 top-full mt-1.5 bg-[var(--bg-surface)] border border-[var(--border-light)] rounded-xl shadow-md overflow-hidden z-10">
+        <div className="absolute left-0 right-0 top-full mt-1.5 bg-surface border border-line rounded-xl shadow-md overflow-hidden z-10">
           {suggestions.map((s, i) => (
             <button
               key={`${s.id}-${i}`}
               onMouseDown={() => commit(s)}
-              className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${i === idx ? "bg-[var(--bg-subtle)]" : "hover:bg-[var(--bg-faintest)]"}`}
+              className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${i === idx ? "bg-subtle" : "hover:bg-faintest"}`}
             >
-              <span className="text-sm text-[var(--fg)] truncate flex-1">
+              <span className="text-sm text-fg truncate flex-1">
                 {s.title}
               </span>
               {s.author && (
-                <span className="text-xs text-[var(--fg-muted)] shrink-0 hidden sm:block">
+                <span className="text-xs text-fg-muted shrink-0 hidden sm:block">
                   {s.author}
                 </span>
               )}
               {showReleaseDate && s.releaseDate && (
-                <span className="text-xs text-[var(--fg-faint)] shrink-0 ml-auto">
+                <span className="text-xs text-fg-faint shrink-0 ml-auto">
                   {s.releaseDate}
                 </span>
               )}
               {s.status && (
                 <span
-                  className={`text-[10px] shrink-0 font-medium ${STATUS_COLOR[s.status] ?? "text-[var(--fg-faint)]"}`}
+                  className={`text-detail shrink-0 font-medium ${STATUS_COLOR[s.status] ?? "text-fg-faint"}`}
                 >
                   {STATUS_SYMBOL[s.status] ?? "·"}{" "}
                   <span className="hidden sm:inline">

@@ -253,23 +253,20 @@ export default function MonthSpreadPage() {
       <div className="page animate-pulse">
         <div className="mx-auto px-6 py-12">
           <div className="flex items-center justify-between mb-6">
-            <div className="h-7 w-32 bg-[var(--bg-hover)] rounded" />
+            <div className="h-7 w-32 bg-hover rounded" />
             <div className="flex gap-2">
-              <div className="h-7 w-7 bg-[var(--bg-hover)] rounded-full" />
-              <div className="h-7 w-7 bg-[var(--bg-hover)] rounded-full" />
+              <div className="h-7 w-7 bg-hover rounded-full" />
+              <div className="h-7 w-7 bg-hover rounded-full" />
             </div>
           </div>
           <div className="grid grid-cols-7 gap-1 mb-1">
             {Array.from({ length: 7 }).map((_, i) => (
-              <div key={i} className="h-4 bg-[var(--bg-hover)] rounded" />
+              <div key={i} className="h-4 bg-hover rounded" />
             ))}
           </div>
           <div className="grid grid-cols-7 gap-1">
             {Array.from({ length: 35 }).map((_, i) => (
-              <div
-                key={i}
-                className="aspect-square bg-[var(--bg-hover)] rounded"
-              />
+              <div key={i} className="aspect-square bg-hover rounded" />
             ))}
           </div>
         </div>
@@ -282,13 +279,13 @@ export default function MonthSpreadPage() {
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-widest mb-1 text-[var(--fg-faint)]">
+            <p className="text-xs uppercase tracking-widest mb-1 text-fg-faint">
               reading journal · {year}
             </p>
-            <h1 className="font-serif text-3xl font-semibold tracking-tight text-[var(--fg-heading)]">
+            <h1 className="font-serif text-3xl font-semibold tracking-tight text-fg-heading">
               {monthLabel}
             </h1>
-            <p className="text-xs mt-2 text-[var(--fg-muted)]">
+            <p className="text-xs mt-2 text-fg-muted">
               {finishedThisMonth.length > 0 &&
                 `${finishedThisMonth.length} books finished`}
               {daysRead > 0 && ` · ${daysRead} days read`}
@@ -300,21 +297,21 @@ export default function MonthSpreadPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => goToMonth(year, monthIndex - 1)}
-              className="text-sm px-2 py-1 rounded hover:bg-[var(--bg-subtle)] transition-colors text-[var(--fg-muted)]"
+              className="text-sm px-2 py-1 rounded hover:bg-subtle transition-colors text-fg-muted"
             >
               ←
             </button>
             {!isCurrentMonth && (
               <button
                 onClick={() => goToMonth(now.getFullYear(), now.getMonth())}
-                className="text-xs px-2 py-1 rounded text-[var(--fg-faint)]"
+                className="text-xs px-2 py-1 rounded text-fg-faint"
               >
                 today
               </button>
             )}
             <button
               onClick={() => goToMonth(year, monthIndex + 1)}
-              className="text-sm px-2 py-1 rounded hover:bg-[var(--bg-subtle)] transition-colors text-[var(--fg-muted)]"
+              className="text-sm px-2 py-1 rounded hover:bg-subtle transition-colors text-fg-muted"
             >
               →
             </button>
@@ -337,7 +334,7 @@ export default function MonthSpreadPage() {
           <div>
             <p className="section-label mb-4">on the nightstand</p>
             {reading.length === 0 ? (
-              <p className="text-xs text-[var(--fg-faint)]">
+              <p className="text-xs text-fg-faint">
                 nothing in progress —{" "}
                 <Link
                   href={`/${year}/books`}
@@ -354,16 +351,16 @@ export default function MonthSpreadPage() {
                     href={`/book/${b.id}`}
                     className="block group py-1"
                   >
-                    <p className="text-sm font-medium truncate text-[var(--fg)] group-hover:opacity-70 transition-opacity">
+                    <p className="text-sm font-medium truncate text-fg group-hover:opacity-70 transition-opacity">
                       {b.title}
                     </p>
                     {b.author && (
-                      <p className="text-xs mt-0.5 truncate text-[var(--fg-muted)]">
+                      <p className="text-xs mt-0.5 truncate text-fg-muted">
                         {b.author}
                       </p>
                     )}
                     {b.moodTags.length > 0 && (
-                      <p className="text-[10px] mt-1 text-[var(--fg-faint)]">
+                      <p className="text-detail mt-1 text-fg-faint">
                         {b.moodTags.slice(0, 2).join(" · ")}
                       </p>
                     )}
@@ -382,11 +379,11 @@ export default function MonthSpreadPage() {
                       href={`/book/${b.id}`}
                       className="block group py-1"
                     >
-                      <p className="text-sm font-medium truncate text-[var(--fg)] group-hover:opacity-70 transition-opacity">
+                      <p className="text-sm font-medium truncate text-fg group-hover:opacity-70 transition-opacity">
                         {b.title}
                       </p>
                       {b.author && (
-                        <p className="text-xs mt-0.5 truncate text-[var(--fg-muted)]">
+                        <p className="text-xs mt-0.5 truncate text-fg-muted">
                           {b.author}
                         </p>
                       )}
@@ -406,16 +403,16 @@ export default function MonthSpreadPage() {
                       href={`/book/${b.id}`}
                       className="block group py-1"
                     >
-                      <p className="text-sm font-medium truncate text-[var(--fg)] group-hover:opacity-70 transition-opacity">
+                      <p className="text-sm font-medium truncate text-fg group-hover:opacity-70 transition-opacity">
                         {b.title}
                       </p>
                       {b.author && (
-                        <p className="text-xs mt-0.5 truncate text-[var(--fg-muted)]">
+                        <p className="text-xs mt-0.5 truncate text-fg-muted">
                           {b.author}
                         </p>
                       )}
                       {b.rating > 0 && (
-                        <p className="text-[10px] mt-1 text-[var(--gold)]">
+                        <p className="text-detail mt-1 text-gold">
                           {"★".repeat(Math.round(b.rating))}
                         </p>
                       )}
@@ -432,7 +429,7 @@ export default function MonthSpreadPage() {
               {quotesThisMonth.length > 0 ? ` · ${quotesThisMonth.length}` : ""}
             </p>
             {quotesThisMonth.length === 0 ? (
-              <p className="text-xs text-[var(--fg-faint)]">
+              <p className="text-xs text-fg-faint">
                 no quotes saved this month —{" "}
                 <Link
                   href={`/${year}/quotes`}
@@ -444,15 +441,12 @@ export default function MonthSpreadPage() {
             ) : (
               <div className="space-y-4">
                 {quotesThisMonth.slice(0, 5).map((q) => (
-                  <div
-                    key={q.id}
-                    className="pl-3 border-l-2 border-l-[var(--lavender)]"
-                  >
-                    <p className="font-serif text-sm italic leading-relaxed text-[var(--fg)]">
+                  <div key={q.id} className="pl-3 border-l-2 border-l-lavender">
+                    <p className="font-serif text-sm italic leading-relaxed text-fg">
                       &ldquo;{q.text}&rdquo;
                     </p>
                     {(q.bookTitle || q.pageNumber) && (
-                      <p className="text-[10px] mt-1.5 text-[var(--fg-faint)]">
+                      <p className="text-detail mt-1.5 text-fg-faint">
                         {q.bookTitle && <span>{q.bookTitle}</span>}
                         {q.pageNumber && <span> · p. {q.pageNumber}</span>}
                       </p>
@@ -473,14 +467,14 @@ export default function MonthSpreadPage() {
       {/* Backdrop */}
       {panelOpen && (
         <div
-          className="fixed inset-0 top-14 z-[24] bg-[var(--bg-overlay)]"
+          className="fixed inset-0 top-14 z-[24] bg-overlay"
           onClick={() => setSelectedDate(null)}
         />
       )}
 
       {/* Daily Log Panel */}
       <div
-        className={`fixed top-14 right-0 h-[calc(100vh-3.5rem)] w-full md:w-[380px] z-[25] border-l border-[var(--border-light)] bg-[var(--bg-surface)] shadow-xl transition-transform duration-300 ${
+        className={`fixed top-14 right-0 h-[calc(100dvh-var(--nav-height))] w-full md:w-95 z-[25] border-l border-line bg-surface shadow-xl transition-transform duration-300 ${
           panelOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >

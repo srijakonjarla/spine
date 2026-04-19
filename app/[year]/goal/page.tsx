@@ -70,7 +70,7 @@ function AutoGoalCard({
               className={`flex items-center gap-1.5 text-xs ${reached ? "text-stone-700" : "text-stone-300"}`}
             >
               <span
-                className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center text-[9px] shrink-0 ${reached ? "text-white bg-plum border-plum" : "border-stone-200"}`}
+                className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center text-label shrink-0 ${reached ? "text-white bg-plum border-plum" : "border-stone-200"}`}
               >
                 {reached ? "✓" : ""}
               </span>

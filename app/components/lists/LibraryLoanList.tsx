@@ -110,13 +110,13 @@ export function LibraryLoanList({
           return (
             <div
               key={item.id}
-              className={`group bg-[var(--bg-surface)] rounded-xl px-4 py-3 border transition-all ${isOverdue ? "border-red-300/60" : isReturned ? "border-[var(--border-light)] opacity-60" : "border-[var(--border-light)]"} ${draggingId === item.id ? "opacity-40" : ""}`}
+              className={`group bg-surface rounded-xl px-4 py-3 border transition-all ${isOverdue ? "border-red-300/60" : isReturned ? "border-line opacity-60" : "border-line"} ${draggingId === item.id ? "opacity-40" : ""}`}
               {...(itemSearch.trim() ? {} : itemProps(index, item.id))}
             >
               {/* Top row: drag + title + status actions */}
               <div className="flex gap-3 items-start">
                 {!itemSearch.trim() && (
-                  <span className="cursor-grab active:cursor-grabbing text-[var(--fg-faint)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0 select-none mt-0.5">
+                  <span className="cursor-grab active:cursor-grabbing text-fg-faint opacity-0 group-hover:opacity-100 transition-opacity shrink-0 select-none mt-0.5">
                     ⠿
                   </span>
                 )}
@@ -124,19 +124,19 @@ export function LibraryLoanList({
                   {item.bookId ? (
                     <Link
                       href={`/book/${item.bookId}`}
-                      className={`font-serif text-[13px] font-semibold leading-snug hover:text-[var(--terra)] transition-colors ${isReturned ? "line-through text-[var(--fg-muted)]" : "text-[var(--fg-heading)]"}`}
+                      className={`font-serif text-note font-semibold leading-snug hover:text-terra transition-colors ${isReturned ? "line-through text-fg-muted" : "text-fg-heading"}`}
                     >
                       {item.title}
                     </Link>
                   ) : (
                     <p
-                      className={`font-serif text-[13px] font-semibold leading-snug ${isReturned ? "line-through text-[var(--fg-muted)]" : "text-[var(--fg-heading)]"}`}
+                      className={`font-serif text-note font-semibold leading-snug ${isReturned ? "line-through text-fg-muted" : "text-fg-heading"}`}
                     >
                       {item.title}
                     </p>
                   )}
                   {item.author && (
-                    <p className="text-[11px] text-[var(--fg-muted)] mt-0.5">
+                    <p className="text-caption text-fg-muted mt-0.5">
                       {item.author}
                     </p>
                   )}
@@ -144,14 +144,14 @@ export function LibraryLoanList({
                 {/* Status badge + actions */}
                 <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
                   <span
-                    className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold ${
+                    className={`text-detail px-2 py-0.5 rounded-full border font-semibold ${
                       isReturned
                         ? "text-sage border-sage/40 bg-sage/10"
                         : isRenewed
                           ? "text-gold border-gold/40 bg-gold/10"
                           : isOverdue
                             ? "text-red-400 border-red-300/50 bg-red-400/8"
-                            : "text-[var(--fg-faint)] border-[var(--border-light)]"
+                            : "text-fg-faint border-line"
                     }`}
                   >
                     {isReturned
@@ -168,7 +168,7 @@ export function LibraryLoanList({
                         <button
                           title="Mark renewed"
                           onClick={() => onUpdateType(item.id, "renewed")}
-                          className="text-[11px] text-[var(--fg-faint)] hover:text-gold transition-colors opacity-0 group-hover:opacity-100"
+                          className="text-caption text-fg-faint hover:text-gold transition-colors opacity-0 group-hover:opacity-100"
                         >
                           ↻
                         </button>
@@ -176,7 +176,7 @@ export function LibraryLoanList({
                       <button
                         title="Mark returned"
                         onClick={() => onUpdateType(item.id, "returned")}
-                        className="text-[11px] text-[var(--fg-faint)] hover:text-sage transition-colors opacity-0 group-hover:opacity-100"
+                        className="text-caption text-fg-faint hover:text-sage transition-colors opacity-0 group-hover:opacity-100"
                       >
                         ✓
                       </button>
@@ -186,14 +186,14 @@ export function LibraryLoanList({
                     <button
                       title="Undo return"
                       onClick={() => onUpdateType(item.id, "")}
-                      className="text-[10px] text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors opacity-0 group-hover:opacity-100"
+                      className="text-detail text-fg-faint hover:text-fg-muted transition-colors opacity-0 group-hover:opacity-100"
                     >
                       undo
                     </button>
                   )}
                   <button
                     onClick={() => onRemove(item.id)}
-                    className="text-base text-[var(--fg-faint)] hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 ml-1"
+                    className="text-base text-fg-faint hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 ml-1"
                   >
                     ×
                   </button>
@@ -203,7 +203,7 @@ export function LibraryLoanList({
               {/* Bottom row: call #, due date, price */}
               <div className="flex items-center gap-4 mt-2 pl-5">
                 <div className="flex items-center gap-1 min-w-0">
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--fg-faint)] shrink-0">
+                  <span className="text-detail font-semibold uppercase tracking-wide text-fg-faint shrink-0">
                     call #
                   </span>
                   <input
@@ -211,12 +211,12 @@ export function LibraryLoanList({
                     value={item.notes ?? ""}
                     onChange={(e) => onUpdateNotes(item.id, e.target.value)}
                     placeholder="—"
-                    className="font-[family-name:var(--font-geist-mono)] text-[11px] text-[var(--fg-muted)] bg-transparent border-none outline-none w-28 placeholder:text-[var(--fg-faint)]/40"
+                    className="font-mono text-caption text-fg-muted bg-transparent border-none outline-none w-28 placeholder:text-fg-faint/40"
                   />
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <span
-                    className={`text-[10px] font-semibold uppercase tracking-wide shrink-0 ${isOverdue && !isReturned ? "text-red-400" : "text-[var(--fg-faint)]"}`}
+                    className={`text-detail font-semibold uppercase tracking-wide shrink-0 ${isOverdue && !isReturned ? "text-red-400" : "text-fg-faint"}`}
                   >
                     due
                   </span>
@@ -224,11 +224,11 @@ export function LibraryLoanList({
                     type="date"
                     value={item.releaseDate ?? ""}
                     onChange={(e) => onUpdateDate(item.id, e.target.value)}
-                    className={`text-[11px] bg-transparent border-none outline-none ${isOverdue && !isReturned ? "text-red-400" : "text-[var(--fg-muted)]"}`}
+                    className={`text-caption bg-transparent border-none outline-none ${isOverdue && !isReturned ? "text-red-400" : "text-fg-muted"}`}
                   />
                 </div>
                 <div className="flex items-center gap-0.5 shrink-0 ml-auto">
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--fg-faint)]">
+                  <span className="text-detail font-semibold uppercase tracking-wide text-fg-faint">
                     Amount Saved $
                   </span>
                   <input
@@ -236,7 +236,7 @@ export function LibraryLoanList({
                     value={item.price ?? ""}
                     onChange={(e) => onUpdatePrice(item.id, e.target.value)}
                     placeholder="0.00"
-                    className="text-[11px] text-[var(--fg-muted)] bg-transparent border-none outline-none w-14 placeholder:text-[var(--fg-faint)]/40"
+                    className="text-caption text-fg-muted bg-transparent border-none outline-none w-14 placeholder:text-fg-faint/40"
                   />
                 </div>
               </div>
@@ -247,7 +247,7 @@ export function LibraryLoanList({
 
       {/* Add loan */}
       {showAdd ? (
-        <div className="rounded-xl px-4 py-3 border border-dashed border-[var(--border-light)] bg-[var(--bg-surface)] space-y-2.5">
+        <div className="rounded-xl px-4 py-3 border border-dashed border-line bg-surface space-y-2.5">
           <CatalogSearch
             value={draftTitle}
             onChange={(v) => setDraftTitle(v)}
@@ -265,11 +265,11 @@ export function LibraryLoanList({
             value={draftAuthor}
             onChange={(e) => setDraftAuthor(e.target.value)}
             placeholder="author"
-            className="text-xs text-[var(--fg-muted)] bg-transparent border-none outline-none w-full placeholder:text-[var(--fg-faint)]"
+            className="text-xs text-fg-muted bg-transparent border-none outline-none w-full placeholder:text-fg-faint"
           />
           <div className="flex gap-3 items-center flex-wrap">
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--fg-faint)]">
+              <span className="text-detail font-semibold uppercase tracking-wide text-fg-faint">
                 Call #
               </span>
               <input
@@ -277,22 +277,22 @@ export function LibraryLoanList({
                 value={draftCallNum}
                 onChange={(e) => setDraftCallNum(e.target.value)}
                 placeholder="e.g. FIC ROW"
-                className="font-[family-name:var(--font-geist-mono)] text-xs text-[var(--fg-muted)] bg-transparent border-b border-[var(--border-light)] outline-none w-24 pb-0.5 placeholder:text-[var(--fg-faint)]"
+                className="font-mono text-xs text-fg-muted bg-transparent border-b border-line outline-none w-24 pb-0.5 placeholder:text-fg-faint"
               />
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--fg-faint)]">
+              <span className="text-detail font-semibold uppercase tracking-wide text-fg-faint">
                 Due
               </span>
               <input
                 type="date"
                 value={draftDueDate}
                 onChange={(e) => setDraftDueDate(e.target.value)}
-                className="text-xs text-[var(--fg-muted)] bg-transparent border-none outline-none"
+                className="text-xs text-fg-muted bg-transparent border-none outline-none"
               />
             </div>
             <div className="flex items-center gap-1 ml-auto">
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--fg-faint)]">
+              <span className="text-detail font-semibold uppercase tracking-wide text-fg-faint">
                 Amount Saved $
               </span>
               <input
@@ -300,15 +300,15 @@ export function LibraryLoanList({
                 value={draftLoanPrice}
                 onChange={(e) => setDraftLoanPrice(e.target.value)}
                 placeholder="0.00"
-                className="text-xs text-[var(--fg-muted)] bg-transparent border-b border-[var(--border-light)] outline-none w-16 pb-0.5 placeholder:text-[var(--fg-faint)]"
+                className="text-xs text-fg-muted bg-transparent border-b border-line outline-none w-16 pb-0.5 placeholder:text-fg-faint"
               />
             </div>
           </div>
-          <div className="flex gap-3 pt-1.5 border-t border-[var(--border-light)]">
+          <div className="flex gap-3 pt-1.5 border-t border-line">
             <button
               onClick={handleAdd}
               disabled={!draftTitle.trim() || adding}
-              className="text-xs font-semibold text-[var(--plum)] hover:text-[var(--plum-light)] transition-colors disabled:opacity-30"
+              className="text-xs font-semibold text-plum hover:text-plum-light transition-colors disabled:opacity-30"
             >
               add ↵
             </button>
@@ -322,7 +322,7 @@ export function LibraryLoanList({
                 setDraftDueDate("");
                 setDraftLoanPrice("");
               }}
-              className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
+              className="text-xs text-fg-faint hover:text-fg-muted transition-colors"
             >
               cancel
             </button>
@@ -331,7 +331,7 @@ export function LibraryLoanList({
       ) : (
         <button
           onClick={() => setShowAdd(true)}
-          className="w-full flex gap-2.5 items-center px-4 py-3 rounded-xl border border-dashed border-[var(--border-light)] hover:border-[var(--terra)] hover:bg-[var(--terra)]/4 transition-all font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)] hover:text-[var(--terra)]"
+          className="w-full flex gap-2.5 items-center px-4 py-3 rounded-xl border border-dashed border-line hover:border-terra hover:bg-terra/4 transition-all font-hand text-note text-fg-muted hover:text-terra"
         >
           <span className="text-lg">＋</span>
           check out a book…

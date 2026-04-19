@@ -84,7 +84,7 @@ export default function RecommendationsPage() {
         </div>
 
         <div className="mb-10 pb-8 border-b border-stone-200">
-          <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold page-title tracking-tight">
+          <h1 className="font-serif text-3xl font-semibold page-title tracking-tight">
             recommendations
           </h1>
           {!loading && (

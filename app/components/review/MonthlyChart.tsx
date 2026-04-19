@@ -22,13 +22,13 @@ export function MonthlyChart({ months, maxMonthly }: MonthlyChartProps) {
                   ? { height: `${Math.round((m.count / maxMonthly) * 100)}%` }
                   : undefined
               }
-              className={`w-full rounded-t-sm transition-all min-h-[2px] ${
+              className={`w-full rounded-t-sm transition-all min-h-0.5 ${
                 m.count > 0
                   ? "[background-image:var(--gradient-chart-month)]"
-                  : "bg-[var(--border-light)] h-[2px]"
+                  : "bg-line h-0.5"
               }`}
             />
-            <span className="text-[9px] text-[var(--fg-faint)]">{m.label}</span>
+            <span className="text-label text-fg-faint">{m.label}</span>
           </div>
         ))}
       </div>

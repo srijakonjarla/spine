@@ -103,10 +103,7 @@ export default function YearPage() {
         <div className="page-content">
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
             {Array.from({ length: 12 }).map((_, i) => (
-              <div
-                key={i}
-                className="aspect-[4/3] bg-[var(--bg-hover)] rounded-xl"
-              />
+              <div key={i} className="aspect-[4/3] bg-hover rounded-xl" />
             ))}
           </div>
         </div>
@@ -118,13 +115,13 @@ export default function YearPage() {
       {/* Hero */}
       <div className="-mt-6 -mx-6 mb-10 px-8 py-10 lg:px-12 lg:py-14 bg-plum">
         <div className="max-w-3xl mx-auto lg:ml-0">
-          <p className="font-[family-name:var(--font-caveat)] text-lg mb-1 text-gold tracking-[0.06em]">
+          <p className="font-hand text-lg mb-1 text-gold tracking-micro">
             your reading year
           </p>
-          <h1 className="font-[family-name:var(--font-playfair)] font-bold italic leading-none mb-2 text-[clamp(52px,8vw,80px)] text-white">
+          <h1 className="font-serif font-bold italic leading-none mb-2 text-[clamp(52px,8vw,80px)] text-white">
             {year}
           </h1>
-          <p className="text-[13px] mb-8 text-white/45">{statusLabel}</p>
+          <p className="text-note mb-8 text-white/45">{statusLabel}</p>
 
           {/* Stat grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
@@ -143,14 +140,14 @@ export default function YearPage() {
               { val: quoteCount, label: "Quotes saved", sub: null },
             ].map(({ val, label, sub }) => (
               <div key={label}>
-                <p className="font-[family-name:var(--font-playfair)] font-bold leading-none mb-1 text-[clamp(22px,4vw,32px)] text-white">
+                <p className="font-serif font-bold leading-none mb-1 text-[clamp(22px,4vw,32px)] text-white">
                   {val}
                 </p>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/55">
+                <p className="text-detail font-semibold uppercase tracking-caps-wide text-white/55">
                   {label}
                 </p>
                 {sub && (
-                  <p className="text-[10px] mt-0.5 text-white/30">{sub}</p>
+                  <p className="text-detail mt-0.5 text-white/30">{sub}</p>
                 )}
               </div>
             ))}
@@ -162,12 +159,12 @@ export default function YearPage() {
               {autoGoal && goalProgress !== null && (
                 <Link
                   href={`/${year}/goal`}
-                  className="rounded-xl px-4 py-3 min-w-[200px] bg-white/7 border border-white/10 hover:bg-white/10 transition-colors"
+                  className="rounded-xl px-4 py-3 min-w-50 bg-white/7 border border-white/10 hover:bg-white/10 transition-colors"
                 >
-                  <p className="text-[9px] uppercase tracking-[0.12em] font-semibold mb-1 text-gold/70">
+                  <p className="text-label uppercase tracking-label font-semibold mb-1 text-gold/70">
                     {autoGoal.name || "reading goal"}
                   </p>
-                  <p className="font-[family-name:var(--font-playfair)] text-[15px] font-semibold mb-2 text-white">
+                  <p className="font-serif text-body-md font-semibold mb-2 text-white">
                     {finishedBooks.length} of {autoGoal.target} books ·{" "}
                     {Math.round(goalProgress * 100)}%
                   </p>
@@ -186,12 +183,12 @@ export default function YearPage() {
                   <Link
                     key={g.id}
                     href={`/${year}/goal`}
-                    className="rounded-xl px-4 py-3 min-w-[180px] bg-white/7 border border-white/10 hover:bg-white/10 transition-colors"
+                    className="rounded-xl px-4 py-3 min-w-45 bg-white/7 border border-white/10 hover:bg-white/10 transition-colors"
                   >
-                    <p className="text-[9px] uppercase tracking-[0.12em] font-semibold mb-1 text-gold/70">
+                    <p className="text-label uppercase tracking-label font-semibold mb-1 text-gold/70">
                       {g.name}
                     </p>
-                    <p className="font-[family-name:var(--font-playfair)] text-[15px] font-semibold mb-2 text-white">
+                    <p className="font-serif text-body-md font-semibold mb-2 text-white">
                       {g.bookIds.length} of {g.target} · {Math.round(p * 100)}%
                     </p>
                     <div className="h-1.5 rounded-full overflow-hidden bg-white/10">
@@ -211,7 +208,7 @@ export default function YearPage() {
       <div className="page-content">
         {/* 12 mini month calendars */}
         <div className="mb-12">
-          <p className="font-[family-name:var(--font-playfair)] text-[17px] italic mb-5 text-[var(--fg-heading)]">
+          <p className="font-serif text-subhead italic mb-5 text-fg-heading">
             {year} at a glance
           </p>
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-4 gap-3">
@@ -232,7 +229,7 @@ export default function YearPage() {
         {/* Up next */}
         {upNextBooks.length > 0 && (
           <div className="mb-12">
-            <p className="font-[family-name:var(--font-playfair)] text-[17px] italic mb-5 text-[var(--fg-heading)]">
+            <p className="font-serif text-subhead italic mb-5 text-fg-heading">
               up next
             </p>
             <div className="flex gap-3 flex-wrap">
@@ -240,7 +237,7 @@ export default function YearPage() {
                 <Link
                   key={b.id}
                   href={`/book/${b.id}`}
-                  className="group flex items-center gap-3 rounded-xl px-3 py-2.5 border border-[var(--border-light)] hover:bg-[var(--bg-subtle)] transition-colors"
+                  className="group flex items-center gap-3 rounded-xl px-3 py-2.5 border border-line hover:bg-subtle transition-colors"
                 >
                   <BookCoverThumb
                     coverUrl={b.coverUrl}
@@ -250,11 +247,11 @@ export default function YearPage() {
                     height="h-10"
                   />
                   <div className="min-w-0">
-                    <p className="text-[12px] font-semibold leading-tight truncate max-w-[140px] text-[var(--fg-heading)]">
+                    <p className="text-xs font-semibold leading-tight truncate max-w-35 text-fg-heading">
                       {b.title}
                     </p>
                     {b.author && (
-                      <p className="text-[10px] mt-0.5 truncate max-w-[140px] text-[var(--fg-muted)]">
+                      <p className="text-detail mt-0.5 truncate max-w-35 text-fg-muted">
                         {b.author}
                       </p>
                     )}
@@ -269,14 +266,14 @@ export default function YearPage() {
         {shelfMonths.length > 0 && (
           <div className="mb-12">
             <div className="flex items-baseline justify-between mb-5">
-              <p className="font-[family-name:var(--font-playfair)] text-[17px] italic text-[var(--fg-heading)]">
+              <p className="font-serif text-subhead italic text-fg-heading">
                 your {year} bookshelf
               </p>
               <Link href={`/${year}/read`} className="back-link">
                 all books read →
               </Link>
             </div>
-            <div className="rounded-2xl p-5 overflow-x-auto bg-[var(--bg-surface)] border border-[var(--border-light)]">
+            <div className="rounded-2xl p-5 overflow-x-auto bg-surface border border-line">
               <div className="flex items-end gap-1 min-w-0">
                 {shelfMonths.map(({ monthIndex, books }, si) => (
                   <div
@@ -284,12 +281,12 @@ export default function YearPage() {
                     className="flex items-end gap-0.5 shrink-0"
                   >
                     {si > 0 && (
-                      <span className="text-[8px] uppercase font-bold mx-2 self-end pb-1 text-[var(--fg-faint)] tracking-[0.1em]">
+                      <span className="text-micro-plus uppercase font-bold mx-2 self-end pb-1 text-fg-faint tracking-caps-wide">
                         {MONTH_NAMES[monthIndex].slice(0, 3)}
                       </span>
                     )}
                     {si === 0 && (
-                      <span className="text-[8px] uppercase font-bold mr-2 self-end pb-1 text-[var(--fg-faint)] tracking-[0.1em]">
+                      <span className="text-micro-plus uppercase font-bold mr-2 self-end pb-1 text-fg-faint tracking-caps-wide">
                         {MONTH_NAMES[monthIndex].slice(0, 3)}
                       </span>
                     )}
@@ -299,7 +296,7 @@ export default function YearPage() {
                         href={`/book/${b.id}`}
                         title={b.title}
                         style={{ height: spineHeightPx(b.title) }}
-                        className={`rounded-sm shrink-0 hover:brightness-110 transition-all hover:-translate-y-1 w-[14px] ${spineColorClass(b.title)}`}
+                        className={`rounded-sm shrink-0 hover:brightness-110 transition-all hover:-translate-y-1 w-3.5 ${spineColorClass(b.title)}`}
                       />
                     ))}
                   </div>
@@ -313,7 +310,7 @@ export default function YearPage() {
         {lists.length > 0 && (
           <div className="mb-12">
             <div className="flex items-baseline justify-between mb-5">
-              <p className="font-[family-name:var(--font-playfair)] text-[17px] italic text-[var(--fg-heading)]">
+              <p className="font-serif text-subhead italic text-fg-heading">
                 {year} lists
               </p>
               <Link href={`/${year}/lists`} className="back-link">
@@ -325,39 +322,37 @@ export default function YearPage() {
                 <Link
                   key={list.id}
                   href={`/${year}/lists/${list.id}`}
-                  className="block rounded-xl p-4 transition-colors hover:bg-[var(--bg-subtle)] border border-[var(--border-light)]"
+                  className="block rounded-xl p-4 transition-colors hover:bg-subtle border border-line"
                 >
                   <div className="flex items-start justify-between gap-2 mb-3">
-                    <p className="text-[13px] font-semibold leading-snug text-[var(--fg-heading)]">
+                    <p className="text-note font-semibold leading-snug text-fg-heading">
                       {list.title}
                     </p>
-                    <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[var(--bg-muted-tag)] text-[var(--fg-muted)]">
+                    <span className="shrink-0 text-detail font-semibold px-1.5 py-0.5 rounded-full bg-muted-tag text-fg-muted">
                       {list.items.length}
                     </span>
                   </div>
                   {list.items.length === 0 ? (
-                    <p className="text-[11px] italic text-[var(--fg-faint)]">
-                      empty
-                    </p>
+                    <p className="text-caption italic text-fg-faint">empty</p>
                   ) : (
                     <ol className="space-y-1">
                       {list.items.slice(0, 4).map((item, i) => (
                         <li key={item.id} className="flex items-baseline gap-2">
-                          <span className="text-[10px] w-4 shrink-0 tabular-nums text-[var(--fg-faint)]">
+                          <span className="text-detail w-4 shrink-0 tabular-nums text-fg-faint">
                             {i + 1}.
                           </span>
-                          <span className="text-xs truncate text-[var(--fg)]">
+                          <span className="text-xs truncate text-fg">
                             {item.title}
                           </span>
                           {item.author && (
-                            <span className="text-[11px] shrink-0 hidden sm:block text-[var(--fg-muted)]">
+                            <span className="text-caption shrink-0 hidden sm:block text-fg-muted">
                               {item.author}
                             </span>
                           )}
                         </li>
                       ))}
                       {list.items.length > 4 && (
-                        <li className="text-[11px] pl-6 text-[var(--fg-faint)]">
+                        <li className="text-caption pl-6 text-fg-faint">
                           +{list.items.length - 4} more
                         </li>
                       )}
@@ -370,7 +365,7 @@ export default function YearPage() {
         )}
 
         {/* Footer nav */}
-        <div className="pt-5 border-t border-[var(--border-light)] flex flex-wrap gap-x-5 gap-y-1.5">
+        <div className="pt-5 border-t border-line flex flex-wrap gap-x-5 gap-y-1.5">
           <Link href="/" className="back-link">
             ← home
           </Link>

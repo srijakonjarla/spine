@@ -18,7 +18,7 @@ export function MoodChip({
   if (display) {
     return (
       <span
-        className={`text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-hover)] text-[var(--fg-muted)]`}
+        className={`text-detail px-2 py-0.5 rounded-full bg-hover text-fg-muted`}
       >
         {mood}
       </span>
@@ -46,10 +46,10 @@ export function AllMoodsChip({
   return (
     <button
       onClick={onClick}
-      className={`text-xs px-3 py-1 rounded-full transition-colors border border-[var(--border-light)] ${
+      className={`text-xs px-3 py-1 rounded-full transition-colors border border-line ${
         active
           ? "bg-plum text-white"
-          : "bg-[var(--bg-surface)] text-[var(--fg-muted)]"
+          : "bg-surface text-fg-muted"
       }`}
     >
       all

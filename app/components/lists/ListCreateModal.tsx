@@ -106,16 +106,16 @@ export function ListCreateModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--bg-overlay)] px-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-overlay px-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-[480px] rounded-2xl p-7 shadow-2xl bg-[var(--bg-surface)] border border-[var(--border-light)]">
-        <h2 className="font-serif text-[22px] font-bold text-[var(--fg-heading)] mb-0.5">
+      <div className="w-full max-w-120 rounded-2xl p-7 shadow-2xl bg-surface border border-line">
+        <h2 className="font-serif text-title font-bold text-fg-heading mb-0.5">
           Create a new list
         </h2>
-        <p className="font-[family-name:var(--font-caveat)] text-sm text-[var(--fg-muted)] mb-6">
+        <p className="font-hand text-sm text-fg-muted mb-6">
           name it, type it, color it — then fill it
         </p>
 
@@ -153,19 +153,19 @@ export function ListCreateModal({
                     onClick={() => setListType(t.value)}
                     className={`flex flex-col items-center gap-1 py-2.5 px-2 rounded-xl border text-center transition-colors ${
                       selected
-                        ? "border-[var(--plum)] bg-[var(--plum)]/6"
-                        : "border-[var(--border-light)] hover:border-[var(--fg-muted)]"
-                    } disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[var(--border-light)]`}
+                        ? "border-plum bg-plum/6"
+                        : "border-line hover:border-fg-muted"
+                    } disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-line`}
                   >
                     <t.icon size={20} />
-                    <span className="text-[10px] font-semibold leading-tight text-[var(--fg-muted)]">
+                    <span className="text-detail font-semibold leading-tight text-fg-muted">
                       {t.label}
                     </span>
                   </button>
                 );
               })}
             </div>
-            <p className="text-[11px] font-[family-name:var(--font-caveat)] text-[var(--fg-muted)]">
+            <p className="text-caption font-hand text-fg-muted">
               {LIST_TYPES.find((t) => t.value === listType)?.desc}
             </p>
           </div>
@@ -195,7 +195,7 @@ export function ListCreateModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="what's this list for?"
-              className="underline-input font-[family-name:var(--font-caveat)] text-[15px]"
+              className="underline-input font-hand text-body-md"
             />
           </div>
 
@@ -204,14 +204,14 @@ export function ListCreateModal({
             <button
               type="button"
               onClick={onClose}
-              className="text-[13px] px-4 py-2 rounded-full text-[var(--fg-muted)] hover:bg-[var(--bg-hover)] transition-colors"
+              className="text-note px-4 py-2 rounded-full text-fg-muted hover:bg-hover transition-colors"
             >
               cancel
             </button>
             <button
               type="submit"
               disabled={!name.trim() || saving}
-              className="text-[13px] font-semibold px-5 py-2 rounded-full text-white bg-[var(--plum)] hover:bg-[var(--plum-light)] transition-colors disabled:opacity-40"
+              className="text-note font-semibold px-5 py-2 rounded-full text-white bg-plum hover:bg-plum-light transition-colors disabled:opacity-40"
             >
               {saving ? "creating…" : "create list →"}
             </button>

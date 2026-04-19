@@ -128,7 +128,7 @@ export default function ReadTab({
                     }
                     className={`text-lg transition-colors ${
                       n <= draft.rating
-                        ? "text-[var(--gold)]"
+                        ? "text-gold"
                         : "text-stone-200 hover:text-stone-300"
                     }`}
                   >
@@ -142,7 +142,7 @@ export default function ReadTab({
               <p className="caveat-label mb-3">dates</p>
               <div className="space-y-2.5">
                 <div>
-                  <label className="text-[9px] uppercase tracking-widest text-ink-light font-semibold block mb-0.5">
+                  <label className="text-label uppercase tracking-widest text-ink-light font-semibold block mb-0.5">
                     Started
                   </label>
                   <input
@@ -153,11 +153,11 @@ export default function ReadTab({
                         d ? { ...d, dateStarted: e.target.value } : d,
                       )
                     }
-                    className="text-[11px] bg-transparent border-b border-stone-200 focus:border-plum outline-none w-full pb-0.5 text-[var(--fg)]"
+                    className="text-caption bg-transparent border-b border-stone-200 focus:border-plum outline-none w-full pb-0.5 text-fg"
                   />
                 </div>
                 <div>
-                  <label className="text-[9px] uppercase tracking-widest text-ink-light font-semibold block mb-0.5">
+                  <label className="text-label uppercase tracking-widest text-ink-light font-semibold block mb-0.5">
                     Finished
                   </label>
                   <input
@@ -168,7 +168,7 @@ export default function ReadTab({
                         d ? { ...d, dateFinished: e.target.value } : d,
                       )
                     }
-                    className="text-[11px] bg-transparent border-b border-stone-200 focus:border-plum outline-none w-full pb-0.5 text-[var(--fg)]"
+                    className="text-caption bg-transparent border-b border-stone-200 focus:border-plum outline-none w-full pb-0.5 text-fg"
                   />
                 </div>
               </div>
@@ -178,7 +178,7 @@ export default function ReadTab({
               <button
                 onClick={handleSaveHistorical}
                 disabled={saving}
-                className="text-xs text-white bg-[var(--plum)] px-4 py-2 rounded-full disabled:opacity-40 hover:opacity-85 transition-opacity font-sans"
+                className="text-xs text-white bg-plum px-4 py-2 rounded-full disabled:opacity-40 hover:opacity-85 transition-opacity font-sans"
               >
                 {saving ? "saving..." : "save changes"}
               </button>
@@ -281,7 +281,7 @@ export default function ReadTab({
             <span className="caveat-label">favorite quotes</span>
             <button
               onClick={() => setActiveTab("quotes")}
-              className="text-[11px] text-terra font-semibold font-sans bg-transparent border-none cursor-pointer"
+              className="text-caption text-terra font-semibold font-sans bg-transparent border-none cursor-pointer"
             >
               {quotes.length > 2
                 ? `see all ${quotes.length} →`
@@ -295,7 +295,7 @@ export default function ReadTab({
               ))}
             </div>
           ) : (
-            <p className="font-hand text-[13px] text-fg-faint">
+            <p className="font-hand text-note text-fg-faint">
               no quotes saved yet
             </p>
           )}
@@ -306,7 +306,7 @@ export default function ReadTab({
       <div>
         {/* Book details */}
         <div className="book-surface p-5 mb-3.5">
-          <p className="book-card-heading text-[15px]">Book details</p>
+          <p className="book-card-heading text-body-md">Book details</p>
           {metaRows.map((row) => (
             <div key={row.key} className="meta-row">
               <span className="text-ink-light font-medium font-sans">
@@ -326,10 +326,10 @@ export default function ReadTab({
         {/* Reading sessions count */}
         {entry.thoughts.length > 0 && (
           <div className="book-surface p-5 mb-3.5">
-            <p className="font-sans text-[11px] font-bold tracking-[0.08em] uppercase text-ink-light mb-2.5">
+            <p className="font-sans text-caption font-bold tracking-caps uppercase text-ink-light mb-2.5">
               Reading sessions
             </p>
-            <p className="font-serif text-[28px] font-bold text-plum">
+            <p className="font-serif text-display font-bold text-plum">
               {entry.thoughts.length}
             </p>
             <p className="font-hand text-xs text-terra mt-0.5">
@@ -337,7 +337,7 @@ export default function ReadTab({
             </p>
             <button
               onClick={() => setActiveTab("timeline")}
-              className="mt-3 text-[11px] text-sage font-semibold font-sans bg-[var(--bg-sage-18)] border-none rounded-full px-3 py-[5px] cursor-pointer"
+              className="mt-3 text-caption text-sage font-semibold font-sans bg-sage-18 border-none rounded-full px-3 py-[5px] cursor-pointer"
             >
               view timeline →
             </button>
@@ -369,7 +369,7 @@ export default function ReadTab({
                 <div className="mt-1 space-y-2 border-t border-stone-100 pt-3">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-[9px] uppercase tracking-widest text-ink-light font-semibold block mb-0.5">
+                      <label className="text-label uppercase tracking-widest text-ink-light font-semibold block mb-0.5">
                         Started
                       </label>
                       <input
@@ -381,11 +381,11 @@ export default function ReadTab({
                             dateStarted: e.target.value,
                           }))
                         }
-                        className="text-[11px] bg-transparent border-b border-stone-200 focus:border-plum outline-none w-full pb-0.5 text-[var(--fg)]"
+                        className="text-caption bg-transparent border-b border-stone-200 focus:border-plum outline-none w-full pb-0.5 text-fg"
                       />
                     </div>
                     <div>
-                      <label className="text-[9px] uppercase tracking-widest text-ink-light font-semibold block mb-0.5">
+                      <label className="text-label uppercase tracking-widest text-ink-light font-semibold block mb-0.5">
                         Finished
                       </label>
                       <input
@@ -397,12 +397,12 @@ export default function ReadTab({
                             dateFinished: e.target.value,
                           }))
                         }
-                        className="text-[11px] bg-transparent border-b border-stone-200 focus:border-plum outline-none w-full pb-0.5 text-[var(--fg)]"
+                        className="text-caption bg-transparent border-b border-stone-200 focus:border-plum outline-none w-full pb-0.5 text-fg"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="text-[9px] uppercase tracking-widest text-ink-light font-semibold block mb-1">
+                    <label className="text-label uppercase tracking-widest text-ink-light font-semibold block mb-1">
                       Rating
                     </label>
                     <div className="flex gap-1">
@@ -417,7 +417,7 @@ export default function ReadTab({
                           }
                           className={`text-sm transition-colors ${
                             n <= logDraft.rating
-                              ? "text-[var(--gold)]"
+                              ? "text-gold"
                               : "text-stone-200 hover:text-stone-300"
                           }`}
                         >
@@ -427,7 +427,7 @@ export default function ReadTab({
                     </div>
                   </div>
                   <div>
-                    <label className="text-[9px] uppercase tracking-widest text-ink-light font-semibold block mb-0.5">
+                    <label className="text-label uppercase tracking-widest text-ink-light font-semibold block mb-0.5">
                       Notes
                     </label>
                     <input
@@ -440,7 +440,7 @@ export default function ReadTab({
                         }))
                       }
                       placeholder="a quick note..."
-                      className="text-[11px] bg-transparent border-b border-stone-200 focus:border-plum outline-none w-full pb-0.5 placeholder:text-stone-300 text-[var(--fg)]"
+                      className="text-caption bg-transparent border-b border-stone-200 focus:border-plum outline-none w-full pb-0.5 placeholder:text-stone-300 text-fg"
                     />
                   </div>
                   <div className="flex gap-3 pt-1">
@@ -450,7 +450,7 @@ export default function ReadTab({
                         logSaving ||
                         (!logDraft.dateFinished && !logDraft.dateStarted)
                       }
-                      className="text-xs text-white bg-[var(--plum)] px-3 py-1 rounded-full disabled:opacity-40 hover:opacity-85 transition-opacity"
+                      className="text-xs text-white bg-plum px-3 py-1 rounded-full disabled:opacity-40 hover:opacity-85 transition-opacity"
                     >
                       {logSaving ? "saving..." : "save"}
                     </button>

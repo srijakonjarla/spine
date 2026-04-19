@@ -27,7 +27,7 @@ export function ProgressBar({
 
   return (
     <div
-      className={`${h} rounded-full overflow-hidden bg-[var(--border)] ${className}`}
+      className={`${h} rounded-full overflow-hidden bg-edge ${className}`}
     >
       <div
         style={{ width: `${pct}%` }}

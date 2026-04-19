@@ -134,10 +134,10 @@ export default function ListDetailPage() {
   if (loading)
     return (
       <div className="page animate-pulse">
-        <div className="h-48 bg-[var(--bg-hover)] mb-8" />
+        <div className="h-48 bg-hover mb-8" />
         <div className="page-content space-y-2.5">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-10 bg-[var(--bg-hover)] rounded-lg" />
+            <div key={i} className="h-10 bg-hover rounded-lg" />
           ))}
         </div>
       </div>
@@ -168,7 +168,7 @@ export default function ListDetailPage() {
       <div className="px-8 pt-5 flex items-center justify-between">
         <Link
           href={`/${year}/lists`}
-          className="text-xs text-[var(--fg-muted)] hover:text-[var(--fg-heading)] transition-colors"
+          className="text-xs text-fg-muted hover:text-fg-heading transition-colors"
         >
           ← lists
         </Link>
@@ -188,7 +188,7 @@ export default function ListDetailPage() {
         style={coverGradientStyle(list.color)}
       >
         <div className="absolute bottom-0 right-0 w-44 h-44 rounded-full pointer-events-none translate-x-1/2 translate-y-1/2 [background:var(--cover-glow-orb)]" />
-        <p className="flex items-center gap-1.5 font-[family-name:var(--font-caveat)] text-sm mb-1 relative z-10 text-white/55">
+        <p className="flex items-center gap-1.5 font-hand text-sm mb-1 relative z-10 text-white/55">
           <TypeIcon size={14} />
           {LIST_TYPE_LABELS[list.listType] ?? "list"}
         </p>
@@ -203,7 +203,7 @@ export default function ListDetailPage() {
           placeholder="list title"
           className="w-full font-serif text-3xl font-bold italic text-white bg-transparent border-none outline-none mb-1 relative z-10 placeholder:text-white/40 leading-snug"
         />
-        <p className="font-[family-name:var(--font-caveat)] text-sm relative z-10 text-white/60">
+        <p className="font-hand text-sm relative z-10 text-white/60">
           {list.items.length} {itemLabel}
           {list.description ? ` · ${list.description}` : ""}
         </p>

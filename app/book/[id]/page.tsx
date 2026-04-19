@@ -336,7 +336,7 @@ export default function BookPage() {
         >
           {/* Decorative orb */}
           <div
-            className="absolute -top-[60px] -right-[60px] w-[240px] h-[240px] rounded-full pointer-events-none"
+            className="absolute -top-15 -right-15 w-60 h-60 rounded-full pointer-events-none"
             style={{
               background:
                 "radial-gradient(circle, rgba(212,168,67,0.18), transparent 70%)",
@@ -355,7 +355,7 @@ export default function BookPage() {
 
           {/* Save state + bookmark */}
           <div className="absolute top-3.5 right-5 z-10 flex items-center gap-3">
-            <span className="text-[11px] text-white/40 font-sans">
+            <span className="text-caption text-white/40 font-sans">
               {saveState === "saving"
                 ? "saving..."
                 : saveState === "saved"
@@ -365,7 +365,7 @@ export default function BookPage() {
             <button
               onClick={() => update({ upNext: !entry.upNext })}
               title={entry.upNext ? "Remove from up next" : "Add to up next"}
-              className={`text-[11px] font-sans px-2.5 py-1 rounded-full border transition-colors ${
+              className={`text-caption font-sans px-2.5 py-1 rounded-full border transition-colors ${
                 entry.upNext
                   ? "bg-gold/20 border-gold/50 text-gold"
                   : "border-white/20 text-white/40 hover:text-white/70 hover:border-white/40"
@@ -386,18 +386,18 @@ export default function BookPage() {
               <img
                 src={entry.coverUrl}
                 alt={entry.title}
-                className="w-[180px] rounded-lg block object-cover aspect-[2/3]"
+                className="w-45 rounded-lg block object-cover aspect-[2/3]"
                 style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.45)" }}
               />
             ) : (
               <div
-                className="w-[180px] aspect-[2/3] rounded-lg bg-white/10 flex flex-col justify-end p-4"
+                className="w-45 aspect-[2/3] rounded-lg bg-white/10 flex flex-col justify-end p-4"
                 style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.45)" }}
               >
-                <p className="font-serif text-[15px] italic text-white/80 leading-[1.3] mb-1.5">
+                <p className="font-serif text-body-md italic text-white/80 leading-[1.3] mb-1.5">
                   {entry.title}
                 </p>
-                <p className="text-[10px] text-white/45 font-sans">
+                <p className="text-detail text-white/45 font-sans">
                   {entry.author}
                 </p>
               </div>
@@ -407,12 +407,12 @@ export default function BookPage() {
           {/* Info */}
           <div className="flex flex-col justify-center relative z-[1] pt-6">
             <h1
-              className="font-serif font-bold text-[var(--white)] leading-[1.05] mb-1 tracking-tight"
+              className="font-serif font-bold text-white leading-[1.05] mb-1 tracking-tight"
               style={{ fontSize: "clamp(26px, 3.5vw, 38px)" }}
             >
               {entry.title}
             </h1>
-            <p className="font-serif text-[15px] italic text-white/55 mb-[18px]">
+            <p className="font-serif text-body-md italic text-white/55 mb-[18px]">
               by {entry.author}
             </p>
 
@@ -580,12 +580,12 @@ export default function BookPage() {
             {/* Page / quote counts */}
             <div className="flex gap-4 mt-3 items-center flex-wrap">
               {(entry.pageCount ?? 0) > 0 && (
-                <span className="text-[11px] text-white/40 font-sans">
+                <span className="text-caption text-white/40 font-sans">
                   📖 {entry.pageCount} pages
                 </span>
               )}
               {quotes.length > 0 && (
-                <span className="text-[11px] text-white/40 font-sans">
+                <span className="text-caption text-white/40 font-sans">
                   💬 {quotes.length} quote{quotes.length !== 1 ? "s" : ""}
                 </span>
               )}
@@ -595,17 +595,17 @@ export default function BookPage() {
 
         {/* ── Read selector (shown when re-reads exist) ── */}
         {entry.reads.length > 0 && (
-          <div className="bg-[var(--bg-plum-trace)] border-b border-[var(--border-light)] px-10 py-2.5 flex items-center gap-2">
-            <span className="text-[10px] text-ink-light font-sans uppercase tracking-widest mr-1">
+          <div className="bg-plum-trace border-b border-line px-10 py-2.5 flex items-center gap-2">
+            <span className="text-detail text-ink-light font-sans uppercase tracking-widest mr-1">
               Read
             </span>
             {[...entry.reads].map((read, i) => (
               <button
                 key={read.id}
                 onClick={() => setSelectedReadId(read.id)}
-                className={`text-[11px] font-sans px-3 py-1 rounded-full border transition-colors ${
+                className={`text-caption font-sans px-3 py-1 rounded-full border transition-colors ${
                   selectedReadId === read.id
-                    ? "bg-[var(--plum)] border-[var(--plum)] text-white"
+                    ? "bg-plum border-plum text-white"
                     : "border-stone-200 text-stone-400 hover:border-stone-300 hover:text-stone-600"
                 }`}
               >
@@ -622,9 +622,9 @@ export default function BookPage() {
             ))}
             <button
               onClick={() => setSelectedReadId(null)}
-              className={`text-[11px] font-sans px-3 py-1 rounded-full border transition-colors ${
+              className={`text-caption font-sans px-3 py-1 rounded-full border transition-colors ${
                 selectedReadId === null
-                  ? "bg-[var(--plum)] border-[var(--plum)] text-white"
+                  ? "bg-plum border-plum text-white"
                   : "border-stone-200 text-stone-400 hover:border-stone-300 hover:text-stone-600"
               }`}
             >
@@ -635,7 +635,7 @@ export default function BookPage() {
               <button
                 onClick={handleReread}
                 disabled={rereadLoading}
-                className="text-[11px] font-sans text-stone-400 hover:text-stone-700 transition-colors disabled:opacity-50"
+                className="text-caption font-sans text-stone-400 hover:text-stone-700 transition-colors disabled:opacity-50"
               >
                 {rereadLoading ? "starting..." : "↺ start a re-read"}
               </button>
@@ -644,7 +644,7 @@ export default function BookPage() {
         )}
 
         {/* ── Sticky tabs ── */}
-        <div className="sticky top-0 z-20 bg-cream border-b border-[var(--border-light)] shadow-[0_2px_8px_var(--border-light)] flex gap-1 px-10">
+        <div className="sticky top-0 z-20 bg-cream border-b border-line shadow-[0_2px_8px_var(--border-light)] flex gap-1 px-10">
           {tabs.map((tab) => (
             <button
               key={tab.id}

@@ -38,12 +38,12 @@ function TagInput({
         {tags.map((t) => (
           <span
             key={t}
-            className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[var(--bg-hover)] text-[var(--fg)]"
+            className="inline-flex items-center gap-1 text-caption px-2 py-0.5 rounded-full bg-hover text-fg"
           >
             {t}
             <button
               onClick={() => onRemove(t)}
-              className="text-[var(--fg-faint)] hover:text-[var(--fg)] leading-none"
+              className="text-fg-faint hover:text-fg leading-none"
             >
               ×
             </button>
@@ -85,14 +85,14 @@ export default function DetailsTab() {
         {/* Left: edit fields */}
         <div className="space-y-5">
           <div className="book-surface p-7">
-            <p className="book-card-heading text-[15px]">Edit details</p>
+            <p className="book-card-heading text-body-md">Edit details</p>
 
             <label className="detail-field-label">Title</label>
             <input
               type="text"
               value={entry.title}
               onChange={(e) => onUpdate({ title: e.target.value })}
-              className="underline-input font-serif text-[15px] mb-4"
+              className="underline-input font-serif text-body-md mb-4"
             />
 
             <label className="detail-field-label">Author</label>
@@ -107,7 +107,7 @@ export default function DetailsTab() {
             {entry.publisher && (
               <>
                 <label className="detail-field-label">Publisher</label>
-                <p className="text-sm text-[var(--fg-muted)] mb-4">
+                <p className="text-sm text-fg-muted mb-4">
                   {entry.publisher}
                 </p>
               </>
@@ -117,7 +117,7 @@ export default function DetailsTab() {
             {entry.audioDurationMinutes != null && (
               <>
                 <label className="detail-field-label">Audio duration</label>
-                <p className="text-sm text-[var(--fg-muted)] mb-4">
+                <p className="text-sm text-fg-muted mb-4">
                   {fmtHours(entry.audioDurationMinutes)}
                 </p>
               </>
@@ -125,7 +125,7 @@ export default function DetailsTab() {
           </div>
 
           <div className="book-surface p-7">
-            <p className="book-card-heading text-[15px]">Format</p>
+            <p className="book-card-heading text-body-md">Format</p>
             <label className="detail-field-label">Edition type</label>
             <select
               value={entry.format}
@@ -138,14 +138,14 @@ export default function DetailsTab() {
                 </option>
               ))}
             </select>
-            <p className="text-[11px] text-[var(--fg-faint)]">
+            <p className="text-caption text-fg-faint">
               Library checkouts and acquisition source are tracked via your
               lists.
             </p>
           </div>
 
           <div className="book-surface p-7">
-            <p className="book-card-heading text-[15px]">Diversity tags</p>
+            <p className="book-card-heading text-body-md">Diversity tags</p>
 
             {/* Catalog-sourced tags from Hardcover (read-only) */}
             {(() => {
@@ -154,14 +154,14 @@ export default function DetailsTab() {
               );
               return catalogTags.length > 0 ? (
                 <div className="mb-3">
-                  <p className="text-[10px] text-[var(--fg-faint)] mb-1.5 uppercase tracking-wide">
+                  <p className="text-detail text-fg-faint mb-1.5 uppercase tracking-wide">
                     from hardcover
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {catalogTags.map((t) => (
                       <span
                         key={t}
-                        className="text-[11px] px-2 py-0.5 rounded-full bg-[var(--bg-hover)] text-[var(--fg-muted)]"
+                        className="text-caption px-2 py-0.5 rounded-full bg-hover text-fg-muted"
                       >
                         {t}
                       </span>
@@ -171,7 +171,7 @@ export default function DetailsTab() {
               ) : null;
             })()}
 
-            <p className="text-[11px] text-[var(--fg-faint)] mb-2">
+            <p className="text-caption text-fg-faint mb-2">
               Add your own — author identity, own voices, translated, etc.
             </p>
             <TagInput
@@ -203,7 +203,7 @@ export default function DetailsTab() {
         <div>
           {entry.reads.length > 0 && (
             <div className="book-surface p-5 mb-3.5">
-              <p className="book-card-heading text-[15px]">Read history</p>
+              <p className="book-card-heading text-body-md">Read history</p>
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-stone-500">
@@ -257,7 +257,7 @@ export default function DetailsTab() {
           )}
 
           <div className="book-surface p-5">
-            <p className="text-[11px] text-fg-faint font-sans mb-3">
+            <p className="text-caption text-fg-faint font-sans mb-3">
               Updated{" "}
               {new Date(entry.updatedAt).toLocaleDateString("en-US", {
                 month: "short",

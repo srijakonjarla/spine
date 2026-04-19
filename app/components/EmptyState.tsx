@@ -3,5 +3,5 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ message }: EmptyStateProps) {
-  return <p className="text-xs text-[var(--fg-faint)]">{message}</p>;
+  return <p className="text-xs text-fg-faint">{message}</p>;
 }

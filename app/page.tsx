@@ -53,7 +53,7 @@ function StreakBars({
           ? isToday
             ? "bg-sage"
             : "bg-[var(--bg-sage-60)]"
-          : "bg-[var(--bg-plum-mid)]";
+          : "bg-plum-mid";
         return (
           <div
             key={dateStr}
@@ -158,24 +158,24 @@ export default function Home() {
     return (
       <div className="page">
         <div className="page-content animate-pulse">
-          <div className="h-5 w-36 bg-[var(--bg-hover)] rounded mb-1.5" />
-          <div className="h-3.5 w-48 bg-[var(--bg-hover)] rounded mb-8" />
+          <div className="h-5 w-36 bg-hover rounded mb-1.5" />
+          <div className="h-3.5 w-48 bg-hover rounded mb-8" />
           <div className="grid grid-cols-3 gap-3 mb-8">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-[var(--bg-hover)] rounded-xl" />
+              <div key={i} className="h-16 bg-hover rounded-xl" />
             ))}
           </div>
           <div className="flex gap-3 mb-8">
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="w-14 aspect-[2/3] bg-[var(--bg-hover)] rounded"
+                className="w-14 aspect-[2/3] bg-hover rounded"
               />
             ))}
           </div>
           <div className="space-y-2.5">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-20 bg-[var(--bg-hover)] rounded-xl" />
+              <div key={i} className="h-20 bg-hover rounded-xl" />
             ))}
           </div>
         </div>
@@ -187,11 +187,11 @@ export default function Home() {
       <div className="page-content">
         {/* Greeting */}
         <div className="mb-8">
-          <p className="font-[family-name:var(--font-playfair)] text-3xl font-semibold tracking-tight text-[var(--fg-heading)]">
+          <p className="font-serif text-3xl font-semibold tracking-tight text-fg-heading">
             {greeting()}
             {name ? `, ${name}` : ""}.
           </p>
-          <p className="font-[family-name:var(--font-caveat)] text-[17px] mt-1 text-terra">
+          <p className="font-hand text-subhead mt-1 text-terra">
             {todayLabel}
             {streak >= 2 && (
               <>
@@ -216,15 +216,15 @@ export default function Home() {
                 href={`/book/${book.id}`}
                 className="block group mb-3"
               >
-                <div className="p-4 rounded-2xl transition-opacity group-hover:opacity-90 bg-[var(--bg-surface)] border border-[var(--border-light)]">
-                  <p className="text-[9px] font-bold uppercase tracking-[0.12em] mb-1.5 text-[var(--fg-faint)]">
+                <div className="p-4 rounded-2xl transition-opacity group-hover:opacity-90 bg-surface border border-line">
+                  <p className="text-label font-bold uppercase tracking-label mb-1.5 text-fg-faint">
                     currently reading
                   </p>
-                  <p className="text-[15px] font-semibold leading-snug font-serif text-[var(--fg-heading)]">
+                  <p className="text-body-md font-semibold leading-snug font-serif text-fg-heading">
                     {book.title}
                   </p>
                   {book.author && (
-                    <p className="text-xs mt-0.5 text-[var(--fg-muted)]">
+                    <p className="text-xs mt-0.5 text-fg-muted">
                       {book.author}
                     </p>
                   )}
@@ -244,34 +244,34 @@ export default function Home() {
         {/* Three index cards */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           {/* Streak card */}
-          <div className="rounded-2xl p-4 bg-[var(--bg-surface)] border border-[var(--border-light)]">
-            <p className="text-[9px] font-bold uppercase tracking-[0.12em] mb-3 text-[var(--fg-faint)]">
+          <div className="rounded-2xl p-4 bg-surface border border-line">
+            <p className="text-label font-bold uppercase tracking-label mb-3 text-fg-faint">
               reading streak
             </p>
             <StreakBars loggedDates={loggedDates} days={14} />
-            <p className="font-[family-name:var(--font-playfair)] text-[22px] font-bold mt-2 leading-none text-[var(--fg-heading)]">
+            <p className="font-serif text-title font-bold mt-2 leading-none text-fg-heading">
               {streak}
             </p>
-            <p className="text-[9px] mt-0.5 font-semibold uppercase tracking-[0.08em] text-[var(--fg-faint)]">
+            <p className="text-label mt-0.5 font-semibold uppercase tracking-caps text-fg-faint">
               {streak === 1 ? "day" : "days"}
             </p>
           </div>
 
           {/* Year goal card */}
-          <div className="rounded-2xl p-4 bg-[var(--bg-surface)] border border-[var(--border-light)]">
-            <p className="text-[9px] font-bold uppercase tracking-[0.12em] mb-2 text-[var(--fg-faint)]">
+          <div className="rounded-2xl p-4 bg-surface border border-line">
+            <p className="text-label font-bold uppercase tracking-label mb-2 text-fg-faint">
               {CURRENT_YEAR} goal
             </p>
             {goalTarget > 0 ? (
               <>
-                <p className="font-[family-name:var(--font-playfair)] text-[17px] font-bold leading-tight mb-2 text-[var(--fg-heading)]">
+                <p className="font-serif text-subhead font-bold leading-tight mb-2 text-fg-heading">
                   {finishedThisYear} / {goalTarget}
-                  <span className="text-[11px] font-normal ml-1 text-[var(--fg-muted)]">
+                  <span className="text-caption font-normal ml-1 text-fg-muted">
                     books
                   </span>
                 </p>
                 <ProgressBar value={goalProgress} className="mb-2" />
-                <p className="font-[family-name:var(--font-caveat)] text-[13px] text-sage">
+                <p className="font-hand text-note text-sage">
                   {goalProgress >= 1 ? (
                     <>
                       goal reached{" "}
@@ -300,7 +300,7 @@ export default function Home() {
             ) : (
               <Link
                 href={`/${CURRENT_YEAR}/goal`}
-                className="text-xs hover:opacity-70 transition-opacity text-[var(--fg-faint)]"
+                className="text-xs hover:opacity-70 transition-opacity text-fg-faint"
               >
                 set a goal →
               </Link>
@@ -310,33 +310,33 @@ export default function Home() {
           {/* Shelf snapshot card */}
           <Link
             href="/library"
-            className="block group rounded-2xl p-4 bg-[var(--bg-surface)] border border-[var(--border-light)] transition-opacity group-hover:opacity-90"
+            className="block group rounded-2xl p-4 bg-surface border border-line transition-opacity group-hover:opacity-90"
           >
-            <p className="text-[9px] font-bold uppercase tracking-[0.12em] mb-3 text-[var(--fg-faint)]">
+            <p className="text-label font-bold uppercase tracking-label mb-3 text-fg-faint">
               your shelf
             </p>
             <div className="space-y-2.5">
               <div className="flex items-baseline justify-between">
-                <span className="font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)]">
+                <span className="font-hand text-note text-fg-muted">
                   reading
                 </span>
-                <span className="font-[family-name:var(--font-playfair)] text-[15px] font-bold text-terra">
+                <span className="font-serif text-body-md font-bold text-terra">
                   {reading.length}
                 </span>
               </div>
               <div className="flex items-baseline justify-between">
-                <span className="font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)]">
+                <span className="font-hand text-note text-fg-muted">
                   {CURRENT_YEAR}
                 </span>
-                <span className="font-[family-name:var(--font-playfair)] text-[15px] font-bold text-sage">
+                <span className="font-serif text-body-md font-bold text-sage">
                   {finishedThisYear}
                 </span>
               </div>
               <div className="flex items-baseline justify-between">
-                <span className="font-[family-name:var(--font-caveat)] text-[13px] text-[var(--fg-muted)]">
+                <span className="font-hand text-note text-fg-muted">
                   want to read
                 </span>
-                <span className="font-[family-name:var(--font-playfair)] text-[15px] font-bold text-[var(--fg-muted)]">
+                <span className="font-serif text-body-md font-bold text-fg-muted">
                   {wantToRead}
                 </span>
               </div>
@@ -347,7 +347,7 @@ export default function Home() {
         {/* Recent log entries with notes */}
         {recentEntries.length > 0 && (
           <div className="mb-8">
-            <p className="font-[family-name:var(--font-caveat)] text-sm mb-3 text-[var(--fg-muted)]">
+            <p className="font-hand text-sm mb-3 text-fg-muted">
               recent entries
             </p>
             <div className="space-y-2.5">
@@ -362,17 +362,17 @@ export default function Home() {
                     className="block group"
                   >
                     <div
-                      className={`rounded-xl px-4 py-3 transition-opacity group-hover:opacity-90 bg-[var(--bg-surface)] border border-[var(--border-light)] border-l-[3px] ${
+                      className={`rounded-xl px-4 py-3 transition-opacity group-hover:opacity-90 bg-surface border border-line border-l-[3px] ${
                         isFinishDay ? "border-l-terra" : "border-l-sage"
                       }`}
                     >
                       <p
-                        className={`text-[10px] font-semibold mb-1.5 ${isFinishDay ? "text-terra" : "text-sage"}`}
+                        className={`text-detail font-semibold mb-1.5 ${isFinishDay ? "text-terra" : "text-sage"}`}
                       >
                         {formatLogDate(entry.logDate)}
                         {isFinishDay ? " · ✦ Finished!" : ""}
                       </p>
-                      <p className="text-[13px] leading-relaxed line-clamp-3 text-[var(--fg)] font-serif">
+                      <p className="text-note leading-relaxed line-clamp-3 text-fg font-serif">
                         {entry.note}
                       </p>
                     </div>
@@ -399,13 +399,13 @@ export default function Home() {
                   <Link
                     key={book.id}
                     href={`/book/${book.id}`}
-                    className="flex items-baseline gap-3 py-1.5 -mx-1 px-1 rounded-lg hover:bg-[var(--bg-plum-trace)] transition-colors group"
+                    className="flex items-baseline gap-3 py-1.5 -mx-1 px-1 rounded-lg hover:bg-plum-trace transition-colors group"
                   >
-                    <p className="text-sm flex-1 truncate group-hover:opacity-70 transition-opacity text-[var(--fg)]">
+                    <p className="text-sm flex-1 truncate group-hover:opacity-70 transition-opacity text-fg">
                       {book.title}
                     </p>
                     {book.author && (
-                      <p className="text-xs shrink-0 hidden sm:block truncate text-[var(--fg-faint)]">
+                      <p className="text-xs shrink-0 hidden sm:block truncate text-fg-faint">
                         {book.author}
                       </p>
                     )}
@@ -426,7 +426,7 @@ export default function Home() {
         )}
 
         {/* Footer links */}
-        <div className="pt-5 border-t border-[var(--border-light)] flex flex-wrap gap-x-5 gap-y-1.5">
+        <div className="pt-5 border-t border-line flex flex-wrap gap-x-5 gap-y-1.5">
           <Link href="/library" className="back-link">
             library →
           </Link>

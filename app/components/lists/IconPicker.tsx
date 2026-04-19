@@ -19,8 +19,8 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
             onClick={() => onChange(name)}
             className={`w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${
               value === name
-                ? "bg-[var(--bg-selected)] text-[var(--fg-heading)]"
-                : "text-[var(--fg-muted)] hover:bg-[var(--bg-subtle)]"
+                ? "bg-selected text-fg-heading"
+                : "text-fg-muted hover:bg-subtle"
             }`}
           >
             <IconComp size={18} />

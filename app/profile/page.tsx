@@ -154,18 +154,18 @@ function GoodreadsImport() {
       : 0;
     return (
       <div className="space-y-3 max-w-sm">
-        <p className="text-xs text-[var(--fg-muted)] animate-pulse">
+        <p className="text-xs text-fg-muted animate-pulse">
           importing in the background — you can navigate away
         </p>
         {progress && (
           <>
-            <p className="text-xs text-[var(--fg-faint)]">
+            <p className="text-xs text-fg-faint">
               {progress.processed} / {progress.total} books · {pct}%
             </p>
-            <div className="w-full h-0.5 bg-[var(--border-light)] rounded-full overflow-hidden">
+            <div className="w-full h-0.5 bg-line rounded-full overflow-hidden">
               <div
                 style={{ width: `${pct}%` }}
-                className="h-full bg-[var(--sage)] transition-all duration-500"
+                className="h-full bg-sage transition-all duration-500"
               />
             </div>
           </>
@@ -182,7 +182,7 @@ function GoodreadsImport() {
         </p>
         <button
           onClick={reset}
-          className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
+          className="text-xs text-fg-faint hover:text-fg-muted transition-colors"
         >
           import again
         </button>
@@ -198,7 +198,7 @@ function GoodreadsImport() {
         </p>
         <button
           onClick={reset}
-          className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
+          className="text-xs text-fg-faint hover:text-fg-muted transition-colors"
         >
           try again
         </button>
@@ -209,39 +209,39 @@ function GoodreadsImport() {
   if (state === "preview") {
     return (
       <div className="max-w-sm">
-        <div className="mb-4 p-4 bg-[var(--bg-surface)] border border-[var(--border-light)] rounded-lg space-y-1">
-          <p className="text-xs text-[var(--fg-muted)]">
-            <span className="font-semibold text-[var(--fg-heading)]">
+        <div className="mb-4 p-4 bg-surface border border-line rounded-lg space-y-1">
+          <p className="text-xs text-fg-muted">
+            <span className="font-semibold text-fg-heading">
               {previews.length}
             </span>{" "}
             books found
           </p>
-          <p className="text-xs text-[var(--fg-faint)]">
+          <p className="text-xs text-fg-faint">
             · {finishedCount} finished
           </p>
           {dnfCount > 0 && (
-            <p className="text-xs text-[var(--fg-faint)]">
+            <p className="text-xs text-fg-faint">
               · {dnfCount} did not finish
             </p>
           )}
-          <p className="text-xs text-[var(--fg-faint)]">
+          <p className="text-xs text-fg-faint">
             · {readingCount} currently reading
           </p>
-          <p className="text-xs text-[var(--fg-faint)]">
+          <p className="text-xs text-fg-faint">
             · {wantCount} want to read
           </p>
         </div>
         <div className="space-y-0.5 mb-6 max-h-60 overflow-y-auto">
           {previews.map(({ entry }) => (
             <div key={entry.id} className="flex items-baseline gap-3 py-0.5">
-              <span className="text-xs text-[var(--fg-faint)]">·</span>
-              <span className="text-sm text-[var(--fg)] truncate flex-1">
+              <span className="text-xs text-fg-faint">·</span>
+              <span className="text-sm text-fg truncate flex-1">
                 {entry.title}
               </span>
-              <span className="text-xs text-[var(--fg-muted)] shrink-0">
+              <span className="text-xs text-fg-muted shrink-0">
                 {entry.author}
               </span>
-              <span className="text-xs text-[var(--fg-faint)] shrink-0">
+              <span className="text-xs text-fg-faint shrink-0">
                 {STATUS_LABEL[entry.status]}
               </span>
             </div>
@@ -253,7 +253,7 @@ function GoodreadsImport() {
           </button>
           <button
             onClick={reset}
-            className="text-sm text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors px-4 py-2"
+            className="text-sm text-fg-faint hover:text-fg-muted transition-colors px-4 py-2"
           >
             cancel
           </button>
@@ -264,12 +264,12 @@ function GoodreadsImport() {
 
   return (
     <div>
-      <p className="text-xs text-[var(--fg-faint)] mb-4">
+      <p className="text-xs text-fg-faint mb-4">
         Export your library from Goodreads (My Books → Export Library) then
         upload the CSV. Runs in the background — you can navigate away once
         started.
         {alreadyImported && (
-          <span className="text-[var(--fg-faint)] ml-2">
+          <span className="text-fg-faint ml-2">
             · previously imported
           </span>
         )}
@@ -283,7 +283,7 @@ function GoodreadsImport() {
       />
       <button
         onClick={() => fileRef.current?.click()}
-        className="text-sm border border-[var(--border-light)] rounded-lg px-4 py-2.5 text-[var(--fg-muted)] hover:border-[var(--fg-muted)] hover:text-[var(--fg)] transition-colors"
+        className="text-sm border border-line rounded-lg px-4 py-2.5 text-fg-muted hover:border-fg-muted hover:text-fg transition-colors"
       >
         choose CSV file
       </button>
@@ -344,11 +344,11 @@ function EnrichLibrary() {
 
   return (
     <div>
-      <p className="text-xs text-[var(--fg-faint)] mb-4">
+      <p className="text-xs text-fg-faint mb-4">
         Fills in covers, page counts, ISBNs, and genres using Hardcover. Runs in
         the background — you can navigate away.
         {remaining !== null && remaining > 0 && (
-          <span className="ml-2 text-[var(--fg-muted)]">
+          <span className="ml-2 text-fg-muted">
             · {remaining} books still need enrichment
           </span>
         )}
@@ -357,7 +357,7 @@ function EnrichLibrary() {
       {state === "idle" && (
         <button
           onClick={start}
-          className="text-sm border border-[var(--border-light)] rounded-lg px-4 py-2.5 text-[var(--fg-muted)] hover:border-[var(--fg-muted)] hover:text-[var(--fg)] transition-colors"
+          className="text-sm border border-line rounded-lg px-4 py-2.5 text-fg-muted hover:border-fg-muted hover:text-fg transition-colors"
         >
           enrich library metadata
         </button>
@@ -365,12 +365,12 @@ function EnrichLibrary() {
 
       {state === "running" && (
         <div className="space-y-2">
-          <p className="text-xs text-[var(--fg-muted)] animate-pulse">
+          <p className="text-xs text-fg-muted animate-pulse">
             enriching{total ? ` ${total} books` : ""}… running in the background
           </p>
           <button
             onClick={checkProgress}
-            className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
+            className="text-xs text-fg-faint hover:text-fg-muted transition-colors"
           >
             check progress
           </button>
@@ -379,7 +379,7 @@ function EnrichLibrary() {
 
       {state === "done" && (
         <div className="space-y-2">
-          <p className="text-xs text-[var(--sage)]">
+          <p className="text-xs text-sage">
             {total === 0
               ? "All books are already enriched."
               : `Done — ${total} book${total === 1 ? "" : "s"} enriched.`}
@@ -390,7 +390,7 @@ function EnrichLibrary() {
               setTotal(null);
               setRemaining(null);
             }}
-            className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
+            className="text-xs text-fg-faint hover:text-fg-muted transition-colors"
           >
             run again
           </button>
@@ -404,7 +404,7 @@ function EnrichLibrary() {
           </p>
           <button
             onClick={() => setState("idle")}
-            className="text-xs text-[var(--fg-faint)] hover:text-[var(--fg-muted)] transition-colors"
+            className="text-xs text-fg-faint hover:text-fg-muted transition-colors"
           >
             try again
           </button>
@@ -512,7 +512,7 @@ export default function ProfilePage() {
     <div className="page">
       <div className="page-content">
         <div className="mb-10 pb-8 border-b border-stone-200">
-          <h1 className="font-[family-name:var(--font-playfair)] text-3xl font-semibold text-[var(--fg-heading)] tracking-tight">
+          <h1 className="font-serif text-3xl font-semibold text-fg-heading tracking-tight">
             profile & settings
           </h1>
           {user?.email && (

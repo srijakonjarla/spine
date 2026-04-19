@@ -63,7 +63,7 @@ export default function RootLayout({
           <AuthProvider>
             <NavigationProvider>
               <Nav />
-              <div className="pt-14 lg:pl-[220px]">{children}</div>
+              <div className="pt-14 lg:pl-55">{children}</div>
               <Toaster />
             </NavigationProvider>
           </AuthProvider>
