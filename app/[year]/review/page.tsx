@@ -127,7 +127,7 @@ function RatingBar({
 // ─── Main page ────────────────────────────────────────────────────
 
 export default function YearReviewPage() {
-  const { year, loading, allEntries, finishedBooks, loggedDates, lists } =
+  const { year, loading, allEntries, yearEntries, finishedBooks, loggedDates, lists } =
     useYear();
 
   // ── Library checkouts from library_loan lists ────────────────────
@@ -159,10 +159,7 @@ export default function YearReviewPage() {
   }, [lists]);
 
   // ── Core stats ──────────────────────────────────────────────────
-  const isAudio = (b: BookEntry) =>
-    b.format === "audiobook" ||
-    b.format === "library audiobook" ||
-    (b.audioDurationMinutes ?? 0) > 0;
+  const isAudio = (b: BookEntry) => b.format === "audiobook";
 
   const printBooks = finishedBooks.filter((b) => !isAudio(b));
   const audioBooks = finishedBooks.filter(isAudio);
@@ -173,19 +170,21 @@ export default function YearReviewPage() {
     0,
   );
 
+  const printMissingPages = uniqueById(
+    printBooks.filter((b) => !b.pageCount),
+  );
+  const audioMissingHours = uniqueById(
+    audioBooks.filter((b) => !b.audioDurationMinutes),
+  );
+
   const libraryFinished = finishedBooks.filter((b) => libraryBookIds.has(b.id));
 
   // Re-reads: finished this year and had prior reads archived
   const rereads = finishedBooks.filter((b) => b.reads.length > 0);
   const uniqueRereads = uniqueById(rereads);
 
-  // DNFs this year
-  const dnfs = allEntries.filter(
-    (b) =>
-      b.status === "did-not-finish" &&
-      (b.dateShelved?.startsWith(`${year}`) ||
-        b.dateStarted?.startsWith(`${year}`)),
-  );
+  // DNFs this year — yearEntries already filters by date_shelved / date_started / created_at
+  const dnfs = yearEntries.filter((b) => b.status === "did-not-finish");
 
   // ── Ratings distribution ────────────────────────────────────────
   const ratingDist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
@@ -372,6 +371,44 @@ export default function YearReviewPage() {
                 accentClass="border-t-[var(--stat-border-quotes)]"
               />
             </div>
+
+            {/* ── Missing data prompt ── */}
+            {(printMissingPages.length > 0 || audioMissingHours.length > 0) && (
+              <div className="mb-14 rounded-2xl border border-[var(--border-light)] bg-[var(--bg-surface)] p-5">
+                <p className="text-sm text-[var(--fg)] mb-2">
+                  Add missing details to make these counts accurate.
+                </p>
+                <p className="text-xs text-[var(--fg-faint)] mb-4">
+                  Tap a book to fill in the length.
+                </p>
+                <div className="grid sm:grid-cols-2 gap-x-10 gap-y-4">
+                  {printMissingPages.length > 0 && (
+                    <div>
+                      <p className="text-[11px] text-[var(--fg-faint)] uppercase tracking-wide mb-2">
+                        missing page count · {printMissingPages.length}
+                      </p>
+                      <div className="space-y-0.5">
+                        {printMissingPages.map((b) => (
+                          <BookRow key={b.id} book={b} meta="add pages" />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {audioMissingHours.length > 0 && (
+                    <div>
+                      <p className="text-[11px] text-[var(--fg-faint)] uppercase tracking-wide mb-2">
+                        missing audio length · {audioMissingHours.length}
+                      </p>
+                      <div className="space-y-0.5">
+                        {audioMissingHours.map((b) => (
+                          <BookRow key={b.id} book={b} meta="add hours" />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* ── Monthly reads ── */}
             <div className="mb-14">

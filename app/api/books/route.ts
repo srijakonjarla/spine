@@ -86,7 +86,6 @@ export async function POST(req: NextRequest) {
       page_count: entry.pageCount ?? null,
       publisher: entry.publisher ?? "",
       audio_duration_minutes: entry.audioDurationMinutes ?? null,
-      diversity_tags: entry.diversityTags ?? [],
     },
     {
       id: entry.id,
@@ -97,6 +96,7 @@ export async function POST(req: NextRequest) {
       rating: entry.rating ?? 0,
       feeling: entry.feeling ?? "",
       bookmarked: false,
+      diversity_tags: entry.diversityTags ?? [],
       created_at: entry.createdAt,
       updated_at: entry.updatedAt,
     },

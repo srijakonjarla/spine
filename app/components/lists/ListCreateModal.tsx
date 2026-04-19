@@ -14,6 +14,11 @@ import { ColorPicker } from "./ColorPicker";
 import { IconPicker } from "./IconPicker";
 import { COVER_COLORS, COVER_ICON_NAMES } from "./coverConstants";
 
+// List types where a user may have at most one per year. Enforced by a partial
+// unique index on `lists(user_id, year, list_type)` in Postgres; mirrored here
+// to disable the buttons when the user already has one.
+const SINGLETON_TYPES = new Set(["library_loan", "book_ledger"]);
+
 const LIST_TYPES: ReadonlyArray<{
   value: string;
   icon: Icon;
@@ -68,13 +73,19 @@ interface ListCreateModalProps {
     description: string;
   }) => Promise<void>;
   saving: boolean;
+  /** List types already present for this year — disables the corresponding buttons. */
+  existingTypes?: string[];
 }
 
 export function ListCreateModal({
   onClose,
   onCreate,
   saving,
+  existingTypes = [],
 }: ListCreateModalProps) {
+  const takenSingletons = new Set(
+    existingTypes.filter((t) => SINGLETON_TYPES.has(t)),
+  );
   const [name, setName] = useState("");
   const [listType, setListType] = useState<string>("book_list");
   const [color, setColor] = useState<string>(COVER_COLORS[0]);
@@ -126,23 +137,33 @@ export function ListCreateModal({
           <div className="mb-5">
             <label className="section-label block mb-2">List type</label>
             <div className="grid grid-cols-3 gap-2 mb-3">
-              {LIST_TYPES.map((t) => (
-                <button
-                  type="button"
-                  key={t.value}
-                  onClick={() => setListType(t.value)}
-                  className={`flex flex-col items-center gap-1 py-2.5 px-2 rounded-xl border text-center transition-colors ${
-                    listType === t.value
-                      ? "border-[var(--plum)] bg-[var(--plum)]/6"
-                      : "border-[var(--border-light)] hover:border-[var(--fg-muted)]"
-                  }`}
-                >
-                  <t.icon size={20} />
-                  <span className="text-[10px] font-semibold leading-tight text-[var(--fg-muted)]">
-                    {t.label}
-                  </span>
-                </button>
-              ))}
+              {LIST_TYPES.map((t) => {
+                const disabled = takenSingletons.has(t.value);
+                const selected = listType === t.value;
+                return (
+                  <button
+                    type="button"
+                    key={t.value}
+                    disabled={disabled}
+                    title={
+                      disabled
+                        ? `You already have a ${t.label.toLowerCase()} list for this year.`
+                        : undefined
+                    }
+                    onClick={() => setListType(t.value)}
+                    className={`flex flex-col items-center gap-1 py-2.5 px-2 rounded-xl border text-center transition-colors ${
+                      selected
+                        ? "border-[var(--plum)] bg-[var(--plum)]/6"
+                        : "border-[var(--border-light)] hover:border-[var(--fg-muted)]"
+                    } disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[var(--border-light)]`}
+                  >
+                    <t.icon size={20} />
+                    <span className="text-[10px] font-semibold leading-tight text-[var(--fg-muted)]">
+                      {t.label}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
             <p className="text-[11px] font-[family-name:var(--font-caveat)] text-[var(--fg-muted)]">
               {LIST_TYPES.find((t) => t.value === listType)?.desc}

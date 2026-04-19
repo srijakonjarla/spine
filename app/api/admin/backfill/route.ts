@@ -1,108 +1,21 @@
 import { NextRequest, NextResponse, after } from "next/server";
-import { createServerClient } from "@/lib/supabase-server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { createAdminClient, createServerClient } from "@/lib/supabase-server";
+import {
+  BOOK_FIELDS,
+  type RawHCBook,
+  authorLastName,
+  gqlStr,
+  hcPost,
+  normTitle,
+  parseBookRow,
+  sleep,
+  stripTitle,
+  titlesMatch,
+} from "@/lib/hardcover.server";
 
-const HC_ENDPOINT = "https://api.hardcover.app/v1/graphql";
 const DELAY_MS = 1100;
-const BATCH_SIZE = 10;
-
-const BOOK_FIELDS = `
-  id title pages release_date
-  images { url }
-  contributions { author { name } }
-  cached_tags
-  default_physical_edition_id
-  editions { id isbn_13 isbn_10 image { url } }
-`;
-
-function gqlStr(s: string, maxLen = 120): string {
-  return s
-    .replace(/\\/g, "\\\\")
-    .replace(/"/g, '\\"')
-    .replace(/[\n\r]/g, " ")
-    .trim()
-    .slice(0, maxLen);
-}
-
-function authorLastName(author: string): string {
-  const clean = author.replace(/[^a-zA-Z\s''-]/g, "").trim();
-  if (author.includes(",")) return (clean.split(/\s+/)[0] ?? "").slice(0, 30);
-  const parts = clean.split(/\s+/);
-  return (parts[parts.length - 1] ?? "").slice(0, 30);
-}
-
-function stripTitle(title: string): string {
-  let t = title.trim().replace(/\bvol\.?\b/gi, "Volume");
-  t = t.replace(/\s*\([^)]*\)\s*$/, "");
-  t = t.replace(/\s*:\s*.+$/, "");
-  t = t.replace(/\s+by\s+[A-Z][\w.'\-]+(?:\s+[\w.'\-]+)*$/, "");
-  t = t.replace(/,\s+[A-Z][\w.'\-]+(?:\s+[A-Z][\w.'\-]+)+\s*$/, "");
-  return t.trim();
-}
-
-function normTitle(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]/g, "");
-}
-
-function titlesMatch(hcTitle: string, csvTitle: string): boolean {
-  if (!hcTitle || !csvTitle) return false;
-  const hc = normTitle(stripTitle(hcTitle));
-  const csv = normTitle(stripTitle(csvTitle));
-  if (!hc || !csv) return false;
-  if (hc === csv) return true;
-  const shorter = hc.length <= csv.length ? hc : csv;
-  const longer = hc.length <= csv.length ? csv : hc;
-  if (!longer.startsWith(shorter) || shorter.length < 6) return false;
-  const BOX =
-    /\b(boxed? set|box set|omnibus|collection|trilogy|the complete|\d-book)\b/i;
-  if (BOX.test(hcTitle) && !BOX.test(csvTitle)) return false;
-  return true;
-}
-
-async function hcPost(query: string) {
-  const token = process.env.HARDCOVER_API_TOKEN;
-  if (!token) {
-    console.warn("[backfill] HARDCOVER_API_TOKEN not set");
-    return null;
-  }
-  const res = await fetch(HC_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ query }),
-  });
-  if (!res.ok) {
-    console.error(`[backfill] Hardcover error: ${res.status}`);
-    return null;
-  }
-  return res.json();
-}
-
-function extractGenres(cached_tags: unknown): string[] {
-  if (!cached_tags) return [];
-  if (Array.isArray(cached_tags)) return cached_tags as string[];
-  if (typeof cached_tags === "object") {
-    return Object.values(cached_tags as Record<string, { tag?: string }[]>)
-      .flat()
-      .map((t) => t?.tag ?? "")
-      .filter(Boolean)
-      .slice(0, 5);
-  }
-  return [];
-}
-
-function collectIsbns(
-  editions: { isbn_13?: string; isbn_10?: string }[],
-): string[] {
-  return [
-    ...new Set(
-      editions
-        .flatMap((e) => [e.isbn_13, e.isbn_10])
-        .filter((isbn): isbn is string => !!isbn && isbn.length > 0),
-    ),
-  ];
-}
+const BATCH_SIZE = 5;
 
 interface StaleRow {
   id: string;
@@ -113,29 +26,14 @@ interface StaleRow {
   page_count: number | null;
   genres: string[] | null;
   isbns: string[] | null;
+  audio_duration_minutes: number | null;
+  publisher: string | null;
 }
 
 interface HCDoc {
   id?: number | string;
   title?: string;
   author_names?: string[];
-}
-
-interface HCBookRow {
-  id?: number;
-  title?: string;
-  pages?: number;
-  release_date?: string;
-  images?: { url?: string }[];
-  contributions?: { author: { name: string } }[];
-  cached_tags?: unknown;
-  default_physical_edition_id?: number;
-  editions?: {
-    id?: number;
-    isbn_13?: string;
-    isbn_10?: string;
-    image?: { url?: string };
-  }[];
 }
 
 /**
@@ -147,17 +45,17 @@ interface HCBookRow {
  *  - release_date ending in "-01-01" (year-only, from search-path fallback)
  */
 async function fetchStaleBooks(
-  supabase: ReturnType<typeof createServerClient>,
+  supabase: SupabaseClient,
   userId: string,
 ): Promise<StaleRow[]> {
   const { data, error } = await supabase
     .from("user_books")
     .select(
-      "catalog_books!inner(id, title, author, release_date, cover_url, page_count, genres, isbns)",
+      "catalog_books!inner(id, title, author, release_date, cover_url, page_count, genres, isbns, audio_duration_minutes, publisher)",
     )
     .eq("user_id", userId)
     .or(
-      "cover_url.eq.,isbns.is.null,isbns.eq.{},genres.is.null,genres.eq.{},release_date.like.%-01-01",
+      "cover_url.eq.,isbns.is.null,isbns.eq.{},genres.is.null,genres.eq.{},release_date.like.%-01-01,publisher.is.null,publisher.eq.,audio_duration_minutes.is.null",
       { referencedTable: "catalog_books" },
     );
   if (error) {
@@ -177,7 +75,7 @@ async function fetchStaleBooks(
 }
 
 async function runBackfill(
-  supabase: ReturnType<typeof createServerClient>,
+  supabase: SupabaseClient,
   userId: string,
 ) {
   const stale = await fetchStaleBooks(supabase, userId);
@@ -197,7 +95,7 @@ async function runBackfill(
         return `b${i}: books(where: { _or: [
           { editions: { isbn_13: { _eq: "${isbn}" } } },
           { editions: { isbn_10: { _eq: "${isbn}" } } }
-        ]}, limit: 1) { ${BOOK_FIELDS} }`;
+        ]}, limit: 3) { ${BOOK_FIELDS} }`;
       }
       const base = stripTitle(row.title);
       const last = authorLastName(row.author);
@@ -205,11 +103,16 @@ async function runBackfill(
       return `b${i}: search(query: "${q}", query_type: "Book", per_page: 3) { results }`;
     });
     const batchQuery = `query BackfillBatch { ${fragments.join("\n")} }`;
-    const batchJson = await hcPost(batchQuery);
-    const batchData = batchJson?.data ?? {};
+    const batchJson = await hcPost(batchQuery, "[backfill]");
+    const batchData = (batchJson?.data ?? {}) as Record<string, unknown>;
 
     // Collect hits: direct books (ISBN path) and search → id (search path).
-    const directHits: { idx: number; row: StaleRow; book: HCBookRow }[] = [];
+    const directHits: {
+      idx: number;
+      row: StaleRow;
+      book: RawHCBook;
+      siblings: RawHCBook[];
+    }[] = [];
     const searchHits: { idx: number; row: StaleRow; bookId: number }[] = [];
 
     for (let i = 0; i < batch.length; i++) {
@@ -217,22 +120,24 @@ async function runBackfill(
       const raw = batchData[`b${i}`];
       const firstIsbn = row.isbns?.[0];
       if (firstIsbn) {
-        const books: HCBookRow[] = Array.isArray(raw) ? raw : [];
+        const books: RawHCBook[] = Array.isArray(raw) ? raw : [];
         const book = books.find((b) => titlesMatch(b.title ?? "", row.title));
         if (book) {
-          directHits.push({ idx: i, row, book });
+          directHits.push({ idx: i, row, book, siblings: books });
           console.log(`[backfill]   ISBN hit "${row.title}"`);
         } else {
           console.log(`[backfill]   ISBN miss "${row.title}"`);
         }
         continue;
       }
-      const rawResults = raw?.results;
+      const rawResults = (raw as { results?: unknown })?.results;
       if (!rawResults) continue;
       let parsed: { hits?: { document: HCDoc }[] };
       try {
         parsed =
-          typeof rawResults === "string" ? JSON.parse(rawResults) : rawResults;
+          typeof rawResults === "string"
+            ? JSON.parse(rawResults)
+            : (rawResults as { hits?: { document: HCDoc }[] });
       } catch {
         continue;
       }
@@ -257,41 +162,58 @@ async function runBackfill(
     }
 
     // Step 2: follow-up books query for search-path hits (same BOOK_FIELDS).
-    const searchBooks = new Map<number, HCBookRow>();
+    const searchBooks = new Map<number, RawHCBook>();
     if (searchHits.length) {
       const followUpFragments = searchHits.map(
         ({ idx, bookId }) =>
           `b${idx}: books(where: {id: {_eq: ${bookId}}}, limit: 1) { ${BOOK_FIELDS} }`,
       );
       const followUpQuery = `query BackfillFollowUp { ${followUpFragments.join("\n")} }`;
-      const followUpJson = await hcPost(followUpQuery);
-      const followUpData = followUpJson?.data ?? {};
+      const followUpJson = await hcPost(followUpQuery, "[backfill]");
+      const followUpData = (followUpJson?.data ?? {}) as Record<string, unknown>;
       for (const { idx, bookId } of searchHits) {
         const raw = followUpData[`b${idx}`];
-        const books: HCBookRow[] = Array.isArray(raw) ? raw : [];
+        const books: RawHCBook[] = Array.isArray(raw) ? raw : [];
         if (books[0]) searchBooks.set(bookId, books[0]);
       }
     }
 
     // Step 3: apply enrichment patches.
-    const applyPatch = async (row: StaleRow, book: HCBookRow) => {
-      const editions = book.editions ?? [];
-      const defaultEdition = editions.find(
-        (e) => e.id === book.default_physical_edition_id,
-      );
-      const isbns = collectIsbns(editions);
-      const coverUrl =
-        defaultEdition?.image?.url || book.images?.[0]?.url || "";
-      const genres = extractGenres(book.cached_tags);
+    const applyPatch = async (
+      row: StaleRow,
+      book: RawHCBook,
+      siblings: RawHCBook[] = [],
+    ) => {
+      const parsed = parseBookRow(book);
+      if (!parsed) return;
+      let audioDurationMinutes = parsed.audioDurationMinutes;
+      // Borrow audio from a same-title sibling if the primary hit lacks it.
+      if (audioDurationMinutes == null) {
+        for (const sib of siblings) {
+          if (sib === book) continue;
+          if (!titlesMatch(sib.title ?? "", row.title)) continue;
+          const sibAudio = parseBookRow(sib)?.audioDurationMinutes ?? null;
+          if (sibAudio != null) {
+            audioDurationMinutes = sibAudio;
+            break;
+          }
+        }
+      }
 
       const patch: Record<string, unknown> = {};
-      if (isbns.length && !row.isbns?.length) patch.isbns = isbns;
-      if (genres.length && !row.genres?.length) patch.genres = genres;
-      if (book.release_date && book.release_date !== row.release_date) {
-        patch.release_date = book.release_date;
+      if (parsed.isbns.length && !row.isbns?.length) patch.isbns = parsed.isbns;
+      if (parsed.genres.length && !row.genres?.length)
+        patch.genres = parsed.genres;
+      if (parsed.releaseDate && parsed.releaseDate !== row.release_date) {
+        patch.release_date = parsed.releaseDate;
       }
-      if (book.pages && !row.page_count) patch.page_count = book.pages;
-      if (coverUrl) patch.cover_url = coverUrl;
+      if (parsed.pageCount && !row.page_count)
+        patch.page_count = parsed.pageCount;
+      if (parsed.coverUrl && !row.cover_url) patch.cover_url = parsed.coverUrl;
+      if (audioDurationMinutes != null && row.audio_duration_minutes == null) {
+        patch.audio_duration_minutes = audioDurationMinutes;
+      }
+      if (parsed.publisher && !row.publisher) patch.publisher = parsed.publisher;
 
       if (Object.keys(patch).length) {
         patch.updated_at = new Date().toISOString();
@@ -314,7 +236,8 @@ async function runBackfill(
       }
     };
 
-    for (const { row, book } of directHits) await applyPatch(row, book);
+    for (const { row, book, siblings } of directHits)
+      await applyPatch(row, book, siblings);
     for (const { row, bookId } of searchHits) {
       const book = searchBooks.get(bookId);
       if (book) await applyPatch(row, book);
@@ -324,10 +247,14 @@ async function runBackfill(
   }
 
   console.log(`[backfill] done for user ${userId}`);
+  const { data: u } = await supabase.auth.admin.getUserById(userId);
+  const meta = (u?.user?.user_metadata ?? {}) as Record<string, unknown>;
+  meta.backfill_running = false;
+  await supabase.auth.admin.updateUserById(userId, { user_metadata: meta });
 }
 
 async function countStale(
-  supabase: ReturnType<typeof createServerClient>,
+  supabase: SupabaseClient,
   userId: string,
 ): Promise<number> {
   const rows = await fetchStaleBooks(supabase, userId);
@@ -342,8 +269,9 @@ export async function GET(req: NextRequest) {
   if (!user)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
+  const running = user.user_metadata?.backfill_running === true;
   const remaining = await countStale(supabase, user.id);
-  return NextResponse.json({ remaining });
+  return NextResponse.json({ remaining, running });
 }
 
 export async function POST(req: NextRequest) {
@@ -359,13 +287,19 @@ export async function POST(req: NextRequest) {
     `[backfill] POST started for user ${user.id}, ${total} stale rows`,
   );
 
+  // Use the service-role admin client for the background job — the user's
+  // session JWT would expire mid-run for large backfills.
+  const admin = createAdminClient();
+  const userId = user.id;
+
+  const { data: u } = await admin.auth.admin.getUserById(userId);
+  const meta = (u?.user?.user_metadata ?? {}) as Record<string, unknown>;
+  meta.backfill_running = true;
+  await admin.auth.admin.updateUserById(userId, { user_metadata: meta });
+
   after(async () => {
-    await runBackfill(supabase, user.id);
+    await runBackfill(admin, userId);
   });
 
   return NextResponse.json({ started: true, total });
-}
-
-function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
 }

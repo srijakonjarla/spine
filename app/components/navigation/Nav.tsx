@@ -84,7 +84,7 @@ export default function Nav() {
               <nav className="hidden lg:flex items-center gap-6">
                 <TopNavLink href="/" label="home" />
                 <TopNavLink href="/library" label="library" />
-                <TopNavLink href={`/${CURRENT_YEAR}/stats`} label="stats" />
+                <TopNavLink href={`/${CURRENT_YEAR}/review`} label="review" />
               </nav>
               <Link
                 href={`/${CURRENT_YEAR}/books`}
@@ -171,11 +171,6 @@ export default function Nav() {
               href={`/${CURRENT_YEAR}/goal`}
               label={`${CURRENT_YEAR} goals`}
               icon={TargetIcon}
-            />
-            <SidebarLink
-              href={`/${CURRENT_YEAR}/stats`}
-              label="stats"
-              icon={ChartBarIcon}
             />
             <SidebarLink
               href={`/${CURRENT_YEAR}/review`}

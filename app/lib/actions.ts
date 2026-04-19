@@ -38,7 +38,6 @@ export async function createEntryAction(
       page_count: entry.pageCount ?? null,
       publisher: entry.publisher ?? "",
       audio_duration_minutes: entry.audioDurationMinutes ?? null,
-      diversity_tags: entry.diversityTags ?? [],
     },
     {
       id: entry.id,
@@ -49,6 +48,7 @@ export async function createEntryAction(
       rating: entry.rating ?? 0,
       feeling: entry.feeling ?? "",
       bookmarked: false,
+      diversity_tags: entry.diversityTags ?? [],
       created_at: entry.createdAt,
       updated_at: entry.updatedAt,
     },
@@ -86,7 +86,6 @@ export async function updateEntryAction(
   if ("bookshelves" in patch) userRow.bookshelves = patch.bookshelves;
   if ("userGenres" in patch) userRow.user_genres = patch.userGenres;
   if ("format" in patch) userRow.format = patch.format;
-  if ("diversityTags" in patch) userRow.diversity_tags = patch.diversityTags;
   if ("title" in patch) userRow.title_override = patch.title || null;
   if ("author" in patch) userRow.author_override = patch.author || null;
 

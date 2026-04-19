@@ -21,7 +21,6 @@ export interface CatalogFields {
   page_count: number | null;
   publisher?: string;
   audio_duration_minutes?: number | null;
-  diversity_tags?: string[];
 }
 
 export interface PersonalFields {
@@ -36,6 +35,7 @@ export interface PersonalFields {
   mood_tags?: string[];
   bookshelves?: string[];
   bookmarked?: boolean;
+  diversity_tags?: string[];
   created_at?: string;
   updated_at?: string;
 }
@@ -103,8 +103,6 @@ export async function upsertBookForUser(
     if (catalog.publisher) patch.publisher = catalog.publisher;
     if (catalog.audio_duration_minutes != null)
       patch.audio_duration_minutes = catalog.audio_duration_minutes;
-    if (catalog.diversity_tags?.length)
-      patch.diversity_tags = catalog.diversity_tags;
 
     if (Object.keys(patch).length) {
       patch.updated_at = new Date().toISOString();
@@ -243,7 +241,6 @@ export async function upsertBookForUser(
         page_count: catalog.page_count,
         publisher: catalog.publisher ?? "",
         audio_duration_minutes: catalog.audio_duration_minutes ?? null,
-        diversity_tags: catalog.diversity_tags ?? [],
         created_at: now,
         updated_at: now,
       })
@@ -287,6 +284,7 @@ export async function upsertBookForUser(
         mood_tags: personal.mood_tags ?? [],
         bookshelves: personal.bookshelves ?? [],
         bookmarked: personal.bookmarked ?? false,
+        diversity_tags: personal.diversity_tags ?? [],
         created_at: personal.created_at ?? now,
         updated_at: personal.updated_at ?? now,
       },
@@ -344,7 +342,6 @@ export function flattenUserBook(row: {
     isbns: string[] | null;
     release_date: string;
     genres: string[];
-    diversity_tags: string[];
     page_count: number | null;
     audio_duration_minutes: number | null;
   } | null;
@@ -359,7 +356,6 @@ export function flattenUserBook(row: {
     isbns: [] as string[],
     release_date: "",
     genres: [],
-    diversity_tags: [],
     page_count: null,
     audio_duration_minutes: null,
   };
@@ -373,9 +369,7 @@ export function flattenUserBook(row: {
     release_date: cb.release_date ?? "",
     genres: [...new Set([...(cb.genres ?? []), ...(row.user_genres ?? [])])],
     user_genres: row.user_genres ?? [],
-    diversity_tags: [
-      ...new Set([...(cb.diversity_tags ?? []), ...(row.diversity_tags ?? [])]),
-    ],
+    diversity_tags: row.diversity_tags ?? [],
     user_diversity_tags: row.diversity_tags ?? [],
     cover_url: cb.cover_url ?? "",
     isbn: cb.isbns?.[0] ?? "",

@@ -23,7 +23,7 @@ function labelForPathname(pathname: string): string {
   if (/^\/\d{4}\/lists$/.test(pathname)) return "lists";
   if (/^\/\d{4}\/lists\//.test(pathname)) return "list";
   if (/^\/\d{4}\/habits$/.test(pathname)) return "habits";
-  if (/^\/\d{4}\/stats$/.test(pathname)) return "year in review";
+  if (/^\/\d{4}\/review$/.test(pathname)) return "year in review";
   if (/^\/\d{4}$/.test(pathname)) return pathname.slice(1); // year number
   return "back";
 }

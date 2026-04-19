@@ -1,100 +1,25 @@
 import { NextRequest, NextResponse, after } from "next/server";
-import { createServerClient } from "@/lib/supabase-server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { createAdminClient, createServerClient } from "@/lib/supabase-server";
 import { parseGoodreadsCSV } from "@/lib/goodreads";
 import { upsertBookForUser } from "@/lib/bookUpsert.server";
+import {
+  BOOK_FIELDS,
+  type HCBook,
+  type HardcoverDocument,
+  type RawHCBook,
+  authorLastName,
+  gqlStr,
+  hcPost,
+  normTitle,
+  parseBookRow,
+  sleep,
+  stripTitle,
+  titlesMatch,
+} from "@/lib/hardcover.server";
 
-const HC_ENDPOINT = "https://api.hardcover.app/v1/graphql";
 const DELAY_MS = 1100;
 const BATCH_SIZE = 10;
-
-// Shared field set for both ISBN and title+author batch fragments.
-const BOOK_FIELDS = `
-  id title pages release_date
-  images { url }
-  contributions { author { name } }
-  cached_tags
-  default_physical_edition_id
-  editions { id isbn_13 isbn_10 image { url } }
-`;
-
-/** Sanitize a string for safe inline embedding in a GQL query literal. */
-function gqlStr(s: string, maxLen = 120): string {
-  return s
-    .replace(/\\/g, "\\\\")
-    .replace(/"/g, '\\"')
-    .replace(/[\n\r]/g, " ")
-    .trim()
-    .slice(0, maxLen);
-}
-
-/**
- * Extract the surname from an author name, handling both "First Last" and
- * Goodreads "Last, First" formats.
- */
-function authorLastName(author: string): string {
-  const clean = author.replace(/[^a-zA-Z\s''-]/g, "").trim();
-  // "Last, First" — comma means the first token is the surname
-  if (author.includes(",")) return (clean.split(/\s+/)[0] ?? "").slice(0, 30);
-  const parts = clean.split(/\s+/);
-  return (parts[parts.length - 1] ?? "").slice(0, 30);
-}
-
-/**
- * Strip Goodreads series suffix, subtitle, and trailing author pollution so
- * variant titles collapse to a shared canonical form for matching.
- * "Lovelight Farms (Lovelight, #1)" → "Lovelight Farms"
- * "Saga, Vol. 1" → "Saga, Volume 1" (normalized, preserves volume number)
- * "Good to Great: ...Don't by Jim Collins" → "Good to Great"
- * "Roots: The Saga of an American Family" → "Roots"
- * "The Woods by Harlan Coben" → "The Woods"
- * "One Flew Over the Cuckoo's Nest, Ken Kesey" → "One Flew Over the Cuckoo's Nest"
- */
-function stripTitle(title: string): string {
-  let t = title.trim().replace(/\bvol\.?\b/gi, "Volume");
-  t = t.replace(/\s*\([^)]*\)\s*$/, "");
-  t = t.replace(/\s*:\s*.+$/, "");
-  t = t.replace(/\s+by\s+[A-Z][\w.'\-]+(?:\s+[\w.'\-]+)*$/, "");
-  t = t.replace(/,\s+[A-Z][\w.'\-]+(?:\s+[A-Z][\w.'\-]+)+\s*$/, "");
-  return t.trim();
-}
-
-function normTitle(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]/g, "");
-}
-
-/**
- * Validate that an HC-returned title legitimately matches the CSV title.
- * Exact-equality on the normalized-and-stripped form; prefix extension is only
- * accepted for subtitle-appended HC titles ("Good to Great" ⊂ "Good to Great:
- * Why Some Companies Make the Leap..."). Non-ASCII in the tail rejects
- * translated editions; a boxed-set marker on the HC side only rejects bundles.
- */
-function titlesMatch(hcTitle: string, csvTitle: string): boolean {
-  if (!hcTitle || !csvTitle) return false;
-  const hcStripped = stripTitle(hcTitle);
-  const csvStripped = stripTitle(csvTitle);
-  const hc = normTitle(hcStripped);
-  const csv = normTitle(csvStripped);
-  if (!hc || !csv) return false;
-  if (hc === csv) return true;
-
-  const shorter = hc.length <= csv.length ? hc : csv;
-  const longer = hc.length <= csv.length ? csv : hc;
-  if (!longer.startsWith(shorter) || shorter.length < 6) return false;
-
-  const BOX =
-    /\b(boxed? set|box set|omnibus|collection|trilogy|the complete|\d-book)\b/i;
-  if (BOX.test(hcTitle) && !BOX.test(csvTitle)) return false;
-
-  const shortFull =
-    hcStripped.length <= csvStripped.length ? hcStripped : csvStripped;
-  const longFull =
-    hcStripped.length <= csvStripped.length ? csvStripped : hcStripped;
-  const tail = longFull.slice(shortFull.length);
-  if (tail.length > 6 && /[^\x00-\x7f]/.test(tail)) return false;
-
-  return true;
-}
 
 function buildBatchQuery(
   books: { title: string; author: string; isbn?: string }[],
@@ -108,7 +33,7 @@ function buildBatchQuery(
             { editions: { isbn_13: { _eq: "${isbn}" } } },
             { editions: { isbn_10: { _eq: "${isbn}" } } }
           ]
-        }, limit: 1) { ${BOOK_FIELDS} }
+        }, limit: 3) { ${BOOK_FIELDS} }
       `;
     }
     // No ISBN — HC does not allow _ilike queries; use the search endpoint instead.
@@ -123,131 +48,6 @@ function buildBatchQuery(
     return `b${i}: search(query: "${searchQuery}", query_type: "Book", per_page: 3) { results }`;
   });
   return `query BatchLookup { ${fragments.join("\n")} }`;
-}
-
-/** Collect all isbn_13/isbn_10 values from a list of editions. */
-function collectIsbns(
-  editions: { isbn_13?: string; isbn_10?: string }[],
-): string[] {
-  return [
-    ...new Set(
-      editions
-        .flatMap((e) => [e.isbn_13, e.isbn_10])
-        .filter((isbn): isbn is string => !!isbn && isbn.length > 0),
-    ),
-  ];
-}
-
-async function hcPost(query: string, variables?: Record<string, unknown>) {
-  const token = process.env.HARDCOVER_API_TOKEN;
-  if (!token) {
-    console.warn("[import] HARDCOVER_API_TOKEN not set");
-    return null;
-  }
-  console.log("[import] POST Hardcover API (batch)");
-  const res = await fetch(HC_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ query, variables }),
-  });
-  if (!res.ok) {
-    console.error(`[import] Hardcover error: ${res.status}`);
-    return null;
-  }
-  return res.json();
-}
-
-function extractGenres(cached_tags: unknown): string[] {
-  if (!cached_tags) return [];
-  if (Array.isArray(cached_tags)) return cached_tags as string[];
-  if (typeof cached_tags === "object") {
-    return Object.values(cached_tags as Record<string, { tag?: string }[]>)
-      .flat()
-      .map((t) => t?.tag ?? "")
-      .filter(Boolean)
-      .slice(0, 5);
-  }
-  return [];
-}
-
-interface HCBook {
-  title: string;
-  coverUrl: string;
-  isbn: string;
-  /** All known edition ISBNs for this book. */
-  isbns: string[];
-  pageCount: number | null;
-  genres: string[];
-  releaseDate: string;
-  author: string;
-}
-
-/** Shape of a document returned by HC's search endpoint. */
-interface HardcoverDocument {
-  id?: number | string;
-  title?: string;
-  author_names?: string[];
-  cover_image_url?: string;
-  isbn_13?: string | string[];
-  isbn_10?: string | string[];
-  pages?: number;
-  release_year?: number | string;
-  release_date?: string;
-}
-
-type RawHCBook = {
-  id?: number;
-  title?: string;
-  pages?: number;
-  release_date?: string;
-  images?: { url?: string }[];
-  contributions?: { author: { name: string } }[];
-  cached_tags?: unknown;
-  default_physical_edition_id?: number;
-  editions?: {
-    id?: number;
-    isbn_13?: string;
-    isbn_10?: string;
-    image?: { url?: string };
-  }[];
-};
-
-/**
- * Parse a raw HC `books` table row into our internal HCBook shape.
- * Both ISBN and title+author batch fragments now return the same `books` shape,
- * so a single parser handles both paths.
- */
-function parseBookRow(
-  book: RawHCBook,
-  fallbackIsbn = "",
-): (HCBook & { bookId: number }) | null {
-  if (!book?.title) return null;
-  const editions = book.editions ?? [];
-  const defaultEdition = editions.find(
-    (e) => e.id === book.default_physical_edition_id,
-  );
-  const isbns = collectIsbns(editions);
-  const primaryIsbn =
-    defaultEdition?.isbn_13 ||
-    defaultEdition?.isbn_10 ||
-    isbns[0] ||
-    fallbackIsbn;
-  const coverUrl = defaultEdition?.image?.url || book.images?.[0]?.url || "";
-
-  return {
-    title: book.title,
-    coverUrl,
-    isbn: primaryIsbn,
-    isbns,
-    pageCount: book.pages ?? null,
-    genres: extractGenres(book.cached_tags),
-    releaseDate: book.release_date ?? "",
-    author: (book.contributions ?? []).map((c) => c.author.name).join(", "),
-    bookId: book.id!,
-  };
 }
 
 /**
@@ -286,7 +86,26 @@ function bestMatchFromBooks(
     }
 
     const parsed = parseBookRow(book, fallbackIsbn);
-    if (parsed) return parsed;
+    if (!parsed) continue;
+    // If the primary match has no audio but a sibling hit (same title) does,
+    // borrow the sibling's audio_seconds. HC sometimes has duplicate book rows
+    // where only one has default_audio_edition populated.
+    if (parsed.audioDurationMinutes == null) {
+      for (const sibling of books) {
+        if (sibling === book) continue;
+        if (!titlesMatch(sibling.title ?? "", titleHint)) continue;
+        const sib =
+          sibling.default_audio_edition?.audio_seconds ??
+          sibling.editions?.find((e) => (e.audio_seconds ?? 0) > 0)
+            ?.audio_seconds ??
+          null;
+        if (sib != null && sib > 0) {
+          parsed.audioDurationMinutes = Math.round(sib / 60);
+          break;
+        }
+      }
+    }
+    return parsed;
   }
   return null;
 }
@@ -313,6 +132,8 @@ function parseSearchDoc(doc: HardcoverDocument, fallbackIsbn: string): HCBook {
     pageCount: doc.pages ?? null,
     genres: [],
     releaseDate,
+    audioDurationMinutes: null,
+    publisher: "",
   };
 }
 
@@ -326,8 +147,8 @@ async function fetchHCBatch(
   }));
   const batchQuery = buildBatchQuery(queryBooks);
   console.log("[import] Batch query:\n", batchQuery);
-  const json = await hcPost(batchQuery);
-  const data = json?.data ?? {};
+  const json = await hcPost(batchQuery, "[import]");
+  const data = (json?.data ?? {}) as Record<string, unknown>;
   if (json?.errors)
     console.error("[import] GraphQL errors:", JSON.stringify(json.errors));
 
@@ -361,7 +182,7 @@ async function fetchHCBatch(
       return result ? rest : null;
     } else {
       // No-ISBN path — response is { results: JSON blob }
-      const rawResults = raw?.results;
+      const rawResults = (raw as { results?: unknown } | undefined)?.results;
       console.log(
         `[import] b${i} search title="${entry.title}" → raw=${JSON.stringify(raw)?.slice(0, 200)}`,
       );
@@ -372,7 +193,9 @@ async function fetchHCBatch(
       let parsed: { hits?: { document: HardcoverDocument }[] };
       try {
         parsed =
-          typeof rawResults === "string" ? JSON.parse(rawResults) : rawResults;
+          typeof rawResults === "string"
+            ? JSON.parse(rawResults)
+            : (rawResults as { hits?: { document: HardcoverDocument }[] });
       } catch {
         console.error(`[import]   └─ failed to parse search results`);
         return null;
@@ -418,8 +241,8 @@ async function fetchHCBatch(
     console.log(
       `[import] Follow-up enrichment for ${enrichmentTargets.length} search-path hit(s)`,
     );
-    const followUpJson = await hcPost(followUpQuery);
-    const followUpData = followUpJson?.data ?? {};
+    const followUpJson = await hcPost(followUpQuery, "[import]");
+    const followUpData = (followUpJson?.data ?? {}) as Record<string, unknown>;
     if (followUpJson?.errors)
       console.error(
         "[import] Follow-up GraphQL errors:",
@@ -443,9 +266,12 @@ async function fetchHCBatch(
         pageCount: existing.pageCount ?? parsed.pageCount,
         releaseDate: parsed.releaseDate || existing.releaseDate,
         coverUrl: existing.coverUrl || parsed.coverUrl,
+        audioDurationMinutes:
+          parsed.audioDurationMinutes ?? existing.audioDurationMinutes,
+        publisher: parsed.publisher || existing.publisher,
       };
       console.log(
-        `[import]   └─ enriched b${idx}: isbns=${parsed.isbns.length}, genres=${parsed.genres.length}, date=${parsed.releaseDate || "(none)"}`,
+        `[import]   └─ enriched b${idx}: isbns=${parsed.isbns.length}, genres=${parsed.genres.length}, date=${parsed.releaseDate || "(none)"}, audio=${parsed.audioDurationMinutes ?? "—"}m`,
       );
     }
   }
@@ -453,15 +279,24 @@ async function fetchHCBatch(
   return results;
 }
 
+/**
+ * Write `goodreads_import` progress into user_metadata via the service-role
+ * admin API. Read-modify-write so we preserve other keys (e.g.
+ * `goodreads_imported`) — `updateUserById` replaces user_metadata wholesale.
+ */
 async function setProgress(
-  supabase: ReturnType<typeof createServerClient>,
+  admin: SupabaseClient,
+  userId: string,
   data: object,
 ) {
-  await supabase.auth.updateUser({ data: { goodreads_import: data } });
+  const { data: u } = await admin.auth.admin.getUserById(userId);
+  const meta = (u?.user?.user_metadata ?? {}) as Record<string, unknown>;
+  meta.goodreads_import = data;
+  await admin.auth.admin.updateUserById(userId, { user_metadata: meta });
 }
 
 async function runImport(
-  supabase: ReturnType<typeof createServerClient>,
+  supabase: SupabaseClient,
   userId: string,
   previews: ReturnType<typeof parseGoodreadsCSV>,
 ) {
@@ -470,7 +305,7 @@ async function runImport(
 
   for (let batchStart = 0; batchStart < total; batchStart += BATCH_SIZE) {
     const batch = previews.slice(batchStart, batchStart + BATCH_SIZE);
-    await setProgress(supabase, {
+    await setProgress(supabase, userId, {
       status: "running",
       total,
       processed: batchStart,
@@ -510,6 +345,8 @@ async function runImport(
       const coverUrl = safeHc?.coverUrl ?? "";
       const pageCount = safeHc?.pageCount ?? null;
       const releaseDate = safeHc?.releaseDate ?? "";
+      const audioDurationMinutes = safeHc?.audioDurationMinutes ?? null;
+      const publisher = safeHc?.publisher ?? "";
       // Genres come exclusively from Hardcover — Goodreads "genres" are the
       // user's custom bookshelves (e.g. "favorites", "my-2024-reads") and
       // should never be stored as catalog genre metadata.
@@ -536,7 +373,9 @@ async function runImport(
         if (isbnToCheck) {
           const { data: byIsbn } = await supabase
             .from("catalog_books")
-            .select("id, title, author, genres, release_date, cover_url, isbns")
+            .select(
+              "id, title, author, genres, release_date, cover_url, isbns, audio_duration_minutes, publisher",
+            )
             .contains("isbns", [isbnToCheck])
             .maybeSingle();
           if (byIsbn) {
@@ -574,14 +413,16 @@ async function runImport(
         const [prefixRes, shortRes] = await Promise.all([
           supabase
             .from("catalog_books")
-            .select("id, title, author, genres, release_date, cover_url, isbns")
+            .select(
+              "id, title, author, genres, release_date, cover_url, isbns, audio_duration_minutes, publisher",
+            )
             .ilike("title", `${ilikePattern}%`)
             .limit(20),
           firstWord
             ? supabase
                 .from("catalog_books")
                 .select(
-                  "id, title, author, genres, release_date, cover_url, isbns",
+                  "id, title, author, genres, release_date, cover_url, isbns, audio_duration_minutes, publisher",
                 )
                 .ilike("title", `${firstWord}%`)
                 .limit(20)
@@ -663,6 +504,8 @@ async function runImport(
             release_date: releaseDate,
             genres,
             page_count: pageCount,
+            audio_duration_minutes: audioDurationMinutes,
+            publisher,
           },
           {
             id: newId,
@@ -717,6 +560,8 @@ async function runImport(
           release_date: string;
           cover_url: string;
           isbns: string[] | null;
+          audio_duration_minutes?: number | null;
+          publisher?: string | null;
         } | null;
         if (cb) {
           const catalogPatch: Record<string, unknown> = {};
@@ -746,6 +591,9 @@ async function runImport(
             }
           }
           if (pageCount) catalogPatch.page_count = pageCount;
+          if (audioDurationMinutes != null && cb.audio_duration_minutes == null)
+            catalogPatch.audio_duration_minutes = audioDurationMinutes;
+          if (publisher && !cb.publisher) catalogPatch.publisher = publisher;
           if (Object.keys(catalogPatch).length) {
             catalogPatch.updated_at = new Date().toISOString();
             await supabase
@@ -817,8 +665,13 @@ async function runImport(
   }
 
   console.log(`[import] Complete for user ${userId}, ${total} books`);
-  await setProgress(supabase, { status: "done", total, processed: total });
-  await supabase.auth.updateUser({ data: { goodreads_imported: true } });
+  // Combined final write: progress=done + goodreads_imported=true, preserving
+  // other user_metadata keys.
+  const { data: u } = await supabase.auth.admin.getUserById(userId);
+  const meta = (u?.user?.user_metadata ?? {}) as Record<string, unknown>;
+  meta.goodreads_import = { status: "done", total, processed: total };
+  meta.goodreads_imported = true;
+  await supabase.auth.admin.updateUserById(userId, { user_metadata: meta });
 }
 
 export async function GET(req: NextRequest) {
@@ -855,19 +708,20 @@ export async function POST(req: NextRequest) {
   console.log(
     `[import] POST received, ${previews.length} books, user ${user.id}`,
   );
-  await setProgress(supabase, {
+
+  // Use the service-role admin client for the background job — the user's
+  // session JWT would expire mid-run for large imports.
+  const admin = createAdminClient();
+  const userId = user.id;
+  await setProgress(admin, userId, {
     status: "running",
     total: previews.length,
     processed: 0,
   });
 
   after(async () => {
-    await runImport(supabase, user.id, previews);
+    await runImport(admin, userId, previews);
   });
 
   return NextResponse.json({ started: true, total: previews.length });
-}
-
-function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
 }

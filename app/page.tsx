@@ -430,7 +430,7 @@ export default function Home() {
           <Link href="/library" className="back-link">
             library →
           </Link>
-          <Link href={`/${CURRENT_YEAR}/stats`} className="back-link">
+          <Link href={`/${CURRENT_YEAR}/review`} className="back-link">
             {CURRENT_YEAR} in review →
           </Link>
           {!goodreadsImported && (

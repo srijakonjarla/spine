@@ -380,8 +380,8 @@ export default function YearPage() {
           >
             this month →
           </Link>
-          <Link href={`/${year}/stats`} className="back-link">
-            year stats →
+          <Link href={`/${year}/review`} className="back-link">
+            year in review →
           </Link>
           <Link href={`/${year}/goal`} className="back-link">
             goals →

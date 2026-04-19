@@ -311,9 +311,9 @@ function EnrichLibrary() {
   const checkProgress = async () => {
     try {
       const res = await apiFetch("/api/admin/backfill");
-      const { remaining: rem } = await res.json();
+      const { remaining: rem, running } = await res.json();
       setRemaining(rem);
-      if (rem === 0) {
+      if (!running) {
         stopPolling();
         setState("done");
       }

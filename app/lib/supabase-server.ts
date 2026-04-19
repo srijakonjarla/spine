@@ -25,3 +25,17 @@ export function createServerClient(req: NextRequest) {
 export function createActionClient(token: string | null | undefined) {
   return makeClient(token);
 }
+
+/**
+ * Creates a Supabase client authenticated with the service role key.
+ * Bypasses RLS — callers MUST scope every query by `user_id` themselves.
+ * Use only for background/long-running jobs where the session JWT would expire
+ * mid-run (e.g. admin backfill, bulk imports triggered via `after()`).
+ */
+export function createAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } },
+  );
+}

@@ -105,6 +105,7 @@ export default function ListsPage() {
           onClose={() => setShowForm(false)}
           onCreate={handleCreate}
           saving={saving}
+          existingTypes={lists.map((l) => l.listType)}
         />
       )}
     </div>

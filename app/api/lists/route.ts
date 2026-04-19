@@ -66,7 +66,22 @@ export async function POST(req: NextRequest) {
     )
     .single();
 
-  if (error)
+  if (error) {
+    // Partial unique index `lists_one_singleton_per_year` enforces
+    // one library_loan / book_ledger list per (user_id, year).
+    if (error.code === "23505") {
+      const label =
+        listType === "library_loan"
+          ? "library"
+          : listType === "book_ledger"
+            ? "book ledger"
+            : "list";
+      return NextResponse.json(
+        { error: `You already have a ${label} list for ${year}.` },
+        { status: 409 },
+      );
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
   return NextResponse.json(data, { status: 201 });
 }
