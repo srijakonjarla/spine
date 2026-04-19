@@ -229,7 +229,7 @@ export default function RereadsPage() {
                     <div
                       className={`absolute top-1.5 right-1.5 text-label font-bold px-1.5 py-0.5 rounded-full leading-none ${
                         isGold
-                          ? "bg-gold text-plum"
+                          ? "bg-gold text-fg-heading"
                           : "bg-plum text-white"
                       }`}
                     >

@@ -45,7 +45,7 @@ export default function TimeOfDay({ timeOfDay, dominantSlot }: TimeOfDayProps) {
             );
           })}
         </div>
-        <div className="flex justify-between mt-1.5 text-label text-ink-light font-sans tracking-wider">
+        <div className="flex justify-between mt-1.5 text-label text-fg-muted font-sans tracking-wider">
           <span>6AM</span>
           <span>12PM</span>
           <span>6PM</span>

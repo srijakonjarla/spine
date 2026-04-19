@@ -58,7 +58,7 @@ export function ListSidebar({
               : "Books"}
       </p>
       <div className="rounded-xl px-4 py-3 text-center mb-5 border border-line bg-surface">
-        <p className="font-serif text-display font-bold text-plum leading-none">
+        <p className="font-serif text-display font-bold text-fg-heading leading-none">
           {list.items.length}
         </p>
         <p className="text-detail uppercase tracking-widest text-fg-faint mt-1 font-semibold">

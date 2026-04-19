@@ -293,7 +293,7 @@ export default function BookPage() {
     return {
       background: "var(--lavender)",
       border: "1px solid var(--lavender)",
-      color: "var(--plum)",
+      color: "var(--fg-heading)",
     };
   };
 
@@ -596,7 +596,7 @@ export default function BookPage() {
         {/* ── Read selector (shown when re-reads exist) ── */}
         {entry.reads.length > 0 && (
           <div className="bg-plum-trace border-b border-line px-10 py-2.5 flex items-center gap-2">
-            <span className="text-detail text-ink-light font-sans uppercase tracking-widest mr-1">
+            <span className="text-detail text-fg-muted font-sans uppercase tracking-widest mr-1">
               Read
             </span>
             {[...entry.reads].map((read, i) => (

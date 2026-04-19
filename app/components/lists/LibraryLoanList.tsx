@@ -308,7 +308,7 @@ export function LibraryLoanList({
             <button
               onClick={handleAdd}
               disabled={!draftTitle.trim() || adding}
-              className="text-xs font-semibold text-plum hover:text-plum-light transition-colors disabled:opacity-30"
+              className="text-xs font-semibold text-fg-heading hover:fg transition-colors disabled:opacity-30"
             >
               add ↵
             </button>

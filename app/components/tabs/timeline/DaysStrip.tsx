@@ -77,7 +77,7 @@ export default function DaysStrip({
     if (isFinish)
       bg = "linear-gradient(135deg, var(--terra), rgba(201,123,90,0.85))";
     else if (count >= 3) bg = "var(--bg-sage-50)";
-    const color = isFinish ? "white" : "var(--plum)";
+    const color = isFinish ? "white" : "var(--fg)";
     const isStartOfMonth = date.getDate() === 1;
     const monthLabel = isStartOfMonth
       ? date.toLocaleDateString("en-US", { month: "short" })
@@ -107,7 +107,7 @@ export default function DaysStrip({
 
   return (
     <div className="mb-7">
-      <p className="font-hand text-note text-ink-light mb-2.5">
+      <p className="font-hand text-note text-fg-muted mb-2.5">
         days you spent with this book
       </p>
       <div className="flex gap-[5px] flex-wrap items-center">{chips}</div>
@@ -115,7 +115,7 @@ export default function DaysStrip({
         {LEGEND.map(({ bg, label }) => (
           <span
             key={label}
-            className="flex items-center gap-[5px] text-detail text-ink-light font-sans"
+            className="flex items-center gap-[5px] text-detail text-fg-muted font-sans"
           >
             <span
               className="w-2.5 h-2.5 rounded-[2px] inline-block"

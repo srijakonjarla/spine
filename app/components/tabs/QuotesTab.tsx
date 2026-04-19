@@ -46,7 +46,7 @@ export default function QuotesTab() {
           onClick={() => setOpen((v) => !v)}
           className={`text-xs font-semibold font-sans rounded-full px-3.5 py-1.5 border-none cursor-pointer transition-colors ${
             open
-              ? "text-ink-light bg-plum-soft"
+              ? "text-fg-muted bg-plum-soft"
               : "text-terra bg-[var(--bg-terra-15)]"
           }`}
         >
@@ -69,7 +69,7 @@ export default function QuotesTab() {
             }}
             placeholder="paste the quote..."
             rows={3}
-            className="w-full bg-transparent border-none outline-none resize-none font-serif text-body-md italic leading-[1.7] text-ink mb-3"
+            className="w-full bg-transparent border-none outline-none resize-none font-serif text-body-md italic leading-[1.7] text-fg mb-3"
           />
           <div className="flex items-center gap-3">
             <input
@@ -77,7 +77,7 @@ export default function QuotesTab() {
               value={page}
               onChange={(e) => setPage(e.target.value)}
               placeholder="p. 42 (optional)"
-              className="focus:outline-none text-xs bg-transparent border-b border-line pb-0.5 text-ink-light font-sans w-30"
+              className="focus:outline-none text-xs bg-transparent border-b border-line pb-0.5 text-fg-muted font-sans w-30"
             />
             <button
               onClick={handleAdd}

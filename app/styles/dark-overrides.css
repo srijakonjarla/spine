@@ -1,0 +1,136 @@
+/* ─── Dark mode overrides for common Tailwind patterns ───────── */
+
+/* Stone text colours */
+[data-theme="dark"] .text-stone-900,
+[data-theme="dark"] .text-stone-800 {
+  color: var(--fg);
+}
+[data-theme="dark"] .text-stone-700 {
+  color: rgba(237, 232, 223, 0.82);
+}
+[data-theme="dark"] .text-stone-600,
+[data-theme="dark"] .text-stone-500 {
+  color: var(--fg-muted);
+}
+[data-theme="dark"] .text-stone-400,
+[data-theme="dark"] .text-stone-300 {
+  color: var(--fg-faint);
+}
+
+/* White/surface backgrounds */
+[data-theme="dark"] .bg-white {
+  background: var(--bg-surface) !important;
+}
+[data-theme="dark"] .bg-\[#FDFAF5\] {
+  background: var(--bg-surface) !important;
+}
+
+/* Stone backgrounds */
+[data-theme="dark"] .bg-stone-100 {
+  background: rgba(255, 255, 255, 0.07);
+}
+[data-theme="dark"] .bg-stone-50 {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Hover backgrounds */
+[data-theme="dark"] .hover\:bg-stone-50:hover,
+[data-theme="dark"] .hover\:bg-stone-100\/60:hover {
+  background: var(--bg-hover);
+}
+
+/* Borders */
+[data-theme="dark"] .border-stone-200 {
+  border-color: var(--border);
+}
+[data-theme="dark"] .border-stone-100 {
+  border-color: var(--border-light);
+}
+
+/* Active status pills */
+[data-theme="dark"] .bg-stone-900 {
+  background: rgba(237, 232, 223, 0.12) !important;
+}
+[data-theme="dark"] .bg-stone-900.text-white {
+  color: var(--fg) !important;
+}
+
+/* Hover text */
+[data-theme="dark"] .hover\:text-stone-900:hover,
+[data-theme="dark"] .hover\:text-stone-700:hover,
+[data-theme="dark"] .hover\:text-stone-600:hover {
+  color: var(--fg);
+}
+[data-theme="dark"] .hover\:text-stone-500:hover {
+  color: var(--fg-muted);
+}
+
+/* Plum-tinted backgrounds used in sidebar links */
+[data-theme="dark"] .bg-\[rgba\(45\2c27\2c46\2c0\.1\)\] {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Animate pulse skeletons */
+[data-theme="dark"] .bg-stone-200 {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Borders — extra weights */
+[data-theme="dark"] .border-stone-300 {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* bg-stone-900 used as primary button (save, submit, etc.) */
+[data-theme="dark"] .bg-stone-900,
+[data-theme="dark"] .hover\:bg-stone-700:hover {
+  background: rgba(237, 232, 223, 0.12) !important;
+}
+[data-theme="dark"] .bg-stone-900.text-white,
+[data-theme="dark"] .bg-stone-700.text-white {
+  color: var(--fg) !important;
+}
+
+/* Amber status text */
+[data-theme="dark"] .text-amber-700 {
+  color: var(--terra);
+}
+
+/* Forms — bg-white textareas / inputs */
+[data-theme="dark"] .bg-white.border,
+[data-theme="dark"] .bg-white.focus\:ring-stone-200 {
+  background: var(--bg-surface) !important;
+  color: var(--fg);
+  border-color: var(--border) !important;
+}
+[data-theme="dark"] .focus\:ring-stone-200:focus {
+  --tw-ring-color: var(--border);
+}
+
+/* Profile / preview surface */
+[data-theme="dark"] .bg-stone-50 {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Hover borders */
+[data-theme="dark"] .hover\:border-stone-400:hover,
+[data-theme="dark"] .hover\:border-stone-500:hover,
+[data-theme="dark"] .hover\:border-stone-600:hover {
+  border-color: var(--fg-muted);
+}
+
+/* Focus borders */
+[data-theme="dark"] .focus\:border-stone-500:focus,
+[data-theme="dark"] .focus\:border-stone-600:focus {
+  border-color: var(--fg-muted);
+}
+
+/* Placeholder text */
+[data-theme="dark"] .placeholder\:text-stone-300::placeholder {
+  color: var(--fg-faint);
+}
+
+/* Catalogue search dropdown */
+[data-theme="dark"] .bg-\[rgba\(45\2c27\2c46\2c0\.05\)\],
+[data-theme="dark"] .hover\:bg-\[rgba\(45\2c27\2c46\2c0\.04\)\]:hover {
+  background: rgba(255, 255, 255, 0.06);
+}

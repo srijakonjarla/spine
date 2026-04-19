@@ -25,7 +25,7 @@ export default function BestReadingDay({ bestDay }: BestReadingDayProps) {
     <>
       <p className="timeline-section-label mb-2.5">Best reading day</p>
       <div className="book-surface p-3 mb-6">
-        <p className="font-serif text-[26px] font-bold text-plum leading-none">
+        <p className="font-serif text-[26px] font-bold text-fg-heading leading-none">
           {headline}
         </p>
         <p className="font-hand text-note text-terra mt-1.5 leading-snug">

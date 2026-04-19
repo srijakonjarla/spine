@@ -1,0 +1,33 @@
+/* ─── Book hero gradients ────────────────────────────────────────
+   Defined outside @layer so they are never purged by Tailwind's
+   content scan (the class name is constructed dynamically in JS). */
+.hero-gradient-0 {
+  background: linear-gradient(135deg, #3a1f3d 0%, #4a2b5a 60%, #5a3268 100%);
+}
+.hero-gradient-1 {
+  background: linear-gradient(135deg, #5b2f0f 0%, #8e4a1a 55%, #6b3a1a 100%);
+}
+.hero-gradient-2 {
+  background: linear-gradient(135deg, #1a2f5c 0%, #2a4d8f 55%, #1e3a7a 100%);
+}
+.hero-gradient-3 {
+  background: linear-gradient(135deg, #0f2218 0%, #1e3a2e 55%, #2a5240 100%);
+}
+.hero-gradient-4 {
+  background: linear-gradient(135deg, #8e4a2e 0%, #c97b5a 55%, #a05c42 100%);
+}
+.hero-gradient-5 {
+  background: linear-gradient(135deg, #4a2862 0%, #7b4a8d 55%, #5a3270 100%);
+}
+.hero-gradient-6 {
+  background: linear-gradient(135deg, #1c2040 0%, #2d3561 55%, #1e2a50 100%);
+}
+.hero-gradient-7 {
+  background: linear-gradient(135deg, #5c1a1a 0%, #8e2c2c 55%, #6a2020 100%);
+}
+.hero-gradient-8 {
+  background: linear-gradient(135deg, #8a6b20 0%, #b48930 55%, #8a6818 100%);
+}
+.hero-gradient-9 {
+  background: linear-gradient(135deg, #3a2018 0%, #5b3a2e 55%, #4a2e22 100%);
+}

@@ -1,0 +1,81 @@
+/* ─── Mood theming ─────────────────────────────────────────────
+   Each .mood-{name} sets two custom props consumed by the
+   component classes below. Default fallback = plum.            */
+@layer components {
+  .mood-cozy {
+    --mood-c: var(--mood-cozy);
+    --mood-ch: var(--ch-terra);
+  }
+  .mood-dark {
+    --mood-c: var(--mood-dark);
+    --mood-ch: var(--ch-mood-dark);
+  }
+  .mood-hopeful {
+    --mood-c: var(--mood-hopeful);
+    --mood-ch: var(--ch-sage);
+  }
+  .mood-funny {
+    --mood-c: var(--mood-funny);
+    --mood-ch: var(--ch-gold);
+  }
+  .mood-slow-burn {
+    --mood-c: var(--mood-slow-burn);
+    --mood-ch: var(--ch-lavender);
+  }
+  .mood-heart-wrenching {
+    --mood-c: var(--mood-heart-wrenching);
+    --mood-ch: var(--ch-mood-heart);
+  }
+  .mood-whimsical {
+    --mood-c: var(--mood-whimsical);
+    --mood-ch: var(--ch-mood-whimsical);
+  }
+  .mood-thought-provoking {
+    --mood-c: var(--mood-thought-provoking);
+    --mood-ch: var(--ch-plum);
+  }
+  .mood-escapist {
+    --mood-c: var(--mood-escapist);
+    --mood-ch: var(--ch-mood-escapist);
+  }
+
+  /* Filter chip — library shelf mood filter bar */
+  .mood-filter-chip {
+    --mood-c: var(--mood-default);
+    --mood-ch: var(--ch-plum);
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-surface);
+    color: var(--fg-muted);
+    transition:
+      background 0.15s,
+      color 0.15s,
+      border-color 0.15s;
+  }
+  .mood-filter-chip.active {
+    background: rgb(var(--mood-ch) / 0.13);
+    color: var(--mood-c);
+    border-color: var(--mood-c);
+  }
+
+  /* Grid tag — small badge on library grid cards */
+  .mood-grid-tag {
+    --mood-c: var(--mood-default);
+    --mood-ch: var(--ch-plum);
+    background: rgb(var(--mood-ch) / 0.8);
+    color: #fff;
+  }
+
+  /* Cloud pill — mood cloud on year stats page */
+  .mood-cloud-pill {
+    --mood-c: var(--mood-default);
+    --mood-ch: var(--ch-plum);
+    padding: 0.375rem 0.75rem;
+    border-radius: 9999px;
+    border: 1px solid rgb(var(--mood-ch) / 0.2);
+    background: rgb(var(--mood-ch) / 0.1);
+    color: var(--mood-c);
+  }
+}

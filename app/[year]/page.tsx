@@ -10,27 +10,16 @@ import { BookCoverThumb } from "@/components/BookCover";
 
 import { hashStr } from "@/lib/spineUtils";
 
-const SPINE_COLOR_CLASSES = [
-  "bg-[var(--year-shelf-0)]",
-  "bg-[var(--year-shelf-1)]",
-  "bg-[var(--year-shelf-2)]",
-  "bg-[var(--year-shelf-3)]",
-  "bg-[var(--year-shelf-4)]",
-  "bg-[var(--year-shelf-5)]",
-  "bg-[var(--year-shelf-6)]",
-  "bg-[var(--year-shelf-7)]",
-  "bg-[var(--year-shelf-8)]",
-  "bg-[var(--year-shelf-9)]",
-  "bg-[var(--year-shelf-10)]",
-  "bg-[var(--year-shelf-11)]",
-  "bg-[var(--year-shelf-12)]",
-  "bg-[var(--year-shelf-13)]",
-  "bg-[var(--year-shelf-14)]",
-  "bg-[var(--year-shelf-15)]",
-  "bg-[var(--year-shelf-16)]",
-  "bg-[var(--year-shelf-17)]",
-  "bg-[var(--year-shelf-18)]",
-] as const;
+/* Tailwind needs to see the full class names statically for purging:
+   bg-shelf-0 bg-shelf-1 bg-shelf-2 bg-shelf-3 bg-shelf-4 bg-shelf-5
+   bg-shelf-6 bg-shelf-7 bg-shelf-8 bg-shelf-9 bg-shelf-10 bg-shelf-11
+   bg-shelf-12 bg-shelf-13 bg-shelf-14 bg-shelf-15 bg-shelf-16 bg-shelf-17
+   bg-shelf-18 */
+const SHELF_COUNT = 19;
+const SPINE_COLOR_CLASSES = Array.from(
+  { length: SHELF_COUNT },
+  (_, i) => `bg-shelf-${i}`,
+);
 function spineColorClass(title: string) {
   return SPINE_COLOR_CLASSES[hashStr(title) % SPINE_COLOR_CLASSES.length];
 }

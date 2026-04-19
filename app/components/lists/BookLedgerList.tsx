@@ -11,7 +11,7 @@ import { toast } from "@/lib/toast";
 export const TX_TYPES = ["bought", "sold", "gifted", "donated"] as const;
 export type TxType = (typeof TX_TYPES)[number];
 export const TX_COLORS: Record<TxType, string> = {
-  bought: "text-plum bg-plum/10 border-plum/30",
+  bought: "text-fg-heading bg-plum/10 border-plum/30",
   sold: "text-sage bg-sage/10 border-sage/30",
   gifted: "text-gold bg-gold/10 border-gold/30",
   donated:
@@ -251,7 +251,7 @@ export function BookLedgerList({
             <button
               onClick={handleAdd}
               disabled={!draftTitle.trim() || adding}
-              className="text-xs font-semibold text-plum hover:text-plum-light transition-colors disabled:opacity-30"
+              className="text-xs font-semibold text-fg-heading hover:fg transition-colors disabled:opacity-30"
             >
               add ↵
             </button>

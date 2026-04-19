@@ -106,7 +106,7 @@ function HistoricalReadView({
           <p className="caveat-label mb-3">dates</p>
           <div className="space-y-2.5">
             <div>
-              <label className="text-label uppercase tracking-widest text-ink-light font-semibold block mb-0.5">
+              <label className="text-label uppercase tracking-widest text-fg-muted font-semibold block mb-0.5">
                 Started
               </label>
               <input
@@ -119,7 +119,7 @@ function HistoricalReadView({
               />
             </div>
             <div>
-              <label className="text-label uppercase tracking-widest text-ink-light font-semibold block mb-0.5">
+              <label className="text-label uppercase tracking-widest text-fg-muted font-semibold block mb-0.5">
                 Finished
               </label>
               <input
@@ -290,13 +290,13 @@ export default function ReflectionTab() {
           <p className="book-card-heading text-body-md">Book details</p>
           {metaRows.map((row) => (
             <div key={row.key} className="meta-row">
-              <span className="text-ink-light font-medium font-sans">
+              <span className="text-fg-muted font-medium font-sans">
                 {row.key}
               </span>
               {row.isRating ? (
                 <StarDisplay rating={entry.rating} size={12} />
               ) : (
-                <span className="text-plum font-semibold font-sans">
+                <span className="text-fg-heading font-semibold font-sans">
                   {row.val}
                 </span>
               )}
@@ -307,10 +307,10 @@ export default function ReflectionTab() {
         {/* Reading sessions count */}
         {entry.thoughts.length > 0 && (
           <div className="book-surface p-5 mb-3.5">
-            <p className="font-sans text-caption font-bold tracking-caps uppercase text-ink-light mb-2.5">
+            <p className="font-sans text-caption font-bold tracking-caps uppercase text-fg-muted mb-2.5">
               Reading sessions
             </p>
-            <p className="font-serif text-display font-bold text-plum">
+            <p className="font-serif text-display font-bold text-fg-heading">
               {entry.thoughts.length}
             </p>
             <p className="font-hand text-xs text-terra mt-0.5">
