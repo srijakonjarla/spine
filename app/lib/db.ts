@@ -1,5 +1,4 @@
 import { apiFetch } from "./api";
-import { supabase } from "./supabase";
 import type { BookEntry, BookRead, Thought } from "@/types";
 import {
   createEntryAction,
@@ -12,13 +11,6 @@ import {
   logHistoricalReadAction,
   updateBookReadAction,
 } from "./actions";
-
-async function getToken(): Promise<string> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  return session?.access_token ?? "";
-}
 
 // ---- mapping ----
 
@@ -170,8 +162,6 @@ export async function getEntry(id: string): Promise<BookEntry | null> {
   try {
     res = await apiFetch(`/api/books/${id}`);
   } catch (err) {
-    // 404 means the book doesn't exist (or belongs to another user) — return null
-    // so callers can redirect gracefully instead of crashing.
     if (err instanceof Error && err.message.startsWith("API error 404"))
       return null;
     throw err;
@@ -182,18 +172,18 @@ export async function getEntry(id: string): Promise<BookEntry | null> {
 }
 
 export async function createEntry(entry: BookEntry): Promise<void> {
-  await createEntryAction(await getToken(), entry);
+  await createEntryAction(entry);
 }
 
 export async function updateEntry(
   id: string,
   patch: Partial<BookEntry>,
 ): Promise<void> {
-  await updateEntryAction(await getToken(), id, patch);
+  await updateEntryAction(id, patch);
 }
 
 export async function deleteEntry(id: string): Promise<void> {
-  await deleteEntryAction(await getToken(), id);
+  await deleteEntryAction(id);
 }
 
 // ---- thoughts ----
@@ -202,24 +192,24 @@ export async function addThought(
   bookId: string,
   thought: Thought,
 ): Promise<void> {
-  await addThoughtAction(await getToken(), bookId, thought);
+  await addThoughtAction(bookId, thought);
 }
 
 export async function removeThought(
   thoughtId: string,
   bookId: string,
 ): Promise<void> {
-  await removeThoughtAction(await getToken(), thoughtId, bookId);
+  await removeThoughtAction(thoughtId, bookId);
 }
 
 // ---- re-reads ----
 
 export async function startNewRead(entry: BookEntry): Promise<void> {
-  await startNewReadAction(await getToken(), entry);
+  await startNewReadAction(entry);
 }
 
 export async function deleteBookRead(id: string): Promise<void> {
-  await deleteBookReadAction(await getToken(), id);
+  await deleteBookReadAction(id);
 }
 
 export async function logHistoricalRead(
@@ -232,7 +222,7 @@ export async function logHistoricalRead(
     feeling: string;
   },
 ): Promise<BookRead> {
-  return logHistoricalReadAction(await getToken(), bookId, read);
+  return logHistoricalReadAction(bookId, read);
 }
 
 export async function updateBookRead(
@@ -246,5 +236,5 @@ export async function updateBookRead(
     feeling: string;
   },
 ): Promise<BookRead> {
-  return updateBookReadAction(await getToken(), readId, patch);
+  return updateBookReadAction(readId, patch);
 }

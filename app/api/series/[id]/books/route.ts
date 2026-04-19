@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase-server";
+import { createApiClient } from "@/lib/supabase-server";
 import { upsertBookForUser } from "@/lib/bookUpsert.server";
 
 interface CatalogMeta {
@@ -16,7 +16,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const supabase = createServerClient(req);
+  const supabase = createApiClient(req);
   const {
     data: { user },
   } = await supabase.auth.getUser();

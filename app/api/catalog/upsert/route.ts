@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase-server";
+import { createApiClient } from "@/lib/supabase-server";
 
 /**
  * POST /api/catalog/upsert
@@ -8,7 +8,7 @@ import { createServerClient } from "@/lib/supabase-server";
  * Used when linking a list item to a catalog book for cover display.
  */
 export async function POST(req: NextRequest) {
-  const supabase = createServerClient(req);
+  const supabase = createApiClient(req);
   const {
     data: { user },
   } = await supabase.auth.getUser();

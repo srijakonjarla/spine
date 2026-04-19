@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse, after } from "next/server";
-import { createServerClient } from "@/lib/supabase-server";
+import { createApiClient } from "@/lib/supabase-server";
 import { autoLogToday } from "@/lib/autoLog";
 import { syncBookSeries } from "@/lib/seriesSync.server";
 import { flattenUserBook } from "@/lib/bookUpsert.server";
@@ -8,7 +8,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const supabase = createServerClient(req);
+  const supabase = createApiClient(req);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -49,7 +49,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const supabase = createServerClient(req);
+  const supabase = createApiClient(req);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -165,7 +165,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const supabase = createServerClient(req);
+  const supabase = createApiClient(req);
   const {
     data: { user },
   } = await supabase.auth.getUser();

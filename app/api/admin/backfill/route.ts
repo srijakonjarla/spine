@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createAdminClient, createServerClient } from "@/lib/supabase-server";
+import { createAdminClient, createApiClient } from "@/lib/supabase-server";
 import {
   BOOK_FIELDS,
   type RawHCBook,
@@ -262,7 +262,7 @@ async function countStale(
 }
 
 export async function GET(req: NextRequest) {
-  const supabase = createServerClient(req);
+  const supabase = createApiClient(req);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -275,7 +275,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = createServerClient(req);
+  const supabase = createApiClient(req);
   const {
     data: { user },
   } = await supabase.auth.getUser();

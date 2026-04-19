@@ -29,6 +29,12 @@ import { TabId } from "@/lib/books";
 import { BookContext } from "@/providers/BookContext";
 import type { ReadPatch } from "@/providers/BookContext";
 
+function addDays(date: string, n: number): string {
+  const d = new Date(date);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
 /** Deterministic 0-9 index derived from the book title, used to pick a hero gradient CSS class. */
 function heroGradientIndex(title: string): number {
   let h = 0;
@@ -477,7 +483,11 @@ export default function BookPage() {
                       <input
                         type="date"
                         value={viewedRead.dateStarted}
-                        max={viewedRead.dateFinished || localDateStr()}
+                        max={
+                          viewedRead.dateFinished
+                            ? addDays(viewedRead.dateFinished, -1)
+                            : localDateStr()
+                        }
                         onChange={(e) =>
                           handleUpdateRead(viewedRead.id, {
                             ...viewedRead,
@@ -492,7 +502,11 @@ export default function BookPage() {
                       <input
                         type="date"
                         value={viewedRead.dateFinished}
-                        min={viewedRead.dateStarted || undefined}
+                        min={
+                          viewedRead.dateStarted
+                            ? addDays(viewedRead.dateStarted, 1)
+                            : undefined
+                        }
                         max={localDateStr()}
                         onChange={(e) =>
                           handleUpdateRead(viewedRead.id, {
@@ -513,9 +527,9 @@ export default function BookPage() {
                         type="date"
                         value={entry.dateStarted}
                         max={
-                          entry.dateFinished ||
-                          entry.dateShelved ||
-                          localDateStr()
+                          entry.dateFinished
+                            ? addDays(entry.dateFinished, -1)
+                            : localDateStr()
                         }
                         onChange={(e) =>
                           update({ dateStarted: e.target.value })
@@ -529,7 +543,11 @@ export default function BookPage() {
                         <input
                           type="date"
                           value={entry.dateFinished}
-                          min={entry.dateStarted || undefined}
+                          min={
+                            entry.dateStarted
+                              ? addDays(entry.dateStarted, 1)
+                              : undefined
+                          }
                           max={localDateStr()}
                           onChange={(e) =>
                             update({ dateFinished: e.target.value })

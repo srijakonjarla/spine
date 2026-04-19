@@ -1,7 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 
-function makeClient(token: string | null | undefined) {
+/**
+ * Creates a Supabase client for API route handlers.
+ * Reads the JWT from the Authorization header so RLS policies apply normally.
+ */
+export function createApiClient(req: NextRequest) {
+  const token = req.headers.get("Authorization")?.replace("Bearer ", "");
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
@@ -10,20 +17,29 @@ function makeClient(token: string | null | undefined) {
 }
 
 /**
- * Creates a Supabase client authenticated as the requesting user.
- * Reads the JWT from the Authorization header so RLS policies apply normally.
+ * Creates a Supabase client for Server Actions.
+ * Reads auth from cookies — no token argument needed, nothing logged by Next.js.
  */
-export function createServerClient(req: NextRequest) {
-  const token = req.headers.get("Authorization")?.replace("Bearer ", "");
-  return makeClient(token);
-}
-
-/**
- * Creates a Supabase client for use inside Server Actions.
- * The caller passes the JWT obtained on the client via supabase.auth.getSession().
- */
-export function createActionClient(token: string | null | undefined) {
-  return makeClient(token);
+export async function createActionClient() {
+  const cookieStore = await cookies();
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
+    {
+      cookies: {
+        getAll: () => cookieStore.getAll(),
+        setAll: (cookiesToSet) => {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
+            );
+          } catch {
+            // Server Components can't set cookies; safe to ignore in read-only contexts
+          }
+        },
+      },
+    },
+  );
 }
 
 /**

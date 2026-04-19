@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase-server";
+import { createApiClient } from "@/lib/supabase-server";
 
 async function verifyOwner(
-  supabase: ReturnType<typeof createServerClient>,
+  supabase: ReturnType<typeof createApiClient>,
   readId: string,
   userId: string,
 ) {
@@ -19,7 +19,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; readId: string }> },
 ) {
-  const supabase = createServerClient(req);
+  const supabase = createApiClient(req);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -55,7 +55,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; readId: string }> },
 ) {
-  const supabase = createServerClient(req);
+  const supabase = createApiClient(req);
   const {
     data: { user },
   } = await supabase.auth.getUser();

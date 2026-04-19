@@ -9,8 +9,8 @@ import type { BookEntry, BookRead, Thought } from "@/types";
 
 // ── Auth helper ────────────────────────────────────────────────────────────────
 
-async function authed(token: string | null) {
-  const supabase = createActionClient(token);
+async function authed() {
+  const supabase = await createActionClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -20,11 +20,8 @@ async function authed(token: string | null) {
 
 // ── Books ──────────────────────────────────────────────────────────────────────
 
-export async function createEntryAction(
-  token: string,
-  entry: BookEntry,
-): Promise<void> {
-  const { supabase, user } = await authed(token);
+export async function createEntryAction(entry: BookEntry): Promise<void> {
+  const { supabase, user } = await authed();
   await upsertBookForUser(
     supabase,
     user.id,
@@ -56,11 +53,10 @@ export async function createEntryAction(
 }
 
 export async function updateEntryAction(
-  token: string,
   id: string,
   patch: Partial<BookEntry>,
 ): Promise<void> {
-  const { supabase, user } = await authed(token);
+  const { supabase, user } = await authed();
   const now = new Date().toISOString();
 
   const { data: ub } = await supabase
@@ -161,11 +157,8 @@ export async function updateEntryAction(
   }
 }
 
-export async function deleteEntryAction(
-  token: string,
-  id: string,
-): Promise<void> {
-  const { supabase, user } = await authed(token);
+export async function deleteEntryAction(id: string): Promise<void> {
+  const { supabase, user } = await authed();
   const { error } = await supabase
     .from("user_books")
     .delete()
@@ -177,11 +170,10 @@ export async function deleteEntryAction(
 // ── Thoughts ───────────────────────────────────────────────────────────────────
 
 export async function addThoughtAction(
-  token: string,
   bookId: string,
   thought: Thought,
 ): Promise<void> {
-  const { supabase, user } = await authed(token);
+  const { supabase, user } = await authed();
   const { error } = await supabase.rpc("add_thought", {
     p_id: thought.id,
     p_book_id: bookId,
@@ -194,11 +186,10 @@ export async function addThoughtAction(
 }
 
 export async function removeThoughtAction(
-  token: string,
   thoughtId: string,
   bookId: string,
 ): Promise<void> {
-  const { supabase, user } = await authed(token);
+  const { supabase, user } = await authed();
 
   const { data: book } = await supabase
     .from("user_books")
@@ -217,11 +208,8 @@ export async function removeThoughtAction(
 
 // ── Reads ──────────────────────────────────────────────────────────────────────
 
-export async function startNewReadAction(
-  token: string,
-  entry: BookEntry,
-): Promise<void> {
-  const { supabase, user } = await authed(token);
+export async function startNewReadAction(entry: BookEntry): Promise<void> {
+  const { supabase, user } = await authed();
   const { error } = await supabase.rpc("start_new_read", {
     p_book_id: entry.id,
     p_status: entry.status,
@@ -236,11 +224,8 @@ export async function startNewReadAction(
   await autoLogToday(supabase, user.id);
 }
 
-export async function deleteBookReadAction(
-  token: string,
-  readId: string,
-): Promise<void> {
-  const { supabase, user } = await authed(token);
+export async function deleteBookReadAction(readId: string): Promise<void> {
+  const { supabase, user } = await authed();
   const { data: read } = await supabase
     .from("book_reads")
     .select("id")
@@ -253,7 +238,6 @@ export async function deleteBookReadAction(
 }
 
 export async function logHistoricalReadAction(
-  token: string,
   bookId: string,
   read: {
     status: string;
@@ -263,7 +247,7 @@ export async function logHistoricalReadAction(
     feeling: string;
   },
 ): Promise<BookRead> {
-  const { supabase, user } = await authed(token);
+  const { supabase, user } = await authed();
   const { data, error } = await supabase
     .from("book_reads")
     .insert({
@@ -294,7 +278,6 @@ export async function logHistoricalReadAction(
 }
 
 export async function updateBookReadAction(
-  token: string,
   readId: string,
   patch: {
     status: string;
@@ -304,7 +287,7 @@ export async function updateBookReadAction(
     feeling: string;
   },
 ): Promise<BookRead> {
-  const { supabase, user } = await authed(token);
+  const { supabase, user } = await authed();
   const { data: existing } = await supabase
     .from("book_reads")
     .select("id")
