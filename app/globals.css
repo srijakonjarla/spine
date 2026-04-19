@@ -858,6 +858,63 @@ h3 {
     align-items: flex-start;
   }
 
+  /* Through entry date */
+  .thought-date {
+    width: 90px;
+    flex-shrink: 0;
+    padding-top: 2px;
+    font-family: var(--font-caveat), cursive;
+    font-size: 15px;
+    color: var(--terra);
+  }
+
+  .thought-pages {
+    display: block;
+    font-family: var(--font-playfair), Georgia, serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--plum);
+    margin-top: 2px;
+  }
+
+  .thought-badge-finished {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--terra);
+    border: 1px solid var(--terra);
+    border-radius: 4px;
+    padding: 1px 6px;
+    white-space: nowrap;
+  }
+
+  .thought-badge-pages {
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sage);
+    border-radius: 100px;
+    padding: 2px 7px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    background-color: var(--bg-sage-pill);
+  }
+
+  .thought-note {
+    font-family: var(--font-caveat), cursive;
+    font-size: 16px;
+    color: var(--ink);
+    line-height: 1.55;
+    flex: 1;
+  }
+
   /* Calendar day cell in timeline */
   .timeline-day {
     width: 34px;
@@ -872,6 +929,40 @@ h3 {
     font-weight: 700;
     font-family: var(--font-dm-sans), system-ui, sans-serif;
     cursor: default;
+  }
+
+  .timeline-day-num {
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .timeline-day-pages {
+    font-size: 9px;
+    font-weight: 500;
+    opacity: 0.75;
+    line-height: 1;
+  }
+
+  .timeline-day-gap {
+    min-width: 22px;
+    padding: 5px 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-light);
+    opacity: 0.5;
+  }
+
+  /* Handwritten sidebar section label (Timeline) */
+  .timeline-section-label {
+    font-family: var(--font-caveat), cursive;
+    font-size: 17px;
+    letter-spacing: 0;
+    line-height: 1;
   }
 
   /* Quoted passage block */

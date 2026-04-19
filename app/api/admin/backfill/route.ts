@@ -74,10 +74,7 @@ async function fetchStaleBooks(
   return rows;
 }
 
-async function runBackfill(
-  supabase: SupabaseClient,
-  userId: string,
-) {
+async function runBackfill(supabase: SupabaseClient, userId: string) {
   const stale = await fetchStaleBooks(supabase, userId);
   console.log(
     `[backfill] ${stale.length} catalog rows to enrich for user ${userId}`,
@@ -170,7 +167,10 @@ async function runBackfill(
       );
       const followUpQuery = `query BackfillFollowUp { ${followUpFragments.join("\n")} }`;
       const followUpJson = await hcPost(followUpQuery, "[backfill]");
-      const followUpData = (followUpJson?.data ?? {}) as Record<string, unknown>;
+      const followUpData = (followUpJson?.data ?? {}) as Record<
+        string,
+        unknown
+      >;
       for (const { idx, bookId } of searchHits) {
         const raw = followUpData[`b${idx}`];
         const books: RawHCBook[] = Array.isArray(raw) ? raw : [];
@@ -213,7 +213,8 @@ async function runBackfill(
       if (audioDurationMinutes != null && row.audio_duration_minutes == null) {
         patch.audio_duration_minutes = audioDurationMinutes;
       }
-      if (parsed.publisher && !row.publisher) patch.publisher = parsed.publisher;
+      if (parsed.publisher && !row.publisher)
+        patch.publisher = parsed.publisher;
 
       if (Object.keys(patch).length) {
         patch.updated_at = new Date().toISOString();

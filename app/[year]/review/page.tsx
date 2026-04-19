@@ -7,11 +7,6 @@ import { StatCard } from "@/components/StatCard";
 import { formatDate } from "@/lib/dates";
 import type { BookEntry } from "@/types";
 import {
-  countBy,
-  countTags,
-  fmtHours,
-  fmtPages,
-  uniqueById,
   MonthlyChart,
   RatingsAndFormats,
   MissingDataCard,
@@ -20,6 +15,11 @@ import {
   ShortestLongestSection,
   BookListSection,
   RereadsSection,
+  countBy,
+  countTags,
+  uniqueById,
+  fmtHours,
+  fmtPages,
 } from "@/components/review";
 
 export default function YearReviewPage() {
@@ -60,7 +60,9 @@ export default function YearReviewPage() {
   );
 
   const printMissingPages = uniqueById(printBooks.filter((b) => !b.pageCount));
-  const audioMissingHours = uniqueById(audioBooks.filter((b) => !b.audioDurationMinutes));
+  const audioMissingHours = uniqueById(
+    audioBooks.filter((b) => !b.audioDurationMinutes),
+  );
 
   const libraryFinished = finishedBooks.filter((b) => libraryBookIds.has(b.id));
   const rereads = finishedBooks.filter((b) => b.reads.length > 0);
@@ -97,7 +99,10 @@ export default function YearReviewPage() {
   const maxMonthly = Math.max(...months.map((m) => m.count), 1);
 
   const genreCounts = countTags(finishedBooks, (b) => b.genres);
-  const formatCounts = countBy(finishedBooks.filter((b) => b.format), (b) => b.format);
+  const formatCounts = countBy(
+    finishedBooks.filter((b) => b.format),
+    (b) => b.format,
+  );
   const publisherCounts = countBy(
     uniqueById(finishedBooks).filter((b) => b.publisher),
     (b) => b.publisher,
@@ -109,12 +114,19 @@ export default function YearReviewPage() {
     }),
     (s) => s,
   );
-  const diversityCounts = countTags(uniqueById(finishedBooks), (b) => b.diversityTags);
+  const diversityCounts = countTags(
+    uniqueById(finishedBooks),
+    (b) => b.diversityTags,
+  );
 
-  const withPages = uniqueById(printBooks.filter((b) => (b.pageCount ?? 0) > 0))
-    .sort((a, b) => (a.pageCount ?? 0) - (b.pageCount ?? 0));
-  const withAudio = uniqueById(audioBooks.filter((b) => (b.audioDurationMinutes ?? 0) > 0))
-    .sort((a, b) => (a.audioDurationMinutes ?? 0) - (b.audioDurationMinutes ?? 0));
+  const withPages = uniqueById(
+    printBooks.filter((b) => (b.pageCount ?? 0) > 0),
+  ).sort((a, b) => (a.pageCount ?? 0) - (b.pageCount ?? 0));
+  const withAudio = uniqueById(
+    audioBooks.filter((b) => (b.audioDurationMinutes ?? 0) > 0),
+  ).sort(
+    (a, b) => (a.audioDurationMinutes ?? 0) - (b.audioDurationMinutes ?? 0),
+  );
 
   const hasData = finishedBooks.length > 0;
 
@@ -160,7 +172,8 @@ export default function YearReviewPage() {
               {finishedBooks.length}{" "}
               {finishedBooks.length === 1 ? "book" : "books"} finished
               {totalPages > 0 && ` · ${fmtPages(totalPages)} pages`}
-              {totalAudioMinutes > 0 && ` · ${fmtHours(totalAudioMinutes)} listened`}
+              {totalAudioMinutes > 0 &&
+                ` · ${fmtHours(totalAudioMinutes)} listened`}
               {loggedDates.size > 0 && ` · ${loggedDates.size} days read`}
             </p>
           )}
@@ -176,23 +189,77 @@ export default function YearReviewPage() {
           <>
             {/* Big numbers */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-14">
-              <StatCard label="books finished" value={finishedBooks.length} accentClass="border-t-[var(--stat-border-books)]" />
-              <StatCard label="pages read" value={totalPages > 0 ? fmtPages(totalPages) : "—"} accentClass="border-t-[var(--stat-border-days)]" />
-              <StatCard label="hours listened" value={totalAudioMinutes > 0 ? fmtHours(totalAudioMinutes) : "—"} accentClass="border-t-[var(--stat-border-rating)]" />
-              <StatCard label="days read" value={loggedDates.size} accentClass="border-t-[var(--stat-border-quotes)]" />
-              <StatCard label="re-reads" value={rereads.length} accentClass="border-t-[var(--stat-border-books)]" />
-              <StatCard label="library checkouts" value={libraryFinished.length} accentClass="border-t-[var(--stat-border-days)]" />
-              <StatCard label="did not finish" value={dnfs.length} accentClass="border-t-[var(--stat-border-rating)]" />
-              <StatCard label="avg rating" value={avgRating > 0 ? `${avgRating.toFixed(1)}★` : "—"} accentClass="border-t-[var(--stat-border-quotes)]" />
+              <StatCard
+                label="books finished"
+                value={finishedBooks.length}
+                accentClass="border-t-[var(--stat-border-books)]"
+              />
+              <StatCard
+                label="pages read"
+                value={totalPages > 0 ? fmtPages(totalPages) : "—"}
+                accentClass="border-t-[var(--stat-border-days)]"
+              />
+              <StatCard
+                label="hours listened"
+                value={
+                  totalAudioMinutes > 0 ? fmtHours(totalAudioMinutes) : "—"
+                }
+                accentClass="border-t-[var(--stat-border-rating)]"
+              />
+              <StatCard
+                label="days read"
+                value={loggedDates.size}
+                accentClass="border-t-[var(--stat-border-quotes)]"
+              />
+              <StatCard
+                label="re-reads"
+                value={rereads.length}
+                accentClass="border-t-[var(--stat-border-books)]"
+              />
+              <StatCard
+                label="library checkouts"
+                value={libraryFinished.length}
+                accentClass="border-t-[var(--stat-border-days)]"
+              />
+              <StatCard
+                label="did not finish"
+                value={dnfs.length}
+                accentClass="border-t-[var(--stat-border-rating)]"
+              />
+              <StatCard
+                label="avg rating"
+                value={avgRating > 0 ? `${avgRating.toFixed(1)}★` : "—"}
+                accentClass="border-t-[var(--stat-border-quotes)]"
+              />
             </div>
 
-            <MissingDataCard printMissingPages={printMissingPages} audioMissingHours={audioMissingHours} />
+            <MissingDataCard
+              printMissingPages={printMissingPages}
+              audioMissingHours={audioMissingHours}
+            />
             <MonthlyChart months={months} maxMonthly={maxMonthly} />
-            <RatingsAndFormats ratingDist={ratingDist} maxRatingCount={maxRatingCount} dnfs={dnfs} formatCounts={formatCounts} />
+            <RatingsAndFormats
+              ratingDist={ratingDist}
+              maxRatingCount={maxRatingCount}
+              dnfs={dnfs}
+              formatCounts={formatCounts}
+            />
             <GenreSection items={genreCounts} />
-            <BarSection label="by diversity" items={diversityCounts} color="plum" />
-            <BarSection label="by publisher" items={publisherCounts} color="sage" />
-            <BarSection label="where books came from" items={acquiredCounts} color="terra" />
+            <BarSection
+              label="by diversity"
+              items={diversityCounts}
+              color="plum"
+            />
+            <BarSection
+              label="by publisher"
+              items={publisherCounts}
+              color="sage"
+            />
+            <BarSection
+              label="where books came from"
+              items={acquiredCounts}
+              color="terra"
+            />
             <ShortestLongestSection
               shortestPrint={withPages[0] ?? null}
               longestPrint={withPages[withPages.length - 1] ?? null}
