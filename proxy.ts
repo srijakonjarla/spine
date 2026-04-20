@@ -1,7 +1,33 @@
+import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 
-export function proxy(req: NextRequest) {
-  // Require a Bearer token on all API routes
+export async function proxy(req: NextRequest) {
+  let res = NextResponse.next({ request: req });
+
+  // Create a Supabase client that reads/writes cookies on every request
+  // so expired auth tokens are refreshed server-side.
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
+    {
+      cookies: {
+        getAll: () => req.cookies.getAll(),
+        setAll: (cookiesToSet) => {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            req.cookies.set(name, value);
+            res.cookies.set(name, value, options);
+          });
+        },
+      },
+    },
+  );
+
+  // Refresh the session — rotates expired JWTs and clears stale sessions.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Require a Bearer token on all API routes (except public catalog)
   if (
     req.nextUrl.pathname.startsWith("/api/") &&
     req.nextUrl.pathname !== "/api/catalog"
@@ -11,9 +37,34 @@ export function proxy(req: NextRequest) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
   }
-  return NextResponse.next();
+
+  // Server-side redirect: unauthenticated users → login
+  const isPublicPath =
+    req.nextUrl.pathname === "/login" ||
+    req.nextUrl.pathname.startsWith("/auth/");
+
+  if (!user && !isPublicPath && !req.nextUrl.pathname.startsWith("/api/")) {
+    const loginUrl = req.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Authenticated users shouldn't see the login page
+  if (user && req.nextUrl.pathname === "/login") {
+    const homeUrl = req.nextUrl.clone();
+    homeUrl.pathname = "/";
+    return NextResponse.redirect(homeUrl);
+  }
+
+  return res;
 }
 
 export const config = {
-  matcher: ["/api/:path*"],
+  matcher: [
+    /*
+     * Match all paths except static assets so auth session
+     * refresh runs on every navigation.
+     */
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+  ],
 };

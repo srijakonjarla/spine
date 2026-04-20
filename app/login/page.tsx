@@ -21,6 +21,16 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      if ((mode === "signup" || mode === "signin") && password.length < 8) {
+        setError("password must be at least 8 characters");
+        setLoading(false);
+        return;
+      }
+      if (mode === "signup" && !name.trim()) {
+        setError("please enter your name");
+        setLoading(false);
+        return;
+      }
       if (mode === "signup") {
         await signUp(email, password, name);
         setMessage("check your email to confirm your account.");
