@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { resetPassword } from "@/lib/auth";
 
-type Stage = "exchanging" | "form" | "done" | "error";
+type Stage = "exchanging" | "otp" | "form" | "done" | "error";
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -16,6 +16,8 @@ function ResetPasswordForm() {
   const [error, setError] = useState("");
   const [supabaseError, setSupabaseError] = useState("");
   const [email, setEmail] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState("");
 
@@ -36,32 +38,38 @@ function ResetPasswordForm() {
       return;
     }
 
-    // Implicit flow — Supabase JS auto-creates a session from the hash fragment.
-    // Listen for the PASSWORD_RECOVERY event, or check if the session already exists.
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY" && session) {
-        setStage("form");
+    // Check hash fragment for implicit flow tokens
+    const hash = window.location.hash.substring(1);
+    if (hash) {
+      const hashParams = new URLSearchParams(hash);
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+      if (accessToken && refreshToken) {
+        supabase.auth
+          .setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
+          .then(({ error }) => {
+            if (error) {
+              setSupabaseError(error.message);
+              setStage("error");
+            } else {
+              setStage("form");
+            }
+          });
+        return;
       }
-    });
+    }
 
-    // Session may already be set by the time this effect runs
+    // No code or hash — check for existing session, otherwise show OTP input
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setStage("form");
+      } else {
+        setStage("otp");
       }
     });
-
-    // Fallback: if nothing fires within 4s, show error
-    const timeout = setTimeout(() => {
-      setStage((s) => (s === "exchanging" ? "error" : s));
-    }, 4000);
-
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeout);
-    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -85,6 +93,24 @@ function ResetPasswordForm() {
     } else {
       await supabase.auth.signOut();
       window.location.href = "/login?reset=1";
+    }
+  };
+
+  const handleOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !otpCode.trim()) return;
+    setError("");
+    setOtpLoading(true);
+    const { error } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: otpCode.trim(),
+      type: "recovery",
+    });
+    if (error) {
+      setOtpLoading(false);
+      setError(error.message);
+    } else {
+      setStage("form");
     }
   };
 
@@ -114,6 +140,63 @@ function ResetPasswordForm() {
 
         {stage === "exchanging" && (
           <p className="text-xs text-stone-400">verifying link...</p>
+        )}
+
+        {stage === "otp" && (
+          <form onSubmit={handleOtpSubmit} className="space-y-4">
+            <p className="text-xs text-stone-400 mb-6">
+              enter the code from your reset email.
+            </p>
+            <div>
+              <label
+                htmlFor="otp-email"
+                className="text-xs text-stone-400 block mb-1"
+              >
+                email
+              </label>
+              <input
+                id="otp-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                autoFocus
+                className="underline-input"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="otp-code"
+                className="text-xs text-stone-400 block mb-1"
+              >
+                reset code
+              </label>
+              <input
+                id="otp-code"
+                type="text"
+                inputMode="numeric"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value)}
+                placeholder="123456"
+                required
+                className="underline-input"
+              />
+            </div>
+            {error && <p className="text-xs text-red-400">{error}</p>}
+            <div className="pt-2 flex items-center gap-4">
+              <button
+                type="submit"
+                disabled={otpLoading}
+                className="btn-primary"
+              >
+                {otpLoading ? "..." : "verify code"}
+              </button>
+              <a href="/login" className="back-link">
+                ← sign in
+              </a>
+            </div>
+          </form>
         )}
 
         {stage === "error" && (

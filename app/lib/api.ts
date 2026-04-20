@@ -6,11 +6,9 @@ let cachedToken: string | null = null;
 
 // Store the initial getSession() promise so apiFetch can await it if the
 // token hasn't been cached yet (prevents race conditions on first load).
-const tokenReady = supabase.auth
-  .getSession()
-  .then(({ data: { session } }) => {
-    cachedToken = session?.access_token ?? null;
-  });
+const tokenReady = supabase.auth.getSession().then(({ data: { session } }) => {
+  cachedToken = session?.access_token ?? null;
+});
 
 supabase.auth.onAuthStateChange((_event, session) => {
   cachedToken = session?.access_token ?? null;
