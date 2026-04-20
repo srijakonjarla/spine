@@ -39,6 +39,26 @@ function AcceptInviteForm() {
         setStage("confirm");
         return;
       }
+
+      // Implicit flow redirect: Supabase returned tokens in the hash
+      // (e.g. #access_token=...&refresh_token=...). Set the session
+      // explicitly to avoid race conditions with onAuthStateChange.
+      const hashParams2 = new URLSearchParams(hash);
+      const accessToken = hashParams2.get("access_token");
+      const refreshToken = hashParams2.get("refresh_token");
+      if (accessToken && refreshToken) {
+        supabase.auth
+          .setSession({ access_token: accessToken, refresh_token: refreshToken })
+          .then(({ error }) => {
+            if (error) {
+              setSupabaseError(error.message);
+              setStage("error");
+            } else {
+              setStage("form");
+            }
+          });
+        return;
+      }
     }
 
     const params = new URLSearchParams(window.location.search);
@@ -56,25 +76,14 @@ function AcceptInviteForm() {
       return;
     }
 
-    // Implicit flow fallback
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) setStage("form");
-    });
-
+    // Fallback: check if there's already an active session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setStage("form");
+      if (session) {
+        setStage("form");
+      } else {
+        setStage("error");
+      }
     });
-
-    const timeout = setTimeout(() => {
-      setStage((s) => (s === "exchanging" ? "error" : s));
-    }, 4000);
-
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeout);
-    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
