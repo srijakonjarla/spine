@@ -4,12 +4,15 @@ import { supabase } from "@/lib/supabase";
 // Updated automatically via onAuthStateChange listener.
 let cachedToken: string | null = null;
 
-supabase.auth.onAuthStateChange((_event, session) => {
-  cachedToken = session?.access_token ?? null;
-});
+// Store the initial getSession() promise so apiFetch can await it if the
+// token hasn't been cached yet (prevents race conditions on first load).
+const tokenReady = supabase.auth
+  .getSession()
+  .then(({ data: { session } }) => {
+    cachedToken = session?.access_token ?? null;
+  });
 
-// Seed the cache on module load
-supabase.auth.getSession().then(({ data: { session } }) => {
+supabase.auth.onAuthStateChange((_event, session) => {
   cachedToken = session?.access_token ?? null;
 });
 
@@ -21,6 +24,10 @@ export async function apiFetch(
   path: string,
   options: RequestInit = {},
 ): Promise<Response> {
+  // If the token hasn't been cached yet, wait for the initial getSession()
+  if (cachedToken === null) {
+    await tokenReady;
+  }
   const token = cachedToken;
 
   const res = await fetch(path, {
