@@ -5,7 +5,6 @@ interface UserBookRow {
   id: string;
   title_override: string | null;
   author_override: string | null;
-  cover_url: string | null;
   mood_tags: string[] | null;
   date_started: string | null;
   date_finished: string | null;
@@ -46,7 +45,7 @@ export async function GET(req: NextRequest) {
       supabase
         .from("user_books")
         .select(
-          "id, status, mood_tags, date_started, cover_url, title_override, author_override, catalog_books(title, author, cover_url)",
+          "id, status, mood_tags, date_started, title_override, author_override, catalog_books(title, author, cover_url)",
         )
         .eq("user_id", userId)
         .eq("status", "reading")
@@ -56,7 +55,7 @@ export async function GET(req: NextRequest) {
       supabase
         .from("user_books")
         .select(
-          "id, status, rating, date_finished, cover_url, title_override, author_override, catalog_books(title, author, cover_url)",
+          "id, status, rating, date_finished, title_override, author_override, catalog_books(title, author, cover_url)",
         )
         .eq("user_id", userId)
         .eq("status", "finished")
@@ -100,7 +99,7 @@ export async function GET(req: NextRequest) {
         id: row.id,
         title: row.title_override ?? cb?.title ?? "",
         author: row.author_override ?? cb?.author ?? "",
-        coverUrl: row.cover_url || cb?.cover_url || "",
+        coverUrl: cb?.cover_url || "",
         moodTags: row.mood_tags ?? [],
         dateStarted: row.date_started ?? "",
       };
@@ -116,7 +115,7 @@ export async function GET(req: NextRequest) {
       id: row.id,
       title: row.title_override ?? cb?.title ?? "",
       author: row.author_override ?? cb?.author ?? "",
-      coverUrl: row.cover_url || cb?.cover_url || "",
+      coverUrl: cb?.cover_url || "",
       rating: row.rating,
       dateFinished: row.date_finished ?? "",
     };

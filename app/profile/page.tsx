@@ -445,9 +445,7 @@ function InviteFriend() {
         their account.
       </p>
       <div>
-        <label className="text-xs text-stone-400 block mb-1">
-          their email
-        </label>
+        <label className="text-xs text-stone-400 block mb-1">their email</label>
         <input
           type="email"
           value={email}

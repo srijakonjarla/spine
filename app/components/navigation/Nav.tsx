@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/providers/AuthProvider";
 import { signOut } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
@@ -48,7 +49,11 @@ interface ShelfCounts {
 }
 
 export default function Nav() {
+  const pathname = usePathname();
   const { user } = useAuth();
+
+  // Hide nav on auth and login pages
+  if (pathname.startsWith("/auth/") || pathname === "/login") return null;
   const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
   const [shelfCounts, setShelfCounts] = useState<ShelfCounts>({
     reading: 0,

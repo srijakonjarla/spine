@@ -48,7 +48,10 @@ function AcceptInviteForm() {
       const refreshToken = hashParams2.get("refresh_token");
       if (accessToken && refreshToken) {
         supabase.auth
-          .setSession({ access_token: accessToken, refresh_token: refreshToken })
+          .setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
           .then(({ error }) => {
             if (error) {
               setSupabaseError(error.message);
