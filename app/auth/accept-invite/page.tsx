@@ -3,10 +3,11 @@
 import { useState, useEffect, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 
-type Stage = "exchanging" | "form" | "done" | "error";
+type Stage = "confirm" | "exchanging" | "form" | "done" | "error";
 
 function AcceptInviteForm() {
   const [stage, setStage] = useState<Stage>("exchanging");
+  const [verifyUrl, setVerifyUrl] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -15,14 +16,27 @@ function AcceptInviteForm() {
   const [supabaseError, setSupabaseError] = useState("");
 
   useEffect(() => {
+    const rawHash = window.location.hash.substring(1);
+    // Decode in case Go's template engine URL-encoded the fragment
+    const hash = rawHash ? decodeURIComponent(rawHash) : "";
+
     // Check for errors in hash fragment (e.g. #error=access_denied&error_description=...)
-    const hash = window.location.hash.substring(1);
     if (hash) {
       const hashParams = new URLSearchParams(hash);
-      const hashError = hashParams.get("error_description") || hashParams.get("error");
+      const hashError =
+        hashParams.get("error_description") || hashParams.get("error");
       if (hashError) {
         setSupabaseError(hashError.replace(/\+/g, " "));
         setStage("error");
+        return;
+      }
+
+      // Email link flow: hash contains the Supabase verify URL.
+      // We show a button instead of auto-redirecting, so email security
+      // scanners (Proofpoint, etc.) can't consume the one-time token.
+      if (hash.startsWith("https://")) {
+        setVerifyUrl(hash);
+        setStage("confirm");
         return;
       }
     }
@@ -105,6 +119,23 @@ function AcceptInviteForm() {
           <h1 className="page-title">spine</h1>
           <p className="text-xs text-stone-400 mt-0.5">your reading journal</p>
         </div>
+
+        {stage === "confirm" && (
+          <div className="space-y-6">
+            <p className="text-xs text-stone-400">
+              you've been invited to spine. tap below to accept and set up your
+              account.
+            </p>
+            <button
+              onClick={() => {
+                window.location.href = verifyUrl;
+              }}
+              className="btn-primary"
+            >
+              accept invite
+            </button>
+          </div>
+        )}
 
         {stage === "exchanging" && (
           <p className="text-xs text-stone-400">verifying invite...</p>
