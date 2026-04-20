@@ -29,9 +29,7 @@ export function ShortestLongestSection({
             </p>
             {shortestPrint && (
               <div>
-                <p className="text-detail text-fg-faint mb-0.5">
-                  shortest
-                </p>
+                <p className="text-detail text-fg-faint mb-0.5">shortest</p>
                 <BookRow
                   book={shortestPrint}
                   meta={`${fmtPages(shortestPrint.pageCount!)} pp`}
@@ -40,9 +38,7 @@ export function ShortestLongestSection({
             )}
             {longestPrint && longestPrint.id !== shortestPrint?.id && (
               <div>
-                <p className="text-detail text-fg-faint mb-0.5">
-                  longest
-                </p>
+                <p className="text-detail text-fg-faint mb-0.5">longest</p>
                 <BookRow
                   book={longestPrint}
                   meta={`${fmtPages(longestPrint.pageCount!)} pp`}
@@ -58,9 +54,7 @@ export function ShortestLongestSection({
             </p>
             {shortestAudio && (
               <div>
-                <p className="text-detail text-fg-faint mb-0.5">
-                  shortest
-                </p>
+                <p className="text-detail text-fg-faint mb-0.5">shortest</p>
                 <BookRow
                   book={shortestAudio}
                   meta={fmtHours(shortestAudio.audioDurationMinutes!)}
@@ -69,9 +63,7 @@ export function ShortestLongestSection({
             )}
             {longestAudio && longestAudio.id !== shortestAudio?.id && (
               <div>
-                <p className="text-detail text-fg-faint mb-0.5">
-                  longest
-                </p>
+                <p className="text-detail text-fg-faint mb-0.5">longest</p>
                 <BookRow
                   book={longestAudio}
                   meta={fmtHours(longestAudio.audioDurationMinutes!)}

@@ -107,9 +107,7 @@ export default function DetailsTab() {
             {entry.publisher && (
               <>
                 <label className="detail-field-label">Publisher</label>
-                <p className="text-sm text-fg-muted mb-4">
-                  {entry.publisher}
-                </p>
+                <p className="text-sm text-fg-muted mb-4">{entry.publisher}</p>
               </>
             )}
 

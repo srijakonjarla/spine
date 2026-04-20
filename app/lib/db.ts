@@ -132,11 +132,14 @@ export async function getEntries(opts?: {
   limit?: number;
   offset?: number;
   status?: string;
+  /** Include nested thoughts and book_reads. Default false (lighter payload). */
+  include?: "nested";
 }): Promise<BookEntry[]> {
   const params = new URLSearchParams();
   if (opts?.year) params.set("year", String(opts.year));
   if (opts?.limit) params.set("limit", String(opts.limit));
   if (opts?.offset) params.set("offset", String(opts.offset));
+  if (opts?.include) params.set("include", opts.include);
   if (opts?.status) {
     switch (opts.status) {
       case "finished":

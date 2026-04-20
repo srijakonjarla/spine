@@ -3,6 +3,7 @@
 import { QuoteCard } from "@/components/QuoteCard";
 import { toast } from "@/lib/toast";
 import { getQuotes, addQuote, deleteQuote } from "@/lib/quotes";
+import { useQuotes } from "@/providers/QuotesProvider";
 import { Quote } from "@/types";
 import { useState, useEffect } from "react";
 import { useBook } from "@/providers/BookContext";
@@ -11,6 +12,8 @@ export default function QuotesTab() {
   const {
     entry: { id: bookId },
   } = useBook();
+  const { addQuote: addQuoteToCache, removeQuote: removeQuoteFromCache } =
+    useQuotes();
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [input, setInput] = useState("");
   const [page, setPage] = useState("");
@@ -30,6 +33,7 @@ export default function QuotesTab() {
     try {
       const q = await addQuote(text, bookId, page.trim());
       setQuotes((prev) => [q, ...prev]);
+      addQuoteToCache(q);
       setInput("");
       setPage("");
       setOpen(false);
@@ -109,6 +113,7 @@ export default function QuotesTab() {
               onDelete={() => {
                 deleteQuote(q.id);
                 setQuotes((prev) => prev.filter((x) => x.id !== q.id));
+                removeQuoteFromCache(q.id);
               }}
             />
           </div>

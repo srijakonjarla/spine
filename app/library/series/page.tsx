@@ -172,9 +172,7 @@ export default function SeriesPage() {
               />
             </div>
             <div>
-              <label className="text-xs text-fg-faint block mb-1">
-                author
-              </label>
+              <label className="text-xs text-fg-faint block mb-1">author</label>
               <input
                 type="text"
                 value={newAuthor}

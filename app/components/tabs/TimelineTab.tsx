@@ -23,6 +23,7 @@ export default function TimelineTab() {
   const { entry, quotes, onUpdate, selectedReadId } = useBook();
   const [thoughtInput, setThoughtInput] = useState("");
   const [pageInput, setPageInput] = useState("");
+  const [dateInput, setDateInput] = useState(localDateStr());
   const [isPosting, setIsPosting] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -159,15 +160,25 @@ export default function TimelineTab() {
     if (!text || isPosting || !entry) return;
     setIsPosting(true);
     const pageNumber = pageInput.trim() ? parseInt(pageInput.trim(), 10) : null;
+
+    // Use the selected date for the timestamp. If backdated, set time to noon
+    // so it sorts naturally within that day.
+    const today = localDateStr();
+    const isBackdated = dateInput !== today;
+    const createdAt = isBackdated
+      ? `${dateInput}T12:00:00.000Z`
+      : new Date().toISOString();
+
     const thought: Thought = {
       id: crypto.randomUUID(),
       text,
       pageNumber: pageNumber && !isNaN(pageNumber) ? pageNumber : null,
-      createdAt: new Date().toISOString(),
+      createdAt,
     };
     onUpdate({ thoughts: [...entry.thoughts, thought] });
     setThoughtInput("");
     setPageInput("");
+    setDateInput(today);
     setTimeout(
       () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
       50,
@@ -207,6 +218,8 @@ export default function TimelineTab() {
           onThoughtInputChange={setThoughtInput}
           onPost={postThought}
           hidden={!!viewedRead}
+          dateValue={dateInput}
+          onDateChange={setDateInput}
         />
       </div>
 

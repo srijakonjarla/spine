@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse, after } from "next/server";
-import { createApiClient } from "@/lib/supabase-server";
+import { createApiClient, getUserId } from "@/lib/supabase-server";
 import { autoLogToday } from "@/lib/autoLog";
 import { syncBookSeries } from "@/lib/seriesSync.server";
 import { flattenUserBook } from "@/lib/bookUpsert.server";
@@ -9,17 +9,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json(null, { status: 401 });
+  const userId = getUserId(req);
+  if (!userId) return NextResponse.json(null, { status: 401 });
 
   const { id } = await params;
   const { data, error } = await supabase
     .from("user_books")
     .select("*, catalog_books(*), thoughts(*), book_reads(*)")
     .eq("id", id)
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .single();
   if (error || !data) return NextResponse.json(null, { status: 404 });
   return NextResponse.json(flattenUserBook(data));
@@ -50,10 +48,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { id } = await params;
@@ -65,7 +61,7 @@ export async function PATCH(
     .from("user_books")
     .select("id, catalog_book_id")
     .eq("id", id)
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .single();
   if (!ub) return NextResponse.json({ error: "not found" }, { status: 404 });
 
@@ -91,7 +87,7 @@ export async function PATCH(
     .from("user_books")
     .update(userRow)
     .eq("id", id)
-    .eq("user_id", user.id);
+    .eq("user_id", userId);
   if (ubErr)
     return NextResponse.json({ error: ubErr.message }, { status: 500 });
 
@@ -127,7 +123,7 @@ export async function PATCH(
   const isReadingActivity = Object.keys(patch).some((k) =>
     READING_ACTIVITY_FIELDS.has(k),
   );
-  if (isReadingActivity) await autoLogToday(supabase, user.id);
+  if (isReadingActivity) await autoLogToday(supabase, userId);
 
   // When status changes to reading/finished, sync series membership
   if ("status" in patch && ["reading", "finished"].includes(patch.status)) {
@@ -145,7 +141,7 @@ export async function PATCH(
           author: string;
           cover_url: string;
         } | null;
-        await syncBookSeries(supabase, user.id, {
+        await syncBookSeries(supabase, userId, {
           id: book.id,
           title: book.title_override ?? cb?.title ?? "",
           author: book.author_override ?? cb?.author ?? "",
@@ -166,10 +162,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { id } = await params;
@@ -178,7 +172,7 @@ export async function DELETE(
     .from("user_books")
     .delete()
     .eq("id", id)
-    .eq("user_id", user.id);
+    .eq("user_id", userId);
   if (error)
     return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });

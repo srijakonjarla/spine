@@ -108,10 +108,7 @@ export default function BooksPage() {
                 <div className="h-3.5 w-16 bg-hover rounded mb-3" />
                 <div className="space-y-2">
                   {[1, 2, 3].map((j) => (
-                    <div
-                      key={j}
-                      className="h-9 bg-hover rounded-lg"
-                    />
+                    <div key={j} className="h-9 bg-hover rounded-lg" />
                   ))}
                 </div>
               </div>

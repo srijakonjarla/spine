@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
+import { decodeJwt } from "jose";
 
 /**
  * Creates a Supabase client for API route handlers.
@@ -14,6 +15,24 @@ export function createApiClient(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
     token ? { global: { headers: { Authorization: `Bearer ${token}` } } } : {},
   );
+}
+
+/**
+ * Extracts the user ID from the JWT without making a network call.
+ * The token is already verified by RLS on every Supabase query, so we
+ * only need to decode it (not verify) to get the sub claim for filtering.
+ *
+ * Returns null if no valid token is present.
+ */
+export function getUserId(req: NextRequest): string | null {
+  const token = req.headers.get("Authorization")?.replace("Bearer ", "");
+  if (!token) return null;
+  try {
+    const payload = decodeJwt(token);
+    return (payload.sub as string) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /**

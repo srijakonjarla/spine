@@ -22,9 +22,7 @@ export function BookRow({ book, meta }: BookRowProps) {
           {book.author}
         </p>
       )}
-      {meta && (
-        <span className="text-xs shrink-0 text-fg-faint">{meta}</span>
-      )}
+      {meta && <span className="text-xs shrink-0 text-fg-faint">{meta}</span>}
     </Link>
   );
 }

@@ -7,6 +7,8 @@ import {
 } from "next/font/google";
 import "@/globals.css";
 import AuthProvider from "@/providers/AuthProvider";
+import { BooksProvider } from "@/providers/BooksProvider";
+import { QuotesProvider } from "@/providers/QuotesProvider";
 import Nav from "@/components/navigation/Nav";
 import { Toaster } from "@/components/Toaster";
 import { NavigationProvider } from "@/providers/NavigationProvider";
@@ -40,6 +42,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "spine",
   description: "your reading journal",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
@@ -61,11 +70,15 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <AuthProvider>
-            <NavigationProvider>
-              <Nav />
-              <div className="pt-14 lg:pl-55">{children}</div>
-              <Toaster />
-            </NavigationProvider>
+            <BooksProvider>
+              <QuotesProvider>
+                <NavigationProvider>
+                  <Nav />
+                  <div className="pt-14 lg:pl-55">{children}</div>
+                  <Toaster />
+                </NavigationProvider>
+              </QuotesProvider>
+            </BooksProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

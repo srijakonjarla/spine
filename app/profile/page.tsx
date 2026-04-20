@@ -216,20 +216,14 @@ function GoodreadsImport() {
             </span>{" "}
             books found
           </p>
-          <p className="text-xs text-fg-faint">
-            · {finishedCount} finished
-          </p>
+          <p className="text-xs text-fg-faint">· {finishedCount} finished</p>
           {dnfCount > 0 && (
-            <p className="text-xs text-fg-faint">
-              · {dnfCount} did not finish
-            </p>
+            <p className="text-xs text-fg-faint">· {dnfCount} did not finish</p>
           )}
           <p className="text-xs text-fg-faint">
             · {readingCount} currently reading
           </p>
-          <p className="text-xs text-fg-faint">
-            · {wantCount} want to read
-          </p>
+          <p className="text-xs text-fg-faint">· {wantCount} want to read</p>
         </div>
         <div className="space-y-0.5 mb-6 max-h-60 overflow-y-auto">
           {previews.map(({ entry }) => (
@@ -269,9 +263,7 @@ function GoodreadsImport() {
         upload the CSV. Runs in the background — you can navigate away once
         started.
         {alreadyImported && (
-          <span className="text-fg-faint ml-2">
-            · previously imported
-          </span>
+          <span className="text-fg-faint ml-2">· previously imported</span>
         )}
       </p>
       <input

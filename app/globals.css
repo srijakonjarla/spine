@@ -317,16 +317,16 @@
   --color-lavender-muted: var(--lavender-muted);
 
   /* Font sizes — fills gaps in the default Tailwind scale */
-  --text-micro: 7px;       /* spine / cover micro text */
-  --text-micro-plus: 8px;  /* spine labels, tiny badges */
-  --text-label: 9px;       /* uppercase micro labels */
-  --text-detail: 10px;     /* field labels, small pills */
-  --text-caption: 11px;    /* meta text, captions */
-  --text-note: 13px;       /* body-small, notes, sidebar */
-  --text-body-md: 15px;    /* card headings, body-medium */
-  --text-subhead: 17px;    /* section headings */
-  --text-title: 22px;      /* large headings */
-  --text-display: 28px;    /* hero stat numbers */
+  --text-micro: 7px; /* spine / cover micro text */
+  --text-micro-plus: 8px; /* spine labels, tiny badges */
+  --text-label: 9px; /* uppercase micro labels */
+  --text-detail: 10px; /* field labels, small pills */
+  --text-caption: 11px; /* meta text, captions */
+  --text-note: 13px; /* body-small, notes, sidebar */
+  --text-body-md: 15px; /* card headings, body-medium */
+  --text-subhead: 17px; /* section headings */
+  --text-title: 22px; /* large headings */
+  --text-display: 28px; /* hero stat numbers */
 
   /* Letter spacing — semantic names for recurring values */
   --tracking-micro: 0.06em;

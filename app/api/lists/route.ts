@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createApiClient } from "@/lib/supabase-server";
+import { createApiClient, getUserId } from "@/lib/supabase-server";
 
 export async function GET(req: NextRequest) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const year = req.nextUrl.searchParams.get("year");
@@ -18,7 +16,7 @@ export async function GET(req: NextRequest) {
     .select(
       "*, list_items(*, user_books(title_override, catalog_books(title, cover_url)))",
     )
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("year", Number(year))
     .order("sort_order", { ascending: true });
 
@@ -29,10 +27,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const {
@@ -50,7 +46,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabase
     .from("lists")
     .insert({
-      user_id: user.id,
+      user_id: userId,
       year,
       title,
       list_type: listType ?? "book_list",

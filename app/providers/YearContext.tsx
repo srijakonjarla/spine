@@ -2,10 +2,11 @@
 
 import { createContext, useContext, useEffect, useState, useMemo } from "react";
 import { getEntries } from "@/lib/db";
-import { getReadingLog } from "@/lib/habits";
 import { getGoals } from "@/lib/goals";
-import { getQuotes } from "@/lib/quotes";
 import { getLists } from "@/lib/lists";
+import { useBooks } from "@/providers/BooksProvider";
+import { useQuotes } from "@/providers/QuotesProvider";
+import { useReadingLog } from "@/providers/ReadingLogProvider";
 import { toast } from "@/lib/toast";
 import type {
   BookEntry,
@@ -49,36 +50,32 @@ export function YearProvider({
   year: number;
   children: React.ReactNode;
 }) {
-  const [loading, setLoading] = useState(true);
-  const [allEntries, setAllEntries] = useState<BookEntry[]>([]);
+  const { books: allEntries, loading: booksLoading } = useBooks();
+  const { quotes: allQuotes, loading: quotesLoading } = useQuotes();
+  const { logEntries, loggedDates, loading: logLoading } = useReadingLog();
+  const [yearLoading, setYearLoading] = useState(true);
   const [yearEntries, setYearEntries] = useState<BookEntry[]>([]);
-  const [logEntries, setLogEntries] = useState<ReadingLogEntry[]>([]);
   const [goals, setGoals] = useState<ReadingGoal[]>([]);
   const [lists, setLists] = useState<BookList[]>([]);
-  const [quoteCount, setQuoteCount] = useState(0);
 
+  const quoteCount = useMemo(
+    () => allQuotes.filter((q) => q.createdAt.startsWith(`${year}`)).length,
+    [allQuotes, year],
+  );
+
+  // Fetch year-scoped data (not books, quotes, or log — those come from shared providers)
   useEffect(() => {
-    Promise.all([
-      getEntries(),
-      getEntries({ year }),
-      getReadingLog(year),
-      getGoals(year),
-      getQuotes(),
-      getLists(year),
-    ])
-      .then(([all, yearBks, log, gs, quotes, ls]) => {
-        setAllEntries(all);
+    Promise.all([getEntries({ year }), getGoals(year), getLists(year)])
+      .then(([yearBks, gs, ls]) => {
         setYearEntries(yearBks);
-        setLogEntries(log as ReadingLogEntry[]);
         setGoals(gs);
         setLists(ls);
-        setQuoteCount(
-          quotes.filter((q) => q.createdAt.startsWith(`${year}`)).length,
-        );
       })
       .catch(() => toast("Failed to load year data. Please refresh."))
-      .finally(() => setLoading(false));
+      .finally(() => setYearLoading(false));
   }, [year]);
+
+  const loading = booksLoading || quotesLoading || logLoading || yearLoading;
 
   // book_reads holds archived previous reads (a new row is only created when the
   // user starts another re-read). The current/active read lives in user_books
@@ -100,11 +97,6 @@ export function YearProvider({
       (a.dateFinished ?? "").localeCompare(b.dateFinished ?? ""),
     );
   }, [allEntries, year]);
-
-  const loggedDates = useMemo(
-    () => new Set(logEntries.map((e) => e.logDate)),
-    [logEntries],
-  );
 
   const value = useMemo<YearData>(
     () => ({

@@ -273,9 +273,7 @@ export default function RereadsPage() {
                             )}
                           </span>
                           {!isLast && (
-                            <span className="text-label text-fg-muted">
-                              →
-                            </span>
+                            <span className="text-label text-fg-muted">→</span>
                           )}
                         </span>
                       );

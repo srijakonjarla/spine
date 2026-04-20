@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createApiClient } from "@/lib/supabase-server";
+import { createApiClient, getUserId } from "@/lib/supabase-server";
 import { autoLogToday } from "@/lib/autoLog";
 
 export async function GET(req: NextRequest) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const bookId = req.nextUrl.searchParams.get("bookId");
@@ -15,7 +13,7 @@ export async function GET(req: NextRequest) {
   let query = supabase
     .from("quotes")
     .select("*, user_books(title_override, catalog_books(title))")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   if (bookId) query = query.eq("book_id", bookId);
@@ -28,10 +26,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { text, pageNumber, bookId } = await req.json();
@@ -41,7 +37,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabase
     .from("quotes")
     .insert({
-      user_id: user.id,
+      user_id: userId,
       text: text.trim(),
       page_number: pageNumber ?? "",
       book_id: bookId ?? null,
@@ -52,6 +48,6 @@ export async function POST(req: NextRequest) {
   if (error)
     return NextResponse.json({ error: error.message }, { status: 500 });
 
-  await autoLogToday(supabase, user.id);
+  await autoLogToday(supabase, userId);
   return NextResponse.json(data, { status: 201 });
 }

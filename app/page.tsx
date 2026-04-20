@@ -2,21 +2,47 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getEntries } from "@/lib/db";
-import { getReadingLog } from "@/lib/habits";
-import { getGoals } from "@/lib/goals";
+import { apiFetch } from "@/lib/api";
 import { getDisplayName, hasImportedGoodreads } from "@/lib/auth";
 import { useAuth } from "@/providers/AuthProvider";
 import { toast } from "@/lib/toast";
-import type { BookEntry, ReadingLogEntry, ReadingGoal } from "@/types";
+import type { ReadingLogEntry } from "@/types";
 import { FireIcon, LeafIcon, StarIcon } from "@phosphor-icons/react";
 import { MoodChip } from "@/components/MoodChip";
+import { BookCoverThumb } from "@/components/BookCover";
 import { ProgressBar } from "@/components/ProgressBar";
 import { localDateStr, formatDate, currentStreak } from "@/lib/dates";
 import { MONTH_ABBRS } from "@/lib/constants";
 
 const CURRENT_YEAR = new Date().getFullYear();
 const CURRENT_MONTH_ABBR = MONTH_ABBRS[new Date().getMonth()];
+
+interface HomeReading {
+  id: string;
+  title: string;
+  author: string;
+  coverUrl: string;
+  moodTags: string[];
+  dateStarted: string;
+}
+
+interface HomeFinished {
+  id: string;
+  title: string;
+  author: string;
+  coverUrl: string;
+  rating: number;
+  dateFinished: string;
+}
+
+interface HomeGoal {
+  id: string;
+  year: number;
+  target: number;
+  name: string;
+  isAuto: boolean;
+  bookIds: string[];
+}
 
 function greeting() {
   const h = new Date().getHours();
@@ -68,14 +94,11 @@ function StreakBars({
 
 export default function Home() {
   const { user } = useAuth();
-  const [reading, setReading] = useState<BookEntry[]>([]);
-  const [recentlyFinished, setRecentlyFinished] = useState<BookEntry[]>([]);
+  const [reading, setReading] = useState<HomeReading[]>([]);
+  const [recentlyFinished, setRecentlyFinished] = useState<HomeFinished[]>([]);
   const [logEntries, setLogEntries] = useState<ReadingLogEntry[]>([]);
-  const [autoGoal, setAutoGoal] = useState<ReadingGoal | null>(null);
+  const [autoGoal, setAutoGoal] = useState<HomeGoal | null>(null);
   const [finishedThisYear, setFinishedThisYear] = useState(0);
-  const [archivedYears, setArchivedYears] = useState<
-    { year: number; books: number }[]
-  >([]);
   const [wantToRead, setWantToRead] = useState(0);
   const [goodreadsImported, setGoodreadsImported] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -86,45 +109,15 @@ export default function Home() {
       return;
     }
     async function load() {
-      const [allBooks, log, goals] = await Promise.all([
-        getEntries(),
-        getReadingLog(CURRENT_YEAR),
-        getGoals(CURRENT_YEAR),
-      ]);
+      const res = await apiFetch(`/api/home?year=${CURRENT_YEAR}`);
+      const data = await res.json();
 
-      setReading(allBooks.filter((b) => b.status === "reading"));
-      setLogEntries(log as ReadingLogEntry[]);
-
-      const finished = allBooks
-        .filter((b) => b.status === "finished" && b.dateFinished)
-        .sort((a, b) => b.dateFinished!.localeCompare(a.dateFinished!));
-
-      const thisYear = finished.filter((b) =>
-        b.dateFinished?.startsWith(`${CURRENT_YEAR}`),
-      );
-      setFinishedThisYear(thisYear.length);
-      setRecentlyFinished(finished.slice(0, 3));
-      setWantToRead(allBooks.filter((b) => b.status === "want-to-read").length);
-
-      setAutoGoal(goals.find((g) => g.isAuto) ?? null);
-
-      const yearSet = new Set<number>();
-      allBooks.forEach((b) => {
-        const d = b.dateFinished || b.dateStarted || b.createdAt;
-        if (d) yearSet.add(new Date(d).getFullYear());
-      });
-      setArchivedYears(
-        Array.from(yearSet)
-          .filter((y) => y !== CURRENT_YEAR)
-          .sort((a, b) => b - a)
-          .map((year) => ({
-            year,
-            books: allBooks.filter((b) => {
-              const d = b.dateFinished || b.dateStarted || b.createdAt;
-              return d && new Date(d).getFullYear() === year;
-            }).length,
-          })),
-      );
+      setReading(data.reading);
+      setRecentlyFinished(data.recentlyFinished);
+      setLogEntries(data.log);
+      setAutoGoal(data.goal);
+      setFinishedThisYear(data.finishedThisYear);
+      setWantToRead(data.wantToReadCount);
     }
     load()
       .catch(() => toast("Failed to load data. Please refresh."))
@@ -167,10 +160,7 @@ export default function Home() {
           </div>
           <div className="flex gap-3 mb-8">
             {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="w-14 aspect-[2/3] bg-hover rounded"
-              />
+              <div key={i} className="w-14 aspect-[2/3] bg-hover rounded" />
             ))}
           </div>
           <div className="space-y-2.5">
@@ -217,24 +207,35 @@ export default function Home() {
                 className="block group mb-3"
               >
                 <div className="p-4 rounded-2xl transition-opacity group-hover:opacity-90 bg-surface border border-line">
-                  <p className="text-label font-bold uppercase tracking-label mb-1.5 text-fg-faint">
+                  <p className="text-label font-bold uppercase tracking-label mb-3 text-fg-faint">
                     currently reading
                   </p>
-                  <p className="text-body-md font-semibold leading-snug font-serif text-fg-heading">
-                    {book.title}
-                  </p>
-                  {book.author && (
-                    <p className="text-xs mt-0.5 text-fg-muted">
-                      {book.author}
-                    </p>
-                  )}
-                  {book.moodTags.length > 0 && (
-                    <div className="flex gap-1.5 mt-2.5 flex-wrap">
-                      {book.moodTags.slice(0, 3).map((tag) => (
-                        <MoodChip key={tag} mood={tag} display />
-                      ))}
+                  <div className="flex gap-4">
+                    <BookCoverThumb
+                      coverUrl={book.coverUrl}
+                      title={book.title}
+                      author={book.author}
+                      width="w-12"
+                      height="h-18"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-serif text-body-md font-semibold leading-snug text-fg-heading">
+                        {book.title}
+                      </p>
+                      {book.author && (
+                        <p className="text-xs mt-0.5 text-fg-muted">
+                          {book.author}
+                        </p>
+                      )}
+                      {book.moodTags.length > 0 && (
+                        <div className="flex gap-1.5 mt-2.5 flex-wrap">
+                          {book.moodTags.slice(0, 3).map((tag) => (
+                            <MoodChip key={tag} mood={tag} display />
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               </Link>
             ))}
@@ -383,44 +384,49 @@ export default function Home() {
           </div>
         )}
 
-        {/* Recently finished — books not already highlighted in a log entry above */}
-        {recentlyFinished.filter(
-          (b) => !recentEntries.some((e) => e.logDate === b.dateFinished),
-        ).length > 0 && (
+        {/* Recently finished — cover row */}
+        {recentlyFinished.length > 0 && (
           <div className="mb-8">
-            <p className="section-label mb-3">recently read</p>
-            <div className="space-y-1">
-              {recentlyFinished
-                .filter(
-                  (b) =>
-                    !recentEntries.some((e) => e.logDate === b.dateFinished),
-                )
-                .map((book) => (
-                  <Link
-                    key={book.id}
-                    href={`/book/${book.id}`}
-                    className="flex items-baseline gap-3 py-1.5 -mx-1 px-1 rounded-lg hover:bg-plum-trace transition-colors group"
-                  >
-                    <p className="text-sm flex-1 truncate group-hover:opacity-70 transition-opacity text-fg">
-                      {book.title}
-                    </p>
-                    {book.author && (
-                      <p className="text-xs shrink-0 hidden sm:block truncate text-fg-faint">
-                        {book.author}
-                      </p>
-                    )}
-                    {book.rating > 0 && (
-                      <span className="flex items-center shrink-0 text-gold">
-                        {Array.from(
-                          { length: Math.round(book.rating) },
-                          (_, i) => (
-                            <StarIcon key={i} size={10} weight="fill" />
-                          ),
-                        )}
-                      </span>
-                    )}
-                  </Link>
-                ))}
+            <div className="flex items-baseline justify-between mb-3">
+              <p className="section-label">recently read</p>
+              <Link
+                href="/library/finished"
+                className="text-xs text-fg-faint hover:text-fg-muted transition-colors"
+              >
+                all →
+              </Link>
+            </div>
+            <div className="flex gap-4">
+              {recentlyFinished.map((book) => (
+                <Link
+                  key={book.id}
+                  href={`/book/${book.id}`}
+                  className="group w-18 shrink-0"
+                >
+                  <div className="rounded-lg overflow-hidden shadow-sm mb-2 aspect-[2/3] group-hover:-translate-y-1 transition-transform">
+                    <BookCoverThumb
+                      coverUrl={book.coverUrl}
+                      title={book.title}
+                      author={book.author}
+                      width="w-full"
+                      height="h-full"
+                    />
+                  </div>
+                  <p className="text-caption font-medium leading-tight truncate text-fg">
+                    {book.title}
+                  </p>
+                  {book.rating > 0 && (
+                    <span className="flex items-center mt-0.5 text-gold">
+                      {Array.from(
+                        { length: Math.round(book.rating) },
+                        (_, i) => (
+                          <StarIcon key={i} size={9} weight="fill" />
+                        ),
+                      )}
+                    </span>
+                  )}
+                </Link>
+              ))}
             </div>
           </div>
         )}
@@ -430,6 +436,12 @@ export default function Home() {
           <Link href="/library" className="back-link">
             library →
           </Link>
+          <Link
+            href={`/${CURRENT_YEAR}/${CURRENT_MONTH_ABBR}`}
+            className="back-link"
+          >
+            {CURRENT_MONTH_ABBR} →
+          </Link>
           <Link href={`/${CURRENT_YEAR}/review`} className="back-link">
             {CURRENT_YEAR} in review →
           </Link>
@@ -438,15 +450,6 @@ export default function Home() {
               import from goodreads →
             </Link>
           )}
-          {archivedYears.map((j) => (
-            <Link
-              key={j.year}
-              href={`/${j.year}/${MONTH_ABBRS[new Date().getMonth()]}`}
-              className="back-link"
-            >
-              {j.year} · {j.books} books →
-            </Link>
-          ))}
         </div>
       </div>
     </div>

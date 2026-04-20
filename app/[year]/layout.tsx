@@ -1,4 +1,5 @@
 import { YearProvider } from "@/providers/YearContext";
+import { ReadingLogProvider } from "@/providers/ReadingLogProvider";
 
 export default async function YearLayout({
   children,
@@ -8,5 +9,9 @@ export default async function YearLayout({
   params: Promise<{ year: string }>;
 }) {
   const { year } = await params;
-  return <YearProvider year={Number(year)}>{children}</YearProvider>;
+  return (
+    <ReadingLogProvider year={Number(year)}>
+      <YearProvider year={Number(year)}>{children}</YearProvider>
+    </ReadingLogProvider>
+  );
 }

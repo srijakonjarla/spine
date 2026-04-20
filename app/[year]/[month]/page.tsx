@@ -3,21 +3,11 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { getEntries } from "@/lib/db";
-import { getReadingLog } from "@/lib/habits";
-import { getQuotes } from "@/lib/quotes";
-import type { BookEntry, BookRead, ReadingLogEntry, Quote } from "@/types";
+import { useBooks } from "@/providers/BooksProvider";
+import { useQuotes } from "@/providers/QuotesProvider";
+import { useReadingLog } from "@/providers/ReadingLogProvider";
+import type { BookEntry, BookRead, Quote } from "@/types";
 
-// Module-level cache — survives component remounts (e.g. when Next.js
-// refreshes the route on tab focus with staleTimes.dynamic = 0).
-const CACHE_TTL = 30_000;
-let pageCache: {
-  year: number;
-  books: BookEntry[];
-  log: ReadingLogEntry[];
-  quotes: Quote[];
-  ts: number;
-} | null = null;
 import { DayPanel } from "@/components/calendar/DayPanel";
 import { MonthCalendar } from "@/components/calendar/MonthCalendar";
 import {
@@ -27,7 +17,6 @@ import {
   formatMonthYear,
 } from "@/lib/dates";
 import { MONTH_ABBRS } from "@/lib/constants";
-import { toast } from "@/lib/toast";
 
 function pad(n: number) {
   return String(n).padStart(2, "0");
@@ -49,57 +38,28 @@ export default function MonthSpreadPage() {
   const now = new Date();
   const todayStr = localDateStr(now);
 
-  const [allBooks, setAllBooks] = useState<BookEntry[]>([]);
-  const [reading, setReading] = useState<BookEntry[]>([]);
-  const [upNext, setUpNext] = useState<BookEntry[]>([]);
-  const [logEntries, setLogEntries] = useState<ReadingLogEntry[]>([]);
-  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const { books: allBooks, loading: booksLoading } = useBooks();
+  const {
+    quotes,
+    loading: quotesLoading,
+    addQuote: addQuoteToCache,
+  } = useQuotes();
+  const {
+    logEntries,
+    loggedDates,
+    loading: logLoading,
+    addEntry: addLogEntry,
+    removeEntry: removeLogEntry,
+    updateNote: updateLogNote,
+  } = useReadingLog();
+  const reading = allBooks.filter((b) => b.status === "reading");
+  const upNext = allBooks.filter(
+    (b) => b.status === "want-to-read" && b.upNext,
+  );
+
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // If we have fresh cached data for this year, restore it without hitting
-    // the network. This prevents redundant fetches when Next.js remounts the
-    // page on tab focus (router cache revalidation).
-    if (
-      pageCache &&
-      pageCache.year === year &&
-      Date.now() - pageCache.ts < CACHE_TTL
-    ) {
-      setAllBooks(pageCache.books);
-      setReading(pageCache.books.filter((b) => b.status === "reading"));
-      setUpNext(
-        pageCache.books.filter((b) => b.status === "want-to-read" && b.upNext),
-      );
-      setLogEntries(pageCache.log);
-      setQuotes(pageCache.quotes);
-      setLoading(false);
-      return;
-    }
-
-    const load = async () => {
-      setLoading(true);
-      try {
-        const [books, log, qs] = await Promise.all([
-          getEntries(),
-          getReadingLog(year),
-          getQuotes(),
-        ]);
-        pageCache = { year, books, log, quotes: qs, ts: Date.now() };
-        setAllBooks(books);
-        setReading(books.filter((b) => b.status === "reading"));
-        setUpNext(books.filter((b) => b.status === "want-to-read" && b.upNext));
-        setLogEntries(log as ReadingLogEntry[]);
-        setQuotes(qs);
-      } catch (message) {
-        toast(message as string);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
-  }, [year]);
+  const loading = booksLoading || quotesLoading || logLoading;
 
   const monthKey = `${year}-${pad(monthIndex + 1)}`;
   const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
@@ -107,7 +67,6 @@ export default function MonthSpreadPage() {
   const isCurrentMonth =
     year === now.getFullYear() && monthIndex === now.getMonth();
 
-  const loggedDates = new Set(logEntries.map((e) => e.logDate));
   const loggedThisMonth = new Set(
     logEntries.map((e) => e.logDate).filter((d) => d.startsWith(monthKey)),
   );
@@ -153,6 +112,18 @@ export default function MonthSpreadPage() {
     `${year}-${String(monthIndex + 1).padStart(2, "0")}-01`,
   );
 
+  // Prefetch adjacent months for instant navigation
+  useEffect(() => {
+    const prevM = monthIndex - 1;
+    const nextM = monthIndex + 1;
+    const prevYear = prevM < 0 ? year - 1 : year;
+    const prevMonth = prevM < 0 ? 11 : prevM;
+    const nextYear = nextM > 11 ? year + 1 : year;
+    const nextMonth = nextM > 11 ? 0 : nextM;
+    router.prefetch(`/${prevYear}/${MONTH_ABBRS[prevMonth]}`);
+    router.prefetch(`/${nextYear}/${MONTH_ABBRS[nextMonth]}`);
+  }, [router, year, monthIndex]);
+
   const goToMonth = (y: number, m: number) => {
     const newYear = m < 0 ? y - 1 : m > 11 ? y + 1 : y;
     const newMonth = m < 0 ? 11 : m > 11 ? 0 : m;
@@ -160,32 +131,19 @@ export default function MonthSpreadPage() {
   };
 
   const handleToggled = (date: string, result: "added" | "removed") => {
-    setLogEntries((prev) => {
-      const next =
-        result === "added"
-          ? prev.some((e) => e.logDate === date)
-            ? prev
-            : [...prev, { id: crypto.randomUUID(), logDate: date, note: "" }]
-          : prev.filter((e) => e.logDate !== date);
-      if (pageCache) pageCache = { ...pageCache, log: next };
-      return next;
-    });
+    if (result === "added") {
+      addLogEntry({ id: crypto.randomUUID(), logDate: date, note: "" });
+    } else {
+      removeLogEntry(date);
+    }
   };
 
   const handleNoteSaved = (date: string, note: string) => {
-    setLogEntries((prev) => {
-      const next = prev.map((e) => (e.logDate === date ? { ...e, note } : e));
-      if (pageCache) pageCache = { ...pageCache, log: next };
-      return next;
-    });
+    updateLogNote(date, note);
   };
 
   const handleQuoteAdded = (q: Quote) => {
-    setQuotes((prev) => {
-      const next = [...prev, q];
-      if (pageCache) pageCache = { ...pageCache, quotes: next };
-      return next;
-    });
+    addQuoteToCache(q);
   };
 
   const panelLog = selectedDate

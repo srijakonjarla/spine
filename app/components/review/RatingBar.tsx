@@ -17,9 +17,7 @@ export function RatingBar({ stars, count, max }: RatingBarProps) {
           className="h-full rounded bg-gold transition-all duration-500"
         />
       </div>
-      <span className="text-caption text-fg-faint w-4 shrink-0">
-        {count}
-      </span>
+      <span className="text-caption text-fg-faint w-4 shrink-0">{count}</span>
     </div>
   );
 }

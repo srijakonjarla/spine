@@ -17,9 +17,7 @@ export function PageHeader({ title, eyebrow, subtitle }: PageHeaderProps) {
       <h1 className="font-serif text-3xl font-semibold page-title tracking-tight">
         {title}
       </h1>
-      {subtitle && (
-        <p className="text-xs mt-3 text-fg-faint">{subtitle}</p>
-      )}
+      {subtitle && <p className="text-xs mt-3 text-fg-faint">{subtitle}</p>}
     </div>
   );
 }

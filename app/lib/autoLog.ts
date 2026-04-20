@@ -16,3 +16,20 @@ export async function autoLogToday(supabase: SupabaseClient, userId: string) {
       { onConflict: "user_id,log_date", ignoreDuplicates: true },
     );
 }
+
+/**
+ * Upserts a specific date into reading_log.
+ * Used when retroactively logging a reading session for a past day.
+ */
+export async function autoLogDate(
+  supabase: SupabaseClient,
+  userId: string,
+  date: string,
+) {
+  await supabase
+    .from("reading_log")
+    .upsert(
+      { user_id: userId, log_date: date },
+      { onConflict: "user_id,log_date", ignoreDuplicates: true },
+    );
+}

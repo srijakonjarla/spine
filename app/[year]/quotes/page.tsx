@@ -1,32 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { getQuotes, deleteQuote } from "@/lib/quotes";
-import type { Quote } from "@/types";
+import { deleteQuote } from "@/lib/quotes";
+import { useQuotes } from "@/providers/QuotesProvider";
 import { QuoteCard } from "@/components/QuoteCard";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
-import { toast } from "@/lib/toast";
 
 export default function QuoteCollectionPage() {
   const { year: yearParam } = useParams<{ year: string }>();
   const year = Number(yearParam);
 
-  const [quotes, setQuotes] = useState<Quote[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getQuotes()
-      .then(setQuotes)
-      .catch(() => toast("Failed to load data. Please refresh."))
-      .finally(() => setLoading(false));
-  }, [year]);
+  const { quotes, loading, removeQuote } = useQuotes();
 
   const handleDelete = async (id: string) => {
+    removeQuote(id);
     await deleteQuote(id);
-    setQuotes((prev) => prev.filter((q) => q.id !== id));
   };
 
   return (

@@ -47,9 +47,7 @@ export function AllMoodsChip({
     <button
       onClick={onClick}
       className={`text-xs px-3 py-1 rounded-full transition-colors border border-line ${
-        active
-          ? "bg-plum text-white"
-          : "bg-surface text-fg-muted"
+        active ? "bg-plum text-white" : "bg-surface text-fg-muted"
       }`}
     >
       all

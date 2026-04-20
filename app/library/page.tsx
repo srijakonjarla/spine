@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getEntries, createEntry } from "@/lib/db";
+import { createEntry } from "@/lib/db";
 import { type CatalogEntry, lookupBook } from "@/lib/catalog";
-import { toast } from "@/lib/toast";
 import { StarDisplay } from "@/components/StarDisplay";
 import { BookCoverThumb } from "@/components/BookCover";
 import { MoodChip, AllMoodsChip } from "@/components/MoodChip";
@@ -13,22 +12,15 @@ import type { BookEntry } from "@/types";
 import { localDateStr, dateYear } from "@/lib/dates";
 import ShelfDivider from "@/components/library/ShelfDivider";
 import InlineAdd from "@/components/library/InlineAdd";
+import { useBooks } from "@/providers/BooksProvider";
 
 export default function LibraryPage() {
   const router = useRouter();
-  const [entries, setEntries] = useState<BookEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { books: entries, loading, addBook: addToCache } = useBooks();
   const [search, setSearch] = useState("");
   const [activeMood, setActiveMood] = useState<string | null>(null);
   const [activeGenre, setActiveGenre] = useState<string | null>(null);
   const [view, setView] = useState<"grid" | "list">("grid");
-
-  useEffect(() => {
-    getEntries()
-      .then(setEntries)
-      .catch(() => toast("Failed to load data. Please refresh."))
-      .finally(() => setLoading(false));
-  }, []);
 
   const allMoods = Array.from(
     new Set(entries.flatMap((e) => e.moodTags)),
@@ -117,7 +109,7 @@ export default function LibraryPage() {
     if (status === "reading") {
       router.push(`/book/${entry.id}`);
     } else {
-      setEntries((prev) => [...prev, entry]);
+      addToCache(entry);
     }
   };
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   getEntry,
   updateEntry,
@@ -382,10 +383,13 @@ export default function BookPage() {
           {/* Cover */}
           <div className="pt-6 relative z-[1]">
             {entry.coverUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={entry.coverUrl}
                 alt={entry.title}
+                width={180}
+                height={270}
+                sizes="180px"
+                priority
                 className="w-45 rounded-lg block object-cover aspect-[2/3]"
                 style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.45)" }}
               />
