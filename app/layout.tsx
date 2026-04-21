@@ -40,6 +40,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://spinereads.com",
+  ),
   title: "spine",
   description: "your reading journal",
   icons: {
@@ -48,6 +51,27 @@ export const metadata: Metadata = {
       { url: "/favicon.svg", type: "image/svg+xml" },
     ],
     apple: "/apple-touch-icon.png",
+  },
+  openGraph: {
+    title: "spine",
+    description: "your reading journal",
+    url: "/",
+    siteName: "spine",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "spine — your reading journal",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "spine",
+    description: "your reading journal",
+    images: ["/og-image.png"],
   },
 };
 
