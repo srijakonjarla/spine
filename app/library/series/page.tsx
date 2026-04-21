@@ -34,7 +34,9 @@ export default function SeriesPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreate = async (
+    e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     if (!newName.trim() || saving) return;
     setSaving(true);

@@ -92,7 +92,9 @@ export function ListCreateModal({
   const [emoji, setEmoji] = useState(COVER_ICON_NAMES[0]);
   const [description, setDescription] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (
+    e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     if (!name.trim() || saving) return;
     await onCreate({

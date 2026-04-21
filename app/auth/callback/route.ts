@@ -56,6 +56,20 @@ export async function GET(request: NextRequest) {
           }
         }
       }
+      // If the user has no username yet, send them to choose one
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("username")
+          .eq("id", user.id)
+          .single();
+        if (!profile?.username) {
+          return NextResponse.redirect(
+            `${origin}/auth/choose-username${next !== "/" ? `?next=${encodeURIComponent(next)}` : ""}`,
+          );
+        }
+      }
+
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

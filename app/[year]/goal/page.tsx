@@ -404,7 +404,9 @@ export default function GoalPage() {
     );
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleCreate = async (
+    e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     const target = Number(setupTarget);
     if (!target || target < 1) return;

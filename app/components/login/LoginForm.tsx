@@ -7,16 +7,28 @@ import {
   signInWithGoogle,
   sendMagicLink,
   resetPassword,
+  resendConfirmation,
 } from "@/lib/auth";
 
-type Step = "email" | "method" | "password" | "signup" | "forgot";
+type Step =
+  | "email"
+  | "method"
+  | "password"
+  | "signup"
+  | "signup-username"
+  | "signup-confirm"
+  | "forgot";
 
 export function LoginForm() {
   const [step, setStep] = useState<Step>("email");
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -28,13 +40,18 @@ export function LoginForm() {
     setMessage("");
   };
 
+  const usernameRef = useRef<HTMLInputElement>(null);
+
   const goBack = () => {
     if (step === "method") goTo("email");
     else if (step === "password" || step === "forgot") goTo("method");
     else if (step === "signup") goTo("email");
+    else if (step === "signup-username") goTo("signup");
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (
+    e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     setError("");
     setMessage("");
@@ -68,8 +85,22 @@ export function LoginForm() {
           setLoading(false);
           return;
         }
-        await signUp(email, password, name);
-        setMessage("check your email to confirm your account.");
+        if (password !== confirmPassword) {
+          setError("passwords don\u2019t match");
+          setLoading(false);
+          return;
+        }
+        goTo("signup-username");
+        setLoading(false);
+        return;
+      } else if (step === "signup-username") {
+        if (!username.trim()) {
+          setError("please choose a username");
+          setLoading(false);
+          return;
+        }
+        await signUp(email, password, name, username);
+        goTo("signup-confirm");
       } else if (step === "forgot") {
         await resetPassword(email);
         setMessage("check your email for a password reset link.");
@@ -84,7 +115,15 @@ export function LoginForm() {
   useEffect(() => {
     if (step === "password") passwordRef.current?.focus();
     if (step === "signup") nameRef.current?.focus();
+    if (step === "signup-username") usernameRef.current?.focus();
+    if (step === "signup-confirm") setCooldown(60);
   }, [step]);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -97,9 +136,13 @@ export function LoginForm() {
   const subtitle =
     step === "signup"
       ? "create your reading journal."
-      : step === "forgot"
-        ? "let\u2019s get you back in."
-        : "sign in to continue your reading year.";
+      : step === "signup-username"
+        ? "pick a username for your shelf."
+        : step === "signup-confirm"
+          ? "one last thing."
+          : step === "forgot"
+            ? "let\u2019s get you back in."
+            : "sign in to continue your reading year.";
 
   return (
     <div
@@ -139,7 +182,7 @@ export function LoginForm() {
       </div>
 
       {/* back button */}
-      {step !== "email" && (
+      {step !== "email" && step !== "signup-confirm" && (
         <button
           type="button"
           onClick={goBack}
@@ -217,26 +260,28 @@ export function LoginForm() {
         className="flex flex-col"
         style={{ gap: 18 }}
       >
-        {/* Email — editable on email & signup, static on other steps */}
-        {step === "email" || step === "signup" ? (
-          <div>
-            <label className="login-label">email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              autoFocus={step === "email"}
-              className="login-input"
-            />
-          </div>
-        ) : (
-          <div className="fade-up">
-            <p className="login-label">email</p>
-            <p className="text-[15px] text-fg">{email}</p>
-          </div>
-        )}
+        {/* Email — editable on email & signup, static on other steps, hidden on username/confirm */}
+        {step !== "signup-username" &&
+          step !== "signup-confirm" &&
+          (step === "email" || step === "signup" ? (
+            <div>
+              <label className="login-label">email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                autoFocus={step === "email"}
+                className="login-input"
+              />
+            </div>
+          ) : (
+            <div className="fade-up">
+              <p className="login-label">email</p>
+              <p className="text-[15px] text-fg">{email}</p>
+            </div>
+          ))}
 
         {/* Signup: name */}
         {step === "signup" && (
@@ -254,7 +299,39 @@ export function LoginForm() {
           </div>
         )}
 
-        {/* Password */}
+        {/* Signup username — separate screen */}
+        {step === "signup-username" && (
+          <div className="fade-up">
+            <label className="login-label">username</label>
+            <input
+              ref={usernameRef}
+              type="text"
+              value={username}
+              onChange={(e) =>
+                setUsername(
+                  e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""),
+                )
+              }
+              placeholder="your_username"
+              maxLength={30}
+              required
+              className="login-input"
+            />
+            <p
+              className="mt-1"
+              style={{
+                fontSize: 10,
+                color: "var(--fg-muted)",
+                fontFamily: "var(--font-geist-mono), monospace",
+                letterSpacing: "0.04em",
+              }}
+            >
+              3-30 chars, lowercase letters, numbers, underscores
+            </p>
+          </div>
+        )}
+
+        {/* Password — not shown on signup-username */}
         {(step === "password" || step === "signup") && (
           <div className="fade-up">
             <label className="login-label">password</label>
@@ -281,8 +358,25 @@ export function LoginForm() {
           </div>
         )}
 
-        {error && <p className="text-xs text-red-400">{error}</p>}
-        {message && (
+        {/* Confirm password — signup only */}
+        {step === "signup" && (
+          <div className="fade-up">
+            <label className="login-label">confirm password</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••••"
+              required
+              className="login-input"
+            />
+          </div>
+        )}
+
+        {step !== "signup-confirm" && error && (
+          <p className="text-xs text-red-400">{error}</p>
+        )}
+        {step !== "signup-confirm" && message && (
           <p className="text-xs" style={{ color: "var(--fg-muted)" }}>
             {message}
           </p>
@@ -358,7 +452,19 @@ export function LoginForm() {
               disabled={loading}
               className="login-cta terra"
             >
-              {loading ? "..." : "start reading →"}
+              next →
+            </button>
+          </div>
+        )}
+
+        {step === "signup-username" && (
+          <div className="fade-up" style={{ marginTop: 8 }}>
+            <button
+              type="submit"
+              disabled={loading}
+              className="login-cta terra"
+            >
+              {loading ? "..." : "create account →"}
             </button>
           </div>
         )}
@@ -375,6 +481,63 @@ export function LoginForm() {
           </div>
         )}
       </form>
+
+      {/* Confirmation screen — after successful signup */}
+      {step === "signup-confirm" && (
+        <div className="fade-up" style={{ marginTop: -8 }}>
+          <p className="text-[15px] text-fg" style={{ lineHeight: 1.6 }}>
+            check your email to confirm your account.
+            <br />
+            <span className="text-fg-muted text-[13px]">
+              check your spam folder if you don&apos;t see it in your inbox.
+            </span>
+          </p>
+
+          <div className="flex items-center gap-4 mt-6">
+            <button
+              type="button"
+              disabled={resending || cooldown > 0}
+              onClick={async () => {
+                setResending(true);
+                setError("");
+                setMessage("");
+                try {
+                  await resendConfirmation(email);
+                  setMessage("confirmation email resent.");
+                  setCooldown(60);
+                } catch (err: unknown) {
+                  setError(
+                    err instanceof Error ? err.message : "failed to resend",
+                  );
+                } finally {
+                  setResending(false);
+                }
+              }}
+              className="login-cta terra"
+            >
+              {resending
+                ? "sending..."
+                : cooldown > 0
+                  ? `resend in ${cooldown}s`
+                  : "resend email"}
+            </button>
+            <button
+              type="button"
+              onClick={() => goTo("email")}
+              className="login-link"
+            >
+              back to sign in
+            </button>
+          </div>
+
+          {error && <p className="text-xs text-red-400 mt-3">{error}</p>}
+          {message && (
+            <p className="text-xs mt-3" style={{ color: "var(--fg-muted)" }}>
+              {message}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

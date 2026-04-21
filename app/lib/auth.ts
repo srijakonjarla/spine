@@ -5,11 +5,44 @@ export async function signIn(email: string, password: string) {
   if (error) throw error;
 }
 
-export async function signUp(email: string, password: string, name: string) {
+export async function signUp(
+  email: string,
+  password: string,
+  name: string,
+  username: string,
+) {
+  // Validate username format before hitting the DB
+  if (!/^[a-z0-9_]{3,30}$/.test(username)) {
+    throw new Error(
+      "username must be 3-30 characters: lowercase letters, numbers, and underscores.",
+    );
+  }
+
+  // Check username availability via RPC (works without auth session)
+  const { data: available, error: rpcError } = await supabase.rpc(
+    "is_username_available",
+    { p_username: username },
+  );
+  if (rpcError) throw rpcError;
+  if (!available) {
+    throw new Error("that username is already taken.");
+  }
+
+  // Pass username in metadata so the DB trigger can set it on the profile row.
+  // The user isn't authenticated yet (email confirmation pending), so we can't
+  // update the profiles table directly from the client.
   const { error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { name, custom_name: name } },
+    options: { data: { name, custom_name: name, username } },
+  });
+  if (error) throw error;
+}
+
+export async function resendConfirmation(email: string) {
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email,
   });
   if (error) throw error;
 }

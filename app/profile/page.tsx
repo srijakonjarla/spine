@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, type FormEvent } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { signOut, getDisplayName } from "@/lib/auth";
@@ -415,7 +415,9 @@ function InviteFriend() {
   );
   const [error, setError] = useState("");
 
-  const handleInvite = async (e: FormEvent<HTMLFormElement>) => {
+  const handleInvite = async (
+    e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     if (!email.trim()) return;
     setState("sending");
@@ -496,6 +498,7 @@ export default function ProfilePage() {
 
   // Profile fields
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [nameSaving, setNameSaving] = useState(false);
   const [nameMsg, setNameMsg] = useState("");
 
@@ -510,30 +513,68 @@ export default function ProfilePage() {
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user);
       setName(getDisplayName(data.user ?? { email: "" }));
+      if (data.user) {
+        supabase
+          .from("profiles")
+          .select("username")
+          .eq("id", data.user.id)
+          .single()
+          .then(({ data: profile }) => {
+            if (profile?.username) setUsername(profile.username);
+          });
+      }
       setLoading(false);
     });
   }, []);
 
-  const handleSaveName = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSaveProfile = async (
+    e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     if (!name.trim()) return;
     setNameSaving(true);
     setNameMsg("");
     try {
-      const { error } = await supabase.auth.updateUser({
+      const { error: authError } = await supabase.auth.updateUser({
         data: { name: name.trim(), custom_name: name.trim() },
       });
-      if (error) throw error;
-      setNameMsg("Saved.");
+      if (authError) throw authError;
+
+      const trimmedUsername = username.trim().toLowerCase();
+      const profileUpdate: Record<string, string> = { name: name.trim() };
+      if (trimmedUsername) {
+        profileUpdate.username = trimmedUsername;
+      }
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update(profileUpdate)
+        .eq("id", user!.id);
+      if (profileError) {
+        if (profileError.message.includes("username_format")) {
+          throw new Error(
+            "username must be 3-30 characters, lowercase letters, numbers, and underscores only.",
+          );
+        }
+        if (
+          profileError.message.includes("duplicate") ||
+          profileError.message.includes("unique")
+        ) {
+          throw new Error("that username is already taken.");
+        }
+        throw profileError;
+      }
+      setNameMsg("saved.");
     } catch (err) {
-      setNameMsg(err instanceof Error ? err.message : "Failed to save.");
+      setNameMsg(err instanceof Error ? err.message : "failed to save.");
     } finally {
       setNameSaving(false);
-      setTimeout(() => setNameMsg(""), 3000);
+      setTimeout(() => setNameMsg(""), 4000);
     }
   };
 
-  const handleChangePassword = async (e: FormEvent<HTMLFormElement>) => {
+  const handleChangePassword = async (
+    e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     setPwError("");
     setPwMsg("");
@@ -594,7 +635,7 @@ export default function ProfilePage() {
 
         {/* ── Profile ── */}
         <Section title="profile">
-          <form onSubmit={handleSaveName} className="max-w-sm space-y-4">
+          <form onSubmit={handleSaveProfile} className="max-w-sm space-y-4">
             <div>
               <label className="text-xs text-stone-400 block mb-1">
                 display name
@@ -605,6 +646,26 @@ export default function ProfilePage() {
                 onChange={(e) => setName(e.target.value)}
                 className="underline-input w-full"
               />
+            </div>
+            <div>
+              <label className="text-xs text-stone-400 block mb-1">
+                username
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) =>
+                  setUsername(
+                    e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""),
+                  )
+                }
+                placeholder="your_username"
+                maxLength={30}
+                className="underline-input w-full"
+              />
+              <p className="hint-text">
+                3-30 characters, lowercase letters, numbers, and underscores.
+              </p>
             </div>
             <div className="flex items-center gap-4">
               <button

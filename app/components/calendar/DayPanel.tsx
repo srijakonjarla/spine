@@ -195,7 +195,9 @@ export function DayPanel({
     }
   };
 
-  const handleSaveQuote = async (e: React.FormEvent) => {
+  const handleSaveQuote = async (
+    e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     if (!quoteText.trim()) return;
     setSavingQuote(true);

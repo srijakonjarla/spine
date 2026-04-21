@@ -37,7 +37,9 @@ export default function RecommendationsPage() {
     setAuthor(entry.author);
   };
 
-  const handleAdd = async (e: React.FormEvent) => {
+  const handleAdd = async (
+    e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     if (!title.trim() || saving) return;
     setSaving(true);

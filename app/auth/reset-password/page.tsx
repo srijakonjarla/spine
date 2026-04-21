@@ -70,7 +70,9 @@ function ResetPasswordForm() {
     });
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (
+    e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     if (password !== confirm) {
       setError("passwords don't match");
@@ -94,7 +96,9 @@ function ResetPasswordForm() {
     }
   };
 
-  const handleResend = async (e: React.FormEvent) => {
+  const handleResend = async (
+    e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     if (!email) return;
     setResendLoading(true);
