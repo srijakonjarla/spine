@@ -96,7 +96,7 @@ export default function RereadsPage() {
   const [filter, setFilter] = useState<Filter>("all");
 
   useEffect(() => {
-    getEntries()
+    getEntries({ include: "nested" })
       .then((all) =>
         setEntries(
           all.filter((b) => {

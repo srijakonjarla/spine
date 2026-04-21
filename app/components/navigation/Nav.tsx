@@ -62,6 +62,8 @@ export default function Nav() {
     wantToRead: 0,
   });
 
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+
   const userId = user?.id;
   useEffect(() => {
     if (!userId) return;
@@ -73,11 +75,6 @@ export default function Nav() {
       })
       .catch(() => toast("Failed to load data. Please refresh."));
   }, [userId]);
-
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [pathname]);
 
   // Hide nav on auth pages, login page, and when not authenticated
   if (pathname.startsWith("/auth/") || pathname === "/login" || !userId)
@@ -144,6 +141,7 @@ export default function Nav() {
         className={`fixed top-14 right-0 h-[calc(100dvh-var(--nav-height))] w-72 z-[29] bg-page border-l border-line shadow-xl overflow-y-auto transition-transform duration-300 lg:hidden ${
           mobileMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
+        onClick={closeMobileMenu}
       >
         <div className="p-4">
           <Link
@@ -154,36 +152,94 @@ export default function Nav() {
           </Link>
 
           <SidebarSection label={CURRENT_MONTH_LABEL}>
-            <SidebarLink href={`/${CURRENT_YEAR}`} label="index" exact icon={HouseIcon} />
-            <SidebarLink href={`/${CURRENT_YEAR}/lists`} label="lists" icon={ListBulletsIcon} />
-            <SidebarLink href={`/${CURRENT_YEAR}/${CURRENT_MONTH}`} label="monthly spread" icon={CalendarBlankIcon} />
-            <SidebarLink href={`/${CURRENT_YEAR}/quotes`} label="quote collection" icon={QuotesIcon} />
+            <SidebarLink
+              href={`/${CURRENT_YEAR}`}
+              label="index"
+              exact
+              icon={HouseIcon}
+            />
+            <SidebarLink
+              href={`/${CURRENT_YEAR}/lists`}
+              label="lists"
+              icon={ListBulletsIcon}
+            />
+            <SidebarLink
+              href={`/${CURRENT_YEAR}/${CURRENT_MONTH}`}
+              label="monthly spread"
+              icon={CalendarBlankIcon}
+            />
+            <SidebarLink
+              href={`/${CURRENT_YEAR}/quotes`}
+              label="quote collection"
+              icon={QuotesIcon}
+            />
           </SidebarSection>
 
           <SidebarSection label="my shelves">
-            <SidebarLink href="/library/reading" label={`reading${shelfCounts.reading > 0 ? ` · ${shelfCounts.reading}` : ""}`} icon={BookOpenIcon} />
-            <SidebarLink href="/library/finished" label={`read${shelfCounts.finished > 0 ? ` · ${shelfCounts.finished}` : ""}`} icon={BookBookmarkIcon} />
-            <SidebarLink href="/library/want-to-read" label={`want to read${shelfCounts.wantToRead > 0 ? ` · ${shelfCounts.wantToRead}` : ""}`} icon={BooksIcon} />
-            <SidebarLink href="/library/rereads" label="re-reads" icon={ArrowsClockwiseIcon} />
-            <SidebarLink href="/library/series" label="series tracker" icon={StackIcon} />
-            <SidebarLink href="/library/recommendations" label="recommendations" icon={StarIcon} />
+            <SidebarLink
+              href="/library/reading"
+              label={`reading${shelfCounts.reading > 0 ? ` · ${shelfCounts.reading}` : ""}`}
+              icon={BookOpenIcon}
+            />
+            <SidebarLink
+              href="/library/finished"
+              label={`read${shelfCounts.finished > 0 ? ` · ${shelfCounts.finished}` : ""}`}
+              icon={BookBookmarkIcon}
+            />
+            <SidebarLink
+              href="/library/want-to-read"
+              label={`want to read${shelfCounts.wantToRead > 0 ? ` · ${shelfCounts.wantToRead}` : ""}`}
+              icon={BooksIcon}
+            />
+            <SidebarLink
+              href="/library/rereads"
+              label="re-reads"
+              icon={ArrowsClockwiseIcon}
+            />
+            <SidebarLink
+              href="/library/series"
+              label="series tracker"
+              icon={StackIcon}
+            />
+            <SidebarLink
+              href="/library/recommendations"
+              label="recommendations"
+              icon={StarIcon}
+            />
           </SidebarSection>
 
           <SidebarSection label="milestones">
-            <SidebarLink href={`/${CURRENT_YEAR}/goal`} label={`${CURRENT_YEAR} goals`} icon={TargetIcon} />
-            <SidebarLink href={`/${CURRENT_YEAR}/review`} label="year in review" icon={ChartBarIcon} />
+            <SidebarLink
+              href={`/${CURRENT_YEAR}/goal`}
+              label={`${CURRENT_YEAR} goals`}
+              icon={TargetIcon}
+            />
+            <SidebarLink
+              href={`/${CURRENT_YEAR}/review`}
+              label="year in review"
+              icon={ChartBarIcon}
+            />
           </SidebarSection>
 
           {bookmarks.length > 0 && (
             <SidebarSection label="bookmarks">
               {bookmarks.map((t) => (
-                <SidebarLink key={t.id} href={t.href} label={t.title} icon={BookmarkSimpleIcon} />
+                <SidebarLink
+                  key={t.id}
+                  href={t.href}
+                  label={t.title}
+                  icon={BookmarkSimpleIcon}
+                />
               ))}
             </SidebarSection>
           )}
 
           <div className="mt-4 space-y-2 border-t border-line pt-4">
-            <SidebarLink href="/profile" label="profile & settings" icon={GearIcon} />
+            <SidebarLink
+              href="/profile"
+              label="profile & settings"
+              icon={GearIcon}
+            />
             <button
               onClick={() => signOut()}
               className="text-xs text-fg-faint hover:text-fg-muted transition-colors px-3 py-2"

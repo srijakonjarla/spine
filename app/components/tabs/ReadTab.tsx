@@ -99,7 +99,10 @@ export default function ReadTab({
           {/* Left: reflection */}
           <div className="book-surface p-4 sm:p-6">
             <p className="caveat-label mb-3">my reflection</p>
-            <div className="journal-surface p-3 sm:p-5" style={{ minHeight: "160px" }}>
+            <div
+              className="journal-surface p-3 sm:p-5"
+              style={{ minHeight: "160px" }}
+            >
               <textarea
                 ref={feelingRef}
                 value={draft.feeling}
@@ -233,9 +236,7 @@ export default function ReadTab({
   ] as { key: string; val: string | number; isRating?: boolean }[];
 
   return (
-    <div
-      className="grid gap-5 sm:gap-7 px-4 sm:px-10 py-5 sm:py-7 bg-cream md:grid-cols-[2fr_1fr]"
-    >
+    <div className="grid gap-5 sm:gap-7 px-4 sm:px-10 py-5 sm:py-7 bg-cream md:grid-cols-[2fr_1fr]">
       {/* Left column */}
       <div>
         {/* Reflection */}

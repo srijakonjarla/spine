@@ -152,9 +152,7 @@ export default function Home() {
   // Show login UI when not authenticated
   if (!authLoading && !user) {
     return (
-      <div
-        className="fixed inset-0 grid grid-cols-1 lg:grid-cols-[1fr_460px] bg-[#faf6f1] lg:bg-[#1c0e1f]"
-      >
+      <div className="fixed inset-0 grid grid-cols-1 lg:grid-cols-[1fr_460px] bg-[#faf6f1] lg:bg-[#1c0e1f]">
         <CoverPanel />
         <LoginForm />
         {/* Gold seal — sits on the seam between panels, above both */}

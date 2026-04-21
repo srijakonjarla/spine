@@ -56,9 +56,7 @@ function HistoricalReadView({
   };
 
   return (
-    <div
-      className="grid gap-5 sm:gap-7 px-4 sm:px-10 py-5 sm:py-7 bg-cream md:grid-cols-[2fr_1fr]"
-    >
+    <div className="grid gap-5 sm:gap-7 px-4 sm:px-10 py-5 sm:py-7 bg-cream md:grid-cols-[2fr_1fr]">
       {/* Left: reflection */}
       <div>
         <div className="book-surface p-4 sm:p-6">
@@ -213,9 +211,7 @@ export default function ReflectionTab() {
   ] as { key: string; val: string | number; isRating?: boolean }[];
 
   return (
-    <div
-      className="grid gap-5 sm:gap-7 px-4 sm:px-10 py-5 sm:py-7 bg-cream md:grid-cols-[2fr_1fr]"
-    >
+    <div className="grid gap-5 sm:gap-7 px-4 sm:px-10 py-5 sm:py-7 bg-cream md:grid-cols-[2fr_1fr]">
       {/* Left column */}
       <div>
         {/* Reflection field */}
