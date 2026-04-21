@@ -80,8 +80,8 @@ function fmtHours(minutes: number): string {
 export default function DetailsTab() {
   const { entry, onUpdate, onDeleteRead, onDelete } = useBook();
   return (
-    <div className="px-10 py-7 pb-12 bg-cream">
-      <div className="grid gap-7" style={{ gridTemplateColumns: "2fr 1fr" }}>
+    <div className="px-4 sm:px-10 py-5 sm:py-7 pb-10 sm:pb-12 bg-cream">
+      <div className="grid gap-5 sm:gap-7 md:grid-cols-[2fr_1fr]">
         {/* Left: edit fields */}
         <div className="space-y-5">
           <div className="book-surface p-7">

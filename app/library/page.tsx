@@ -285,7 +285,7 @@ export default function LibraryPage() {
 
         {/* Finished — grouped by year */}
         {loading && (
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4 animate-pulse">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4 animate-pulse">
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i}>
                 <div className="rounded-lg mb-2 aspect-[2/3] bg-edge" />
@@ -310,7 +310,7 @@ export default function LibraryPage() {
               <ShelfDivider year={year} count={books.length} />
 
               {view === "grid" ? (
-                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
                   {books.map((e) => (
                     <Link key={e.id} href={`/book/${e.id}`} className="group">
                       <div className="relative mb-2 rounded-lg overflow-hidden group-hover:-translate-y-1 transition-transform h-32.5 shadow-sm">

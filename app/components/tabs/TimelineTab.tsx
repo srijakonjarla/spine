@@ -196,9 +196,9 @@ export default function TimelineTab() {
   };
 
   return (
-    <div className="grid bg-cream" style={{ gridTemplateColumns: "1fr 280px" }}>
+    <div className="grid bg-cream md:grid-cols-[1fr_280px]">
       {/* Main column */}
-      <div className="px-9 py-7 pb-10">
+      <div className="px-4 sm:px-9 py-5 sm:py-7 pb-8 sm:pb-10">
         <DaysStrip
           calendarDays={calendarDays}
           thoughtsByDay={thoughtsByDay}
@@ -224,7 +224,7 @@ export default function TimelineTab() {
       </div>
 
       {/* Sidebar */}
-      <div className="px-[22px] py-[22px] bg-plum-trace border-l border-line overflow-y-auto">
+      <div className="px-4 sm:px-[22px] py-4 sm:py-[22px] bg-plum-trace md:border-l border-t md:border-t-0 border-line overflow-y-auto">
         <SummaryStats
           sessions={sortedThoughts.length}
           pages={entry.pageCount ?? "—"}

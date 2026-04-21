@@ -153,8 +153,7 @@ export default function Home() {
   if (!authLoading && !user) {
     return (
       <div
-        className="fixed inset-0 grid grid-cols-1 lg:grid-cols-[1fr_460px]"
-        style={{ background: "#1c0e1f" }}
+        className="fixed inset-0 grid grid-cols-1 lg:grid-cols-[1fr_460px] bg-[#faf6f1] lg:bg-[#1c0e1f]"
       >
         <CoverPanel />
         <LoginForm />
@@ -186,7 +185,7 @@ export default function Home() {
         <div className="page-content animate-pulse">
           <div className="h-5 w-36 bg-hover rounded mb-1.5" />
           <div className="h-3.5 w-48 bg-hover rounded mb-8" />
-          <div className="grid grid-cols-3 gap-3 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-16 bg-hover rounded-xl" />
             ))}
@@ -210,7 +209,7 @@ export default function Home() {
       <div className="page-content">
         {/* Greeting */}
         <div className="mb-8">
-          <p className="font-serif text-3xl font-semibold tracking-tight text-fg-heading">
+          <p className="font-serif text-2xl sm:text-3xl font-semibold tracking-tight text-fg-heading">
             {greeting()}
             {name ? `, ${name}` : ""}.
           </p>
@@ -276,7 +275,7 @@ export default function Home() {
         )}
 
         {/* Three index cards */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
           {/* Streak card */}
           <div className="rounded-2xl p-4 bg-surface border border-line">
             <p className="text-label font-bold uppercase tracking-label mb-3 text-fg-faint">

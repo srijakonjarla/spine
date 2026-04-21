@@ -43,7 +43,7 @@ export default function QuotesTab() {
   };
 
   return (
-    <div className="px-10 py-7 bg-cream">
+    <div className="px-4 sm:px-10 py-5 sm:py-7 bg-cream">
       {/* Add quote toggle */}
       <div className="mb-5 flex justify-end">
         <button
@@ -104,7 +104,7 @@ export default function QuotesTab() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         {quotes.map((q) => (
           <div key={q.id} className="book-surface px-6 py-5">
             <QuoteCard

@@ -10,13 +10,25 @@
   .page-content {
     /* max-width: 48rem; */
     margin: 0 auto;
-    padding: 3rem 1.5rem;
+    padding: 2rem 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .page-content {
+      padding: 3rem 1.5rem;
+    }
   }
 
   .page-content-sm {
     max-width: 48rem;
     margin: 0 auto;
-    padding: 2.5rem 1.5rem;
+    padding: 2rem 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .page-content-sm {
+      padding: 2.5rem 1.5rem;
+    }
   }
 
   /* Typography */

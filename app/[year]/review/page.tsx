@@ -164,7 +164,7 @@ export default function YearReviewPage() {
           <p className="text-white/60 text-caption mb-1 tracking-widest uppercase">
             year in review
           </p>
-          <h1 className="font-serif text-5xl font-bold italic text-white tracking-tight">
+          <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold italic text-white tracking-tight">
             {year}
           </h1>
           {hasData && (

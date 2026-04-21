@@ -133,7 +133,7 @@ export default function RereadsPage() {
           <div className="h-4 w-16 bg-hover rounded mb-8" />
           <div className="h-6 w-24 bg-hover rounded mb-2" />
           <div className="h-4 w-56 bg-hover rounded mb-8" />
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="space-y-2">
                 <div className="aspect-[2/3] bg-hover rounded" />
@@ -204,7 +204,7 @@ export default function RereadsPage() {
         ) : filtered.length === 0 ? (
           <EmptyState message="No books match this filter." />
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-7 mb-10">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-7 mb-10">
             {filtered.map((book) => {
               const count = readCount(book);
               const timeline = readTimeline(book);

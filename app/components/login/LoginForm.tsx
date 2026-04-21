@@ -137,11 +137,10 @@ export function LoginForm() {
   return (
     <div
       data-theme="light"
-      className="relative flex flex-col justify-center overflow-y-auto"
+      className="relative flex flex-col justify-center overflow-y-auto px-5 py-8 sm:px-8 sm:py-12 md:px-10 md:py-14 lg:px-14"
       style={{
         background: "#faf6f1",
         boxShadow: "inset 24px 0 48px -24px rgba(0,0,0,0.35)",
-        padding: "56px 56px",
       }}
     >
       {/* fold line */}

@@ -57,12 +57,11 @@ function HistoricalReadView({
 
   return (
     <div
-      className="grid gap-7 px-10 py-7 bg-cream"
-      style={{ gridTemplateColumns: "2fr 1fr" }}
+      className="grid gap-5 sm:gap-7 px-4 sm:px-10 py-5 sm:py-7 bg-cream md:grid-cols-[2fr_1fr]"
     >
       {/* Left: reflection */}
       <div>
-        <div className="book-surface p-6">
+        <div className="book-surface p-4 sm:p-6">
           <p className="caveat-label mb-3">my reflection · read {readIndex}</p>
           <div className="journal-surface p-5" style={{ minHeight: "160px" }}>
             <textarea
@@ -215,13 +214,12 @@ export default function ReflectionTab() {
 
   return (
     <div
-      className="grid gap-7 px-10 py-7 bg-cream"
-      style={{ gridTemplateColumns: "2fr 1fr" }}
+      className="grid gap-5 sm:gap-7 px-4 sm:px-10 py-5 sm:py-7 bg-cream md:grid-cols-[2fr_1fr]"
     >
       {/* Left column */}
       <div>
         {/* Reflection field */}
-        <div className="book-surface p-6 mb-4">
+        <div className="book-surface p-4 sm:p-6 mb-4">
           <p className="caveat-label mb-3">my reflection</p>
           <div className="journal-surface p-5" style={{ minHeight: "160px" }}>
             <textarea

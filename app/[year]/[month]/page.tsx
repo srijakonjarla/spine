@@ -288,7 +288,7 @@ export default function MonthSpreadPage() {
         />
 
         {/* Two-column spread */}
-        <div className="grid lg:grid-cols-2 gap-10">
+        <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-10">
           <div>
             <p className="section-label mb-4">on the nightstand</p>
             {reading.length === 0 ? (
@@ -432,7 +432,7 @@ export default function MonthSpreadPage() {
 
       {/* Daily Log Panel */}
       <div
-        className={`fixed top-14 right-0 h-[calc(100dvh-var(--nav-height))] w-full md:w-95 z-[25] border-l border-line bg-surface shadow-xl transition-transform duration-300 ${
+        className={`fixed top-14 right-0 h-[calc(100dvh-var(--nav-height))] w-full sm:w-80 md:w-95 z-[25] border-l border-line bg-surface shadow-xl transition-transform duration-300 ${
           panelOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
