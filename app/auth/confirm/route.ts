@@ -46,11 +46,6 @@ export async function GET(request: NextRequest) {
       type,
     });
     if (!error) {
-      // For signup confirmations, redirect to login with a success message
-      // so the user knows it worked and can sign in.
-      if (type === "signup") {
-        return NextResponse.redirect(`${origin}/login?confirmed=1`);
-      }
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

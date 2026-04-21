@@ -152,25 +152,6 @@ export function LoginForm() {
             "linear-gradient(to bottom, transparent, rgb(var(--ch-plum) / 0.18) 20%, rgb(var(--ch-plum) / 0.18) 80%, transparent)",
         }}
       />
-      {/* gold seal */}
-      <div
-        className="absolute hidden lg:flex items-center justify-center font-serif font-bold"
-        style={{
-          top: 56,
-          left: -18,
-          width: 36,
-          height: 36,
-          background: "var(--gold)",
-          borderRadius: "50%",
-          boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
-          fontSize: 20,
-          color: "var(--plum)",
-          lineHeight: 1,
-        }}
-      >
-        s<span className="text-terra">.</span>
-      </div>
-
       {/* back button */}
       {step !== "email" && step !== "signup-confirm" && (
         <button
