@@ -125,7 +125,7 @@ function AcceptInviteForm() {
   };
 
   return (
-    <div className="page flex items-center justify-center px-6">
+    <div className="flex items-center justify-center px-6 min-h-[calc(100dvh-var(--nav-height))] bg-page">
       <div className="w-full max-w-sm font-mono">
         <div className="mb-10">
           <h1 className="page-title">spine</h1>
@@ -251,7 +251,7 @@ export default function AcceptInvitePage() {
   return (
     <Suspense
       fallback={
-        <div className="page flex items-center justify-center px-6">
+        <div className="flex items-center justify-center px-6 min-h-[calc(100dvh-var(--nav-height))] bg-page">
           <p className="text-xs text-stone-400 font-mono">
             verifying invite...
           </p>

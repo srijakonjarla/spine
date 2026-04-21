@@ -120,4 +120,20 @@
   .btn-delete:hover {
     color: var(--danger-hover);
   }
+
+  /* Entrance animation */
+  .fade-up {
+    animation: fadeUp 0.2s ease-out both;
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
