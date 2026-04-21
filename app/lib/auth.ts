@@ -43,6 +43,9 @@ export async function resendConfirmation(email: string) {
   const { error } = await supabase.auth.resend({
     type: "signup",
     email,
+    options: {
+      emailRedirectTo: `${window.location.origin}/auth/confirm`,
+    },
   });
   if (error) throw error;
 }

@@ -1,14 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import {
-  signIn,
-  signUp,
-  signInWithGoogle,
-  sendMagicLink,
-  resetPassword,
-  resendConfirmation,
-} from "@/lib/auth";
+import { signIn, signUp, sendMagicLink, resetPassword } from "@/lib/auth";
+import { GoogleButton } from "./GoogleButton";
+import { SignupConfirmScreen } from "./SignupConfirmScreen";
 
 type Step =
   | "email"
@@ -27,8 +22,6 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [resending, setResending] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -116,18 +109,15 @@ export function LoginForm() {
     if (step === "password") passwordRef.current?.focus();
     if (step === "signup") nameRef.current?.focus();
     if (step === "signup-username") usernameRef.current?.focus();
-    if (step === "signup-confirm") setCooldown(60);
   }, [step]);
 
   useEffect(() => {
-    if (cooldown <= 0) return;
-    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [cooldown]);
-
-  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("reset") === "1") {
+    if (params.get("confirmed") === "1") {
+      setMessage("email confirmed — sign in to get started.");
+    } else if (params.get("error") === "confirmation") {
+      setError("confirmation link expired or invalid. please try again.");
+    } else if (params.get("reset") === "1") {
       setStep("password");
       setMessage("password updated — sign in with your new password.");
     }
@@ -218,42 +208,7 @@ export function LoginForm() {
         {subtitle}
       </div>
 
-      {/* Google button + divider — top of email step, like the design */}
-      {step === "email" && (
-        <div className="flex flex-col" style={{ gap: 18, marginBottom: 18 }}>
-          <button
-            type="button"
-            onClick={() => signInWithGoogle()}
-            className="login-alt"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24">
-              <path
-                fill="#4285F4"
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.84 14.09c-.22-.66-.35-1.37-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-              />
-              <path
-                fill="#EA4335"
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-              />
-            </svg>
-            continue with google
-          </button>
-
-          <div className="login-divider">
-            <div className="login-divider-line" />
-            <span>or with email</span>
-            <div className="login-divider-line" />
-          </div>
-        </div>
-      )}
+      {step === "email" && <GoogleButton />}
 
       <form
         onSubmit={handleSubmit}
@@ -482,61 +437,11 @@ export function LoginForm() {
         )}
       </form>
 
-      {/* Confirmation screen — after successful signup */}
       {step === "signup-confirm" && (
-        <div className="fade-up" style={{ marginTop: -8 }}>
-          <p className="text-[15px] text-fg" style={{ lineHeight: 1.6 }}>
-            check your email to confirm your account.
-            <br />
-            <span className="text-fg-muted text-[13px]">
-              check your spam folder if you don&apos;t see it in your inbox.
-            </span>
-          </p>
-
-          <div className="flex items-center gap-4 mt-6">
-            <button
-              type="button"
-              disabled={resending || cooldown > 0}
-              onClick={async () => {
-                setResending(true);
-                setError("");
-                setMessage("");
-                try {
-                  await resendConfirmation(email);
-                  setMessage("confirmation email resent.");
-                  setCooldown(60);
-                } catch (err: unknown) {
-                  setError(
-                    err instanceof Error ? err.message : "failed to resend",
-                  );
-                } finally {
-                  setResending(false);
-                }
-              }}
-              className="login-cta terra"
-            >
-              {resending
-                ? "sending..."
-                : cooldown > 0
-                  ? `resend in ${cooldown}s`
-                  : "resend email"}
-            </button>
-            <button
-              type="button"
-              onClick={() => goTo("email")}
-              className="login-link"
-            >
-              back to sign in
-            </button>
-          </div>
-
-          {error && <p className="text-xs text-red-400 mt-3">{error}</p>}
-          {message && (
-            <p className="text-xs mt-3" style={{ color: "var(--fg-muted)" }}>
-              {message}
-            </p>
-          )}
-        </div>
+        <SignupConfirmScreen
+          email={email}
+          onBackToSignIn={() => goTo("email")}
+        />
       )}
     </div>
   );
