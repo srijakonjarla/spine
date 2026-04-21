@@ -441,8 +441,9 @@ function InviteFriend() {
   return (
     <form onSubmit={handleInvite} className="max-w-sm space-y-4">
       <p className="text-xs text-fg-faint">
-        invite someone to join spine. they'll get an email with a link to create
-        their account.
+        {
+          "invite someone to join spine. they'll get an email with a link to create their account."
+        }
       </p>
       <div>
         <label className="text-xs text-stone-400 block mb-1">their email</label>

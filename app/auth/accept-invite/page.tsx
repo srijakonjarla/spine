@@ -1,51 +1,60 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
 type Stage = "confirm" | "exchanging" | "form" | "done" | "error";
 
+function parseHash() {
+  if (typeof window === "undefined") return null;
+  const rawHash = window.location.hash.substring(1);
+  const hash = rawHash ? decodeURIComponent(rawHash) : "";
+  if (!hash) return null;
+
+  const hashParams = new URLSearchParams(hash);
+  const hashError =
+    hashParams.get("error_description") || hashParams.get("error");
+  if (hashError) {
+    return {
+      stage: "error" as Stage,
+      supabaseError: hashError.replace(/\+/g, " "),
+    };
+  }
+
+  if (hash.startsWith("https://")) {
+    return { stage: "confirm" as Stage, verifyUrl: hash };
+  }
+
+  return null;
+}
+
 function AcceptInviteForm() {
-  const [stage, setStage] = useState<Stage>("exchanging");
-  const [verifyUrl, setVerifyUrl] = useState("");
+  const parsed = parseHash();
+
+  const [stage, setStage] = useState<Stage>(parsed?.stage ?? "exchanging");
+  const [verifyUrl] = useState(parsed?.verifyUrl ?? "");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [supabaseError, setSupabaseError] = useState("");
+  const [supabaseError, setSupabaseError] = useState(
+    parsed?.supabaseError ?? "",
+  );
 
   useEffect(() => {
+    // Synchronous cases (error, confirm) are handled via initial state above.
+    // This effect only runs the async session exchange paths.
+    if (parsed) return;
+
     const rawHash = window.location.hash.substring(1);
-    // Decode in case Go's template engine URL-encoded the fragment
     const hash = rawHash ? decodeURIComponent(rawHash) : "";
 
-    // Check for errors in hash fragment (e.g. #error=access_denied&error_description=...)
     if (hash) {
       const hashParams = new URLSearchParams(hash);
-      const hashError =
-        hashParams.get("error_description") || hashParams.get("error");
-      if (hashError) {
-        setSupabaseError(hashError.replace(/\+/g, " "));
-        setStage("error");
-        return;
-      }
-
-      // Email link flow: hash contains the Supabase verify URL.
-      // We show a button instead of auto-redirecting, so email security
-      // scanners (Proofpoint, etc.) can't consume the one-time token.
-      if (hash.startsWith("https://")) {
-        setVerifyUrl(hash);
-        setStage("confirm");
-        return;
-      }
-
-      // Implicit flow redirect: Supabase returned tokens in the hash
-      // (e.g. #access_token=...&refresh_token=...). Set the session
-      // explicitly to avoid race conditions with onAuthStateChange.
-      const hashParams2 = new URLSearchParams(hash);
-      const accessToken = hashParams2.get("access_token");
-      const refreshToken = hashParams2.get("refresh_token");
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
       if (accessToken && refreshToken) {
         supabase.auth
           .setSession({
@@ -79,7 +88,6 @@ function AcceptInviteForm() {
       return;
     }
 
-    // Fallback: check if there's already an active session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setStage("form");
@@ -87,6 +95,7 @@ function AcceptInviteForm() {
         setStage("error");
       }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -135,8 +144,8 @@ function AcceptInviteForm() {
         {stage === "confirm" && (
           <div className="space-y-6">
             <p className="text-xs text-stone-400">
-              you've been invited to spine. tap below to accept and set up your
-              account.
+              you&apos;ve been invited to spine. tap below to accept and set up
+              your account.
             </p>
             <button
               onClick={() => {
@@ -163,9 +172,9 @@ function AcceptInviteForm() {
             {supabaseError && (
               <p className="text-caption text-stone-400">{supabaseError}</p>
             )}
-            <a href="/login" className="back-link">
+            <Link href="/login" className="back-link">
               ← go to sign in
-            </a>
+            </Link>
           </div>
         )}
 
@@ -238,7 +247,7 @@ function AcceptInviteForm() {
         {stage === "done" && (
           <div>
             <p className="text-xs text-stone-400">
-              you're in. redirecting to your library...
+              you&apos;re in. redirecting to your library...
             </p>
           </div>
         )}

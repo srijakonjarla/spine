@@ -125,6 +125,123 @@
   .fade-up {
     animation: fadeUp 0.2s ease-out both;
   }
+
+  /* ─── Login — dust jacket ────────────────────────────────────── */
+  .login-label {
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .login-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border-light);
+    padding: 8px 0 10px;
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+    font-size: 15px;
+    color: var(--fg);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .login-input::placeholder {
+    color: var(--fg-faint);
+  }
+  .login-input:focus {
+    border-bottom-color: var(--terra);
+  }
+
+  .login-cta {
+    background: var(--plum);
+    color: var(--cream);
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    padding: 14px 28px;
+    border: none;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .login-cta:hover {
+    background: var(--plum-dark);
+  }
+  .login-cta.terra {
+    background: var(--terra);
+  }
+  .login-cta.terra:hover {
+    background: #a04630;
+  }
+  .login-cta:disabled {
+    opacity: 0.5;
+  }
+
+  .login-link {
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 11px;
+    color: var(--fg-muted);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: none;
+    border-bottom: 1px dotted transparent;
+    transition:
+      color 0.15s,
+      border-color 0.15s;
+  }
+  .login-link:hover {
+    color: var(--terra);
+    border-bottom-color: var(--terra);
+  }
+
+  .login-alt {
+    width: 100%;
+    background: transparent;
+    color: var(--fg);
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 11px 20px;
+    border: 1px solid var(--border-light);
+    border-radius: 9999px;
+    cursor: pointer;
+    transition:
+      background 0.15s,
+      border-color 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .login-alt:hover {
+    background: var(--bg-plum-trace);
+    border-color: var(--fg-muted);
+  }
+
+  .login-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--fg-muted);
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    margin: 4px 0;
+  }
+  .login-divider-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border-light);
+  }
 }
 
 @keyframes fadeUp {

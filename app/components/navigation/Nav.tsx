@@ -51,9 +51,6 @@ interface ShelfCounts {
 export default function Nav() {
   const pathname = usePathname();
   const { user } = useAuth();
-
-  // Hide nav on auth and login pages
-  if (pathname.startsWith("/auth/") || pathname === "/login") return null;
   const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
   const [shelfCounts, setShelfCounts] = useState<ShelfCounts>({
     reading: 0,
@@ -72,6 +69,9 @@ export default function Nav() {
       })
       .catch(() => toast("Failed to load data. Please refresh."));
   }, [userId]);
+
+  // Hide nav on auth and login pages
+  if (pathname.startsWith("/auth/") || pathname === "/login") return null;
 
   return (
     <>

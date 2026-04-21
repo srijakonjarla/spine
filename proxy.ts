@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function proxy(req: NextRequest) {
-  let res = NextResponse.next({ request: req });
+  const res = NextResponse.next({ request: req });
 
   // Create a Supabase client that reads/writes cookies on every request
   // so expired auth tokens are refreshed server-side.
