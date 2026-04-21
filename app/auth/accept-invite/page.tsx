@@ -174,7 +174,7 @@ function AcceptInviteForm() {
             {supabaseError && (
               <p className="text-caption text-stone-400">{supabaseError}</p>
             )}
-            <Link href="/login" className="back-link">
+            <Link href="/" className="back-link">
               ← go to sign in
             </Link>
           </div>

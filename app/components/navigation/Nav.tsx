@@ -70,8 +70,9 @@ export default function Nav() {
       .catch(() => toast("Failed to load data. Please refresh."));
   }, [userId]);
 
-  // Hide nav on auth and login pages
-  if (pathname.startsWith("/auth/") || pathname === "/login") return null;
+  // Hide nav on auth pages, login page, and when not authenticated
+  if (pathname.startsWith("/auth/") || pathname === "/login" || !userId)
+    return null;
 
   return (
     <>

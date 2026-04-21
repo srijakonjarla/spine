@@ -51,5 +51,5 @@ export async function GET(request: NextRequest) {
   }
 
   // If verification fails, send to login with a message
-  return NextResponse.redirect(`${origin}/login?error=confirmation`);
+  return NextResponse.redirect(`${origin}/?error=confirmation`);
 }

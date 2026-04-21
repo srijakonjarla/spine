@@ -607,7 +607,7 @@ export default function ProfilePage() {
 
   const handleSignOut = async () => {
     await signOut();
-    router.replace("/login");
+    router.replace("/");
   };
 
   if (loading) {

@@ -49,11 +49,14 @@ export default function AuthProvider({
 
   useEffect(() => {
     if (loading) return;
-    const isPublicPath = pathname === "/login" || pathname.startsWith("/auth/");
+    const isPublicPath =
+      pathname === "/" ||
+      pathname === "/login" ||
+      pathname.startsWith("/auth/");
     if (!user && !isPublicPath) {
       // Hard redirect so all React state is cleared — prevents stale data
       // from the previous session leaking into a subsequent login.
-      window.location.href = "/login";
+      window.location.href = "/";
     }
     if (user && pathname === "/login") {
       router.replace("/");

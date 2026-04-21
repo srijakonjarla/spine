@@ -193,6 +193,27 @@
   --foreground: var(--fg);
 }
 
+/* ─── Light mode — explicit override for nested elements ────── */
+/* Allows data-theme="light" on a child to force light colors
+   even when the root is in dark mode (e.g. the login form panel). */
+[data-theme="dark"] [data-theme="light"] {
+  --bg-page: #faf6f0;
+  --bg-surface: #fdfaf5;
+  --fg: #1a1a1a;
+  --fg-muted: #5a5060;
+  --fg-faint: #c4bfba;
+  --fg-heading: #2d1b2e;
+  --border: #e7e5e4;
+  --bg-hover: rgb(var(--ch-ink) / 0.05);
+  --border-light: rgb(var(--ch-plum) / 0.08);
+  --bg-plum-trace: rgb(var(--ch-plum) / 0.03);
+  --bg-plum-soft: rgb(var(--ch-plum) / 0.05);
+  --bg-plum-mid: rgb(var(--ch-plum) / 0.08);
+  --auth-loading-bg: #faf8f5;
+  --background: var(--bg-page);
+  --foreground: var(--fg);
+}
+
 /* ─── Dark mode — lamplight ──────────────────────────────────── */
 /* layout.tsx sets data-theme synchronously before paint, so this
    is the single source of truth for dark mode. No @media needed. */

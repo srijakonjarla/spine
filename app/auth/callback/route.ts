@@ -75,5 +75,5 @@ export async function GET(request: NextRequest) {
   }
 
   // If code exchange fails or no code, redirect to login
-  return NextResponse.redirect(`${origin}/login`);
+  return NextResponse.redirect(`${origin}/`);
 }

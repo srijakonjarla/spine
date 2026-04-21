@@ -92,7 +92,7 @@ function ResetPasswordForm() {
       setError(error.message);
     } else {
       await supabase.auth.signOut();
-      window.location.href = "/login?reset=1";
+      window.location.href = "/?reset=1";
     }
   };
 
@@ -160,7 +160,7 @@ function ResetPasswordForm() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => router.push("/login")}
+                  onClick={() => router.push("/")}
                   className="back-link"
                 >
                   ← sign in

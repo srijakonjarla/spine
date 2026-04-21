@@ -38,19 +38,20 @@ export async function proxy(req: NextRequest) {
     }
   }
 
-  // Server-side redirect: unauthenticated users → login
+  // Server-side redirect: unauthenticated users → home (which shows login)
   const isPublicPath =
+    req.nextUrl.pathname === "/" ||
     req.nextUrl.pathname === "/login" ||
     req.nextUrl.pathname.startsWith("/auth/");
 
   if (!user && !isPublicPath && !req.nextUrl.pathname.startsWith("/api/")) {
-    const loginUrl = req.nextUrl.clone();
-    loginUrl.pathname = "/login";
-    return NextResponse.redirect(loginUrl);
+    const homeUrl = req.nextUrl.clone();
+    homeUrl.pathname = "/";
+    return NextResponse.redirect(homeUrl);
   }
 
-  // Authenticated users shouldn't see the login page
-  if (user && req.nextUrl.pathname === "/login") {
+  // Redirect /login → / (login lives on the home page now)
+  if (req.nextUrl.pathname === "/login") {
     const homeUrl = req.nextUrl.clone();
     homeUrl.pathname = "/";
     return NextResponse.redirect(homeUrl);
