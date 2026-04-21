@@ -50,7 +50,7 @@ export function CoverPanel() {
           color: "rgba(250,246,240,0.55)",
         }}
       >
-        a quiet home for your reading &nbsp;&middot;&nbsp; est. 2024
+        a quiet home for your reading &nbsp;&middot;&nbsp; est. 2026
       </div>
 
       {/* title lockup */}

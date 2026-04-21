@@ -9,7 +9,7 @@ export async function signUp(email: string, password: string, name: string) {
   const { error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { name } },
+    options: { data: { name, custom_name: name } },
   });
   if (error) throw error;
 }
@@ -57,6 +57,7 @@ export function getDisplayName(user: {
   user_metadata?: Record<string, string>;
 }) {
   return (
+    user.user_metadata?.custom_name ||
     user.user_metadata?.name ||
     user.user_metadata?.full_name ||
     user.email?.split("@")[0] ||

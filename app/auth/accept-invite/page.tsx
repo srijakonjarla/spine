@@ -118,7 +118,7 @@ function AcceptInviteForm() {
 
     const { error } = await supabase.auth.updateUser({
       password,
-      data: { name: name.trim() },
+      data: { name: name.trim(), custom_name: name.trim() },
     });
 
     if (error) {

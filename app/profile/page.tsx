@@ -521,7 +521,7 @@ export default function ProfilePage() {
     setNameMsg("");
     try {
       const { error } = await supabase.auth.updateUser({
-        data: { name: name.trim() },
+        data: { name: name.trim(), custom_name: name.trim() },
       });
       if (error) throw error;
       setNameMsg("Saved.");
