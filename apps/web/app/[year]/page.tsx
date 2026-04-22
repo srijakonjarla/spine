@@ -262,8 +262,8 @@ export default function YearPage() {
                 all books read →
               </Link>
             </div>
-            <div className="rounded-2xl p-5 overflow-x-auto bg-surface border border-line">
-              <div className="flex items-end gap-1 min-w-0">
+            <div className="rounded-xl sm:rounded-2xl p-3 sm:p-5 overflow-x-auto bg-surface border border-line">
+              <div className="flex items-end gap-0.5 sm:gap-1 min-w-0">
                 {shelfMonths.map(({ monthIndex, books }, si) => (
                   <div
                     key={monthIndex}

@@ -23,6 +23,7 @@ export default function TimelineTab() {
   const { entry, quotes, onUpdate, selectedReadId } = useBook();
   const [thoughtInput, setThoughtInput] = useState("");
   const [pageInput, setPageInput] = useState("");
+  const [dateInput, setDateInput] = useState(localDateStr());
   const [isPosting, setIsPosting] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -159,15 +160,25 @@ export default function TimelineTab() {
     if (!text || isPosting || !entry) return;
     setIsPosting(true);
     const pageNumber = pageInput.trim() ? parseInt(pageInput.trim(), 10) : null;
+
+    // Use the selected date for the timestamp. If backdated, set time to noon
+    // so it sorts naturally within that day.
+    const today = localDateStr();
+    const isBackdated = dateInput !== today;
+    const createdAt = isBackdated
+      ? `${dateInput}T12:00:00.000Z`
+      : new Date().toISOString();
+
     const thought: Thought = {
       id: crypto.randomUUID(),
       text,
       pageNumber: pageNumber && !isNaN(pageNumber) ? pageNumber : null,
-      createdAt: new Date().toISOString(),
+      createdAt,
     };
     onUpdate({ thoughts: [...entry.thoughts, thought] });
     setThoughtInput("");
     setPageInput("");
+    setDateInput(today);
     setTimeout(
       () => bottomRef.current?.scrollIntoView({ behavior: "smooth" }),
       50,
@@ -185,9 +196,9 @@ export default function TimelineTab() {
   };
 
   return (
-    <div className="grid bg-cream" style={{ gridTemplateColumns: "1fr 280px" }}>
+    <div className="grid bg-cream md:grid-cols-[1fr_280px]">
       {/* Main column */}
-      <div className="px-9 py-7 pb-10">
+      <div className="px-4 sm:px-9 py-5 sm:py-7 pb-8 sm:pb-10">
         <DaysStrip
           calendarDays={calendarDays}
           thoughtsByDay={thoughtsByDay}
@@ -207,11 +218,13 @@ export default function TimelineTab() {
           onThoughtInputChange={setThoughtInput}
           onPost={postThought}
           hidden={!!viewedRead}
+          dateValue={dateInput}
+          onDateChange={setDateInput}
         />
       </div>
 
       {/* Sidebar */}
-      <div className="px-[22px] py-[22px] bg-plum-trace border-l border-line overflow-y-auto">
+      <div className="px-4 sm:px-[22px] py-4 sm:py-[22px] bg-plum-trace md:border-l border-t md:border-t-0 border-line overflow-y-auto">
         <SummaryStats
           sessions={sortedThoughts.length}
           pages={entry.pageCount ?? "—"}

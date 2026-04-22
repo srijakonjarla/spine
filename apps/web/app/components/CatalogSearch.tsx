@@ -157,9 +157,7 @@ export function CatalogSearch({
               onMouseDown={() => commit(s)}
               className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${i === idx ? "bg-subtle" : "hover:bg-faintest"}`}
             >
-              <span className="text-sm text-fg truncate flex-1">
-                {s.title}
-              </span>
+              <span className="text-sm text-fg truncate flex-1">{s.title}</span>
               {s.author && (
                 <span className="text-xs text-fg-muted shrink-0 hidden sm:block">
                   {s.author}

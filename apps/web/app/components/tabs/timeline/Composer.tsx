@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { localDateStr } from "@/lib/dates";
+
 interface ComposerProps {
   pageInput: string;
   thoughtInput: string;
@@ -5,6 +8,9 @@ interface ComposerProps {
   onThoughtInputChange: (v: string) => void;
   onPost: () => void;
   hidden: boolean;
+  /** Currently selected date for the thought (YYYY-MM-DD). */
+  dateValue: string;
+  onDateChange: (v: string) => void;
 }
 
 /** The "add a reading note" input row at the bottom of the timeline. */
@@ -15,7 +21,13 @@ export default function Composer({
   onThoughtInputChange,
   onPost,
   hidden,
+  dateValue,
+  onDateChange,
 }: ComposerProps) {
+  const [showDate, setShowDate] = useState(false);
+  const today = localDateStr();
+  const isBackdated = dateValue !== today;
+
   return (
     <>
       <div className={`flex gap-2 items-start${hidden ? " hidden" : ""}`}>
@@ -53,8 +65,50 @@ export default function Composer({
         />
       </div>
       {!hidden && (
-        <p className="hint-text mt-1.5">↵ to post · shift+↵ for newline</p>
+        <div className="flex items-center gap-3 mt-1.5">
+          <p className="hint-text">↵ to post · shift+↵ for newline</p>
+          <button
+            type="button"
+            onClick={() => {
+              setShowDate(!showDate);
+              if (showDate) onDateChange(today);
+            }}
+            className={`hint-text transition-colors ${isBackdated ? "text-terra" : "hover:text-fg-muted"}`}
+          >
+            {isBackdated ? `logging for ${formatShort(dateValue)}` : "backdate"}
+          </button>
+        </div>
+      )}
+      {!hidden && showDate && (
+        <div className="mt-2">
+          <input
+            type="date"
+            value={dateValue}
+            max={today}
+            onChange={(e) => onDateChange(e.target.value)}
+            className="text-xs bg-transparent border border-line rounded-lg px-2.5 py-1.5 text-fg outline-none focus:border-terra transition-colors"
+          />
+        </div>
       )}
     </>
   );
+}
+
+function formatShort(iso: string) {
+  const [, m, d] = iso.split("-");
+  const months = [
+    "jan",
+    "feb",
+    "mar",
+    "apr",
+    "may",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "oct",
+    "nov",
+    "dec",
+  ];
+  return `${months[Number(m) - 1]} ${Number(d)}`;
 }

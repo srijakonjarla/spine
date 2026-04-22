@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   getEntry,
   updateEntry,
@@ -331,8 +332,7 @@ export default function BookPage() {
       >
         {/* ── Hero ── */}
         <div
-          className={`${heroClass} relative overflow-hidden px-10 py-9 grid gap-8`}
-          style={{ gridTemplateColumns: "180px 1fr" }}
+          className={`${heroClass} relative overflow-hidden px-5 py-7 sm:px-10 sm:py-9 grid gap-5 sm:gap-8 grid-cols-[120px_1fr] sm:grid-cols-[150px_1fr] md:grid-cols-[180px_1fr]`}
         >
           {/* Decorative orb */}
           <div
@@ -365,7 +365,7 @@ export default function BookPage() {
             <button
               onClick={() => update({ upNext: !entry.upNext })}
               title={entry.upNext ? "Remove from up next" : "Add to up next"}
-              className={`text-caption font-sans px-2.5 py-1 rounded-full border transition-colors ${
+              className={`relative text-caption font-sans px-2.5 py-1 rounded-full border transition-colors before:absolute before:-inset-2 before:content-[''] ${
                 entry.upNext
                   ? "bg-gold/20 border-gold/50 text-gold"
                   : "border-white/20 text-white/40 hover:text-white/70 hover:border-white/40"
@@ -382,16 +382,19 @@ export default function BookPage() {
           {/* Cover */}
           <div className="pt-6 relative z-[1]">
             {entry.coverUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={entry.coverUrl}
                 alt={entry.title}
-                className="w-45 rounded-lg block object-cover aspect-[2/3]"
+                width={180}
+                height={270}
+                sizes="180px"
+                priority
+                className="w-30 sm:w-37.5 md:w-45 rounded-lg block object-cover aspect-[2/3]"
                 style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.45)" }}
               />
             ) : (
               <div
-                className="w-45 aspect-[2/3] rounded-lg bg-white/10 flex flex-col justify-end p-4"
+                className="w-30 sm:w-37.5 md:w-45 aspect-[2/3] rounded-lg bg-white/10 flex flex-col justify-end p-3 sm:p-4"
                 style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.45)" }}
               >
                 <p className="font-serif text-body-md italic text-white/80 leading-[1.3] mb-1.5">
@@ -595,7 +598,7 @@ export default function BookPage() {
 
         {/* ── Read selector (shown when re-reads exist) ── */}
         {entry.reads.length > 0 && (
-          <div className="bg-plum-trace border-b border-line px-10 py-2.5 flex items-center gap-2">
+          <div className="bg-plum-trace border-b border-line px-4 sm:px-10 py-2.5 flex items-center gap-2 overflow-x-auto">
             <span className="text-detail text-fg-muted font-sans uppercase tracking-widest mr-1">
               Read
             </span>
@@ -644,7 +647,7 @@ export default function BookPage() {
         )}
 
         {/* ── Sticky tabs ── */}
-        <div className="sticky top-0 z-20 bg-cream border-b border-line shadow-[0_2px_8px_var(--border-light)] flex gap-1 px-10">
+        <div className="sticky top-0 z-20 bg-cream border-b border-line shadow-[0_2px_8px_var(--border-light)] flex gap-1 px-4 sm:px-10 overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab.id}

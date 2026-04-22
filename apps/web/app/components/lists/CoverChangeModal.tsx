@@ -23,7 +23,9 @@ export function CoverChangeModal({
   const [emoji, setEmoji] = useState(initialEmoji);
   const [saving, setSaving] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (
+    e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     setSaving(true);
     try {

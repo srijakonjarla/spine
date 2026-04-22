@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import Image from "next/image";
 import { spineColor } from "@/lib/spineUtils";
 
 interface BookCoverProps {
@@ -19,10 +20,12 @@ export function BookCover({
 
   if (coverUrl) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <Image
         src={coverUrl}
         alt={title}
+        width={128}
+        height={192}
+        sizes="128px"
         className={`${className} rounded shadow-sm shrink-0 self-start object-cover aspect-[2/3]`}
       />
     );
@@ -63,10 +66,12 @@ export function BookCoverThumb({
 
   if (coverUrl) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <Image
         src={coverUrl}
         alt={title}
+        width={48}
+        height={72}
+        sizes="48px"
         className={`${width} ${height} object-cover rounded-sm shrink-0 shadow-sm`}
       />
     );

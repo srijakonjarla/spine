@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createApiClient } from "@/lib/supabase-server";
+import { createApiClient, getUserId } from "@/lib/supabase-server";
 
 export async function GET(req: NextRequest) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const year = req.nextUrl.searchParams.get("year");
@@ -16,7 +14,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supabase
     .from("reading_log")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .gte("log_date", `${year}-01-01`)
     .lte("log_date", `${year}-12-31`)
     .order("log_date", { ascending: true });
@@ -28,10 +26,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { date } = await req.json();
@@ -39,7 +35,7 @@ export async function POST(req: NextRequest) {
   const { data: existing } = await supabase
     .from("reading_log")
     .select("id")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("log_date", date)
     .maybeSingle();
 
@@ -49,17 +45,15 @@ export async function POST(req: NextRequest) {
   } else {
     await supabase
       .from("reading_log")
-      .insert({ user_id: user.id, log_date: date });
+      .insert({ user_id: userId, log_date: date });
     return NextResponse.json({ result: "added" }, { status: 201 });
   }
 }
 
 export async function PATCH(req: NextRequest) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { date, note } = await req.json();
@@ -70,7 +64,7 @@ export async function PATCH(req: NextRequest) {
   const { error } = await supabase
     .from("reading_log")
     .upsert(
-      { user_id: user.id, log_date: date, note: note ?? "" },
+      { user_id: userId, log_date: date, note: note ?? "" },
       { onConflict: "user_id,log_date" },
     );
 

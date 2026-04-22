@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, type FormEvent } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { signOut, getDisplayName } from "@/lib/auth";
@@ -216,20 +216,14 @@ function GoodreadsImport() {
             </span>{" "}
             books found
           </p>
-          <p className="text-xs text-fg-faint">
-            · {finishedCount} finished
-          </p>
+          <p className="text-xs text-fg-faint">· {finishedCount} finished</p>
           {dnfCount > 0 && (
-            <p className="text-xs text-fg-faint">
-              · {dnfCount} did not finish
-            </p>
+            <p className="text-xs text-fg-faint">· {dnfCount} did not finish</p>
           )}
           <p className="text-xs text-fg-faint">
             · {readingCount} currently reading
           </p>
-          <p className="text-xs text-fg-faint">
-            · {wantCount} want to read
-          </p>
+          <p className="text-xs text-fg-faint">· {wantCount} want to read</p>
         </div>
         <div className="space-y-0.5 mb-6 max-h-60 overflow-y-auto">
           {previews.map(({ entry }) => (
@@ -269,9 +263,7 @@ function GoodreadsImport() {
         upload the CSV. Runs in the background — you can navigate away once
         started.
         {alreadyImported && (
-          <span className="text-fg-faint ml-2">
-            · previously imported
-          </span>
+          <span className="text-fg-faint ml-2">· previously imported</span>
         )}
       </p>
       <input
@@ -414,6 +406,88 @@ function EnrichLibrary() {
   );
 }
 
+// ─── Invite a friend ─────────────────────────────────────────────────────────
+function InviteFriend() {
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [state, setState] = useState<"idle" | "sending" | "sent" | "error">(
+    "idle",
+  );
+  const [error, setError] = useState("");
+
+  const handleInvite = async (
+    e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setState("sending");
+    setError("");
+    try {
+      await apiFetch("/api/invite", {
+        method: "POST",
+        body: JSON.stringify({
+          email: email.trim(),
+          message: message.trim(),
+        }),
+      });
+      setState("sent");
+      setEmail("");
+      setMessage("");
+      setTimeout(() => setState("idle"), 4000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send invite.");
+      setState("error");
+    }
+  };
+
+  return (
+    <form onSubmit={handleInvite} className="max-w-sm space-y-4">
+      <p className="text-xs text-fg-faint">
+        {
+          "invite someone to join spine. they'll get an email with a link to create their account."
+        }
+      </p>
+      <div>
+        <label className="text-xs text-stone-400 block mb-1">their email</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="friend@example.com"
+          required
+          className="underline-input w-full"
+        />
+      </div>
+      <div>
+        <label className="text-xs text-stone-400 block mb-1">
+          a note (optional)
+        </label>
+        <input
+          type="text"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="you have to try this!"
+          maxLength={200}
+          className="underline-input w-full"
+        />
+      </div>
+      {error && <p className="text-xs text-red-400">{error}</p>}
+      <div className="flex items-center gap-4">
+        <button
+          type="submit"
+          disabled={state === "sending" || !email.trim()}
+          className="btn-primary"
+        >
+          {state === "sending" ? "sending..." : "send invite"}
+        </button>
+        {state === "sent" && (
+          <span className="text-xs text-sage">invite sent!</span>
+        )}
+      </div>
+    </form>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function ProfilePage() {
   const router = useRouter();
@@ -424,6 +498,7 @@ export default function ProfilePage() {
 
   // Profile fields
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [nameSaving, setNameSaving] = useState(false);
   const [nameMsg, setNameMsg] = useState("");
 
@@ -438,30 +513,68 @@ export default function ProfilePage() {
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user);
       setName(getDisplayName(data.user ?? { email: "" }));
+      if (data.user) {
+        supabase
+          .from("profiles")
+          .select("username")
+          .eq("id", data.user.id)
+          .single()
+          .then(({ data: profile }) => {
+            if (profile?.username) setUsername(profile.username);
+          });
+      }
       setLoading(false);
     });
   }, []);
 
-  const handleSaveName = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSaveProfile = async (
+    e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     if (!name.trim()) return;
     setNameSaving(true);
     setNameMsg("");
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: { name: name.trim() },
+      const { error: authError } = await supabase.auth.updateUser({
+        data: { name: name.trim(), custom_name: name.trim() },
       });
-      if (error) throw error;
-      setNameMsg("Saved.");
+      if (authError) throw authError;
+
+      const trimmedUsername = username.trim().toLowerCase();
+      const profileUpdate: Record<string, string> = { name: name.trim() };
+      if (trimmedUsername) {
+        profileUpdate.username = trimmedUsername;
+      }
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update(profileUpdate)
+        .eq("id", user!.id);
+      if (profileError) {
+        if (profileError.message.includes("username_format")) {
+          throw new Error(
+            "username must be 3-30 characters, lowercase letters, numbers, and underscores only.",
+          );
+        }
+        if (
+          profileError.message.includes("duplicate") ||
+          profileError.message.includes("unique")
+        ) {
+          throw new Error("that username is already taken.");
+        }
+        throw profileError;
+      }
+      setNameMsg("saved.");
     } catch (err) {
-      setNameMsg(err instanceof Error ? err.message : "Failed to save.");
+      setNameMsg(err instanceof Error ? err.message : "failed to save.");
     } finally {
       setNameSaving(false);
-      setTimeout(() => setNameMsg(""), 3000);
+      setTimeout(() => setNameMsg(""), 4000);
     }
   };
 
-  const handleChangePassword = async (e: FormEvent<HTMLFormElement>) => {
+  const handleChangePassword = async (
+    e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     setPwError("");
     setPwMsg("");
@@ -494,7 +607,7 @@ export default function ProfilePage() {
 
   const handleSignOut = async () => {
     await signOut();
-    router.replace("/login");
+    router.replace("/");
   };
 
   if (loading) {
@@ -522,7 +635,7 @@ export default function ProfilePage() {
 
         {/* ── Profile ── */}
         <Section title="profile">
-          <form onSubmit={handleSaveName} className="max-w-sm space-y-4">
+          <form onSubmit={handleSaveProfile} className="max-w-sm space-y-4">
             <div>
               <label className="text-xs text-stone-400 block mb-1">
                 display name
@@ -533,6 +646,26 @@ export default function ProfilePage() {
                 onChange={(e) => setName(e.target.value)}
                 className="underline-input w-full"
               />
+            </div>
+            <div>
+              <label className="text-xs text-stone-400 block mb-1">
+                username
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) =>
+                  setUsername(
+                    e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""),
+                  )
+                }
+                placeholder="your_username"
+                maxLength={30}
+                className="underline-input w-full"
+              />
+              <p className="hint-text">
+                3-30 characters, lowercase letters, numbers, and underscores.
+              </p>
             </div>
             <div className="flex items-center gap-4">
               <button
@@ -624,6 +757,11 @@ export default function ProfilePage() {
         {/* ── Enrich library ── */}
         <Section title="enrich library metadata">
           <EnrichLibrary />
+        </Section>
+
+        {/* ── Invite ── */}
+        <Section title="invite a friend">
+          <InviteFriend />
         </Section>
 
         {/* ── Account ── */}

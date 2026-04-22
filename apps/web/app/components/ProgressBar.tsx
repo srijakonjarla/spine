@@ -26,9 +26,7 @@ export function ProgressBar({
   const fill = COLOR_CLASS[color] ?? color;
 
   return (
-    <div
-      className={`${h} rounded-full overflow-hidden bg-edge ${className}`}
-    >
+    <div className={`${h} rounded-full overflow-hidden bg-edge ${className}`}>
       <div
         style={{ width: `${pct}%` }}
         className={`h-full rounded-full transition-all duration-500 ${fill}`}

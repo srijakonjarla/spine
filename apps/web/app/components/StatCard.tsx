@@ -15,9 +15,11 @@ export function StatCard({
   const borderTop = accentClass ? `border-t-[3px] ${accentClass}` : "";
   return (
     <div
-      className={`rounded-2xl p-5 bg-surface border border-line ${borderTop}`}
+      className={`rounded-2xl p-4 sm:p-5 bg-surface border border-line ${borderTop}`}
     >
-      <p className="text-2xl font-bold text-fg-heading">{value}</p>
+      <p className="text-xl sm:text-2xl font-bold text-fg-heading break-words">
+        {value}
+      </p>
       <p className="text-xs mt-1 text-fg-faint">{label}</p>
       {children}
     </div>

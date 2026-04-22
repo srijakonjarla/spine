@@ -7,6 +7,8 @@ import {
 } from "next/font/google";
 import "@/globals.css";
 import AuthProvider from "@/providers/AuthProvider";
+import { BooksProvider } from "@/providers/BooksProvider";
+import { QuotesProvider } from "@/providers/QuotesProvider";
 import Nav from "@/components/navigation/Nav";
 import { Toaster } from "@/components/Toaster";
 import { NavigationProvider } from "@/providers/NavigationProvider";
@@ -38,8 +40,39 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://spinereads.com",
+  ),
   title: "spine",
   description: "your reading journal",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
+  openGraph: {
+    title: "spine",
+    description: "your reading journal",
+    url: "/",
+    siteName: "spine",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "spine — your reading journal",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "spine",
+    description: "your reading journal",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({
@@ -61,11 +94,15 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <AuthProvider>
-            <NavigationProvider>
-              <Nav />
-              <div className="pt-14 lg:pl-55">{children}</div>
-              <Toaster />
-            </NavigationProvider>
+            <BooksProvider>
+              <QuotesProvider>
+                <NavigationProvider>
+                  <Nav />
+                  <div className="pt-14 lg:pl-55">{children}</div>
+                  <Toaster />
+                </NavigationProvider>
+              </QuotesProvider>
+            </BooksProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

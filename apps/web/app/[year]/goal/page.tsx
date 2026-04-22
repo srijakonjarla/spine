@@ -80,7 +80,7 @@ function AutoGoalCard({
         })}
       </div>
 
-      <div className="pt-4 border-t border-stone-100 flex items-baseline gap-2">
+      <div className="pt-4 border-t border-stone-100 flex flex-wrap items-baseline gap-2">
         <label className="text-xs text-stone-400">target</label>
         <input
           type="number"
@@ -92,7 +92,7 @@ function AutoGoalCard({
             onUpdate(goal.id, { target: val });
             scheduleSave(val);
           }}
-          className="w-20 bg-transparent border-b border-stone-200 pb-0.5 text-stone-900 text-sm focus:outline-none focus:border-stone-500 transition-colors"
+          className="w-16 sm:w-20 bg-transparent border-b border-stone-200 pb-0.5 text-stone-900 text-sm focus:outline-none focus:border-stone-500 transition-colors"
         />
         <span className="text-xs text-stone-400">books</span>
       </div>
@@ -404,7 +404,9 @@ export default function GoalPage() {
     );
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleCreate = async (
+    e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     const target = Number(setupTarget);
     if (!target || target < 1) return;

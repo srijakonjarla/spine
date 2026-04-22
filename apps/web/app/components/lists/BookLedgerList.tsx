@@ -14,8 +14,7 @@ export const TX_COLORS: Record<TxType, string> = {
   bought: "text-fg-heading bg-plum/10 border-plum/30",
   sold: "text-sage bg-sage/10 border-sage/30",
   gifted: "text-gold bg-gold/10 border-gold/30",
-  donated:
-    "text-fg-muted bg-hover border-line",
+  donated: "text-fg-muted bg-hover border-line",
 };
 
 interface Props {

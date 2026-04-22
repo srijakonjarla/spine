@@ -58,9 +58,7 @@ export default function MiniMonthCal({
           </p>
         )}
         {isFutureMonth && (
-          <p className="text-md font-hand text-fg-faint">
-            not yet written
-          </p>
+          <p className="text-md font-hand text-fg-faint">not yet written</p>
         )}
       </div>
 

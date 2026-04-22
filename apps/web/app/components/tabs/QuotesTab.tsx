@@ -3,6 +3,7 @@
 import { QuoteCard } from "@/components/QuoteCard";
 import { toast } from "@/lib/toast";
 import { getQuotes, addQuote, deleteQuote } from "@/lib/quotes";
+import { useQuotes } from "@/providers/QuotesProvider";
 import { Quote } from "@/types";
 import { useState, useEffect } from "react";
 import { useBook } from "@/providers/BookContext";
@@ -11,6 +12,8 @@ export default function QuotesTab() {
   const {
     entry: { id: bookId },
   } = useBook();
+  const { addQuote: addQuoteToCache, removeQuote: removeQuoteFromCache } =
+    useQuotes();
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [input, setInput] = useState("");
   const [page, setPage] = useState("");
@@ -30,6 +33,7 @@ export default function QuotesTab() {
     try {
       const q = await addQuote(text, bookId, page.trim());
       setQuotes((prev) => [q, ...prev]);
+      addQuoteToCache(q);
       setInput("");
       setPage("");
       setOpen(false);
@@ -39,7 +43,7 @@ export default function QuotesTab() {
   };
 
   return (
-    <div className="px-10 py-7 bg-cream">
+    <div className="px-4 sm:px-10 py-5 sm:py-7 bg-cream">
       {/* Add quote toggle */}
       <div className="mb-5 flex justify-end">
         <button
@@ -100,7 +104,7 @@ export default function QuotesTab() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         {quotes.map((q) => (
           <div key={q.id} className="book-surface px-6 py-5">
             <QuoteCard
@@ -109,6 +113,7 @@ export default function QuotesTab() {
               onDelete={() => {
                 deleteQuote(q.id);
                 setQuotes((prev) => prev.filter((x) => x.id !== q.id));
+                removeQuoteFromCache(q.id);
               }}
             />
           </div>

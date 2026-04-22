@@ -56,18 +56,14 @@ function BookLink({
           {title}
         </p>
         {author && (
-          <p className="text-caption mt-0.5 truncate text-fg-muted">
-            {author}
-          </p>
+          <p className="text-caption mt-0.5 truncate text-fg-muted">{author}</p>
         )}
         {rating != null && rating > 0 && (
           <p className="text-detail mt-0.5 text-gold">
             {"★".repeat(Math.round(rating))}
           </p>
         )}
-        {meta && (
-          <p className="text-detail mt-0.5 text-fg-faint">{meta}</p>
-        )}
+        {meta && <p className="text-detail mt-0.5 text-fg-faint">{meta}</p>}
       </Link>
       {feelingSnippet && (
         <p className="text-xs mt-1.5 leading-relaxed text-fg-muted font-serif italic">
@@ -199,7 +195,9 @@ export function DayPanel({
     }
   };
 
-  const handleSaveQuote = async (e: React.FormEvent) => {
+  const handleSaveQuote = async (
+    e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     if (!quoteText.trim()) return;
     setSavingQuote(true);
@@ -409,10 +407,7 @@ export function DayPanel({
             </p>
             <div className="space-y-4">
               {localQuotes.map((q) => (
-                <div
-                  key={q.id}
-                  className="pl-3 border-l-2 border-l-lavender"
-                >
+                <div key={q.id} className="pl-3 border-l-2 border-l-lavender">
                   <p className="text-note italic leading-relaxed text-fg font-serif">
                     &ldquo;{q.text}&rdquo;
                   </p>

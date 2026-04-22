@@ -81,9 +81,7 @@ export function ListSidebar({
           <p className="section-label mb-2">Activity</p>
           <div className="rounded-xl px-4 py-3 border border-line bg-surface mb-4 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-fg-muted">
-                checked out
-              </span>
+              <span className="text-xs text-fg-muted">checked out</span>
               <span className="text-xs font-semibold text-terra">
                 {loansOut}
               </span>

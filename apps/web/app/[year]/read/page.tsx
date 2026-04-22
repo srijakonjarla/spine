@@ -33,10 +33,7 @@ export default function ReadThisYearPage() {
           <div className="h-4 w-28 bg-hover rounded mb-8" />
           <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
             {Array.from({ length: 12 }).map((_, i) => (
-              <div
-                key={i}
-                className="aspect-[2/3] bg-hover rounded"
-              />
+              <div key={i} className="aspect-[2/3] bg-hover rounded" />
             ))}
           </div>
         </div>
@@ -86,7 +83,7 @@ export default function ReadThisYearPage() {
                       {monthBooks.length}
                     </span>
                   </div>
-                  <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-3">
                     {monthBooks.map((b) => (
                       <Link
                         key={b.id}

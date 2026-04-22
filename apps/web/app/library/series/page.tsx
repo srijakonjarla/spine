@@ -34,7 +34,9 @@ export default function SeriesPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreate = async (
+    e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     if (!newName.trim() || saving) return;
     setSaving(true);
@@ -172,9 +174,7 @@ export default function SeriesPage() {
               />
             </div>
             <div>
-              <label className="text-xs text-fg-faint block mb-1">
-                author
-              </label>
+              <label className="text-xs text-fg-faint block mb-1">author</label>
               <input
                 type="text"
                 value={newAuthor}

@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse, after } from "next/server";
-import { createApiClient } from "@/lib/supabase-server";
+import { createApiClient, getUserId } from "@/lib/supabase-server";
 import { syncBookSeries } from "@/lib/seriesSync.server";
 import { upsertBookForUser, flattenUserBook } from "@/lib/bookUpsert.server";
 
 export async function GET(req: NextRequest) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { searchParams } = req.nextUrl;
@@ -16,11 +14,15 @@ export async function GET(req: NextRequest) {
   const limit = searchParams.get("limit");
   const offset = searchParams.get("offset");
   const sort = searchParams.get("order");
+  const include = searchParams.get("include");
 
-  let query = supabase
-    .from("user_books")
-    .select("*, catalog_books(*), thoughts(*), book_reads(*)")
-    .eq("user_id", user.id);
+  // Only join thoughts/book_reads when explicitly requested (e.g. book detail page)
+  const select =
+    include === "nested"
+      ? "*, catalog_books(*), thoughts(*), book_reads(*)"
+      : "*, catalog_books(*)";
+
+  let query = supabase.from("user_books").select(select).eq("user_id", userId);
 
   // apply sorting
   if (sort) {
@@ -57,7 +59,9 @@ export async function GET(req: NextRequest) {
   if (error)
     return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const flattened = (data ?? []).map(flattenUserBook);
+  const flattened = (
+    (data ?? []) as unknown as Parameters<typeof flattenUserBook>[0][]
+  ).map(flattenUserBook);
   if (limit)
     return NextResponse.json({ data: flattened, total: flattened.length });
   return NextResponse.json(flattened);
@@ -65,17 +69,15 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { entry } = await req.json();
 
   const result = await upsertBookForUser(
     supabase,
-    user.id,
+    userId,
     {
       title: entry.title ?? "",
       author: entry.author ?? "",
@@ -109,7 +111,7 @@ export async function POST(req: NextRequest) {
     );
 
   after(async () => {
-    await syncBookSeries(supabase, user.id, {
+    await syncBookSeries(supabase, userId, {
       id: result.userBookId,
       title: entry.title ?? "",
       author: entry.author ?? "",

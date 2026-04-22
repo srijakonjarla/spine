@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getEntries, createEntry } from "@/lib/db";
+import { createEntry } from "@/lib/db";
 import { type CatalogEntry, lookupBook } from "@/lib/catalog";
-import { toast } from "@/lib/toast";
 import { StarDisplay } from "@/components/StarDisplay";
 import { BookCoverThumb } from "@/components/BookCover";
 import { MoodChip, AllMoodsChip } from "@/components/MoodChip";
@@ -13,22 +12,15 @@ import type { BookEntry } from "@/types";
 import { localDateStr, dateYear } from "@/lib/dates";
 import ShelfDivider from "@/components/library/ShelfDivider";
 import InlineAdd from "@/components/library/InlineAdd";
+import { useBooks } from "@/providers/BooksProvider";
 
 export default function LibraryPage() {
   const router = useRouter();
-  const [entries, setEntries] = useState<BookEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { books: entries, loading, addBook: addToCache } = useBooks();
   const [search, setSearch] = useState("");
   const [activeMood, setActiveMood] = useState<string | null>(null);
   const [activeGenre, setActiveGenre] = useState<string | null>(null);
   const [view, setView] = useState<"grid" | "list">("grid");
-
-  useEffect(() => {
-    getEntries()
-      .then(setEntries)
-      .catch(() => toast("Failed to load data. Please refresh."))
-      .finally(() => setLoading(false));
-  }, []);
 
   const allMoods = Array.from(
     new Set(entries.flatMap((e) => e.moodTags)),
@@ -117,7 +109,7 @@ export default function LibraryPage() {
     if (status === "reading") {
       router.push(`/book/${entry.id}`);
     } else {
-      setEntries((prev) => [...prev, entry]);
+      addToCache(entry);
     }
   };
 
@@ -293,7 +285,7 @@ export default function LibraryPage() {
 
         {/* Finished — grouped by year */}
         {loading && (
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4 animate-pulse">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4 animate-pulse">
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i}>
                 <div className="rounded-lg mb-2 aspect-[2/3] bg-edge" />
@@ -318,7 +310,7 @@ export default function LibraryPage() {
               <ShelfDivider year={year} count={books.length} />
 
               {view === "grid" ? (
-                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
                   {books.map((e) => (
                     <Link key={e.id} href={`/book/${e.id}`} className="group">
                       <div className="relative mb-2 rounded-lg overflow-hidden group-hover:-translate-y-1 transition-transform h-32.5 shadow-sm">

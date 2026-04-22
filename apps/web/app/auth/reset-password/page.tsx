@@ -36,42 +36,50 @@ function ResetPasswordForm() {
       return;
     }
 
-    // Implicit flow — Supabase JS auto-creates a session from the hash fragment.
-    // Listen for the PASSWORD_RECOVERY event, or check if the session already exists.
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY" && session) {
-        setStage("form");
+    // Check hash fragment for implicit flow tokens
+    const hash = window.location.hash.substring(1);
+    if (hash) {
+      const hashParams = new URLSearchParams(hash);
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+      if (accessToken && refreshToken) {
+        supabase.auth
+          .setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
+          .then(({ error }) => {
+            if (error) {
+              setSupabaseError(error.message);
+              setStage("error");
+            } else {
+              setStage("form");
+            }
+          });
+        return;
       }
-    });
+    }
 
-    // Session may already be set by the time this effect runs
+    // No code or hash — check for existing session, otherwise show error
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setStage("form");
+      } else {
+        setStage("error");
       }
     });
-
-    // Fallback: if nothing fires within 4s, show error
-    const timeout = setTimeout(() => {
-      setStage((s) => (s === "exchanging" ? "error" : s));
-    }, 4000);
-
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeout);
-    };
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (
+    e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     if (password !== confirm) {
       setError("passwords don't match");
       return;
     }
-    if (password.length < 6) {
-      setError("password must be at least 6 characters");
+    if (password.length < 8) {
+      setError("password must be at least 8 characters");
       return;
     }
 
@@ -84,11 +92,13 @@ function ResetPasswordForm() {
       setError(error.message);
     } else {
       await supabase.auth.signOut();
-      window.location.href = "/login?reset=1";
+      window.location.href = "/?reset=1";
     }
   };
 
-  const handleResend = async (e: React.FormEvent) => {
+  const handleResend = async (
+    e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
     e.preventDefault();
     if (!email) return;
     setResendLoading(true);
@@ -105,7 +115,7 @@ function ResetPasswordForm() {
   };
 
   return (
-    <div className="page flex items-center justify-center px-6">
+    <div className="flex items-center justify-center px-6 min-h-[calc(100dvh-var(--nav-height))] bg-page">
       <div className="w-full max-w-sm font-mono">
         <div className="mb-10">
           <h1 className="page-title">spine</h1>
@@ -150,7 +160,7 @@ function ResetPasswordForm() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => router.push("/login")}
+                  onClick={() => router.push("/")}
                   className="back-link"
                 >
                   ← sign in
@@ -217,7 +227,7 @@ export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
-        <div className="page flex items-center justify-center px-6">
+        <div className="flex items-center justify-center px-6 min-h-[calc(100dvh-var(--nav-height))] bg-page">
           <p className="text-xs text-stone-400 font-mono">verifying link...</p>
         </div>
       }

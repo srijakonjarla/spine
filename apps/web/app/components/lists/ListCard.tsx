@@ -103,13 +103,8 @@ export function ListCard({ list, year }: ListCardProps) {
         </p>
         <div className="flex flex-col gap-0.5">
           {list.items.slice(0, 3).map((item) => (
-            <p
-              key={item.id}
-              className="text-caption truncate text-fg-muted"
-            >
-              {isIdeaType && (
-                <span className="text-terra mr-1">{bullet}</span>
-              )}
+            <p key={item.id} className="text-caption truncate text-fg-muted">
+              {isIdeaType && <span className="text-terra mr-1">{bullet}</span>}
               {item.title}
             </p>
           ))}
