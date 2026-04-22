@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("reading_log")
-    .select("*")
+    .select("id, user_id, log_date, note, logged")
     .eq("user_id", userId)
     .gte("log_date", `${year}-01-01`)
     .lte("log_date", `${year}-12-31`)
@@ -34,18 +34,29 @@ export async function POST(req: NextRequest) {
 
   const { data: existing } = await supabase
     .from("reading_log")
-    .select("id")
+    .select("id, logged")
     .eq("user_id", userId)
     .eq("log_date", date)
     .maybeSingle();
 
-  if (existing) {
-    await supabase.from("reading_log").delete().eq("id", existing.id);
+  if (existing && existing.logged) {
+    // Row exists and is logged — unlog it (keep the row if it has a note)
+    await supabase
+      .from("reading_log")
+      .update({ logged: false })
+      .eq("id", existing.id);
     return NextResponse.json({ result: "removed" });
+  } else if (existing) {
+    // Row exists but not logged (note-only) — mark as logged
+    await supabase
+      .from("reading_log")
+      .update({ logged: true })
+      .eq("id", existing.id);
+    return NextResponse.json({ result: "added" }, { status: 200 });
   } else {
     await supabase
       .from("reading_log")
-      .insert({ user_id: userId, log_date: date });
+      .insert({ user_id: userId, log_date: date, logged: true });
     return NextResponse.json({ result: "added" }, { status: 201 });
   }
 }
@@ -60,13 +71,26 @@ export async function PATCH(req: NextRequest) {
   if (!date)
     return NextResponse.json({ error: "date required" }, { status: 400 });
 
-  // Ensure the row exists (upsert), then set the note
-  const { error } = await supabase
+  // Ensure the row exists (upsert), then set the note.
+  // Note-only entries default to logged=false so they don't count as reading days.
+  const { data: existing } = await supabase
     .from("reading_log")
-    .upsert(
-      { user_id: userId, log_date: date, note: note ?? "" },
-      { onConflict: "user_id,log_date" },
-    );
+    .select("id")
+    .eq("user_id", userId)
+    .eq("log_date", date)
+    .maybeSingle();
+
+  const { error } = existing
+    ? await supabase
+        .from("reading_log")
+        .update({ note: note ?? "" })
+        .eq("id", existing.id)
+    : await supabase.from("reading_log").insert({
+        user_id: userId,
+        log_date: date,
+        note: note ?? "",
+        logged: false,
+      });
 
   if (error)
     return NextResponse.json({ error: error.message }, { status: 500 });

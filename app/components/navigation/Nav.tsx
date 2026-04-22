@@ -33,6 +33,7 @@ import {
   SidebarSection,
   TopNavLink,
 } from "@/components/navigation";
+import { QuickLogModal } from "@/components/QuickLogModal";
 const CURRENT_YEAR = new Date().getFullYear();
 const CURRENT_MONTH = MONTH_ABBRS[new Date().getMonth()];
 const CURRENT_MONTH_LABEL = new Date().toLocaleDateString("en-US", {
@@ -56,6 +57,7 @@ export default function Nav() {
   const { user } = useAuth();
   const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [quickLogOpen, setQuickLogOpen] = useState(false);
   const [shelfCounts, setShelfCounts] = useState<ShelfCounts>({
     reading: 0,
     finished: 0,
@@ -98,12 +100,12 @@ export default function Nav() {
                 <TopNavLink href="/library" label="library" />
                 <TopNavLink href={`/${CURRENT_YEAR}/review`} label="review" />
               </nav>
-              <Link
-                href={`/${CURRENT_YEAR}/books`}
+              <button
+                onClick={() => setQuickLogOpen(true)}
                 className="hidden lg:inline-block text-note font-semibold text-white bg-terra px-4 py-1.5 rounded-full hover:bg-terra-light transition-colors"
               >
                 + log
-              </Link>
+              </button>
             </>
           )}
           {user && (
@@ -144,12 +146,15 @@ export default function Nav() {
         onClick={closeMobileMenu}
       >
         <div className="p-4">
-          <Link
-            href={`/${CURRENT_YEAR}/books`}
+          <button
+            onClick={() => {
+              setQuickLogOpen(true);
+              closeMobileMenu();
+            }}
             className="flex items-center justify-center gap-2 text-note font-semibold text-white bg-terra px-4 py-2.5 rounded-full hover:bg-terra-light transition-colors mb-4 w-full"
           >
             <PlusIcon size={16} weight="bold" /> log a book
-          </Link>
+          </button>
 
           <SidebarSection label={CURRENT_MONTH_LABEL}>
             <SidebarLink
@@ -345,6 +350,8 @@ export default function Nav() {
           </div>
         </nav>
       )}
+
+      {quickLogOpen && <QuickLogModal onClose={() => setQuickLogOpen(false)} />}
     </>
   );
 }

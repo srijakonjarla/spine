@@ -47,17 +47,17 @@ export function BooksProvider({ children }: { children: React.ReactNode }) {
   const fetchedRef = useRef(false);
 
   useEffect(() => {
-    if (fetchedRef.current) return;
-    fetchedRef.current = true;
-
     if (!user) {
-      // Defer state updates to avoid synchronous setState in effect
       Promise.resolve().then(() => {
         setBooks([]);
         setLoading(false);
       });
+      fetchedRef.current = false;
       return;
     }
+
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
 
     getEntries({ include: "nested" })
       .then(setBooks)

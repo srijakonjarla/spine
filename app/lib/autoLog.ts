@@ -12,8 +12,8 @@ export async function autoLogToday(supabase: SupabaseClient, userId: string) {
   await supabase
     .from("reading_log")
     .upsert(
-      { user_id: userId, log_date: today },
-      { onConflict: "user_id,log_date", ignoreDuplicates: true },
+      { user_id: userId, log_date: today, logged: true },
+      { onConflict: "user_id,log_date" },
     );
 }
 
@@ -29,7 +29,7 @@ export async function autoLogDate(
   await supabase
     .from("reading_log")
     .upsert(
-      { user_id: userId, log_date: date },
-      { onConflict: "user_id,log_date", ignoreDuplicates: true },
+      { user_id: userId, log_date: date, logged: true },
+      { onConflict: "user_id,log_date" },
     );
 }

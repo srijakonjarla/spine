@@ -132,7 +132,12 @@ export default function MonthSpreadPage() {
 
   const handleToggled = (date: string, result: "added" | "removed") => {
     if (result === "added") {
-      addLogEntry({ id: crypto.randomUUID(), logDate: date, note: "" });
+      addLogEntry({
+        id: crypto.randomUUID(),
+        logDate: date,
+        note: "",
+        logged: true,
+      });
     } else {
       removeLogEntry(date);
     }
@@ -284,6 +289,13 @@ export default function MonthSpreadPage() {
           streakDates={streakDays}
           finishedByDate={finishedByDate}
           quoteDateSet={quoteDateSet}
+          notesByDate={
+            new Map(
+              logEntries
+                .filter((e) => e.note?.trim() && e.logDate.startsWith(monthKey))
+                .map((e) => [e.logDate, e.note]),
+            )
+          }
           onSelectDate={setSelectedDate}
         />
 

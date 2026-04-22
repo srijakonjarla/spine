@@ -13,6 +13,7 @@ interface MonthCalendarProps {
   streakDates: Set<string>;
   finishedByDate: Map<string, { title: string }>;
   quoteDateSet: Set<string>;
+  notesByDate?: Map<string, string>;
   onSelectDate: (dateStr: string) => void;
 }
 
@@ -24,6 +25,7 @@ export function MonthCalendar({
   streakDates,
   finishedByDate,
   quoteDateSet,
+  notesByDate,
   onSelectDate,
 }: MonthCalendarProps) {
   return (
@@ -60,6 +62,7 @@ export function MonthCalendar({
           const finished = finishedByDate.get(dateStr);
           const hasQuote = quoteDateSet.has(dateStr);
           const isSelected = selectedDate === dateStr;
+          const note = notesByDate?.get(dateStr);
 
           const bgClass = isSelected
             ? "bg-selected"
@@ -92,7 +95,17 @@ export function MonthCalendar({
                   {finished.title.length > 10 ? "…" : ""}
                 </span>
               )}
-              {isLogged && !finished && (
+              {note && !finished && (
+                <span
+                  className="text-xs leading-tight line-clamp-2 w-full font-hand text-fg-muted inline-block"
+                  style={{
+                    transform: `rotate(${((cell.day! * 7 + 3) % 7) - 3}deg)`,
+                  }}
+                >
+                  {note}
+                </span>
+              )}
+              {isLogged && !finished && !note && (
                 <span
                   className={`w-1 h-1 rounded-full absolute bottom-1.5 left-1/2 -translate-x-1/2 ${isStreak ? "bg-sage" : "bg-fg-faint"}`}
                 />
@@ -107,12 +120,13 @@ export function MonthCalendar({
 
           if (isFuture) {
             return (
-              <div
+              <button
                 key={i}
-                className={`aspect-square border-r border-b border-line flex flex-col items-start justify-start p-1.5 relative opacity-45 cursor-default ${bgClass}`}
+                onClick={() => onSelectDate(dateStr)}
+                className={`aspect-square border-r border-b border-line flex flex-col items-start justify-start p-1.5 relative transition-colors hover:bg-subtle text-left ${bgClass}`}
               >
                 {inner}
-              </div>
+              </button>
             );
           }
 

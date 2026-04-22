@@ -122,6 +122,7 @@ export function DayPanel({
   onQuoteAdded,
 }: DayPanelProps) {
   const isToday = date === todayStr;
+  const isFuture = date > todayStr;
   const dateLabel = formatDate(date, {
     weekday: "long",
     month: "long",
@@ -174,11 +175,6 @@ export function DayPanel({
     setDraft(val);
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(async () => {
-      if (!localLogged && val.trim()) {
-        const result = await toggleDay(date);
-        setLocalLogged(true);
-        onToggled(date, result);
-      }
       await saveLogNote(date, val);
       onNoteSaved(date, val);
     }, 800);
@@ -245,20 +241,22 @@ export function DayPanel({
 
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto px-6 py-5 space-y-7">
-        {/* Reading day toggle */}
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-fg-muted">Reading day</span>
-          <button
-            onClick={handleToggleClick}
-            className={`text-caption px-3 py-1 rounded-full transition-all font-medium border ${
-              localLogged
-                ? "bg-sage-pill text-sage border-border-sage"
-                : "bg-hover text-fg-muted border-line"
-            }`}
-          >
-            {localLogged ? "✓ logged" : "mark as reading day"}
-          </button>
-        </div>
+        {/* Reading day toggle (past/today only) */}
+        {!isFuture && (
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-fg-muted">Reading day</span>
+            <button
+              onClick={handleToggleClick}
+              className={`text-caption px-3 py-1 rounded-full transition-all font-medium border ${
+                localLogged
+                  ? "bg-sage-pill text-sage border-border-sage"
+                  : "bg-hover text-fg-muted border-line"
+              }`}
+            >
+              {localLogged ? "✓ logged" : "mark as reading day"}
+            </button>
+          </div>
+        )}
 
         {/* Journal note — ruled textarea */}
         <div>
@@ -443,8 +441,8 @@ export function DayPanel({
           </PanelSection>
         )}
 
-        {/* Save a quote */}
-        {!showQuoteForm ? (
+        {/* Save a quote (past/today only) */}
+        {isFuture ? null : !showQuoteForm ? (
           <button
             onClick={() => {
               setShowQuoteForm(true);
