@@ -480,6 +480,9 @@ export default function Home() {
               import from goodreads →
             </Link>
           )}
+          <Link href="/privacy" className="back-link">
+            privacy →
+          </Link>
         </div>
       </div>
     </div>
