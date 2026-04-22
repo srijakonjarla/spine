@@ -481,7 +481,6 @@ export default function Home() {
             </Link>
           )}
         </div>
-        <p className="mt-6 text-xs text-fg-faint">© 2026 spine</p>
       </div>
     </div>
   );
