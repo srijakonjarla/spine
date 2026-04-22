@@ -487,9 +487,7 @@ export default function Home() {
             terms →
           </Link>
         </div>
-        <p className="mt-6 text-xs text-fg-faint">
-          © 2026 spine
-        </p>
+        <p className="mt-6 text-xs text-fg-faint">© 2026 spine</p>
       </div>
     </div>
   );

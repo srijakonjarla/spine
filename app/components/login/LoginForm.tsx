@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { signIn, signUp, sendMagicLink, resetPassword } from "@/lib/auth";
 import { GoogleButton } from "./GoogleButton";
 import { SignupConfirmScreen } from "./SignupConfirmScreen";
@@ -429,12 +430,12 @@ export function LoginForm() {
         className="mt-10 flex flex-wrap items-end gap-x-4 gap-y-1 text-xs justify-end"
         style={{ color: "var(--fg-faint)" }}
       >
-        <a href="/privacy" className="hover:text-fg-muted transition-colors">
+        <Link href="/privacy" className="hover:text-fg-muted transition-colors">
           privacy
-        </a>
-        <a href="/terms" className="hover:text-fg-muted transition-colors">
+        </Link>
+        <Link href="/terms" className="hover:text-fg-muted transition-colors">
           terms
-        </a>
+        </Link>
         <span>© 2026 spine</span>
       </div>
     </div>

@@ -53,18 +53,18 @@ export default function TermsPage() {
         <Section title="your account">
           <p>
             you are responsible for the credentials you use to access spine.
-            please keep your password private. you must be at least 13 years
-            old to create an account.
+            please keep your password private. you must be at least 13 years old
+            to create an account.
           </p>
         </Section>
 
         <Section title="your content">
           <p>
-            everything you write in spine — entries, reflections, quotes,
-            notes, moods, ratings — belongs to you. by storing it here, you
-            grant spine a limited license to hold and display it back to you
-            as part of running the service. we will never publish or share
-            your journal without your permission.
+            everything you write in spine — entries, reflections, quotes, notes,
+            moods, ratings — belongs to you. by storing it here, you grant spine
+            a limited license to hold and display it back to you as part of
+            running the service. we will never publish or share your journal
+            without your permission.
           </p>
           <p>
             please only transcribe quotes and excerpts for your own personal
@@ -92,8 +92,8 @@ export default function TermsPage() {
           <p>
             book covers, descriptions, and related metadata are provided by the
             Hardcover API and remain the property of their respective
-            rightsholders. spine displays this information under Hardcover&rsquo;s
-            terms.
+            rightsholders. spine displays this information under
+            Hardcover&rsquo;s terms.
           </p>
         </Section>
 
