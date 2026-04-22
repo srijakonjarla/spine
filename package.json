@@ -8,7 +8,8 @@
   ],
   "scripts": {
     "web": "npm --workspace apps/web run dev",
-    "mobile": "npm --workspace apps/mobile run ios",
+    "mobile": "npm --workspace apps/mobile run start",
+    "mobile:ios": "npm --workspace apps/mobile run ios",
     "web:build": "npm --workspace apps/web run build",
     "web:lint": "npm --workspace apps/web run lint"
   }

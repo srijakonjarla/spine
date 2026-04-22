@@ -2,13 +2,31 @@
 
 An online reading bullet journal. Log books, write reflections, track reading habits, save quotes, follow series, and review your year.
 
+## Project Structure
+
+Monorepo with two apps and a shared package:
+
+```
+apps/
+  web/       Next.js web app
+  mobile/    Expo / React Native iOS app
+packages/
+  shared/    Shared types and constants
+```
+
 ## Tech Stack
 
-- **Framework:** Next.js 15 (App Router)
+### Web (`apps/web`)
+- **Framework:** Next.js 16 (App Router)
 - **Database:** Supabase (Postgres + Auth + RLS)
 - **Styling:** Tailwind CSS v4
 - **Language:** TypeScript
 - **Book metadata:** Hardcover API (primary) + Google Books API (fallback)
+
+### Mobile (`apps/mobile`)
+- **Framework:** Expo (SDK 54) + Expo Router
+- **Auth:** Supabase via `expo-secure-store`
+- **Language:** TypeScript
 
 ## Features
 
@@ -26,24 +44,34 @@ An online reading bullet journal. Log books, write reflections, track reading ha
 - **Library enrichment** — Backfill cover art, ISBNs, page counts, and genres for existing books from Hardcover
 - **Dark mode** — Warm lamplight dark theme
 
-## Routes
+## Routes (Web)
 
 ```
 /                          Home — currently reading, recent books, archive
 /library                   Full library (all books)
 /library/[status]          Filtered by status: reading, finished, want-to-read
+/library/rereads           Re-read history
 /library/series            Series tracker
 /library/recommendations   Recommendations log
-/[year]/spread             Monthly reading spread
-/[year]/habits             Habit tracker + journal entries
+/[year]                    Year index — stats, bookshelf, recent log
+/[year]/[month]            Monthly spread with day panel
+/[year]/read               Books read by month
 /[year]/quotes             Quote collection
 /[year]/lists              Custom lists
 /[year]/lists/[listId]     Individual list
 /[year]/goal               Reading goals (auto + custom)
-/[year]/stats              Year-in-review stats
-/[year]/books              Reading log by year
-/book/[id]                 Individual book entry
+/[year]/review             Year-in-review stats
+/[year]/books              Log a new book
+/book/[id]                 Individual book entry (reflection, timeline, quotes, details tabs)
 /profile                   Account settings, Goodreads import, library enrichment
+/login                     Auth (email, password, magic link, signup)
+```
+
+### Screens (Mobile)
+
+```
+/login                     Auth (email + password)
+/library                   Book library
 ```
 
 ### Admin API routes
@@ -71,7 +99,7 @@ Create a project at [supabase.com](https://supabase.com), then run `supabase/set
 
 ### 3. Environment variables
 
-Create `.env.local`:
+**Web** — create `apps/web/.env.local`:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
@@ -82,28 +110,40 @@ GOOGLE_BOOKS_API_KEY=your-google-books-api-key    # optional fallback if Hardcov
 
 `HARDCOVER_API_TOKEN` is a personal Bearer token from [hardcover.app](https://hardcover.app). Without it, catalog search falls back to Google Books only and library enrichment is disabled.
 
+**Mobile** — create `apps/mobile/.env.local`:
+
+```
+EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
 ### 4. Run
 
 ```bash
-npm run dev
+# Web
+npm run web
+
+# Mobile (iOS)
+npm run mobile
 ```
 
 ## Database Schema
 
-| Table             | Description                                                        |
-| ----------------- | ------------------------------------------------------------------ |
-| `books`           | Personal book library with inline metadata (title, author, genres) |
-| `thoughts`        | Reflection notes per book                                          |
-| `book_reads`      | Re-read history per book                                           |
-| `quotes`          | Saved quotes linked to books                                       |
-| `reading_log`     | Daily reading habit log with notes                                 |
-| `reading_goals`   | Annual goals (auto-tracked or custom)                              |
-| `goal_books`      | Books manually assigned to custom goals                            |
-| `lists`           | Custom curated lists                                               |
-| `list_items`      | Items within a list                                                |
-| `series`          | Book series tracker                                                |
-| `series_books`    | Books within a series with read status                             |
-| `recommendations` | Books recommended to/by the user                                   |
+| Table             | Description                                                             |
+| ----------------- | ----------------------------------------------------------------------- |
+| `catalog_books`   | Shared book catalog (title, author, cover, ISBN, genres, page count)    |
+| `user_books`      | Per-user book entries with status, rating, feeling, dates, mood tags    |
+| `thoughts`        | Reflection notes per book                                               |
+| `book_reads`      | Re-read history per book                                                |
+| `quotes`          | Saved quotes linked to books                                            |
+| `reading_log`     | Daily reading habit log with notes                                      |
+| `reading_goals`   | Annual goals (auto-tracked or custom)                                   |
+| `goal_books`      | Books manually assigned to custom goals                                 |
+| `lists`           | Custom curated lists                                                    |
+| `list_items`      | Items within a list                                                     |
+| `series`          | Book series tracker                                                     |
+| `series_books`    | Books within a series with read status                                  |
+| `recommendations` | Books recommended to/by the user                                        |
 
 ## Color Palette
 

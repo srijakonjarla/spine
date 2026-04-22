@@ -1,3 +1,7 @@
+import {
+  GoogleSignin,
+  statusCodes,
+} from "@react-native-google-signin/google-signin";
 import { Session } from "@supabase/supabase-js";
 import {
   createContext,
@@ -8,10 +12,16 @@ import {
 } from "react";
 import { supabase } from "./supabase";
 
+GoogleSignin.configure({
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+});
+
 type AuthState = {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -41,6 +51,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
+      });
+      if (error) throw error;
+    },
+    signInWithGoogle: async () => {
+      await GoogleSignin.hasPlayServices();
+      const response = await GoogleSignin.signIn();
+
+      if (!response.data?.idToken) {
+        throw new Error("No ID token returned from Google Sign-In");
+      }
+
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: "google",
+        token: response.data.idToken,
       });
       if (error) throw error;
     },
