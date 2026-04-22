@@ -52,6 +52,8 @@ export default function AuthProvider({
     const isPublicPath =
       pathname === "/" ||
       pathname === "/login" ||
+      pathname === "/privacy" ||
+      pathname === "/terms" ||
       pathname.startsWith("/auth/");
     if (!user && !isPublicPath) {
       // Hard redirect so all React state is cleared — prevents stale data
