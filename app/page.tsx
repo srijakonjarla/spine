@@ -480,12 +480,6 @@ export default function Home() {
               import from goodreads →
             </Link>
           )}
-          <Link href="/privacy" className="back-link">
-            privacy →
-          </Link>
-          <Link href="/terms" className="back-link">
-            terms →
-          </Link>
         </div>
         <p className="mt-6 text-xs text-fg-faint">© 2026 spine</p>
       </div>
