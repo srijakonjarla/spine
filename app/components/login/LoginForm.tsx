@@ -424,6 +424,19 @@ export function LoginForm() {
           onBackToSignIn={() => goTo("email")}
         />
       )}
+
+      <div
+        className="mt-10 flex flex-wrap items-end gap-x-4 gap-y-1 text-xs justify-end"
+        style={{ color: "var(--fg-faint)" }}
+      >
+        <a href="/privacy" className="hover:text-fg-muted transition-colors">
+          privacy
+        </a>
+        <a href="/terms" className="hover:text-fg-muted transition-colors">
+          terms
+        </a>
+        <span>© 2026 spine</span>
+      </div>
     </div>
   );
 }

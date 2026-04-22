@@ -47,14 +47,15 @@ export default function AuthProvider({
     return () => subscription.unsubscribe();
   }, []);
 
+  const isPublicPath =
+    pathname === "/" ||
+    pathname === "/login" ||
+    pathname === "/privacy" ||
+    pathname === "/terms" ||
+    pathname.startsWith("/auth/");
+
   useEffect(() => {
     if (loading) return;
-    const isPublicPath =
-      pathname === "/" ||
-      pathname === "/login" ||
-      pathname === "/privacy" ||
-      pathname === "/terms" ||
-      pathname.startsWith("/auth/");
     if (!user && !isPublicPath) {
       // Hard redirect so all React state is cleared — prevents stale data
       // from the previous session leaking into a subsequent login.
@@ -63,9 +64,9 @@ export default function AuthProvider({
     if (user && pathname === "/login") {
       router.replace("/");
     }
-  }, [user, loading, pathname, router]);
+  }, [user, loading, pathname, router, isPublicPath]);
 
-  if (loading) {
+  if (loading && !isPublicPath) {
     return <div className="min-h-screen bg-[var(--auth-loading-bg)]" />;
   }
 

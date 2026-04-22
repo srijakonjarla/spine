@@ -3,6 +3,8 @@
 import { useSyncExternalStore, useEffect } from "react";
 import { getToasts, subscribeToasts, dismissToast } from "@/lib/toast";
 
+const EMPTY: readonly ReturnType<typeof getToasts>[number][] = [];
+
 const COLORS = {
   error: "bg-red-500/95 text-white",
   info: "bg-plum/95 text-white",
@@ -13,7 +15,7 @@ export function Toaster() {
   const toasts = useSyncExternalStore(
     subscribeToasts,
     getToasts,
-    () => [], // server snapshot — no toasts during SSR
+    () => EMPTY, // server snapshot — no toasts during SSR
   );
 
   // Auto-dismiss after 4 s
