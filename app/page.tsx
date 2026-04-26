@@ -134,6 +134,11 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
+  const dismissImportModal = useCallback(() => {
+    localStorage.setItem("spine:import-modal-dismissed", "1");
+    setShowImportModal(false);
+  }, []);
+
   const name = user ? getDisplayName(user) : "";
   const loggedDates = new Set(logEntries.map((e) => e.logDate));
 
@@ -207,11 +212,6 @@ export default function Home() {
         </div>
       </div>
     );
-
-  const dismissImportModal = useCallback(() => {
-    localStorage.setItem("spine:import-modal-dismissed", "1");
-    setShowImportModal(false);
-  }, []);
 
   return (
     <div className="page">
