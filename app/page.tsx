@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { getDisplayName, hasImportedGoodreads } from "@/lib/auth";
@@ -103,6 +103,7 @@ export default function Home() {
   const [finishedThisYear, setFinishedThisYear] = useState(0);
   const [wantToRead, setWantToRead] = useState(0);
   const [goodreadsImported, setGoodreadsImported] = useState(true);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -124,7 +125,12 @@ export default function Home() {
     load()
       .catch(() => toast("Failed to load data. Please refresh."))
       .finally(() => setLoading(false));
-    hasImportedGoodreads().then(setGoodreadsImported);
+    hasImportedGoodreads().then((imported) => {
+      setGoodreadsImported(imported);
+      if (!imported && !localStorage.getItem("spine:import-modal-dismissed")) {
+        setShowImportModal(true);
+      }
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
@@ -202,9 +208,44 @@ export default function Home() {
       </div>
     );
 
+  const dismissImportModal = useCallback(() => {
+    localStorage.setItem("spine:import-modal-dismissed", "1");
+    setShowImportModal(false);
+  }, []);
+
   return (
     <div className="page">
       <div className="page-content">
+        {/* Import from Goodreads modal — one-time for new users */}
+        {showImportModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-surface border border-line rounded-2xl shadow-lg max-w-sm w-full mx-4 p-6 space-y-4">
+              <h2 className="font-serif text-lg font-semibold text-fg-heading">
+                welcome to spine
+              </h2>
+              <p className="text-sm text-fg-muted leading-relaxed">
+                if you have a goodreads library, you can import all your books,
+                ratings, and shelves in one go.
+              </p>
+              <div className="flex items-center gap-3 pt-1">
+                <Link
+                  href="/profile"
+                  onClick={dismissImportModal}
+                  className="btn-primary text-caption"
+                >
+                  import from goodreads
+                </Link>
+                <button
+                  onClick={dismissImportModal}
+                  className="text-caption text-fg-faint hover:text-fg-muted transition-colors"
+                >
+                  skip for now
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Greeting */}
         <div className="mb-8">
           <p className="font-serif text-2xl sm:text-3xl font-semibold tracking-tight text-fg-heading">

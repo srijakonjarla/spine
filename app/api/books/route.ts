@@ -41,10 +41,11 @@ export async function GET(req: NextRequest) {
     const start = `${y}-01-01`;
     const end = `${y + 1}-01-01`;
     query = query.or(
-      `and(created_at.gte.${start},created_at.lt.${end}),` +
-        `and(date_finished.gte.${start},date_finished.lt.${end}),` +
+      `and(date_finished.gte.${start},date_finished.lt.${end}),` +
         `and(date_started.gte.${start},date_started.lt.${end}),` +
-        `and(date_shelved.gte.${start},date_shelved.lt.${end})`,
+        `and(date_shelved.gte.${start},date_shelved.lt.${end}),` +
+        `and(status.eq.want-to-read,created_at.gte.${start},created_at.lt.${end}),` +
+        `and(status.eq.did-not-finish,date_shelved.is.null,updated_at.gte.${start},updated_at.lt.${end})`,
     );
   }
 

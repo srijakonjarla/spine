@@ -14,6 +14,84 @@ import { useYear } from "@/providers/YearContext";
 import { useBooks } from "@/providers/BooksProvider";
 import { toast } from "@/lib/toast";
 
+function BookSection({
+  label,
+  books,
+  view,
+}: {
+  label: string;
+  books: BookEntry[];
+  view: "grid" | "list";
+}) {
+  return (
+    <div>
+      <p className="section-label mb-3">{label}</p>
+      {view === "grid" ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+          {books.map((e) => (
+            <Link key={e.id} href={`/book/${e.id}`} className="group">
+              <div className="relative mb-2 rounded-lg overflow-hidden group-hover:-translate-y-1 transition-transform h-32.5 shadow-sm">
+                <BookCoverThumb
+                  coverUrl={e.coverUrl}
+                  title={e.title}
+                  author={e.author}
+                  width="w-full"
+                  height="h-full"
+                />
+                {e.moodTags[0] && (
+                  <span className="absolute top-1.5 left-1.5 z-10 text-label px-1.5 py-0.5 rounded-md bg-white/90 text-fg leading-none">
+                    {e.moodTags[0]}
+                  </span>
+                )}
+                {e.rating > 0 && (
+                  <span className="absolute top-1.5 right-1.5 z-10 text-label px-1.5 py-0.5 rounded-md bg-black/40 text-gold leading-none tracking-tight">
+                    {"★".repeat(Math.round(e.rating))}
+                  </span>
+                )}
+              </div>
+              <p className="text-caption font-medium leading-tight truncate text-fg">
+                {e.title || "untitled"}
+              </p>
+              {e.author && (
+                <p className="text-detail mt-0.5 truncate text-fg-faint">
+                  {e.author}
+                </p>
+              )}
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-0.5">
+          {books.map((e) => (
+            <Link
+              key={e.id}
+              href={`/book/${e.id}`}
+              className="flex items-center gap-3 py-1.5 px-2 -mx-2 rounded-lg hover:bg-plum-trace transition-colors"
+            >
+              <BookCoverThumb
+                coverUrl={e.coverUrl}
+                title={e.title}
+                width="w-6"
+                height="h-9"
+              />
+              <span className="text-sm flex-1 truncate text-fg">
+                {e.title || "untitled"}
+              </span>
+              {e.author && (
+                <span className="text-xs shrink-0 hidden sm:block text-fg-faint">
+                  {e.author}
+                </span>
+              )}
+              <span className="dot-leader hidden sm:block" />
+              {e.rating > 0 && <StarDisplay rating={e.rating} size={11} />}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function BooksPage() {
   const { year, loading: yearLoading, yearEntries } = useYear();
   const { books, loading: booksLoading } = useBooks();
@@ -26,8 +104,7 @@ export default function BooksPage() {
 
   const activeBooks = books.filter((e) => e.status === "reading");
 
-  // All books that were read/finished/dnf this year (exclude want-to-read)
-  const yearBooks = yearEntries.filter((e) => e.status !== "want-to-read");
+  const yearBooks = yearEntries;
 
   const filtered = yearBooks.filter(
     (e) =>
@@ -39,6 +116,7 @@ export default function BooksPage() {
   const finished = filtered.filter((e) => e.status === "finished");
   const reading = filtered.filter((e) => e.status === "reading");
   const dnf = filtered.filter((e) => e.status === "did-not-finish");
+  const wantToRead = filtered.filter((e) => e.status === "want-to-read");
 
   const addBook = async (catalog?: CatalogEntry) => {
     const title = (catalog?.title ?? addValue).trim();
@@ -120,6 +198,8 @@ export default function BooksPage() {
               <p className="text-xs text-fg-faint mt-1">
                 {finished.length} finished
                 {reading.length > 0 && ` · ${reading.length} reading`}
+                {wantToRead.length > 0 &&
+                  ` · ${wantToRead.length} want to read`}
                 {dnf.length > 0 && ` · ${dnf.length} dnf`}
               </p>
             )}
@@ -195,71 +275,26 @@ export default function BooksPage() {
           )}
         </div>
 
-        {/* Books grid/list */}
+        {/* Sectioned books */}
         {filtered.length === 0 ? (
           <p className="text-xs text-fg-faint">
             {search ? "no matches." : "no books logged yet."}
           </p>
-        ) : view === "grid" ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-            {filtered.map((e) => (
-              <Link key={e.id} href={`/book/${e.id}`} className="group">
-                <div className="relative mb-2 rounded-lg overflow-hidden group-hover:-translate-y-1 transition-transform h-32.5 shadow-sm">
-                  <BookCoverThumb
-                    coverUrl={e.coverUrl}
-                    title={e.title}
-                    author={e.author}
-                    width="w-full"
-                    height="h-full"
-                  />
-                  {e.moodTags[0] && (
-                    <span className="absolute top-1.5 left-1.5 z-10 text-label px-1.5 py-0.5 rounded-md bg-white/90 text-fg leading-none">
-                      {e.moodTags[0]}
-                    </span>
-                  )}
-                  {e.rating > 0 && (
-                    <span className="absolute top-1.5 right-1.5 z-10 text-label px-1.5 py-0.5 rounded-md bg-black/40 text-gold leading-none tracking-tight">
-                      {"★".repeat(Math.round(e.rating))}
-                    </span>
-                  )}
-                </div>
-                <p className="text-caption font-medium leading-tight truncate text-fg">
-                  {e.title || "untitled"}
-                </p>
-                {e.author && (
-                  <p className="text-detail mt-0.5 truncate text-fg-faint">
-                    {e.author}
-                  </p>
-                )}
-              </Link>
-            ))}
-          </div>
         ) : (
-          <div className="space-y-0.5">
-            {filtered.map((e) => (
-              <Link
-                key={e.id}
-                href={`/book/${e.id}`}
-                className="flex items-center gap-3 py-1.5 px-2 -mx-2 rounded-lg hover:bg-plum-trace transition-colors"
-              >
-                <BookCoverThumb
-                  coverUrl={e.coverUrl}
-                  title={e.title}
-                  width="w-6"
-                  height="h-9"
-                />
-                <span className="text-sm flex-1 truncate text-fg">
-                  {e.title || "untitled"}
-                </span>
-                {e.author && (
-                  <span className="text-xs shrink-0 hidden sm:block text-fg-faint">
-                    {e.author}
-                  </span>
-                )}
-                <span className="dot-leader hidden sm:block" />
-                {e.rating > 0 && <StarDisplay rating={e.rating} size={11} />}
-              </Link>
-            ))}
+          <div className="space-y-10">
+            {finished.length > 0 && (
+              <BookSection label="finished" books={finished} view={view} />
+            )}
+            {wantToRead.length > 0 && (
+              <BookSection
+                label="want to read"
+                books={wantToRead}
+                view={view}
+              />
+            )}
+            {dnf.length > 0 && (
+              <BookSection label="did not finish" books={dnf} view={view} />
+            )}
           </div>
         )}
       </div>
