@@ -11,6 +11,7 @@ import { BooksProvider } from "@/providers/BooksProvider";
 import { QuotesProvider } from "@/providers/QuotesProvider";
 import Nav from "@/components/navigation/Nav";
 import { Toaster } from "@/components/Toaster";
+import { Footer } from "@/components/Footer";
 import { NavigationProvider } from "@/providers/NavigationProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 
@@ -98,7 +99,10 @@ export default function RootLayout({
               <QuotesProvider>
                 <NavigationProvider>
                   <Nav />
-                  <div className="pt-14 lg:pl-55">{children}</div>
+                  <div className="pt-14 lg:pl-55">
+                    {children}
+                    <Footer />
+                  </div>
                   <Toaster />
                 </NavigationProvider>
               </QuotesProvider>

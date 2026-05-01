@@ -73,23 +73,36 @@ export function ReadingLogProvider({
   }, [year]);
 
   const addEntry = useCallback((entry: ReadingLogEntry) => {
-    setLogEntries((prev) =>
-      prev.some((e) => e.logDate === entry.logDate) ? prev : [...prev, entry],
-    );
+    setLogEntries((prev) => {
+      const existing = prev.find((e) => e.logDate === entry.logDate);
+      if (existing) {
+        // Row exists (maybe note-only) — mark as logged
+        return prev.map((e) =>
+          e.logDate === entry.logDate ? { ...e, logged: true } : e,
+        );
+      }
+      return [...prev, { ...entry, logged: true }];
+    });
   }, []);
 
   const removeEntry = useCallback((date: string) => {
-    setLogEntries((prev) => prev.filter((e) => e.logDate !== date));
-  }, []);
-
-  const updateNote = useCallback((date: string, note: string) => {
     setLogEntries((prev) =>
-      prev.map((e) => (e.logDate === date ? { ...e, note } : e)),
+      prev.map((e) => (e.logDate === date ? { ...e, logged: false } : e)),
     );
   }, []);
 
+  const updateNote = useCallback((date: string, note: string) => {
+    setLogEntries((prev) => {
+      const exists = prev.some((e) => e.logDate === date);
+      if (exists) {
+        return prev.map((e) => (e.logDate === date ? { ...e, note } : e));
+      }
+      return [...prev, { id: "", logDate: date, note, logged: false }];
+    });
+  }, []);
+
   const loggedDates = useMemo(
-    () => new Set(logEntries.map((e) => e.logDate)),
+    () => new Set(logEntries.filter((e) => e.logged).map((e) => e.logDate)),
     [logEntries],
   );
 

@@ -115,4 +115,5 @@ export interface ReadingLogEntry {
   id: string;
   logDate: string;
   note: string;
+  logged: boolean;
 }

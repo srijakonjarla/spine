@@ -3,12 +3,17 @@ import type { ReadingLogEntry } from "@/types";
 
 export async function getReadingLog(year: number): Promise<ReadingLogEntry[]> {
   const res = await apiFetch(`/api/habits?year=${year}`);
-  const data: { id: string; log_date: string; note: string }[] =
-    await res.json();
+  const data: {
+    id: string;
+    log_date: string;
+    note: string;
+    logged: boolean;
+  }[] = await res.json();
   return data.map((row) => ({
     id: row.id,
     logDate: row.log_date,
     note: row.note,
+    logged: row.logged,
   }));
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { signIn, signUp, sendMagicLink, resetPassword } from "@/lib/auth";
 import { GoogleButton } from "./GoogleButton";
 import { SignupConfirmScreen } from "./SignupConfirmScreen";
@@ -376,7 +377,7 @@ export function LoginForm() {
               disabled={loading}
               className="login-cta terra"
             >
-              {loading ? "..." : "open the book →"}
+              {loading ? "..." : "open your journal →"}
             </button>
           </div>
         )}
@@ -424,6 +425,25 @@ export function LoginForm() {
           onBackToSignIn={() => goTo("email")}
         />
       )}
+
+      <div
+        className="mt-10 flex items-center justify-end gap-x-4 text-xs"
+        style={{ color: "var(--fg-faint)" }}
+      >
+        <Link href="/terms" className="hover:text-fg-muted transition-colors">
+          terms
+        </Link>
+        <Link href="/privacy" className="hover:text-fg-muted transition-colors">
+          privacy
+        </Link>
+        <a
+          href="mailto:hello@spinereads.com"
+          className="hover:text-fg-muted transition-colors"
+        >
+          contact
+        </a>
+        <span>© 2026 spine</span>
+      </div>
     </div>
   );
 }

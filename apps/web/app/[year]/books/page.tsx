@@ -3,43 +3,120 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import BookCard from "@/components/BookCard";
+import { BookCoverThumb } from "@/components/BookCover";
+import { StarDisplay } from "@/components/StarDisplay";
 import { CatalogSearch } from "@/components/CatalogSearch";
 import { createEntry } from "@/lib/db";
 import { type CatalogEntry, lookupBook } from "@/lib/catalog";
 import type { BookEntry } from "@/types";
-import { localDateStr, formatDate } from "@/lib/dates";
+import { localDateStr } from "@/lib/dates";
 import { useYear } from "@/providers/YearContext";
+import { useBooks } from "@/providers/BooksProvider";
 import { toast } from "@/lib/toast";
 
-function effectiveDate(e: BookEntry): string {
-  if (e.status === "finished" && e.dateFinished) return e.dateFinished;
-  if (e.status === "did-not-finish" && e.dateShelved) return e.dateShelved;
-  return e.dateStarted || e.createdAt;
-}
-
-function monthKey(iso: string) {
-  // DATE strings (YYYY-MM-DD) are safe to slice; timestamps need local conversion
-  const local = iso.length === 10 ? iso : localDateStr(new Date(iso));
-  return local.slice(0, 7);
-}
-
-function monthLabel(key: string) {
-  return formatDate(`${key}-01`, { month: "long" });
-}
-
-function sectionId(key: string) {
-  return `month-${key}`;
+function BookSection({
+  label,
+  books,
+  view,
+}: {
+  label: string;
+  books: BookEntry[];
+  view: "grid" | "list";
+}) {
+  return (
+    <div>
+      <p className="section-label mb-3">{label}</p>
+      {view === "grid" ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+          {books.map((e) => (
+            <Link key={e.id} href={`/book/${e.id}`} className="group">
+              <div className="relative mb-2 rounded-lg overflow-hidden group-hover:-translate-y-1 transition-transform h-32.5 shadow-sm">
+                <BookCoverThumb
+                  coverUrl={e.coverUrl}
+                  title={e.title}
+                  author={e.author}
+                  width="w-full"
+                  height="h-full"
+                />
+                {e.moodTags[0] && (
+                  <span className="absolute top-1.5 left-1.5 z-10 text-label px-1.5 py-0.5 rounded-md bg-white/90 text-fg leading-none">
+                    {e.moodTags[0]}
+                  </span>
+                )}
+                {e.rating > 0 && (
+                  <span className="absolute top-1.5 right-1.5 z-10 text-label px-1.5 py-0.5 rounded-md bg-black/40 text-gold leading-none tracking-tight">
+                    {"★".repeat(Math.round(e.rating))}
+                  </span>
+                )}
+              </div>
+              <p className="text-caption font-medium leading-tight truncate text-fg">
+                {e.title || "untitled"}
+              </p>
+              {e.author && (
+                <p className="text-detail mt-0.5 truncate text-fg-faint">
+                  {e.author}
+                </p>
+              )}
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-0.5">
+          {books.map((e) => (
+            <Link
+              key={e.id}
+              href={`/book/${e.id}`}
+              className="flex items-center gap-3 py-1.5 px-2 -mx-2 rounded-lg hover:bg-plum-trace transition-colors"
+            >
+              <BookCoverThumb
+                coverUrl={e.coverUrl}
+                title={e.title}
+                width="w-6"
+                height="h-9"
+              />
+              <span className="text-sm flex-1 truncate text-fg">
+                {e.title || "untitled"}
+              </span>
+              {e.author && (
+                <span className="text-xs shrink-0 hidden sm:block text-fg-faint">
+                  {e.author}
+                </span>
+              )}
+              <span className="dot-leader hidden sm:block" />
+              {e.rating > 0 && <StarDisplay rating={e.rating} size={11} />}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function BooksPage() {
-  const { year, loading, yearEntries, allEntries } = useYear();
+  const { year, loading: yearLoading, yearEntries } = useYear();
+  const { books, loading: booksLoading } = useBooks();
+  const loading = yearLoading || booksLoading;
   const router = useRouter();
   const [addValue, setAddValue] = useState("");
   const [adding, setAdding] = useState(false);
+  const [search, setSearch] = useState("");
+  const [view, setView] = useState<"grid" | "list">("grid");
 
-  const entries = yearEntries;
-  const activeBooks = allEntries.filter((e) => e.status === "reading");
+  const activeBooks = books.filter((e) => e.status === "reading");
+
+  const yearBooks = yearEntries;
+
+  const filtered = yearBooks.filter(
+    (e) =>
+      !search.trim() ||
+      e.title.toLowerCase().includes(search.toLowerCase()) ||
+      e.author.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const finished = filtered.filter((e) => e.status === "finished");
+  const reading = filtered.filter((e) => e.status === "reading");
+  const dnf = filtered.filter((e) => e.status === "did-not-finish");
+  const wantToRead = filtered.filter((e) => e.status === "want-to-read");
 
   const addBook = async (catalog?: CatalogEntry) => {
     const title = (catalog?.title ?? addValue).trim();
@@ -82,35 +159,22 @@ export default function BooksPage() {
       await createEntry(entry);
       router.push(`/book/${entry.id}`);
     } catch {
-      toast("Something went wrong. Please try again.");
+      toast("something went wrong. please try again.");
       setAdding(false);
     }
   };
-
-  const loggable = entries.filter((e) => e.status !== "want-to-read");
-
-  const grouped = loggable.reduce<Record<string, BookEntry[]>>((acc, e) => {
-    const key = monthKey(effectiveDate(e));
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(e);
-    return acc;
-  }, {});
-  const months = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
 
   if (loading)
     return (
       <div className="page">
         <div className="page-content animate-pulse">
           <div className="h-5 w-20 bg-hover rounded mb-8" />
-          <div className="space-y-8">
-            {[1, 2, 3].map((i) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+            {Array.from({ length: 12 }).map((_, i) => (
               <div key={i}>
-                <div className="h-3.5 w-16 bg-hover rounded mb-3" />
-                <div className="space-y-2">
-                  {[1, 2, 3].map((j) => (
-                    <div key={j} className="h-9 bg-hover rounded-lg" />
-                  ))}
-                </div>
+                <div className="rounded-lg mb-2 aspect-[2/3] bg-edge" />
+                <div className="h-2.5 rounded mb-1 w-4/5 bg-edge" />
+                <div className="h-2 rounded w-1/2 bg-edge" />
               </div>
             ))}
           </div>
@@ -121,33 +185,80 @@ export default function BooksPage() {
   return (
     <div className="page">
       <div className="page-content">
-        <div className="mb-10">
+        <div className="mb-8">
           <Link href="/" className="back-link">
             ← home
           </Link>
         </div>
 
-        <div className="mb-10 pb-8 border-b border-stone-200">
-          <p className="text-xs text-stone-300 mb-2 tracking-widest uppercase">
-            reading journal · {year}
-          </p>
-          <h1 className="font-serif text-3xl font-semibold text-fg-heading tracking-tight">
-            reading log
-          </h1>
-          {loggable.length > 0 && (
-            <p className="text-xs text-stone-400 mt-3">
-              {loggable.length} books · {months.length} months
-            </p>
+        <div className="flex items-baseline justify-between mb-6">
+          <div>
+            <h1 className="page-title">{year} books</h1>
+            {yearBooks.length > 0 && (
+              <p className="text-xs text-fg-faint mt-1">
+                {finished.length} finished
+                {reading.length > 0 && ` · ${reading.length} reading`}
+                {wantToRead.length > 0 &&
+                  ` · ${wantToRead.length} want to read`}
+                {dnf.length > 0 && ` · ${dnf.length} dnf`}
+              </p>
+            )}
+          </div>
+          {yearBooks.length > 0 && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setView("grid")}
+                className={`text-xs px-2 py-1 rounded transition-colors ${view === "grid" ? "bg-hover text-fg" : "text-fg-faint"}`}
+              >
+                ▦
+              </button>
+              <button
+                onClick={() => setView("list")}
+                className={`text-xs px-2 py-1 rounded transition-colors ${view === "list" ? "bg-hover text-fg" : "text-fg-faint"}`}
+              >
+                ☰
+              </button>
+            </div>
           )}
         </div>
 
-        {/* currently reading */}
-        <div className="mb-10">
+        {/* Search */}
+        {yearBooks.length > 0 && (
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="search by title or author..."
+            className="underline-input mb-6"
+          />
+        )}
+
+        {/* Currently reading */}
+        <div className="mb-8 pb-8 border-b border-line">
           <p className="section-label mb-3">currently reading</p>
           {activeBooks.length > 0 && (
-            <div className="space-y-0.5 mb-1">
+            <div className="space-y-0.5 mb-3">
               {activeBooks.map((e) => (
-                <BookCard key={e.id} entry={e} />
+                <Link
+                  key={e.id}
+                  href={`/book/${e.id}`}
+                  className="flex items-center gap-3 py-1.5 px-2 -mx-2 rounded-lg hover:bg-plum-trace transition-colors"
+                >
+                  <BookCoverThumb
+                    coverUrl={e.coverUrl}
+                    title={e.title}
+                    width="w-6"
+                    height="h-9"
+                  />
+                  <span className="text-sm flex-1 truncate text-fg">
+                    {e.title}
+                  </span>
+                  {e.author && (
+                    <span className="text-xs shrink-0 hidden sm:block text-fg-faint">
+                      {e.author}
+                    </span>
+                  )}
+                </Link>
               ))}
             </div>
           )}
@@ -164,62 +275,27 @@ export default function BooksPage() {
           )}
         </div>
 
-        {loggable.length === 0 ? (
-          <p className="text-xs text-stone-400">nothing logged yet.</p>
+        {/* Sectioned books */}
+        {filtered.length === 0 ? (
+          <p className="text-xs text-fg-faint">
+            {search ? "no matches." : "no books logged yet."}
+          </p>
         ) : (
-          <>
-            {/* table of contents */}
-            <div className="mb-12">
-              <p className="section-label mb-4">contents</p>
-              <div className="space-y-1">
-                {months.map((key, i) => (
-                  <a
-                    key={key}
-                    href={`#${sectionId(key)}`}
-                    className="flex items-baseline gap-3 py-1.5 -mx-3 px-3 rounded hover:bg-stone-100/60 transition-colors group"
-                  >
-                    <span className="text-xs text-stone-300 w-6 shrink-0 font-mono">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <span className="text-xs text-stone-500 group-hover:text-stone-800 transition-colors">
-                      {monthLabel(key)}
-                    </span>
-                    <span className="dot-leader" />
-                    <span className="text-xs text-stone-300 shrink-0">
-                      {grouped[key].length}
-                    </span>
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            <hr className="border-stone-200 mb-12" />
-
-            {/* monthly chapters */}
-            <div className="space-y-14">
-              {months.map((key, i) => (
-                <section key={key} id={sectionId(key)}>
-                  <div className="flex items-baseline gap-3 mb-4">
-                    <span className="text-xs text-stone-300 font-mono">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <h2 className="text-sm font-semibold text-stone-700 tracking-wider uppercase">
-                      {monthLabel(key)}
-                    </h2>
-                    <span className="flex-1 border-b border-dotted border-stone-200 mb-0.5" />
-                    <span className="text-xs text-stone-300">
-                      {grouped[key].length}
-                    </span>
-                  </div>
-                  <div className="space-y-0.5">
-                    {grouped[key].map((e) => (
-                      <BookCard key={e.id} entry={e} />
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
-          </>
+          <div className="space-y-10">
+            {finished.length > 0 && (
+              <BookSection label="finished" books={finished} view={view} />
+            )}
+            {wantToRead.length > 0 && (
+              <BookSection
+                label="want to read"
+                books={wantToRead}
+                view={view}
+              />
+            )}
+            {dnf.length > 0 && (
+              <BookSection label="did not finish" books={dnf} view={view} />
+            )}
+          </div>
         )}
       </div>
     </div>

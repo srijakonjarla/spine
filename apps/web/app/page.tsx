@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { getDisplayName, hasImportedGoodreads } from "@/lib/auth";
@@ -11,7 +11,13 @@ import { FireIcon, LeafIcon, StarIcon } from "@phosphor-icons/react";
 import { MoodChip } from "@/components/MoodChip";
 import { BookCoverThumb } from "@/components/BookCover";
 import { ProgressBar } from "@/components/ProgressBar";
-import { localDateStr, formatDate, currentStreak } from "@/lib/dates";
+import {
+  localDateStr,
+  formatDate,
+  currentStreak,
+  streakRuns,
+  type StreakRun,
+} from "@/lib/dates";
 import { MONTH_ABBRS } from "@/lib/constants";
 import { CoverPanel } from "@/components/login/CoverPanel";
 import { LoginForm } from "@/components/login/LoginForm";
@@ -57,36 +63,36 @@ function formatLogDate(iso: string) {
   return formatDate(iso, { month: "long", day: "numeric", year: "numeric" });
 }
 
-function StreakBars({
-  loggedDates,
-  days = 14,
-}: {
-  loggedDates: Set<string>;
-  days?: number;
-}) {
-  const today = new Date();
-  const bars: { dateStr: string; logged: boolean; isToday: boolean }[] = [];
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    const dateStr = localDateStr(d);
-    bars.push({ dateStr, logged: loggedDates.has(dateStr), isToday: i === 0 });
+function StreakBars({ runs }: { runs: StreakRun[] }) {
+  if (runs.length === 0) {
+    return (
+      <div className="h-8 flex items-end text-label text-fg-faint">
+        no reading days yet
+      </div>
+    );
   }
+  const today = localDateStr(new Date());
+  const yesterday = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return localDateStr(d);
+  })();
+  const max = Math.max(...runs.map((r) => r.length));
   return (
     <div className="flex items-end gap-[3px] h-8">
-      {bars.map(({ dateStr, logged, isToday }) => {
-        const seed = dateStr.split("-").reduce((a, b) => a + Number(b), 0);
-        const stableH = logged ? 14 + (seed % 16) : 5;
-        const bgClass = logged
-          ? isToday
-            ? "bg-sage"
-            : "bg-[var(--bg-sage-60)]"
-          : "bg-plum-mid";
+      {runs.map((r) => {
+        const isCurrent = r.endDate === today || r.endDate === yesterday;
+        const heightPct = Math.max(8, Math.round((r.length / max) * 100));
+        const label =
+          r.length === 1
+            ? `1 day · ${r.startDate}`
+            : `${r.length} days · ${r.startDate} → ${r.endDate}`;
         return (
           <div
-            key={dateStr}
-            style={{ height: `${stableH}%` }}
-            className={`rounded-sm flex-1 ${bgClass}`}
+            key={r.startDate}
+            title={label}
+            style={{ height: `${heightPct}%` }}
+            className={`rounded-sm flex-1 ${isCurrent ? "bg-sage" : "bg-[var(--bg-sage-60)]"}`}
           />
         );
       })}
@@ -103,6 +109,7 @@ export default function Home() {
   const [finishedThisYear, setFinishedThisYear] = useState(0);
   const [wantToRead, setWantToRead] = useState(0);
   const [goodreadsImported, setGoodreadsImported] = useState(true);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -124,14 +131,25 @@ export default function Home() {
     load()
       .catch(() => toast("Failed to load data. Please refresh."))
       .finally(() => setLoading(false));
-    hasImportedGoodreads().then(setGoodreadsImported);
+    hasImportedGoodreads().then((imported) => {
+      setGoodreadsImported(imported);
+      if (!imported && !localStorage.getItem("spine:import-modal-dismissed")) {
+        setShowImportModal(true);
+      }
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
+
+  const dismissImportModal = useCallback(() => {
+    localStorage.setItem("spine:import-modal-dismissed", "1");
+    setShowImportModal(false);
+  }, []);
 
   const name = user ? getDisplayName(user) : "";
   const loggedDates = new Set(logEntries.map((e) => e.logDate));
 
   const streak = currentStreak(loggedDates);
+  const runs = streakRuns(loggedDates, CURRENT_YEAR);
 
   const recentEntries = [...logEntries]
     .filter((e) => e.note.trim())
@@ -205,6 +223,36 @@ export default function Home() {
   return (
     <div className="page">
       <div className="page-content">
+        {/* Import from Goodreads modal — one-time for new users */}
+        {showImportModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-surface border border-line rounded-2xl shadow-lg max-w-sm w-full mx-4 p-6 space-y-4">
+              <h2 className="font-serif text-lg font-semibold text-fg-heading">
+                welcome to spine
+              </h2>
+              <p className="text-sm text-fg-muted leading-relaxed">
+                if you have a goodreads library, you can import all your books,
+                ratings, and shelves in one go.
+              </p>
+              <div className="flex items-center gap-3 pt-1">
+                <Link
+                  href="/profile"
+                  onClick={dismissImportModal}
+                  className="btn-primary text-caption"
+                >
+                  import from goodreads
+                </Link>
+                <button
+                  onClick={dismissImportModal}
+                  className="text-caption text-fg-faint hover:text-fg-muted transition-colors"
+                >
+                  skip for now
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Greeting */}
         <div className="mb-8">
           <p className="font-serif text-2xl sm:text-3xl font-semibold tracking-tight text-fg-heading">
@@ -279,7 +327,7 @@ export default function Home() {
             <p className="text-label font-bold uppercase tracking-label mb-3 text-fg-faint">
               reading streak
             </p>
-            <StreakBars loggedDates={loggedDates} days={14} />
+            <StreakBars runs={runs} />
             <p className="font-serif text-title font-bold mt-2 leading-none text-fg-heading">
               {streak}
             </p>

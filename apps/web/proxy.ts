@@ -42,6 +42,8 @@ export async function proxy(req: NextRequest) {
   const isPublicPath =
     req.nextUrl.pathname === "/" ||
     req.nextUrl.pathname === "/login" ||
+    req.nextUrl.pathname === "/privacy" ||
+    req.nextUrl.pathname === "/terms" ||
     req.nextUrl.pathname.startsWith("/auth/");
 
   if (!user && !isPublicPath && !req.nextUrl.pathname.startsWith("/api/")) {

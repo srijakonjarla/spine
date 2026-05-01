@@ -157,6 +157,47 @@ export function streakDates(loggedDates: Set<string>): Set<string> {
   return result;
 }
 
+export type StreakRun = {
+  startDate: string;
+  endDate: string;
+  length: number;
+};
+
+/**
+ * Group a year's logged dates into consecutive runs. Returned in chronological order.
+ * A "run" is one or more adjacent days; isolated single-day reads count as length-1 runs.
+ */
+export function streakRuns(
+  loggedDates: Set<string>,
+  year: number,
+): StreakRun[] {
+  const prefix = `${year}-`;
+  const dates = [...loggedDates].filter((d) => d.startsWith(prefix)).sort();
+  if (dates.length === 0) return [];
+  const runs: StreakRun[] = [];
+  let start = dates[0];
+  let prev = dates[0];
+  for (let i = 1; i < dates.length; i++) {
+    if (dates[i] === addDays(prev, 1)) {
+      prev = dates[i];
+      continue;
+    }
+    runs.push({
+      startDate: start,
+      endDate: prev,
+      length: daysApart(start, prev) + 1,
+    });
+    start = dates[i];
+    prev = dates[i];
+  }
+  runs.push({
+    startDate: start,
+    endDate: prev,
+    length: daysApart(start, prev) + 1,
+  });
+  return runs;
+}
+
 // ─── Reading period ───────────────────────────────────────────────
 
 /**
