@@ -11,7 +11,13 @@ import { FireIcon, LeafIcon, StarIcon } from "@phosphor-icons/react";
 import { MoodChip } from "@/components/MoodChip";
 import { BookCoverThumb } from "@/components/BookCover";
 import { ProgressBar } from "@/components/ProgressBar";
-import { localDateStr, formatDate, currentStreak } from "@/lib/dates";
+import {
+  localDateStr,
+  formatDate,
+  currentStreak,
+  streakRuns,
+  type StreakRun,
+} from "@/lib/dates";
 import { MONTH_ABBRS } from "@/lib/constants";
 import { CoverPanel } from "@/components/login/CoverPanel";
 import { LoginForm } from "@/components/login/LoginForm";
@@ -57,36 +63,36 @@ function formatLogDate(iso: string) {
   return formatDate(iso, { month: "long", day: "numeric", year: "numeric" });
 }
 
-function StreakBars({
-  loggedDates,
-  days = 14,
-}: {
-  loggedDates: Set<string>;
-  days?: number;
-}) {
-  const today = new Date();
-  const bars: { dateStr: string; logged: boolean; isToday: boolean }[] = [];
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    const dateStr = localDateStr(d);
-    bars.push({ dateStr, logged: loggedDates.has(dateStr), isToday: i === 0 });
+function StreakBars({ runs }: { runs: StreakRun[] }) {
+  if (runs.length === 0) {
+    return (
+      <div className="h-8 flex items-end text-label text-fg-faint">
+        no reading days yet
+      </div>
+    );
   }
+  const today = localDateStr(new Date());
+  const yesterday = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return localDateStr(d);
+  })();
+  const max = Math.max(...runs.map((r) => r.length));
   return (
     <div className="flex items-end gap-[3px] h-8">
-      {bars.map(({ dateStr, logged, isToday }) => {
-        const seed = dateStr.split("-").reduce((a, b) => a + Number(b), 0);
-        const stableH = logged ? 14 + (seed % 16) : 5;
-        const bgClass = logged
-          ? isToday
-            ? "bg-sage"
-            : "bg-[var(--bg-sage-60)]"
-          : "bg-plum-mid";
+      {runs.map((r) => {
+        const isCurrent = r.endDate === today || r.endDate === yesterday;
+        const heightPct = Math.max(8, Math.round((r.length / max) * 100));
+        const label =
+          r.length === 1
+            ? `1 day · ${r.startDate}`
+            : `${r.length} days · ${r.startDate} → ${r.endDate}`;
         return (
           <div
-            key={dateStr}
-            style={{ height: `${stableH}%` }}
-            className={`rounded-sm flex-1 ${bgClass}`}
+            key={r.startDate}
+            title={label}
+            style={{ height: `${heightPct}%` }}
+            className={`rounded-sm flex-1 ${isCurrent ? "bg-sage" : "bg-[var(--bg-sage-60)]"}`}
           />
         );
       })}
@@ -143,6 +149,7 @@ export default function Home() {
   const loggedDates = new Set(logEntries.map((e) => e.logDate));
 
   const streak = currentStreak(loggedDates);
+  const runs = streakRuns(loggedDates, CURRENT_YEAR);
 
   const recentEntries = [...logEntries]
     .filter((e) => e.note.trim())
@@ -320,7 +327,7 @@ export default function Home() {
             <p className="text-label font-bold uppercase tracking-label mb-3 text-fg-faint">
               reading streak
             </p>
-            <StreakBars loggedDates={loggedDates} days={14} />
+            <StreakBars runs={runs} />
             <p className="font-serif text-title font-bold mt-2 leading-none text-fg-heading">
               {streak}
             </p>
