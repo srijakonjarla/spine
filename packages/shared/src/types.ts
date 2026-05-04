@@ -116,4 +116,5 @@ export interface ReadingLogEntry {
   logDate: string;
   note: string;
   logged: boolean;
+  pagesRead?: number;
 }

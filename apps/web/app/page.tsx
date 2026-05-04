@@ -2,7 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { apiFetch } from "@/lib/api";
+import {
+  loadHomeData,
+  type HomeGoal,
+  type HomeReading,
+  type HomeFinished,
+} from "@spine/shared";
+import { supabase } from "@/lib/supabase";
 import { getDisplayName, hasImportedGoodreads } from "@/lib/auth";
 import { useAuth } from "@/providers/AuthProvider";
 import { toast } from "@/lib/toast";
@@ -24,33 +30,6 @@ import { LoginForm } from "@/components/login/LoginForm";
 
 const CURRENT_YEAR = new Date().getFullYear();
 const CURRENT_MONTH_ABBR = MONTH_ABBRS[new Date().getMonth()];
-
-interface HomeReading {
-  id: string;
-  title: string;
-  author: string;
-  coverUrl: string;
-  moodTags: string[];
-  dateStarted: string;
-}
-
-interface HomeFinished {
-  id: string;
-  title: string;
-  author: string;
-  coverUrl: string;
-  rating: number;
-  dateFinished: string;
-}
-
-interface HomeGoal {
-  id: string;
-  year: number;
-  target: number;
-  name: string;
-  isAuto: boolean;
-  bookIds: string[];
-}
 
 function greeting() {
   const h = new Date().getHours();
@@ -118,8 +97,7 @@ export default function Home() {
       return;
     }
     async function load() {
-      const res = await apiFetch(`/api/home?year=${CURRENT_YEAR}`);
-      const data = await res.json();
+      const data = await loadHomeData(supabase, CURRENT_YEAR);
 
       setReading(data.reading);
       setRecentlyFinished(data.recentlyFinished);

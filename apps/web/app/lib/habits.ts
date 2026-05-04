@@ -1,34 +1,22 @@
-import { apiFetch } from "@/lib/api";
-import type { ReadingLogEntry } from "@/types";
+import { loadReadingLog, setLogNote, toggleLogEntry } from "@spine/shared";
+import { supabase } from "@/lib/supabase";
 
-export async function getReadingLog(year: number): Promise<ReadingLogEntry[]> {
-  const res = await apiFetch(`/api/habits?year=${year}`);
-  const data: {
-    id: string;
-    log_date: string;
-    note: string;
-    logged: boolean;
-  }[] = await res.json();
-  return data.map((row) => ({
-    id: row.id,
-    logDate: row.log_date,
-    note: row.note,
-    logged: row.logged,
-  }));
+async function currentUserId(): Promise<string> {
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) throw new Error("not signed in");
+  return data.user.id;
+}
+
+export async function getReadingLog(year: number) {
+  return loadReadingLog(supabase, year);
 }
 
 export async function toggleDay(date: string): Promise<"added" | "removed"> {
-  const res = await apiFetch("/api/habits", {
-    method: "POST",
-    body: JSON.stringify({ date }),
-  });
-  const { result } = await res.json();
-  return result;
+  const userId = await currentUserId();
+  return toggleLogEntry(supabase, { userId, date });
 }
 
 export async function saveLogNote(date: string, note: string): Promise<void> {
-  await apiFetch("/api/habits", {
-    method: "PATCH",
-    body: JSON.stringify({ date, note }),
-  });
+  const userId = await currentUserId();
+  await setLogNote(supabase, { userId, date, note });
 }

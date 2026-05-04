@@ -11,6 +11,11 @@
     "mobile": "npm --workspace apps/mobile run start",
     "mobile:ios": "npm --workspace apps/mobile run ios",
     "web:build": "npm --workspace apps/web run build",
-    "web:lint": "npm --workspace apps/web run lint"
+    "web:lint": "npm --workspace apps/web run lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.8.3"
   }
 }

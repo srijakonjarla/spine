@@ -6,54 +6,101 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  StyleSheet,
+  ScrollView,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/lib/auth";
-import { SpineLogo } from "@/components/SpineLogo";
+import {
+  FoldShadow,
+  FormCover,
+  GoldSeal,
+  GoogleButton,
+  LandingCover,
+  loginColors as C,
+  loginStyles as styles,
+} from "@/components/login";
 
-// ─── Brand palette ───────────────────────────────────────────────
-const C = {
-  plum: "#2d1b2e",
-  plumDark: "#1c0e1e",
-  terra: "#c97b5a",
-  terraPressed: "#a04630",
-  sage: "#7b9e87",
-  gold: "#d4a843",
-  cream: "#faf6f0",
-  creamDark: "#f0eae0",
-  fg: "#1a1a1a",
-  fgMuted: "#5a5060",
-  fgFaint: "#c4bfba",
-  borderLight: "#e8e2da",
+type Step = "landing" | "login" | "signup" | "username" | "forgot";
+
+const HEADLINES: Record<
+  Exclude<Step, "landing">,
+  { pre: string; accent: string; post: string; caption?: string }
+> = {
+  login: { pre: "sign in to", accent: "continue", post: " reading." },
+  signup: {
+    pre: "open a new",
+    accent: "journal",
+    post: ".",
+    caption: "no inbox blasts. ever.",
+  },
+  username: { pre: "claim your", accent: "handle", post: "." },
+  forgot: { pre: "forgot your", accent: "password", post: "?" },
 };
-
-type Step = "email" | "method" | "password" | "signup" | "forgot";
 
 export default function Login() {
   const router = useRouter();
   const { signIn, signInWithGoogle } = useAuth();
+  const { height: screenHeight } = useWindowDimensions();
 
-  const [step, setStep] = useState<Step>("email");
+  const [step, setStep] = useState<Step>("landing");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  const coverHeight = step === "landing" ? Math.round(screenHeight * 0.6) : 220;
 
   const goTo = (next: Step) => {
     setStep(next);
     setError("");
   };
+
   const goBack = () => {
-    if (step === "method") goTo("email");
-    else if (step === "password" || step === "forgot") goTo("method");
-    else if (step === "signup") goTo("email");
+    if (step === "forgot") goTo("login");
+    else if (step === "username") goTo("signup");
+    else goTo("landing");
   };
 
+  function handleSignupStep1() {
+    setError("");
+    if (!name.trim()) {
+      setError("please enter your name");
+      return;
+    }
+    if (!email.trim()) {
+      setError("please enter your email");
+      return;
+    }
+    if (!password || password.length < 8) {
+      setError("password must be at least 8 characters");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("passwords don’t match");
+      return;
+    }
+    goTo("username");
+  }
+
+  function handleClaimHandle() {
+    if (!username.trim()) {
+      setError("please choose a username");
+      return;
+    }
+    Alert.alert("welcome", `account creation coming soon, @${username}.`);
+  }
+
   async function handleSignIn() {
+    if (!email.trim()) {
+      Alert.alert("missing email", "please enter your email address.");
+      return;
+    }
     if (!password || password.length < 8) {
       setError("password must be at least 8 characters");
       return;
@@ -61,10 +108,9 @@ export default function Login() {
     setBusy(true);
     try {
       await signIn(email, password);
-      router.replace("/library");
+      router.replace("/(tabs)");
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "sign-in failed.";
-      setError(msg);
+      setError(e instanceof Error ? e.message : "sign-in failed.");
     } finally {
       setBusy(false);
     }
@@ -72,363 +118,390 @@ export default function Login() {
 
   async function handleGoogleSignIn() {
     setBusy(true);
+    setError("");
     try {
-      await signInWithGoogle();
-      router.replace("/library");
+      const ok = await signInWithGoogle();
+      if (ok) router.replace("/(tabs)");
+      // user cancelled — leave the form alone, no error
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "google sign-in failed.";
-      setError(msg);
+      setError(e instanceof Error ? e.message : "google sign-in failed.");
     } finally {
       setBusy(false);
     }
   }
 
-  function handleContinue() {
-    if (!email.trim()) {
-      Alert.alert("Missing email", "Please enter your email address.");
-      return;
-    }
-    goTo("method");
-  }
-
-  const subtitle =
-    step === "signup"
-      ? "create your reading journal."
-      : step === "forgot"
-        ? "let\u2019s get you back in."
-        : "sign in to continue your reading year.";
-
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+    <View style={styles.root}>
+      {step === "landing" ? (
+        <LandingCover height={coverHeight} />
+      ) : (
+        <FormCover
+          height={coverHeight}
+          onBack={goBack}
+          pre={HEADLINES[step].pre}
+          accent={HEADLINES[step].accent}
+          post={HEADLINES[step].post}
+          caption={HEADLINES[step].caption}
+        />
+      )}
+
       <KeyboardAvoidingView
-        style={styles.flex}
+        style={styles.flapHost}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <View style={styles.container}>
-          {/* Back button */}
-          {step !== "email" && (
-            <Pressable onPress={goBack} style={styles.backButton}>
-              <Text style={styles.backText}>← back</Text>
-            </Pressable>
-          )}
+        <View style={styles.flap}>
+          <FoldShadow />
+          <GoldSeal />
 
-          {/* Logo + Wordmark */}
-          <SpineLogo size={48} variant="dark" />
-          <Text style={styles.wordmark}>
-            spine<Text style={styles.wordmarkDot}>.</Text>
-          </Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
-
-          {/* Email field */}
-          {step === "email" || step === "signup" ? (
-            <View style={styles.field}>
-              <Text style={styles.label}>EMAIL</Text>
-              <TextInput
-                placeholder="you@example.com"
-                placeholderTextColor={C.fgFaint}
-                autoCapitalize="none"
-                autoComplete="email"
-                autoCorrect={false}
-                keyboardType="email-address"
-                value={email}
-                onChangeText={setEmail}
-                style={styles.input}
-                autoFocus={step === "email"}
-              />
-            </View>
-          ) : (
-            <View style={styles.field}>
-              <Text style={styles.label}>EMAIL</Text>
-              <Text style={styles.staticValue}>{email}</Text>
-            </View>
-          )}
-
-          {/* Password field */}
-          {step === "password" && (
-            <View style={styles.field}>
-              <Text style={styles.label}>PASSWORD</Text>
-              <TextInput
-                placeholder="••••••••••"
-                placeholderTextColor={C.fgFaint}
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-                style={styles.input}
-                autoFocus
-              />
-              <View style={styles.forgotRow}>
-                <Pressable onPress={() => goTo("forgot")}>
-                  <Text style={styles.linkText}>forgot?</Text>
-                </Pressable>
-              </View>
-            </View>
-          )}
-
-          {/* Error */}
-          {!!error && <Text style={styles.error}>{error}</Text>}
-
-          {/* Step actions */}
-          {step === "email" && (
-            <View style={styles.actions}>
-              <Pressable
-                onPress={handleContinue}
-                style={({ pressed }) => [
-                  styles.cta,
-                  pressed && styles.ctaPressed,
-                ]}
-              >
-                <Text style={styles.ctaText}>continue →</Text>
-              </Pressable>
-
-              <View style={styles.dividerRow}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or</Text>
-                <View style={styles.dividerLine} />
-              </View>
-
-              <Pressable
-                onPress={handleGoogleSignIn}
-                disabled={busy}
-                style={({ pressed }) => [
-                  styles.googleBtn,
-                  pressed && styles.googleBtnPressed,
-                  busy && styles.ctaDisabled,
-                ]}
-              >
-                {busy ? (
-                  <ActivityIndicator color={C.fg} size="small" />
-                ) : (
-                  <Text style={styles.googleBtnText}>
-                    continue with Google
-                  </Text>
-                )}
-              </Pressable>
-
-              <View style={styles.signupRow}>
-                <Text style={styles.signupHint}>
-                  don&apos;t have an account?{" "}
+          <ScrollView
+            contentContainerStyle={styles.flapContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {step === "landing" && (
+              <>
+                <Text style={styles.wordmark}>
+                  spine<Text style={{ color: C.terra }}>.</Text>
                 </Text>
-                <Pressable onPress={() => goTo("signup")}>
-                  <Text style={[styles.linkText, { color: C.terra }]}>
-                    start reading →
-                  </Text>
+                <Text style={styles.subtitle}>
+                  a quiet place for the books you read.
+                </Text>
+                <View style={styles.actions}>
+                  <Pressable
+                    onPress={() => goTo("signup")}
+                    style={({ pressed }) => [
+                      styles.ctaTerra,
+                      pressed && styles.ctaTerraPressed,
+                    ]}
+                  >
+                    <Text style={styles.ctaTerraText}>start reading →</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => goTo("login")}
+                    style={styles.linkRow}
+                    hitSlop={8}
+                  >
+                    <Text style={styles.linkRowText}>
+                      i already have an account →
+                    </Text>
+                  </Pressable>
+                </View>
+              </>
+            )}
+
+            {step === "login" && (
+              <View style={styles.formBlock}>
+                <GoogleButton busy={busy} onPress={handleGoogleSignIn} />
+
+                <Divider />
+
+                <EmailField email={email} setEmail={setEmail} />
+                <PasswordField
+                  password={password}
+                  setPassword={setPassword}
+                  onForgot={() => goTo("forgot")}
+                />
+
+                {!!error && <Text style={styles.error}>{error}</Text>}
+
+                <Pressable
+                  onPress={handleSignIn}
+                  disabled={busy}
+                  style={({ pressed }) => [
+                    styles.ctaTerra,
+                    pressed && styles.ctaTerraPressed,
+                    busy && styles.disabled,
+                  ]}
+                >
+                  {busy ? (
+                    <ActivityIndicator color={C.cream} size="small" />
+                  ) : (
+                    <Text style={styles.ctaTerraText}>open the book →</Text>
+                  )}
+                </Pressable>
+
+                <FooterLink
+                  prompt="no account yet?"
+                  cta="start reading →"
+                  onPress={() => goTo("signup")}
+                />
+              </View>
+            )}
+
+            {step === "signup" && (
+              <View style={styles.formBlock}>
+                <GoogleButton busy={busy} onPress={handleGoogleSignIn} />
+
+                <Divider />
+
+                <NameField name={name} setName={setName} />
+                <EmailField email={email} setEmail={setEmail} />
+                <PasswordField
+                  password={password}
+                  setPassword={setPassword}
+                  placeholder="something memorable"
+                />
+                <ConfirmPasswordField
+                  value={confirmPassword}
+                  setValue={setConfirmPassword}
+                />
+
+                {!!error && <Text style={styles.error}>{error}</Text>}
+
+                <Pressable
+                  onPress={handleSignupStep1}
+                  style={({ pressed }) => [
+                    styles.ctaTerra,
+                    pressed && styles.ctaTerraPressed,
+                  ]}
+                >
+                  <Text style={styles.ctaTerraText}>begin reading →</Text>
+                </Pressable>
+
+                <Text style={styles.fineprint}>
+                  by continuing you agree to the{" "}
+                  <Text
+                    style={styles.fineprintLink}
+                    onPress={() => router.push("/terms")}
+                  >
+                    terms
+                  </Text>{" "}
+                  and{" "}
+                  <Text
+                    style={styles.fineprintLink}
+                    onPress={() => router.push("/privacy")}
+                  >
+                    privacy
+                  </Text>{" "}
+                  notice.
+                </Text>
+
+                <View style={styles.signupFooter}>
+                  <FooterLink
+                    prompt="already a reader?"
+                    cta="sign in"
+                    onPress={() => goTo("login")}
+                  />
+                </View>
+              </View>
+            )}
+
+            {step === "username" && (
+              <View style={styles.formBlock}>
+                <UsernameField
+                  username={username}
+                  setUsername={setUsername}
+                  autoFocus
+                />
+
+                {!!error && <Text style={styles.error}>{error}</Text>}
+
+                <Pressable
+                  onPress={handleClaimHandle}
+                  style={({ pressed }) => [
+                    styles.ctaTerra,
+                    pressed && styles.ctaTerraPressed,
+                  ]}
+                >
+                  <Text style={styles.ctaTerraText}>claim your shelf →</Text>
                 </Pressable>
               </View>
-            </View>
-          )}
+            )}
 
-          {step === "method" && (
-            <View style={styles.actions}>
-              <Pressable
-                onPress={handleGoogleSignIn}
-                disabled={busy}
-                style={({ pressed }) => [
-                  styles.googleBtn,
-                  pressed && styles.googleBtnPressed,
-                  busy && styles.ctaDisabled,
-                ]}
-              >
-                {busy ? (
-                  <ActivityIndicator color={C.fg} size="small" />
-                ) : (
-                  <Text style={styles.googleBtnText}>
-                    continue with Google
-                  </Text>
-                )}
-              </Pressable>
-
-              <View style={styles.dividerRow}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or</Text>
-                <View style={styles.dividerLine} />
+            {step === "forgot" && (
+              <View style={styles.formBlock}>
+                <EmailField email={email} setEmail={setEmail} autoFocus />
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.ctaTerra,
+                    pressed && styles.ctaTerraPressed,
+                  ]}
+                >
+                  <Text style={styles.ctaTerraText}>send reset link →</Text>
+                </Pressable>
               </View>
-
-              <Pressable
-                onPress={() => goTo("password")}
-                style={({ pressed }) => [
-                  styles.cta,
-                  pressed && styles.ctaPressed,
-                ]}
-              >
-                <Text style={styles.ctaText}>sign in with password →</Text>
-              </Pressable>
-            </View>
-          )}
-
-          {step === "password" && (
-            <View style={styles.actions}>
-              <Pressable
-                onPress={handleSignIn}
-                disabled={busy}
-                style={({ pressed }) => [
-                  styles.cta,
-                  pressed && styles.ctaPressed,
-                  busy && styles.ctaDisabled,
-                ]}
-              >
-                {busy ? (
-                  <ActivityIndicator color={C.cream} size="small" />
-                ) : (
-                  <Text style={styles.ctaText}>open the book →</Text>
-                )}
-              </Pressable>
-            </View>
-          )}
-
-          {step === "forgot" && (
-            <View style={styles.actions}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.cta,
-                  pressed && styles.ctaPressed,
-                ]}
-              >
-                <Text style={styles.ctaText}>send reset link →</Text>
-              </Pressable>
-            </View>
-          )}
+            )}
+          </ScrollView>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: C.cream },
-  flex: { flex: 1 },
-  container: {
-    flex: 1,
-    paddingHorizontal: 28,
-    justifyContent: "center",
-    gap: 4,
-  },
+function Divider() {
+  return (
+    <View style={styles.dividerRow}>
+      <View style={styles.dividerLine} />
+      <Text style={styles.dividerText}>or with email</Text>
+      <View style={styles.dividerLine} />
+    </View>
+  );
+}
 
-  // Back
-  backButton: { marginBottom: 24 },
-  backText: {
-    fontSize: 13,
-    color: C.fgMuted,
-    letterSpacing: 0.3,
-  },
+function EmailField({
+  email,
+  setEmail,
+  autoFocus,
+}: {
+  email: string;
+  setEmail: (v: string) => void;
+  autoFocus?: boolean;
+}) {
+  return (
+    <View style={styles.field}>
+      <Text style={styles.label}>email</Text>
+      <TextInput
+        placeholder="you@example.com"
+        placeholderTextColor={C.fgFaint}
+        autoCapitalize="none"
+        autoComplete="email"
+        autoCorrect={false}
+        keyboardType="email-address"
+        value={email}
+        onChangeText={setEmail}
+        style={styles.inputBoxed}
+        autoFocus={autoFocus}
+      />
+    </View>
+  );
+}
 
-  // Wordmark
-  wordmark: {
-    fontSize: 42,
-    fontWeight: "700",
-    color: C.plum,
-    letterSpacing: -1.5,
-    lineHeight: 46,
-  },
-  wordmarkDot: { color: C.terra },
-  subtitle: {
-    fontSize: 16,
-    fontStyle: "italic",
-    color: C.fgMuted,
-    marginTop: 6,
-    marginBottom: 36,
-    lineHeight: 22,
-  },
+function PasswordField({
+  password,
+  setPassword,
+  onForgot,
+  placeholder = "••••••••••",
+}: {
+  password: string;
+  setPassword: (v: string) => void;
+  onForgot?: () => void;
+  placeholder?: string;
+}) {
+  return (
+    <View style={styles.field}>
+      <Text style={styles.label}>password</Text>
+      <TextInput
+        placeholder={placeholder}
+        placeholderTextColor={C.fgFaint}
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+        style={styles.inputBoxed}
+      />
+      {onForgot && (
+        <View style={styles.forgotRow}>
+          <Pressable onPress={onForgot} hitSlop={8}>
+            <Text style={styles.forgotText}>forgot password?</Text>
+          </Pressable>
+        </View>
+      )}
+    </View>
+  );
+}
 
-  // Fields
-  field: { marginBottom: 20 },
-  label: {
-    fontSize: 10,
-    fontWeight: "500",
-    letterSpacing: 1.4,
-    color: C.fgMuted,
-    marginBottom: 6,
-  },
-  input: {
-    fontSize: 16,
-    color: C.fg,
-    borderBottomWidth: 1,
-    borderBottomColor: C.borderLight,
-    paddingVertical: 10,
-    paddingHorizontal: 0,
-  },
-  staticValue: {
-    fontSize: 15,
-    color: C.fg,
-    paddingVertical: 10,
-  },
+function ConfirmPasswordField({
+  value,
+  setValue,
+}: {
+  value: string;
+  setValue: (v: string) => void;
+}) {
+  return (
+    <View style={styles.field}>
+      <Text style={styles.label}>confirm password</Text>
+      <TextInput
+        placeholder="re-enter password"
+        placeholderTextColor={C.fgFaint}
+        secureTextEntry
+        value={value}
+        onChangeText={setValue}
+        style={styles.inputBoxed}
+      />
+    </View>
+  );
+}
 
-  // Forgot
-  forgotRow: { alignItems: "flex-end", marginTop: 6 },
+function NameField({
+  name,
+  setName,
+  autoFocus,
+}: {
+  name: string;
+  setName: (v: string) => void;
+  autoFocus?: boolean;
+}) {
+  return (
+    <View style={styles.field}>
+      <Text style={styles.label}>your name</Text>
+      <TextInput
+        placeholder="srija"
+        placeholderTextColor={C.fgFaint}
+        autoCapitalize="words"
+        autoComplete="name"
+        autoCorrect={false}
+        value={name}
+        onChangeText={setName}
+        style={styles.inputBoxed}
+        autoFocus={autoFocus}
+      />
+    </View>
+  );
+}
 
-  // Links
-  linkText: {
-    fontSize: 12,
-    color: C.fgMuted,
-    letterSpacing: 0.3,
-  },
+function UsernameField({
+  username,
+  setUsername,
+  autoFocus,
+}: {
+  username: string;
+  setUsername: (v: string) => void;
+  autoFocus?: boolean;
+}) {
+  return (
+    <View style={styles.field}>
+      <Text style={styles.label}>username</Text>
+      <TextInput
+        placeholder="your_handle"
+        placeholderTextColor={C.fgFaint}
+        autoCapitalize="none"
+        autoComplete="off"
+        autoCorrect={false}
+        value={username}
+        onChangeText={(v) =>
+          setUsername(v.toLowerCase().replace(/[^a-z0-9_]/g, ""))
+        }
+        maxLength={30}
+        style={styles.inputBoxed}
+        autoFocus={autoFocus}
+      />
+      <Text
+        style={{
+          fontSize: 11,
+          color: C.fgMuted,
+          letterSpacing: 0.2,
+          marginTop: 6,
+        }}
+      >
+        3–30 chars, lowercase letters, numbers, underscores.
+      </Text>
+    </View>
+  );
+}
 
-  // Error
-  error: {
-    fontSize: 13,
-    color: "#c44",
-    marginBottom: 4,
-  },
-
-  // Actions
-  actions: { marginTop: 12, gap: 16 },
-  cta: {
-    backgroundColor: C.terra,
-    borderRadius: 999,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-  ctaPressed: { backgroundColor: C.terraPressed },
-
-  // Google button
-  googleBtn: {
-    borderRadius: 999,
-    paddingVertical: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: C.borderLight,
-    backgroundColor: C.cream,
-  },
-  googleBtnPressed: { backgroundColor: C.creamDark },
-  googleBtnText: {
-    color: C.fg,
-    fontSize: 14,
-    fontWeight: "500",
-    letterSpacing: 0.3,
-  },
-
-  // Divider
-  dividerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  dividerLine: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: C.borderLight,
-  },
-  dividerText: {
-    fontSize: 12,
-    color: C.fgFaint,
-    letterSpacing: 0.3,
-  },
-  ctaDisabled: { opacity: 0.5 },
-  ctaText: {
-    color: C.cream,
-    fontSize: 14,
-    fontWeight: "500",
-    letterSpacing: 0.3,
-  },
-
-  // Signup hint
-  signupRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-  },
-  signupHint: {
-    fontSize: 12,
-    color: C.fgMuted,
-    letterSpacing: 0.3,
-  },
-});
+function FooterLink({
+  prompt,
+  cta,
+  onPress,
+}: {
+  prompt: string;
+  cta: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} style={styles.footerLinkCenter} hitSlop={8}>
+      <Text style={styles.footerHint}>
+        {prompt} <Text style={styles.footerHintAccent}>{cta}</Text>
+      </Text>
+    </Pressable>
+  );
+}

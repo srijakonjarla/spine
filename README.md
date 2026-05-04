@@ -8,10 +8,10 @@ Monorepo with two apps and a shared package:
 
 ```
 apps/
-  web/       Next.js web app
-  mobile/    Expo / React Native iOS app
+  web/        Next.js web app
+  mobile/     Expo / React Native iOS app
 packages/
-  shared/    Shared types and constants
+  shared/     Shared types, constants, dates utilities, and Supabase queries
 ```
 
 ## Tech Stack
@@ -25,8 +25,18 @@ packages/
 
 ### Mobile (`apps/mobile`)
 - **Framework:** Expo (SDK 54) + Expo Router
-- **Auth:** Supabase via `expo-secure-store`
+- **Auth:** Supabase + native Google Sign-In via `@react-native-google-signin/google-signin`
+- **Storage:** `expo-secure-store` for session persistence
 - **Language:** TypeScript
+
+## Architecture
+
+Both clients talk to the same Postgres database directly. **Row-Level Security policies are the enforcement boundary** — there is no separate backend service.
+
+- **Shared queries (`packages/shared/src/queries/`)** are the single source of truth for read/write logic. Each function takes a `SupabaseClient` and runs against the user's session JWT; RLS scopes results to the current user.
+- **Mobile** (`apps/mobile/lib/`) imports the shared functions, pre-bound to its native Supabase client.
+- **Web** (`apps/web/app/lib/`) imports the same functions from React components.
+- **Server API routes** (`apps/web/app/api/`) are reserved for things that genuinely need server-side compute — Hardcover lookups with secret tokens, the Goodreads CSV import that runs after the response, library enrichment, etc. The pure-CRUD routes (home, goals, habits) were removed in favor of direct shared-query calls.
 
 ## Features
 
@@ -35,14 +45,14 @@ packages/
 - **Monthly spread** — Color-coded reading calendar (sage = streak day, terra = finished, plum = today, gold = quote)
 - **Habit tracker** — Year grid of reading days with inline journal entries
 - **Quote collection** — All saved quotes across books, per year
-- **Reading goals** — Annual auto-tracked goal + custom goals with manually assigned books
+- **Reading goals** — Annual yearly goal + custom goals with manually pinned books; created explicitly via the goals page
 - **Series tracker** — Track progress through multi-book series; auto-populated from Hardcover when books are added or marked read
 - **Recommendations** — Log books recommended to/by you with context
 - **Custom lists** — Flexible lists (anticipated reads, book club, favorites, etc.)
 - **Stats** — Year-in-review with genre breakdown, mood cloud, pace chart, top books
 - **Goodreads import** — Import reading history from a Goodreads CSV export; enriched with Hardcover metadata (cover, ISBN, page count, genres) via batched ISBN lookup
 - **Library enrichment** — Backfill cover art, ISBNs, page counts, and genres for existing books from Hardcover
-- **Dark mode** — Warm lamplight dark theme
+- **Dark mode** — Warm lamplight dark theme (web)
 
 ## Routes (Web)
 
@@ -67,21 +77,37 @@ packages/
 /login                     Auth (email, password, magic link, signup)
 ```
 
-### Screens (Mobile)
+## Screens (Mobile)
 
 ```
-/login                     Auth (email + password)
-/library                   Book library
+/login                     Auth — landing, sign in, sign up, forgot, choose username
+/(tabs)/                   Bottom-tab shell with six tabs:
+  index                      today (home dashboard)
+  library                    library (every book)
+  calendar                   month spread
+  lists                      tbr & series
+  goals                      reading goals
+  you                        year-in-review + sign out
+/terms                     Terms of service
+/privacy                   Privacy policy
 ```
 
-### Admin API routes
+## Server API Routes (`apps/web/app/api`)
 
-| Route                              | Description                                                                   |
+Only routes that need server-side compute remain. CRUD-only routes (home, goals, habits) were removed; their logic now lives in `packages/shared/src/queries/` and is called directly from both clients.
+
+| Route                              | Why it's server-side                                                          |
 | ---------------------------------- | ----------------------------------------------------------------------------- |
-| `POST /api/admin/import-goodreads` | Start a server-side Goodreads CSV import (runs via `after()`, navigable away) |
-| `GET  /api/admin/import-goodreads` | Poll import progress from `user_metadata`                                     |
-| `POST /api/admin/backfill`         | Enrich all library books with Hardcover metadata (cover, ISBN, pages, genres) |
-| `GET  /api/admin/backfill`         | Count books still missing cover/page count/ISBN                               |
+| `/api/books/[id]` (PATCH)          | Triggers auto-log + series sync + catalog merge as side effects               |
+| `/api/catalog`                     | Calls Hardcover with secret bearer token                                      |
+| `/api/items`, `/api/lists`         | Custom list management                                                        |
+| `/api/quotes`, `/api/reads`        | Quote + re-read CRUD with ordering logic                                      |
+| `/api/recommendations`             | Recommendation CRUD                                                           |
+| `/api/series`                      | Series tracker (transactional updates)                                        |
+| `/api/nav`                         | Navigation data (year list, current month)                                    |
+| `/api/invite`                      | Invite-code auth flow                                                         |
+| `/api/admin/import-goodreads`      | CSV import via `after()` so the user can navigate away                        |
+| `/api/admin/backfill`              | Bulk Hardcover enrichment of existing library                                 |
 
 ## Setup
 
@@ -95,7 +121,7 @@ npm install
 
 ### 2. Supabase
 
-Create a project at [supabase.com](https://supabase.com), then run `supabase/setup.sql` in the SQL editor to create all tables, policies, and functions.
+Create a project at [supabase.com](https://supabase.com), then run `supabase/setup.sql` in the SQL editor to create all tables, RLS policies, and functions.
 
 ### 3. Environment variables
 
@@ -103,9 +129,10 @@ Create a project at [supabase.com](https://supabase.com), then run `supabase/set
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your-anon-key
 HARDCOVER_API_TOKEN=your-hardcover-bearer-token   # required for book search & enrichment
 GOOGLE_BOOKS_API_KEY=your-google-books-api-key    # optional fallback if Hardcover misses
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key   # required for admin imports/backfill
 ```
 
 `HARDCOVER_API_TOKEN` is a personal Bearer token from [hardcover.app](https://hardcover.app). Without it, catalog search falls back to Google Books only and library enrichment is disabled.
@@ -115,7 +142,14 @@ GOOGLE_BOOKS_API_KEY=your-google-books-api-key    # optional fallback if Hardcov
 ```
 EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=xxx.apps.googleusercontent.com
+EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=yyy.apps.googleusercontent.com
 ```
+
+For Google Sign-In on mobile:
+1. Create OAuth clients in the [Google Cloud Console](https://console.cloud.google.com) — one **iOS** client (bundle id `com.spine.app`) and one **Web** client.
+2. Add both client IDs to your Supabase project's **Auth → Providers → Google**, and enable **Skip nonce checks** (Google's iOS SDK injects a nonce that gotrue can't predict).
+3. Set the iOS client's reversed scheme as `iosUrlScheme` in `apps/mobile/app.json` under the `@react-native-google-signin/google-signin` plugin entry.
 
 ### 4. Run
 
@@ -123,8 +157,10 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 # Web
 npm run web
 
-# Mobile (iOS)
+# Mobile (iOS — requires Xcode + an iOS Simulator runtime)
 npm run mobile
+# or for a fresh native build:
+cd apps/mobile && npx expo run:ios
 ```
 
 ## Database Schema
@@ -136,7 +172,7 @@ npm run mobile
 | `thoughts`        | Reflection notes per book                                               |
 | `book_reads`      | Re-read history per book                                                |
 | `quotes`          | Saved quotes linked to books                                            |
-| `reading_log`     | Daily reading habit log with notes                                      |
+| `reading_log`     | Daily reading habit log with notes and pages-read                       |
 | `reading_goals`   | Annual goals (auto-tracked or custom)                                   |
 | `goal_books`      | Books manually assigned to custom goals                                 |
 | `lists`           | Custom curated lists                                                    |
@@ -144,6 +180,9 @@ npm run mobile
 | `series`          | Book series tracker                                                     |
 | `series_books`    | Books within a series with read status                                  |
 | `recommendations` | Books recommended to/by the user                                        |
+| `profiles`        | Display name, username, avatar per user                                 |
+
+All user-scoped tables are protected by Row-Level Security policies that match `auth.uid() = user_id` (or transitively via parent tables for `thoughts`, `book_reads`, `list_items`).
 
 ## Color Palette
 

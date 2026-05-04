@@ -13,5 +13,5 @@ export default function Index() {
     );
   }
 
-  return <Redirect href={session ? "/library" : "/login"} />;
+  return <Redirect href={session ? "/(tabs)" : "/login"} />;
 }

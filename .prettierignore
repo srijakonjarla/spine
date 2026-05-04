@@ -1,0 +1,44 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build output
+.next
+**/.next
+dist
+**/dist
+build
+**/build
+.turbo
+**/.turbo
+.expo
+**/.expo
+
+# Generated native projects (Expo prebuild)
+apps/mobile/ios
+apps/mobile/android
+
+# TypeScript build cache
+**/*.tsbuildinfo
+
+# Lockfiles
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Logs and runtime
+*.log
+*.pid
+
+# Local env (never format secrets)
+.env
+.env.*
+
+# IDE state
+.claude
+.vscode
+.idea
+
+# Generated assets
+public/sw.js
+public/workbox-*.js

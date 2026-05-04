@@ -349,27 +349,36 @@ export default function GoalPage() {
   const [setupName, setSetupName] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Initialize local goals from context; auto-create yearly goal if needed
+  // Mirror context goals into local state. Yearly auto goal is created
+  // explicitly by the user via the empty-state CTA below — no lazy insert.
   useEffect(() => {
     if (yearLoading) return;
+    setLocalGoals(contextGoals);
+    setLoading(false);
+  }, [yearLoading, contextGoals]);
 
-    async function init() {
-      let resolved = contextGoals;
-      if (year === CURRENT_YEAR && !contextGoals.some((g) => g.isAuto)) {
-        try {
-          const created = await setGoal(year, 12, `${year} reading goal`, true);
-          resolved = [created, ...contextGoals];
-          setGoals(resolved);
-        } catch {
-          toast("Something went wrong. Please try again.");
-        }
-      }
-      setLocalGoals(resolved);
-      setLoading(false);
+  const [yearlyTarget, setYearlyTarget] = useState("");
+  const [creatingYearly, setCreatingYearly] = useState(false);
+
+  const handleCreateYearly = async (
+    e: React.SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) => {
+    e.preventDefault();
+    const target = Number(yearlyTarget);
+    if (!target || target < 1) return;
+    setCreatingYearly(true);
+    try {
+      const created = await setGoal(year, target, `${year} reading goal`, true);
+      const next = [created, ...goals];
+      setLocalGoals(next);
+      setGoals(next);
+      setYearlyTarget("");
+    } catch {
+      toast("Couldn't set the goal. Please try again.");
+    } finally {
+      setCreatingYearly(false);
     }
-
-    init();
-  }, [yearLoading, contextGoals, year, setGoals]);
+  };
 
   const finishedCount = finishedBooks.length;
 
@@ -452,12 +461,48 @@ export default function GoalPage() {
 
         <div className="space-y-4 mb-8">
           {/* Auto yearly goal */}
-          {autoGoal && (
+          {autoGoal ? (
             <AutoGoalCard
               goal={autoGoal}
               finishedCount={finishedCount}
               onUpdate={handleUpdate}
             />
+          ) : (
+            year === CURRENT_YEAR && (
+              <form
+                onSubmit={handleCreateYearly}
+                className="border border-stone-200 rounded-xl p-6 space-y-4"
+              >
+                <p className="section-label">set a year goal</p>
+                <p className="text-sm text-stone-500">
+                  pick a number of books to read this year. you can edit it any
+                  time.
+                </p>
+                <div>
+                  <label className="text-xs text-stone-400 block mb-1">
+                    target books
+                  </label>
+                  <input
+                    type="number"
+                    value={yearlyTarget}
+                    onChange={(e) => setYearlyTarget(e.target.value)}
+                    placeholder="12"
+                    min={1}
+                    autoFocus
+                    className="w-full bg-transparent border-b border-stone-200 pb-1 text-stone-900 text-sm focus:outline-none focus:border-stone-500 transition-colors"
+                  />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="submit"
+                    disabled={!yearlyTarget || creatingYearly}
+                    className="text-sm text-white bg-stone-900 px-5 py-2 rounded-full hover:bg-stone-700 transition-colors disabled:opacity-50"
+                  >
+                    {creatingYearly ? "saving..." : "set goal"}
+                  </button>
+                </div>
+              </form>
+            )
           )}
 
           {/* Custom goals */}
