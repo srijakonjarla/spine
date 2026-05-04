@@ -2,32 +2,21 @@
   "name": "spine",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint",
-    "lint:fix": "eslint --fix",
-    "format": "prettier --write ."
-  },
-  "dependencies": {
-    "@phosphor-icons/react": "^2.1.10",
-    "@supabase/ssr": "^0.10.2",
-    "@supabase/supabase-js": "^2.99.2",
-    "jose": "^6.2.2",
-    "next": "^16.2.4",
-    "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "web": "npm --workspace apps/web run dev",
+    "mobile": "npm --workspace apps/mobile run start",
+    "mobile:ios": "npm --workspace apps/mobile run ios",
+    "web:build": "npm --workspace apps/web run build",
+    "lint": "npm --workspace apps/mobile run lint",
+    "lint:fix": "npm --workspace apps/mobile run lint:fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.1.7",
-    "prettier": "^3.8.3",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "prettier": "^3.8.3"
   }
 }
