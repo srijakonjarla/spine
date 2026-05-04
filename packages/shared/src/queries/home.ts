@@ -1,12 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { localDateStr } from "../dates";
 import type { ReadingLogEntry } from "../types";
-import type {
-  HomeData,
-  HomeFinished,
-  HomeGoal,
-  HomeReading,
-} from "./types";
+import type { HomeData, HomeFinished, HomeGoal, HomeReading } from "./types";
 
 interface UserBookRow {
   id: string;
@@ -17,14 +12,12 @@ interface UserBookRow {
   date_started: string | null;
   date_finished: string | null;
   rating: number;
-  catalog_books:
-    | {
-        title: string;
-        author: string;
-        cover_url: string | null;
-        page_count: number | null;
-      }
-    | null;
+  catalog_books: {
+    title: string;
+    author: string;
+    cover_url: string | null;
+    page_count: number | null;
+  } | null;
 }
 
 interface CountRow {

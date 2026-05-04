@@ -1,5 +1,3 @@
-import type { ReactNode } from "react";
-
 interface DaysStripProps {
   calendarDays: { date: Date; dateStr: string }[];
   thoughtsByDay: Record<string, number>;
@@ -12,7 +10,12 @@ const LEGEND = [
   { bg: "var(--terra)", label: "finished" },
 ];
 
-/** Horizontal strip of day chips above the timeline entries. */
+/**
+ * Horizontal strip showing every day the user has spent with a book — including
+ * the days they didn't log anything. Days with notes get the sage chip style;
+ * the finished day gets terra. Empty days render as the muted gap chip so the
+ * full continuous span is visible. Overflow scrolls horizontally.
+ */
 export default function DaysStrip({
   calendarDays,
   thoughtsByDay,
@@ -21,96 +24,69 @@ export default function DaysStrip({
 }: DaysStripProps) {
   if (calendarDays.length === 0) return null;
 
-  // Walk the calendar, collapsing runs of empty days (3+) into a single gap chip.
-  const chips: ReactNode[] = [];
-  let i = 0;
-  while (i < calendarDays.length) {
-    const { date, dateStr } = calendarDays[i];
-    const count = thoughtsByDay[dateStr] || 0;
-    const pages = pagesByDay[dateStr] || 0;
-    const isFinish = dateStr === finishedDateStr;
-    const hasEntry = count > 0 || isFinish;
-
-    if (!hasEntry) {
-      let j = i;
-      while (
-        j < calendarDays.length &&
-        !(thoughtsByDay[calendarDays[j].dateStr] || 0) &&
-        calendarDays[j].dateStr !== finishedDateStr
-      ) {
-        j++;
-      }
-      const runLen = j - i;
-      if (runLen <= 2) {
-        for (let k = i; k < j; k++) {
-          const d = calendarDays[k];
-          chips.push(
-            <div
-              key={d.dateStr}
-              className="timeline-day-gap"
-              title={d.date.toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-              })}
-            >
-              {d.date.getDate()}
-            </div>,
-          );
-        }
-      } else {
-        const mid = calendarDays[i + Math.floor(runLen / 2)];
-        chips.push(
-          <div
-            key={`gap-${mid.dateStr}`}
-            className="timeline-day-gap"
-            title={`${runLen} days with no entries`}
-          >
-            {mid.date.getDate()}
-          </div>,
-        );
-      }
-      i = j;
-      continue;
-    }
-
-    let bg = "var(--bg-sage-25)";
-    if (isFinish)
-      bg = "linear-gradient(135deg, var(--terra), rgba(201,123,90,0.85))";
-    else if (count >= 3) bg = "var(--bg-sage-50)";
-    const color = isFinish ? "white" : "var(--fg)";
-    const isStartOfMonth = date.getDate() === 1;
-    const monthLabel = isStartOfMonth
-      ? date.toLocaleDateString("en-US", { month: "short" })
-      : null;
-
-    chips.push(
-      <div
-        key={dateStr}
-        title={`${date.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        })}${count ? ` · ${count} note${count !== 1 ? "s" : ""}` : ""}`}
-        className="timeline-day"
-        style={{ background: bg, color }}
-      >
-        {monthLabel && <span className="timeline-day-pages">{monthLabel}</span>}
-        <span className="timeline-day-num">{date.getDate()}</span>
-        {isFinish && (
-          <span className="timeline-day-pages text-white/90">
-            {pages > 0 ? `${pages}p ✓` : "✓"}
-          </span>
-        )}
-      </div>,
-    );
-    i++;
-  }
-
   return (
     <div className="mb-7">
       <p className="font-hand text-note text-fg-muted mb-2.5">
         days you spent with this book
       </p>
-      <div className="flex gap-[5px] flex-wrap items-center">{chips}</div>
+      <div
+        className="flex gap-[5px] items-center overflow-x-auto pb-1 -mx-1 px-1 scroll-smooth snap-x"
+        style={{ scrollbarWidth: "thin" }}
+      >
+        {calendarDays.map(({ date, dateStr }) => {
+          const count = thoughtsByDay[dateStr] || 0;
+          const pages = pagesByDay[dateStr] || 0;
+          const isFinish = dateStr === finishedDateStr;
+          const hasEntry = count > 0 || isFinish;
+          const isStartOfMonth = date.getDate() === 1;
+          const monthLabel = isStartOfMonth
+            ? date.toLocaleDateString("en-US", { month: "short" })
+            : null;
+
+          if (!hasEntry) {
+            return (
+              <div
+                key={dateStr}
+                className="timeline-day-gap shrink-0 snap-start"
+                title={date.toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                })}
+              >
+                {date.getDate()}
+              </div>
+            );
+          }
+
+          let bg = "var(--bg-sage-25)";
+          if (isFinish)
+            bg = "linear-gradient(135deg, var(--terra), rgba(201,123,90,0.85))";
+          else if (count >= 3) bg = "var(--bg-sage-50)";
+          const color = isFinish ? "white" : "var(--fg)";
+
+          return (
+            <div
+              key={dateStr}
+              title={`${date.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              })}${count ? ` · ${count} note${count !== 1 ? "s" : ""}` : ""}`}
+              className="timeline-day shrink-0 snap-start"
+              style={{ background: bg, color }}
+            >
+              {monthLabel && (
+                <span className="timeline-day-pages">{monthLabel}</span>
+              )}
+              <span className="timeline-day-num">{date.getDate()}</span>
+              {isFinish && (
+                <span className="timeline-day-pages text-white/90">
+                  {pages > 0 ? `${pages}p ✓` : "✓"}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
       <div className="flex gap-4 mt-2.5 flex-wrap">
         {LEGEND.map(({ bg, label }) => (
           <span

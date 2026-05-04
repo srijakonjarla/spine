@@ -8,15 +8,12 @@ import {
 
 export default function PrivacyScreen() {
   return (
-    <LegalPage
-      title="privacy policy"
-      lastUpdated="last updated April 22, 2026"
-    >
+    <LegalPage title="privacy policy" lastUpdated="last updated April 22, 2026">
       <Section title="the short version">
         <P>
           spine is a private reading journal. we collect what you need to sign
-          in and what you choose to log about your reading — nothing more. we
-          do not sell your data, and we do not show you ads.
+          in and what you choose to log about your reading — nothing more. we do
+          not sell your data, and we do not show you ads.
         </P>
       </Section>
 
@@ -46,12 +43,12 @@ export default function PrivacyScreen() {
       <Section title="how we use it">
         <P>
           we use your data to run spine — to show you your library, your
-          calendar, your streaks, and your year in review. that is the extent
-          of it.
+          calendar, your streaks, and your year in review. that is the extent of
+          it.
         </P>
         <P>
-          we do not use your reading journal to train models, build profiles,
-          or share insights with third parties.
+          we do not use your reading journal to train models, build profiles, or
+          share insights with third parties.
         </P>
       </Section>
 
@@ -67,8 +64,8 @@ export default function PrivacyScreen() {
           <Em>Hardcover</Em> — book metadata (no personal data sent).
         </Bullet>
         <P>
-          each operates under its own privacy policy. we do not share your
-          data with anyone else.
+          each operates under its own privacy policy. we do not share your data
+          with anyone else.
         </P>
       </Section>
 
@@ -91,9 +88,9 @@ export default function PrivacyScreen() {
 
       <Section title="changes to this policy" last>
         <P>
-          if we change how spine handles your data, we will update this page
-          and adjust the date at the top. material changes will also be
-          surfaced to signed-in readers.
+          if we change how spine handles your data, we will update this page and
+          adjust the date at the top. material changes will also be surfaced to
+          signed-in readers.
         </P>
       </Section>
     </LegalPage>

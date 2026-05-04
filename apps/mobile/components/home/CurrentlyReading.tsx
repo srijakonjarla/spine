@@ -16,7 +16,11 @@ function daysAgo(iso: string): number | null {
   if (!y || !m || !d) return null;
   const start = new Date(y, m - 1, d).getTime();
   const today = new Date();
-  const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const todayMid = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  ).getTime();
   return Math.max(0, Math.round((todayMid - start) / 86400000));
 }
 
@@ -44,9 +48,7 @@ export function CurrentlyReading({ book }: { book: ReadingBook }) {
           <Text style={s.bookTitle} numberOfLines={2}>
             {book.title}
           </Text>
-          {book.author ? (
-            <Text style={s.bookAuthor}>{book.author}</Text>
-          ) : null}
+          {book.author ? <Text style={s.bookAuthor}>{book.author}</Text> : null}
         </View>
 
         <View style={s.bookMeta}>

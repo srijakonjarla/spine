@@ -17,16 +17,15 @@ import { FireIcon, LeafIcon, StarIcon } from "@phosphor-icons/react";
 import { MoodChip } from "@/components/MoodChip";
 import { BookCoverThumb } from "@/components/BookCover";
 import { ProgressBar } from "@/components/ProgressBar";
-import {
-  localDateStr,
-  formatDate,
-  currentStreak,
-  streakRuns,
-  type StreakRun,
-} from "@/lib/dates";
+import { formatDate, currentStreak, streakRuns } from "@/lib/dates";
 import { MONTH_ABBRS } from "@/lib/constants";
 import { CoverPanel } from "@/components/login/CoverPanel";
 import { LoginForm } from "@/components/login/LoginForm";
+import {
+  GoodreadsImportPrompt,
+  HomeSkeleton,
+  StreakBars,
+} from "@/components/home";
 
 const CURRENT_YEAR = new Date().getFullYear();
 const CURRENT_MONTH_ABBR = MONTH_ABBRS[new Date().getMonth()];
@@ -40,43 +39,6 @@ function greeting() {
 
 function formatLogDate(iso: string) {
   return formatDate(iso, { month: "long", day: "numeric", year: "numeric" });
-}
-
-function StreakBars({ runs }: { runs: StreakRun[] }) {
-  if (runs.length === 0) {
-    return (
-      <div className="h-8 flex items-end text-label text-fg-faint">
-        no reading days yet
-      </div>
-    );
-  }
-  const today = localDateStr(new Date());
-  const yesterday = (() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    return localDateStr(d);
-  })();
-  const max = Math.max(...runs.map((r) => r.length));
-  return (
-    <div className="flex items-end gap-[3px] h-8">
-      {runs.map((r) => {
-        const isCurrent = r.endDate === today || r.endDate === yesterday;
-        const heightPct = Math.max(8, Math.round((r.length / max) * 100));
-        const label =
-          r.length === 1
-            ? `1 day · ${r.startDate}`
-            : `${r.length} days · ${r.startDate} → ${r.endDate}`;
-        return (
-          <div
-            key={r.startDate}
-            title={label}
-            style={{ height: `${heightPct}%` }}
-            className={`rounded-sm flex-1 ${isCurrent ? "bg-sage" : "bg-[var(--bg-sage-60)]"}`}
-          />
-        );
-      })}
-    </div>
-  );
 }
 
 export default function Home() {
@@ -173,62 +135,14 @@ export default function Home() {
     );
   }
 
-  if (loading)
-    return (
-      <div className="page">
-        <div className="page-content animate-pulse">
-          <div className="h-5 w-36 bg-hover rounded mb-1.5" />
-          <div className="h-3.5 w-48 bg-hover rounded mb-8" />
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-hover rounded-xl" />
-            ))}
-          </div>
-          <div className="flex gap-3 mb-8">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="w-14 aspect-[2/3] bg-hover rounded" />
-            ))}
-          </div>
-          <div className="space-y-2.5">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-20 bg-hover rounded-xl" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+  if (loading) return <HomeSkeleton />;
 
   return (
     <div className="page">
       <div className="page-content">
         {/* Import from Goodreads modal — one-time for new users */}
         {showImportModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-surface border border-line rounded-2xl shadow-lg max-w-sm w-full mx-4 p-6 space-y-4">
-              <h2 className="font-serif text-lg font-semibold text-fg-heading">
-                welcome to spine
-              </h2>
-              <p className="text-sm text-fg-muted leading-relaxed">
-                if you have a goodreads library, you can import all your books,
-                ratings, and shelves in one go.
-              </p>
-              <div className="flex items-center gap-3 pt-1">
-                <Link
-                  href="/profile"
-                  onClick={dismissImportModal}
-                  className="btn-primary text-caption"
-                >
-                  import from goodreads
-                </Link>
-                <button
-                  onClick={dismissImportModal}
-                  className="text-caption text-fg-faint hover:text-fg-muted transition-colors"
-                >
-                  skip for now
-                </button>
-              </div>
-            </div>
-          </div>
+          <GoodreadsImportPrompt onDismiss={dismissImportModal} />
         )}
 
         {/* Greeting */}

@@ -36,7 +36,11 @@ export function BookIcon({ size = 22, color, weight = "regular" }: IconProps) {
   );
 }
 
-export function CalendarIcon({ size = 22, color, weight = "regular" }: IconProps) {
+export function CalendarIcon({
+  size = 22,
+  color,
+  weight = "regular",
+}: IconProps) {
   const w = weight === "bold" ? 2 : 1.5;
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" {...stroke(color, w)}>
@@ -62,7 +66,11 @@ export function ListIcon({ size = 22, color, weight = "regular" }: IconProps) {
   );
 }
 
-export function PersonIcon({ size = 22, color, weight = "regular" }: IconProps) {
+export function PersonIcon({
+  size = 22,
+  color,
+  weight = "regular",
+}: IconProps) {
   const w = weight === "bold" ? 2 : 1.5;
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" {...stroke(color, w)}>
@@ -72,7 +80,11 @@ export function PersonIcon({ size = 22, color, weight = "regular" }: IconProps) 
   );
 }
 
-export function TargetIcon({ size = 22, color, weight = "regular" }: IconProps) {
+export function TargetIcon({
+  size = 22,
+  color,
+  weight = "regular",
+}: IconProps) {
   const w = weight === "bold" ? 2 : 1.5;
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" {...stroke(color, w)}>

@@ -22,11 +22,7 @@ export function LegalPage({
         contentContainerStyle={s.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Pressable
-          onPress={() => router.back()}
-          style={s.backBtn}
-          hitSlop={8}
-        >
+        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
           <Text style={s.backText}>← back</Text>
         </Pressable>
 
@@ -44,9 +40,7 @@ export function LegalPage({
             }
             hitSlop={8}
           >
-            <Text style={s.footerLink}>
-              questions? hello@spinereads.com
-            </Text>
+            <Text style={s.footerLink}>questions? hello@spinereads.com</Text>
           </Pressable>
         </View>
       </ScrollView>

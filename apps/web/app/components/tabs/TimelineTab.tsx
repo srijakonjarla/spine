@@ -68,7 +68,7 @@ export default function TimelineTab() {
     if (!start || !end) return [];
     const days: { date: Date; dateStr: string }[] = [];
     const d = new Date(start);
-    while (d <= end && days.length < 60) {
+    while (d <= end) {
       days.push({ date: new Date(d), dateStr: localDateStr(d) });
       d.setDate(d.getDate() + 1);
     }

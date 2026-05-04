@@ -1,10 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TopBar, homeStyles as s } from "@/components/home";
 import { useAuth } from "@/lib/auth";
@@ -15,8 +10,9 @@ const SAGE = "#7b9e87";
 
 function GoalCard({ goal }: { goal: GoalListItem }) {
   const current = goal.isAuto ? goal.yearFinished : goal.pinnedFinished;
-  const total = goal.target || (goal.pinnedBookIds.length || 0);
-  const pct = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
+  const total = goal.target || goal.pinnedBookIds.length || 0;
+  const pct =
+    total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
   const accent = goal.isAuto ? C.terraInk : SAGE;
   const caveat =
     pct >= 100
@@ -36,8 +32,7 @@ function GoalCard({ goal }: { goal: GoalListItem }) {
         {goal.year} {goal.isAuto ? "auto goal" : goal.name.toLowerCase()}
       </Text>
       <Text style={s.statBig}>
-        {current}{" "}
-        <Text style={s.statBigSecondary}>/ {total || "—"}</Text>
+        {current} <Text style={s.statBigSecondary}>/ {total || "—"}</Text>
       </Text>
       <Text style={s.statSub}>
         {goal.isAuto ? "books finished this year" : "pinned books finished"}
@@ -70,7 +65,8 @@ export default function GoalsTab() {
         if (!cancelled) setGoals(g);
       })
       .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : "load failed");
+        if (!cancelled)
+          setError(e instanceof Error ? e.message : "load failed");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

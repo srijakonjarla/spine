@@ -17,6 +17,7 @@ packages/
 ## Tech Stack
 
 ### Web (`apps/web`)
+
 - **Framework:** Next.js 16 (App Router)
 - **Database:** Supabase (Postgres + Auth + RLS)
 - **Styling:** Tailwind CSS v4
@@ -24,6 +25,7 @@ packages/
 - **Book metadata:** Hardcover API (primary) + Google Books API (fallback)
 
 ### Mobile (`apps/mobile`)
+
 - **Framework:** Expo (SDK 54) + Expo Router
 - **Auth:** Supabase + native Google Sign-In via `@react-native-google-signin/google-signin`
 - **Storage:** `expo-secure-store` for session persistence
@@ -96,18 +98,18 @@ Both clients talk to the same Postgres database directly. **Row-Level Security p
 
 Only routes that need server-side compute remain. CRUD-only routes (home, goals, habits) were removed; their logic now lives in `packages/shared/src/queries/` and is called directly from both clients.
 
-| Route                              | Why it's server-side                                                          |
-| ---------------------------------- | ----------------------------------------------------------------------------- |
-| `/api/books/[id]` (PATCH)          | Triggers auto-log + series sync + catalog merge as side effects               |
-| `/api/catalog`                     | Calls Hardcover with secret bearer token                                      |
-| `/api/items`, `/api/lists`         | Custom list management                                                        |
-| `/api/quotes`, `/api/reads`        | Quote + re-read CRUD with ordering logic                                      |
-| `/api/recommendations`             | Recommendation CRUD                                                           |
-| `/api/series`                      | Series tracker (transactional updates)                                        |
-| `/api/nav`                         | Navigation data (year list, current month)                                    |
-| `/api/invite`                      | Invite-code auth flow                                                         |
-| `/api/admin/import-goodreads`      | CSV import via `after()` so the user can navigate away                        |
-| `/api/admin/backfill`              | Bulk Hardcover enrichment of existing library                                 |
+| Route                         | Why it's server-side                                            |
+| ----------------------------- | --------------------------------------------------------------- |
+| `/api/books/[id]` (PATCH)     | Triggers auto-log + series sync + catalog merge as side effects |
+| `/api/catalog`                | Calls Hardcover with secret bearer token                        |
+| `/api/items`, `/api/lists`    | Custom list management                                          |
+| `/api/quotes`, `/api/reads`   | Quote + re-read CRUD with ordering logic                        |
+| `/api/recommendations`        | Recommendation CRUD                                             |
+| `/api/series`                 | Series tracker (transactional updates)                          |
+| `/api/nav`                    | Navigation data (year list, current month)                      |
+| `/api/invite`                 | Invite-code auth flow                                           |
+| `/api/admin/import-goodreads` | CSV import via `after()` so the user can navigate away          |
+| `/api/admin/backfill`         | Bulk Hardcover enrichment of existing library                   |
 
 ## Setup
 
@@ -147,6 +149,7 @@ EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=yyy.apps.googleusercontent.com
 ```
 
 For Google Sign-In on mobile:
+
 1. Create OAuth clients in the [Google Cloud Console](https://console.cloud.google.com) — one **iOS** client (bundle id `com.spine.app`) and one **Web** client.
 2. Add both client IDs to your Supabase project's **Auth → Providers → Google**, and enable **Skip nonce checks** (Google's iOS SDK injects a nonce that gotrue can't predict).
 3. Set the iOS client's reversed scheme as `iosUrlScheme` in `apps/mobile/app.json` under the `@react-native-google-signin/google-signin` plugin entry.
@@ -165,22 +168,22 @@ cd apps/mobile && npx expo run:ios
 
 ## Database Schema
 
-| Table             | Description                                                             |
-| ----------------- | ----------------------------------------------------------------------- |
-| `catalog_books`   | Shared book catalog (title, author, cover, ISBN, genres, page count)    |
-| `user_books`      | Per-user book entries with status, rating, feeling, dates, mood tags    |
-| `thoughts`        | Reflection notes per book                                               |
-| `book_reads`      | Re-read history per book                                                |
-| `quotes`          | Saved quotes linked to books                                            |
-| `reading_log`     | Daily reading habit log with notes and pages-read                       |
-| `reading_goals`   | Annual goals (auto-tracked or custom)                                   |
-| `goal_books`      | Books manually assigned to custom goals                                 |
-| `lists`           | Custom curated lists                                                    |
-| `list_items`      | Items within a list                                                     |
-| `series`          | Book series tracker                                                     |
-| `series_books`    | Books within a series with read status                                  |
-| `recommendations` | Books recommended to/by the user                                        |
-| `profiles`        | Display name, username, avatar per user                                 |
+| Table             | Description                                                          |
+| ----------------- | -------------------------------------------------------------------- |
+| `catalog_books`   | Shared book catalog (title, author, cover, ISBN, genres, page count) |
+| `user_books`      | Per-user book entries with status, rating, feeling, dates, mood tags |
+| `thoughts`        | Reflection notes per book                                            |
+| `book_reads`      | Re-read history per book                                             |
+| `quotes`          | Saved quotes linked to books                                         |
+| `reading_log`     | Daily reading habit log with notes and pages-read                    |
+| `reading_goals`   | Annual goals (auto-tracked or custom)                                |
+| `goal_books`      | Books manually assigned to custom goals                              |
+| `lists`           | Custom curated lists                                                 |
+| `list_items`      | Items within a list                                                  |
+| `series`          | Book series tracker                                                  |
+| `series_books`    | Books within a series with read status                               |
+| `recommendations` | Books recommended to/by the user                                     |
+| `profiles`        | Display name, username, avatar per user                              |
 
 All user-scoped tables are protected by Row-Level Security policies that match `auth.uid() = user_id` (or transitively via parent tables for `thoughts`, `book_reads`, `list_items`).
 

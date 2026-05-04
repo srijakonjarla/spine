@@ -1,11 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { currentStreak, localDateStr, streakRuns } from "@spine/shared";
 import {
@@ -32,8 +26,18 @@ import { C } from "@/components/login/tokens";
 const CURRENT_YEAR = new Date().getFullYear();
 
 const MONTH_ABBRS = [
-  "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
-  "JUL", "AUG", "SEP", "OCT", "NOV", "DEC",
+  "JAN",
+  "FEB",
+  "MAR",
+  "APR",
+  "MAY",
+  "JUN",
+  "JUL",
+  "AUG",
+  "SEP",
+  "OCT",
+  "NOV",
+  "DEC",
 ];
 
 function formatEntryDate(iso: string): string {
@@ -42,10 +46,15 @@ function formatEntryDate(iso: string): string {
   return `READING · ${MONTH_ABBRS[m - 1]} ${d}`;
 }
 
-function firstNameFromUser(user: {
-  email?: string;
-  user_metadata?: { name?: string; full_name?: string };
-} | null | undefined): string {
+function firstNameFromUser(
+  user:
+    | {
+        email?: string;
+        user_metadata?: { name?: string; full_name?: string };
+      }
+    | null
+    | undefined,
+): string {
   if (!user) return "reader";
   const meta = user.user_metadata;
   const full = meta?.name ?? meta?.full_name;
@@ -94,7 +103,8 @@ export default function Home() {
         if (!cancelled) setData(d);
       })
       .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : "load failed");
+        if (!cancelled)
+          setError(e instanceof Error ? e.message : "load failed");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -289,7 +299,8 @@ export default function Home() {
                 }}
               >
                 <Text style={s.sectionHand}>
-                  nothing on the nightstand yet — pick up a book to start logging.
+                  nothing on the nightstand yet — pick up a book to start
+                  logging.
                 </Text>
               </View>
             )}

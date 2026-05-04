@@ -47,7 +47,9 @@ export function StatCardsRow({
   year: number;
 }) {
   const goalPct =
-    goalTarget > 0 ? Math.min(100, Math.round((goalCurrent / goalTarget) * 100)) : 0;
+    goalTarget > 0
+      ? Math.min(100, Math.round((goalCurrent / goalTarget) * 100))
+      : 0;
 
   return (
     <View style={s.statRow}>
@@ -63,8 +65,7 @@ export function StatCardsRow({
           <View style={[s.statTopBorder, { backgroundColor: C.terraInk }]} />
           <Text style={s.statLabel}>{year} GOAL</Text>
           <Text style={s.statBig}>
-            {goalCurrent}{" "}
-            <Text style={s.statBigSecondary}>/ {goalTarget}</Text>
+            {goalCurrent} <Text style={s.statBigSecondary}>/ {goalTarget}</Text>
           </Text>
           <Text style={s.statSub}>books finished</Text>
           <View style={[s.progressBar, { marginTop: 10 }]}>
@@ -88,9 +89,7 @@ export function StatCardsRow({
         >
           <View style={[s.statTopBorder, { backgroundColor: C.terraInk }]} />
           <Text style={s.statLabel}>{year} GOAL</Text>
-          <Text
-            style={[s.statBig, { fontSize: 20, lineHeight: 24 }]}
-          >
+          <Text style={[s.statBig, { fontSize: 20, lineHeight: 24 }]}>
             set a goal
           </Text>
           <Text style={[s.statSub, { marginTop: 6 }]}>

@@ -14,8 +14,8 @@
     "@phosphor-icons/react": "^2.1.10",
     "@spine/shared": "*",
     "@supabase/ssr": "^0.10.2",
-    "jose": "^6.2.2",
     "@supabase/supabase-js": "^2.99.2",
+    "jose": "^6.2.2",
     "next": "^16.2.4",
     "react": "19.2.3",
     "react-dom": "19.2.3"
@@ -26,7 +26,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.1.7",
+    "eslint-config-next": "^16.2.4",
     "prettier": "^3.8.3",
     "tailwindcss": "^4",
     "typescript": "^5"

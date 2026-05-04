@@ -1,9 +1,4 @@
-import {
-  Bullet,
-  LegalPage,
-  P,
-  Section,
-} from "@/components/legal/LegalPage";
+import { Bullet, LegalPage, P, Section } from "@/components/legal/LegalPage";
 
 export default function TermsScreen() {
   return (
@@ -13,9 +8,9 @@ export default function TermsScreen() {
     >
       <Section title="the short version">
         <P>
-          spine is a personal reading journal. by creating an account, you
-          agree to these terms. they are short on purpose — use spine
-          thoughtfully, and we will do the same in running it.
+          spine is a personal reading journal. by creating an account, you agree
+          to these terms. they are short on purpose — use spine thoughtfully,
+          and we will do the same in running it.
         </P>
       </Section>
 
@@ -30,10 +25,10 @@ export default function TermsScreen() {
       <Section title="your content">
         <P>
           everything you write in spine — entries, reflections, quotes, notes,
-          moods, ratings — belongs to you. by storing it here, you grant spine
-          a limited license to hold and display it back to you as part of
-          running the service. we will never publish or share your journal
-          without your permission.
+          moods, ratings — belongs to you. by storing it here, you grant spine a
+          limited license to hold and display it back to you as part of running
+          the service. we will never publish or share your journal without your
+          permission.
         </P>
         <P>
           please only transcribe quotes and excerpts for your own personal
@@ -43,7 +38,9 @@ export default function TermsScreen() {
 
       <Section title="acceptable use">
         <P>please do not:</P>
-        <Bullet>attempt to access other readers&rsquo; accounts or data.</Bullet>
+        <Bullet>
+          attempt to access other readers&rsquo; accounts or data.
+        </Bullet>
         <Bullet>interfere with the service, scrape it, or overload it.</Bullet>
         <Bullet>
           upload content that is unlawful or infringes on someone else&rsquo;s
@@ -74,9 +71,9 @@ export default function TermsScreen() {
 
       <Section title="changes">
         <P>
-          we may update these terms as spine evolves. the date at the top of
-          the page will always reflect the latest version. material changes
-          will be surfaced to signed-in readers.
+          we may update these terms as spine evolves. the date at the top of the
+          page will always reflect the latest version. material changes will be
+          surfaced to signed-in readers.
         </P>
       </Section>
 

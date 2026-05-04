@@ -66,7 +66,9 @@ export async function loadGoals(
     const yearFinished = finished.filter((f) =>
       f.date_finished?.startsWith(yearStr),
     ).length;
-    const pinnedFinished = pinnedIds.filter((id) => finishedById.has(id)).length;
+    const pinnedFinished = pinnedIds.filter((id) =>
+      finishedById.has(id),
+    ).length;
     return {
       id: g.id,
       year: g.year,
@@ -168,10 +170,7 @@ export async function deleteGoal(
   supabase: SupabaseClient,
   id: string,
 ): Promise<void> {
-  const { error } = await supabase
-    .from("reading_goals")
-    .delete()
-    .eq("id", id);
+  const { error } = await supabase.from("reading_goals").delete().eq("id", id);
   if (error) throw error;
 }
 
@@ -179,13 +178,11 @@ export async function addBookToGoal(
   supabase: SupabaseClient,
   opts: { userId: string; goalId: string; bookId: string },
 ): Promise<void> {
-  const { error } = await supabase
-    .from("goal_books")
-    .insert({
-      goal_id: opts.goalId,
-      book_id: opts.bookId,
-      user_id: opts.userId,
-    });
+  const { error } = await supabase.from("goal_books").insert({
+    goal_id: opts.goalId,
+    book_id: opts.bookId,
+    user_id: opts.userId,
+  });
   if (error) throw error;
 }
 

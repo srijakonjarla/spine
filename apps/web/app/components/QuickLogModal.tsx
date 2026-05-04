@@ -48,6 +48,7 @@ export function QuickLogModal({ onClose }: QuickLogModalProps) {
   const [selectedBookId, setSelectedBookId] = useState<string>("");
   const [tab, setTab] = useState<Tab>("thought");
   const [saving, setSaving] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Form state
   const [thoughtInput, setThoughtInput] = useState("");
@@ -55,6 +56,12 @@ export function QuickLogModal({ onClose }: QuickLogModalProps) {
   const [quoteText, setQuoteText] = useState("");
   const [quotePageInput, setQuotePageInput] = useState("");
   const [ratingInput, setRatingInput] = useState(0);
+
+  useEffect(() => {
+    if (!successMessage) return;
+    const t = setTimeout(() => onClose(), 1100);
+    return () => clearTimeout(t);
+  }, [successMessage, onClose]);
 
   // Select first reading book once books load
   useEffect(() => {
@@ -83,6 +90,7 @@ export function QuickLogModal({ onClose }: QuickLogModalProps) {
     setSaving(true);
 
     try {
+      let resultMessage = "";
       switch (tab) {
         case "thought": {
           if (!thoughtInput.trim() && !pageInput.trim()) {
@@ -106,7 +114,7 @@ export function QuickLogModal({ onClose }: QuickLogModalProps) {
           updateBook(selectedBook.id, {
             thoughts: [...selectedBook.thoughts, thought],
           });
-          toast(page ? "page logged" : "thought added");
+          resultMessage = page ? "page logged" : "thought added";
           break;
         }
         case "quote": {
@@ -121,7 +129,7 @@ export function QuickLogModal({ onClose }: QuickLogModalProps) {
             quotePageInput.trim() || undefined,
           );
           addQuoteToCache(q);
-          toast("quote saved");
+          resultMessage = "quote saved";
           break;
         }
         case "finished": {
@@ -135,11 +143,11 @@ export function QuickLogModal({ onClose }: QuickLogModalProps) {
             dateFinished: localDateStr(),
             rating: ratingInput,
           });
-          toast("marked as finished");
+          resultMessage = "marked as finished";
           break;
         }
       }
-      onClose();
+      setSuccessMessage(resultMessage);
     } catch (e) {
       toast(e instanceof Error ? e.message : "something went wrong", "error");
     } finally {
@@ -198,9 +206,11 @@ export function QuickLogModal({ onClose }: QuickLogModalProps) {
         {/* Header */}
         <div className="flex items-start justify-between mb-5">
           <div>
-            <p className="font-hand text-sm text-terra italic">quick log</p>
+            <p className="font-hand text-sm text-terra italic">
+              {successMessage ? "saved" : "quick log"}
+            </p>
             <h2 className="font-serif text-title font-bold text-fg-heading">
-              log an entry
+              {successMessage ?? "log an entry"}
             </h2>
           </div>
           <button
