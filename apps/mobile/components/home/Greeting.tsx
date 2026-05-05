@@ -65,12 +65,12 @@ export function Greeting({
             gap: 8,
           }}
         >
+          {streakDays > 0 && <FlameIcon color={C.gold} size={14} />}
           {streakDays > 0 && (
             <Text style={[s.statLine, { marginTop: 0, marginBottom: 0 }]}>
               {streakDays}-day streak
             </Text>
           )}
-          {streakDays > 0 && <FlameIcon color={C.gold} size={14} />}
           {streakDays > 0 && pagesToday > 0 && (
             <Text
               style={[

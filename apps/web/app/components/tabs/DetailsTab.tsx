@@ -14,11 +14,13 @@ const FORMATS = [
 ];
 
 function TagInput({
+  id,
   tags,
   placeholder,
   onAdd,
   onRemove,
 }: {
+  id: string;
   tags: string[];
   placeholder: string;
   onAdd: (t: string) => void;
@@ -51,6 +53,7 @@ function TagInput({
         ))}
       </div>
       <input
+        id={id}
         type="text"
         value={input}
         onChange={(e) => setInput(e.target.value)}
@@ -89,6 +92,7 @@ export default function DetailsTab() {
 
             <label className="detail-field-label">Title</label>
             <input
+              id="details-title"
               type="text"
               value={entry.title}
               onChange={(e) => onUpdate({ title: e.target.value })}
@@ -97,6 +101,7 @@ export default function DetailsTab() {
 
             <label className="detail-field-label">Author</label>
             <input
+              id="details-author"
               type="text"
               value={entry.author}
               onChange={(e) => onUpdate({ author: e.target.value })}
@@ -126,6 +131,7 @@ export default function DetailsTab() {
             <p className="book-card-heading text-body-md">Format</p>
             <label className="detail-field-label">Edition type</label>
             <select
+              id="details-format"
               value={entry.format}
               onChange={(e) => onUpdate({ format: e.target.value })}
               className="underline-input text-sm mb-2 bg-transparent cursor-pointer"
@@ -173,6 +179,7 @@ export default function DetailsTab() {
               Add your own — author identity, own voices, translated, etc.
             </p>
             <TagInput
+              id="details-diversity-tags"
               tags={entry.userDiversityTags ?? []}
               placeholder="e.g. own voices, translated…"
               onAdd={(t) => {

@@ -21,6 +21,7 @@ import {
   fmtHours,
   fmtPages,
 } from "@/components/review";
+import { YearReviewSkeleton } from "@/components/skeletons/YearReviewSkeleton";
 
 export default function YearReviewPage() {
   const { year, loading, yearEntries, finishedBooks, loggedDates, lists } =
@@ -130,25 +131,7 @@ export default function YearReviewPage() {
 
   const hasData = finishedBooks.length > 0;
 
-  if (loading)
-    return (
-      <div className="page animate-pulse">
-        <div className="px-6 pt-16 pb-12 mb-10 bg-plum">
-          <div className="max-w-3xl mx-auto">
-            <div className="h-3 w-16 bg-white/20 rounded mb-6" />
-            <div className="h-10 w-40 bg-white/20 rounded mb-3" />
-            <div className="h-3 w-36 bg-white/20 rounded" />
-          </div>
-        </div>
-        <div className="page-content">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-20 bg-hover rounded-xl" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+  if (loading) return <YearReviewSkeleton />;
 
   return (
     <div className="page">

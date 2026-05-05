@@ -92,6 +92,7 @@ export function LibraryLoanList({
     <>
       {items.length > 4 && (
         <input
+          id="loan-search"
           type="text"
           value={itemSearch}
           onChange={(e) => setItemSearch(e.target.value)}
@@ -207,6 +208,7 @@ export function LibraryLoanList({
                     call #
                   </span>
                   <input
+                    id={`loan-item-${item.id}-call-num`}
                     type="text"
                     value={item.notes ?? ""}
                     onChange={(e) => onUpdateNotes(item.id, e.target.value)}
@@ -221,6 +223,7 @@ export function LibraryLoanList({
                     due
                   </span>
                   <input
+                    id={`loan-item-${item.id}-due-date`}
                     type="date"
                     value={item.releaseDate ?? ""}
                     onChange={(e) => onUpdateDate(item.id, e.target.value)}
@@ -232,6 +235,7 @@ export function LibraryLoanList({
                     Amount Saved $
                   </span>
                   <input
+                    id={`loan-item-${item.id}-saved`}
                     type="text"
                     value={item.price ?? ""}
                     onChange={(e) => onUpdatePrice(item.id, e.target.value)}
@@ -249,6 +253,7 @@ export function LibraryLoanList({
       {showAdd ? (
         <div className="rounded-xl px-4 py-3 border border-dashed border-line bg-surface space-y-2.5">
           <CatalogSearch
+            id="loan-add-title"
             value={draftTitle}
             onChange={(v) => setDraftTitle(v)}
             onSelect={(s: CatalogEntry) => {
@@ -261,6 +266,7 @@ export function LibraryLoanList({
             libraryEntries={libraryEntries}
           />
           <input
+            id="loan-add-author"
             type="text"
             value={draftAuthor}
             onChange={(e) => setDraftAuthor(e.target.value)}
@@ -273,6 +279,7 @@ export function LibraryLoanList({
                 Call #
               </span>
               <input
+                id="loan-add-call-num"
                 type="text"
                 value={draftCallNum}
                 onChange={(e) => setDraftCallNum(e.target.value)}
@@ -285,6 +292,7 @@ export function LibraryLoanList({
                 Due
               </span>
               <input
+                id="loan-add-due-date"
                 type="date"
                 value={draftDueDate}
                 onChange={(e) => setDraftDueDate(e.target.value)}
@@ -296,6 +304,7 @@ export function LibraryLoanList({
                 Amount Saved $
               </span>
               <input
+                id="loan-add-saved"
                 type="text"
                 value={draftLoanPrice}
                 onChange={(e) => setDraftLoanPrice(e.target.value)}

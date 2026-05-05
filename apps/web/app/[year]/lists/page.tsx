@@ -7,6 +7,7 @@ import { useYear } from "@/providers/YearContext";
 import { ListCard } from "@/components/lists/ListCard";
 import { ListCreateModal } from "@/components/lists/ListCreateModal";
 import { toast } from "@/lib/toast";
+import { YearListsSkeleton } from "@/components/skeletons/YearListsSkeleton";
 
 export default function ListsPage() {
   const { year, loading, lists, setLists } = useYear();
@@ -39,19 +40,7 @@ export default function ListsPage() {
     }
   };
 
-  if (loading)
-    return (
-      <div className="page">
-        <div className="mx-auto px-6 py-12 animate-pulse">
-          <div className="h-5 w-16 bg-hover rounded mb-8" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-40 bg-hover rounded-xl" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+  if (loading) return <YearListsSkeleton />;
 
   return (
     <div className="page">

@@ -12,6 +12,7 @@ import type { BookEntry } from "@/types";
 import { localDateStr, dateYear } from "@/lib/dates";
 import ShelfDivider from "@/components/library/ShelfDivider";
 import InlineAdd from "@/components/library/InlineAdd";
+import { LibrarySkeleton } from "@/components/library/LibrarySkeleton";
 import { useBooks } from "@/providers/BooksProvider";
 
 export default function LibraryPage() {
@@ -64,6 +65,8 @@ export default function LibraryPage() {
         (b.dateFinished ?? "").localeCompare(a.dateFinished ?? ""),
       ),
     }));
+
+  if (loading) return <LibrarySkeleton />;
 
   const addBook = async (
     status: "reading" | "want-to-read",
@@ -124,30 +127,29 @@ export default function LibraryPage() {
 
         <div className="flex items-baseline justify-between mb-6">
           <h1 className="page-title">library</h1>
-          {!loading && (
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setView("grid")}
-                className={`text-xs px-2 py-1 rounded transition-colors ${view === "grid" ? "bg-hover text-fg" : "text-fg-faint"}`}
-              >
-                ▦
-              </button>
-              <button
-                onClick={() => setView("list")}
-                className={`text-xs px-2 py-1 rounded transition-colors ${view === "list" ? "bg-hover text-fg" : "text-fg-faint"}`}
-              >
-                ☰
-              </button>
-              <span className="text-xs text-fg-faint">
-                {entries.length} books
-              </span>
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setView("grid")}
+              className={`text-xs px-2 py-1 rounded transition-colors ${view === "grid" ? "bg-hover text-fg" : "text-fg-faint"}`}
+            >
+              ▦
+            </button>
+            <button
+              onClick={() => setView("list")}
+              className={`text-xs px-2 py-1 rounded transition-colors ${view === "list" ? "bg-hover text-fg" : "text-fg-faint"}`}
+            >
+              ☰
+            </button>
+            <span className="text-xs text-fg-faint">
+              {entries.length} books
+            </span>
+          </div>
         </div>
 
         {/* Search + genre filter */}
         <div className="flex items-center gap-3 mb-4">
           <input
+            id="library-search"
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -156,6 +158,7 @@ export default function LibraryPage() {
           />
           {allGenres.length > 0 && (
             <select
+              id="library-genre-filter"
               value={activeGenre ?? ""}
               onChange={(e) => setActiveGenre(e.target.value || null)}
               className="text-xs bg-transparent border-none outline-none cursor-pointer transition-colors text-fg-faint hover:text-fg-muted"
@@ -213,6 +216,7 @@ export default function LibraryPage() {
                 ))}
               </div>
               <InlineAdd
+                id="library-add-reading"
                 placeholder="what are you reading?"
                 onAdd={(c, r) => addBook("reading", c, r)}
                 libraryEntries={entries}
@@ -224,6 +228,7 @@ export default function LibraryPage() {
             <div className="mb-6">
               <p className="section-label mb-2">currently reading</p>
               <InlineAdd
+                id="library-add-reading"
                 placeholder="what are you reading?"
                 onAdd={(c, r) => addBook("reading", c, r)}
                 libraryEntries={entries}
@@ -264,6 +269,7 @@ export default function LibraryPage() {
                 ))}
               </div>
               <InlineAdd
+                id="library-add-tbr"
                 placeholder="add to tbr..."
                 onAdd={(c, r) => addBook("want-to-read", c, r)}
                 libraryEntries={entries}
@@ -275,6 +281,7 @@ export default function LibraryPage() {
             <div>
               <p className="section-label mb-2">want to read</p>
               <InlineAdd
+                id="library-add-tbr"
                 placeholder="add to tbr..."
                 onAdd={(c, r) => addBook("want-to-read", c, r)}
                 libraryEntries={entries}
@@ -284,99 +291,82 @@ export default function LibraryPage() {
         </div>
 
         {/* Finished — grouped by year */}
-        {loading && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4 animate-pulse">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i}>
-                <div className="rounded-lg mb-2 aspect-[2/3] bg-edge" />
-                <div className="h-2.5 rounded mb-1 w-4/5 bg-edge" />
-                <div className="h-2 rounded w-1/2 bg-edge" />
-              </div>
-            ))}
-          </div>
+        {yearGroups.length === 0 && !search && !activeMood && !activeGenre && (
+          <p className="text-xs text-fg-faint">no finished books yet.</p>
         )}
 
-        {!loading &&
-          yearGroups.length === 0 &&
-          !search &&
-          !activeMood &&
-          !activeGenre && (
-            <p className="text-xs text-fg-faint">no finished books yet.</p>
-          )}
+        {yearGroups.map(({ year, books }) => (
+          <div key={year}>
+            <ShelfDivider year={year} count={books.length} />
 
-        {!loading &&
-          yearGroups.map(({ year, books }) => (
-            <div key={year}>
-              <ShelfDivider year={year} count={books.length} />
-
-              {view === "grid" ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-                  {books.map((e) => (
-                    <Link key={e.id} href={`/book/${e.id}`} className="group">
-                      <div className="relative mb-2 rounded-lg overflow-hidden group-hover:-translate-y-1 transition-transform h-32.5 shadow-sm">
-                        <BookCoverThumb
-                          coverUrl={e.coverUrl}
-                          title={e.title}
-                          author={e.author}
-                          width="w-full"
-                          height="h-full"
-                        />
-                        {/* Top-left: first mood tag */}
-                        {e.moodTags[0] && (
-                          <span className="absolute top-1.5 left-1.5 z-10 text-label px-1.5 py-0.5 rounded-md bg-white/90 text-fg leading-none">
-                            {e.moodTags[0]}
-                          </span>
-                        )}
-                        {/* Top-right: rating */}
-                        {e.rating > 0 && (
-                          <span className="absolute top-1.5 right-1.5 z-10 text-label px-1.5 py-0.5 rounded-md bg-black/40 text-gold leading-none tracking-tight">
-                            {"★".repeat(Math.round(e.rating))}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-caption font-medium leading-tight truncate text-fg">
-                        {e.title || "untitled"}
-                      </p>
-                      {e.author && (
-                        <p className="text-detail mt-0.5 truncate text-fg-faint">
-                          {e.author}
-                        </p>
-                      )}
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-0.5">
-                  {books.map((e) => (
-                    <Link
-                      key={e.id}
-                      href={`/book/${e.id}`}
-                      className="flex items-center gap-3 py-1.5 px-2 -mx-2 rounded-lg hover:bg-plum-trace transition-colors group"
-                    >
+            {view === "grid" ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+                {books.map((e) => (
+                  <Link key={e.id} href={`/book/${e.id}`} className="group">
+                    <div className="relative mb-2 rounded-lg overflow-hidden group-hover:-translate-y-1 transition-transform h-32.5 shadow-sm">
                       <BookCoverThumb
                         coverUrl={e.coverUrl}
                         title={e.title}
-                        width="w-6"
-                        height="h-9"
+                        author={e.author}
+                        width="w-full"
+                        height="h-full"
                       />
-                      <span className="text-sm flex-1 truncate text-fg">
-                        {e.title || "untitled"}
-                      </span>
-                      {e.author && (
-                        <span className="text-xs shrink-0 hidden sm:block text-fg-faint">
-                          {e.author}
+                      {/* Top-left: first mood tag */}
+                      {e.moodTags[0] && (
+                        <span className="absolute top-1.5 left-1.5 z-10 text-label px-1.5 py-0.5 rounded-md bg-white/90 text-fg leading-none">
+                          {e.moodTags[0]}
                         </span>
                       )}
-                      <span className="dot-leader hidden sm:block" />
+                      {/* Top-right: rating */}
                       {e.rating > 0 && (
-                        <StarDisplay rating={e.rating} size={11} />
+                        <span className="absolute top-1.5 right-1.5 z-10 text-label px-1.5 py-0.5 rounded-md bg-black/40 text-gold leading-none tracking-tight">
+                          {"★".repeat(Math.round(e.rating))}
+                        </span>
                       )}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+                    </div>
+                    <p className="text-caption font-medium leading-tight truncate text-fg">
+                      {e.title || "untitled"}
+                    </p>
+                    {e.author && (
+                      <p className="text-detail mt-0.5 truncate text-fg-faint">
+                        {e.author}
+                      </p>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-0.5">
+                {books.map((e) => (
+                  <Link
+                    key={e.id}
+                    href={`/book/${e.id}`}
+                    className="flex items-center gap-3 py-1.5 px-2 -mx-2 rounded-lg hover:bg-plum-trace transition-colors group"
+                  >
+                    <BookCoverThumb
+                      coverUrl={e.coverUrl}
+                      title={e.title}
+                      width="w-6"
+                      height="h-9"
+                    />
+                    <span className="text-sm flex-1 truncate text-fg">
+                      {e.title || "untitled"}
+                    </span>
+                    {e.author && (
+                      <span className="text-xs shrink-0 hidden sm:block text-fg-faint">
+                        {e.author}
+                      </span>
+                    )}
+                    <span className="dot-leader hidden sm:block" />
+                    {e.rating > 0 && (
+                      <StarDisplay rating={e.rating} size={11} />
+                    )}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

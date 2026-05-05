@@ -13,6 +13,7 @@ import { localDateStr } from "@/lib/dates";
 import { useYear } from "@/providers/YearContext";
 import { useBooks } from "@/providers/BooksProvider";
 import { toast } from "@/lib/toast";
+import { YearBooksSkeleton } from "@/components/skeletons/YearBooksSkeleton";
 
 function BookSection({
   label,
@@ -164,23 +165,7 @@ export default function BooksPage() {
     }
   };
 
-  if (loading)
-    return (
-      <div className="page">
-        <div className="page-content animate-pulse">
-          <div className="h-5 w-20 bg-hover rounded mb-8" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i}>
-                <div className="rounded-lg mb-2 aspect-[2/3] bg-edge" />
-                <div className="h-2.5 rounded mb-1 w-4/5 bg-edge" />
-                <div className="h-2 rounded w-1/2 bg-edge" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+  if (loading) return <YearBooksSkeleton />;
 
   return (
     <div className="page">
@@ -225,6 +210,7 @@ export default function BooksPage() {
         {/* Search */}
         {yearBooks.length > 0 && (
           <input
+            id="year-books-search"
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -263,6 +249,7 @@ export default function BooksPage() {
             </div>
           )}
           <CatalogSearch
+            id="year-books-add"
             value={addValue}
             onChange={setAddValue}
             onSelect={(s) => addBook(s)}

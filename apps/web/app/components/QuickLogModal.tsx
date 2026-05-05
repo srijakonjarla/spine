@@ -317,6 +317,7 @@ export function QuickLogModal({ onClose }: QuickLogModalProps) {
                   </span>
                 </label>
                 <input
+                  id="quick-log-page"
                   type="number"
                   value={pageInput}
                   onChange={(e) => setPageInput(e.target.value)}
@@ -332,6 +333,7 @@ export function QuickLogModal({ onClose }: QuickLogModalProps) {
               <div>
                 <label className="section-label block mb-1.5">note</label>
                 <textarea
+                  id="quick-log-note"
                   value={thoughtInput}
                   onChange={(e) => setThoughtInput(e.target.value)}
                   placeholder="how's it going?"
@@ -347,6 +349,7 @@ export function QuickLogModal({ onClose }: QuickLogModalProps) {
               <div>
                 <label className="section-label block mb-1.5">quote</label>
                 <textarea
+                  id="quick-log-quote-text"
                   value={quoteText}
                   onChange={(e) => setQuoteText(e.target.value)}
                   placeholder="paste or type a passage..."
@@ -363,6 +366,7 @@ export function QuickLogModal({ onClose }: QuickLogModalProps) {
                   </span>
                 </label>
                 <input
+                  id="quick-log-quote-page"
                   type="text"
                   value={quotePageInput}
                   onChange={(e) => setQuotePageInput(e.target.value)}

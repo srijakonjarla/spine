@@ -63,6 +63,7 @@ function HistoricalReadView({
           <p className="caveat-label mb-3">my reflection · read {readIndex}</p>
           <div className="journal-surface p-5" style={{ minHeight: "160px" }}>
             <textarea
+              id="reflection-feeling"
               ref={feelingRef}
               value={draft.feeling}
               onChange={(e) =>
@@ -107,6 +108,7 @@ function HistoricalReadView({
                 Started
               </label>
               <input
+                id="reflection-date-started"
                 type="date"
                 value={draft.dateStarted}
                 onChange={(e) =>
@@ -120,6 +122,7 @@ function HistoricalReadView({
                 Finished
               </label>
               <input
+                id="reflection-date-finished"
                 type="date"
                 value={draft.dateFinished}
                 onChange={(e) =>
@@ -219,6 +222,7 @@ export default function ReflectionTab() {
           <p className="caveat-label mb-3">my reflection</p>
           <div className="journal-surface p-5" style={{ minHeight: "160px" }}>
             <textarea
+              id="reflection-feeling-current"
               ref={feelingRef}
               value={entry.feeling}
               onChange={(e) => onUpdate({ feeling: e.target.value })}

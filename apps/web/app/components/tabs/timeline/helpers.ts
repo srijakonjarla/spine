@@ -1,5 +1,13 @@
 // Shared helpers for TimelineTab sub-components.
 
+import {
+  CloudSunIcon,
+  Icon,
+  MoonStarsIcon,
+  SunHorizonIcon,
+  SunIcon,
+} from "@phosphor-icons/react";
+
 export type TimeSlot = "morning" | "afternoon" | "evening" | "night";
 
 /** Bucket a timestamp into one of four time-of-day slots. */
@@ -12,10 +20,10 @@ export function timeOfDayLabel(iso: string): TimeSlot {
 }
 
 /** Emoji for the time slot of a timestamp. */
-export function timeOfDayEmoji(iso: string): string {
+export function timeOfDayEmoji(iso: string): Icon {
   const label = timeOfDayLabel(iso);
-  if (label === "morning") return "☀️";
-  if (label === "afternoon") return "🌤️";
-  if (label === "evening") return "🌆";
-  return "🌙";
+  if (label === "morning") return SunIcon;
+  if (label === "afternoon") return CloudSunIcon;
+  if (label === "evening") return SunHorizonIcon;
+  return MoonStarsIcon;
 }

@@ -7,6 +7,7 @@ import { localDateStr, dateMonth } from "@/lib/dates";
 import { MONTH_ABBRS, MONTH_NAMES } from "@/lib/constants";
 import MiniMonthCal from "@/components/calendar/MiniMonthCal";
 import { BookCoverThumb } from "@/components/BookCover";
+import { YearSkeleton } from "@/components/skeletons/YearSkeleton";
 
 import { hashStr } from "@/lib/spineUtils";
 
@@ -77,27 +78,7 @@ export default function YearPage() {
     ? `in progress · ${now.toLocaleDateString("en-US", { month: "long", day: "numeric" })}`
     : `complete · ${finishedBooks.length} books`;
 
-  if (loading)
-    return (
-      <div className="page animate-pulse">
-        <div className="-mt-6 -mx-6 mb-10 px-8 py-10 lg:px-12 lg:py-14 bg-plum">
-          <div className="h-4 w-28 bg-white/20 rounded mb-3" />
-          <div className="h-16 w-24 bg-white/20 rounded mb-4" />
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-12 bg-white/20 rounded-lg" />
-            ))}
-          </div>
-        </div>
-        <div className="page-content">
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="aspect-[4/3] bg-hover rounded-xl" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+  if (loading) return <YearSkeleton />;
 
   return (
     <div className="page">

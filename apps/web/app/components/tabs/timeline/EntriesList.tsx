@@ -22,7 +22,7 @@ export default function EntriesList({
     <div className="mb-6">
       {sortedThoughts.length === 0 ? (
         <p className="font-hand text-base text-fg-faint">
-          no reading notes yet — add one below
+          no reading notes yet — add one above
         </p>
       ) : (
         <div className="flex flex-col">

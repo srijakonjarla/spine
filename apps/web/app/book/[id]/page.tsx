@@ -14,6 +14,7 @@ import {
 } from "@/lib/db";
 import { getQuotes } from "@/lib/quotes";
 import { BookmarkButton } from "@/components/BookmarkButton";
+import { BookDetailSkeleton } from "@/components/book/BookDetailSkeleton";
 import { StarRating } from "@/components/StarRating";
 import { usePreviousRoute } from "@/providers/NavigationProvider";
 import type { BookEntry, ReadingStatus, Quote } from "@/types";
@@ -66,6 +67,7 @@ function HeroGenreAdd({
   if (adding) {
     return (
       <input
+        id="book-genre-add"
         autoFocus
         value={input}
         onChange={(e) => setInput(e.target.value)}
@@ -233,22 +235,7 @@ export default function BookPage() {
     router.back();
   };
 
-  if (!entry)
-    return (
-      <div className="page">
-        <div className="max-w-3xl mx-auto px-6 py-10 animate-pulse">
-          <div className="h-4 w-16 bg-stone-200 rounded mb-8" />
-          <div className="h-7 w-2/3 bg-stone-200 rounded mb-3" />
-          <div className="h-4 w-1/3 bg-stone-200 rounded mb-6" />
-          <div className="flex gap-2 mb-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-7 w-20 bg-stone-200 rounded-full" />
-            ))}
-          </div>
-          <div className="h-16 w-full bg-stone-200 rounded" />
-        </div>
-      </div>
-    );
+  if (!entry) return <BookDetailSkeleton />;
 
   // The currently viewed read (null = current/user_books, else a historical book_read)
   const viewedRead = selectedReadId
@@ -484,6 +471,7 @@ export default function BookPage() {
                     <div className="flex items-center gap-1.5">
                       <span className="hero-date-label">started</span>
                       <input
+                        id={`book-read-${viewedRead.id}-date-started`}
                         type="date"
                         value={viewedRead.dateStarted}
                         max={
@@ -503,6 +491,7 @@ export default function BookPage() {
                     <div className="flex items-center gap-1.5">
                       <span className="hero-date-label">finished</span>
                       <input
+                        id={`book-read-${viewedRead.id}-date-finished`}
                         type="date"
                         value={viewedRead.dateFinished}
                         min={
@@ -527,6 +516,7 @@ export default function BookPage() {
                     <div className="flex items-center gap-1.5">
                       <span className="hero-date-label">started</span>
                       <input
+                        id="book-current-date-started"
                         type="date"
                         value={entry.dateStarted}
                         max={
@@ -544,6 +534,7 @@ export default function BookPage() {
                       <div className="flex items-center gap-1.5">
                         <span className="hero-date-label">finished</span>
                         <input
+                          id="book-current-date-finished"
                           type="date"
                           value={entry.dateFinished}
                           min={
@@ -564,6 +555,7 @@ export default function BookPage() {
                       <div className="flex items-center gap-1.5">
                         <span className="hero-date-label">shelved</span>
                         <input
+                          id="book-current-date-shelved"
                           type="date"
                           value={entry.dateShelved}
                           min={entry.dateStarted || undefined}

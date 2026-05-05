@@ -7,6 +7,7 @@ import { useQuotes } from "@/providers/QuotesProvider";
 import { QuoteCard } from "@/components/QuoteCard";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
+import { YearQuotesSkeleton } from "@/components/skeletons/YearQuotesSkeleton";
 
 export default function QuoteCollectionPage() {
   const { year: yearParam } = useParams<{ year: string }>();
@@ -34,17 +35,7 @@ export default function QuoteCollectionPage() {
           subtitle={!loading ? `${quotes.length} saved` : undefined}
         />
 
-        {loading && (
-          <div className="space-y-6 animate-pulse">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="border-l-2 border-stone-200 pl-4">
-                <div className="h-3 w-3/4 bg-stone-100 rounded mb-2" />
-                <div className="h-3 w-1/2 bg-stone-100 rounded mb-3" />
-                <div className="h-2 w-24 bg-stone-100 rounded" />
-              </div>
-            ))}
-          </div>
-        )}
+        {loading && <YearQuotesSkeleton />}
 
         {!loading && quotes.length === 0 && (
           <EmptyState message="no quotes saved yet — add them from any book page." />

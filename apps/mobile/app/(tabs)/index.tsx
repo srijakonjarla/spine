@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { currentStreak, localDateStr, streakRuns } from "@spine/shared";
 import {
   CurrentlyReading,
@@ -75,9 +76,9 @@ function readingToBook(r: HomeData["reading"][number]): ReadingBook {
 
 export default function Home() {
   const { session } = useAuth();
+  const router = useRouter();
   const userId = session?.user?.id;
   const name = firstNameFromUser(session?.user);
-  const initial = name.charAt(0) || "r";
 
   const [data, setData] = useState<HomeData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -255,7 +256,7 @@ export default function Home() {
 
   return (
     <SafeAreaView style={s.safe} edges={["top"]}>
-      <TopBar initial={initial} />
+      <TopBar />
       <ScrollView
         style={s.scroll}
         contentContainerStyle={s.scrollContent}
@@ -326,6 +327,7 @@ export default function Home() {
               goalTarget={data.goal?.target ?? 0}
               hasGoal={!!data.goal}
               onSetGoal={handleSetGoal}
+              onOpenGoal={() => router.push("/goals")}
               goalCaveat={
                 data.goal && data.goal.current >= data.goal.target
                   ? "goal reached"

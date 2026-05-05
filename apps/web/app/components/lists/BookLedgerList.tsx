@@ -94,6 +94,7 @@ export function BookLedgerList({
     <>
       {items.length > 4 && (
         <input
+          id="ledger-search"
           type="text"
           value={itemSearch}
           onChange={(e) => setItemSearch(e.target.value)}
@@ -140,6 +141,7 @@ export function BookLedgerList({
             {/* Transaction type */}
             <div className="w-20 shrink-0">
               <select
+                id={`ledger-item-${item.id}-type`}
                 value={item.type || "bought"}
                 onChange={(e) => onUpdateType(item.id, e.target.value)}
                 className={`text-detail font-semibold px-2 py-0.5 rounded-full border cursor-pointer bg-transparent outline-none ${TX_COLORS[(item.type as TxType) || "bought"]}`}
@@ -155,6 +157,7 @@ export function BookLedgerList({
             <div className="w-16 shrink-0 flex items-center gap-0.5">
               <span className="text-caption text-fg-faint">$</span>
               <input
+                id={`ledger-item-${item.id}-price`}
                 type="text"
                 value={item.price ?? ""}
                 onChange={(e) => onUpdatePrice(item.id, e.target.value)}
@@ -164,6 +167,7 @@ export function BookLedgerList({
             </div>
             {/* Source / destination */}
             <input
+              id={`ledger-item-${item.id}-notes`}
               type="text"
               value={item.notes ?? ""}
               onChange={(e) => onUpdateNotes(item.id, e.target.value)}
@@ -172,6 +176,7 @@ export function BookLedgerList({
             />
             {/* Date */}
             <input
+              id={`ledger-item-${item.id}-date`}
               type="date"
               value={item.releaseDate ?? ""}
               onChange={(e) => onUpdateDate(item.id, e.target.value)}
@@ -191,6 +196,7 @@ export function BookLedgerList({
       {showAdd ? (
         <div className="rounded-xl px-4 py-3 border border-dashed border-line bg-surface space-y-2">
           <CatalogSearch
+            id="ledger-add-title"
             value={draftTitle}
             onChange={(v) => setDraftTitle(v)}
             onSelect={(s: CatalogEntry) => {
@@ -203,6 +209,7 @@ export function BookLedgerList({
             libraryEntries={libraryEntries}
           />
           <input
+            id="ledger-add-author"
             type="text"
             value={draftAuthor}
             onChange={(e) => setDraftAuthor(e.target.value)}
@@ -225,6 +232,7 @@ export function BookLedgerList({
             <div className="flex items-center gap-0.5">
               <span className="text-caption text-fg-faint">$</span>
               <input
+                id="ledger-add-price"
                 type="text"
                 value={draftPrice}
                 onChange={(e) => setDraftPrice(e.target.value)}
@@ -233,6 +241,7 @@ export function BookLedgerList({
               />
             </div>
             <input
+              id="ledger-add-source"
               type="text"
               value={draftSource}
               onChange={(e) => setDraftSource(e.target.value)}
@@ -240,6 +249,7 @@ export function BookLedgerList({
               className="flex-1 text-xs text-fg-muted bg-transparent border-b border-line outline-none pb-0.5 placeholder:text-fg-faint"
             />
             <input
+              id="ledger-add-date"
               type="date"
               value={draftTxDate}
               onChange={(e) => setDraftTxDate(e.target.value)}

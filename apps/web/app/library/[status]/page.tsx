@@ -12,6 +12,7 @@ import { StarDisplay } from "@/components/StarDisplay";
 import { BookCoverThumb } from "@/components/BookCover";
 import { MoodChip, AllMoodsChip } from "@/components/MoodChip";
 import { EmptyState } from "@/components/EmptyState";
+import { SkeletonRoot, SkeletonGrid } from "@/components/Skeleton";
 import type { BookEntry } from "@/types";
 import { localDateStr } from "@/lib/dates";
 
@@ -137,6 +138,7 @@ export default function StatusCatalogPage() {
         {/* Add book */}
         <div className="mb-6">
           <CatalogSearch
+            id="library-status-add"
             value={addValue}
             onChange={setAddValue}
             onSelect={(s) => addBook(s)}
@@ -150,7 +152,7 @@ export default function StatusCatalogPage() {
         {/* Search */}
         <div className="mb-6">
           <input
-            id="status-search"
+            id="library-status-search"
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -211,15 +213,9 @@ export default function StatusCatalogPage() {
         )}
 
         {loading && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 animate-pulse">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i}>
-                <div className="rounded-lg mb-2 aspect-[2/3] bg-edge" />
-                <div className="h-2.5 rounded mb-1 w-4/5 bg-edge" />
-                <div className="h-2 rounded w-1/2 bg-edge" />
-              </div>
-            ))}
-          </div>
+          <SkeletonRoot>
+            <SkeletonGrid count={12} />
+          </SkeletonRoot>
         )}
 
         {!loading && filtered.length === 0 && (

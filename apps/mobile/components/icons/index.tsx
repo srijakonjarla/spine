@@ -133,7 +133,7 @@ export function QuoteIcon({ size = 16, color }: IconProps) {
 export function FlameIcon({ size = 14, color }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <Path d="M13.5 1.5s2 4 0 6-4 1.5-4 5 2.5 4.5 2.5 4.5S6 16 6 12c0-3 1.5-4 1.5-4S5 6 6.5 3 13.5 1.5 13.5 1.5zm.5 14s4-1 4-5c0 0 2 2 2 5a6 6 0 1 1-12 0c0-1.5.5-2.5.5-2.5s1 2 3 2 2-2 2-2 .5 2.5.5 2.5z" />
+      <Path d="M12 2c.6 3-1.5 4.5-3 6.5C7.5 10.5 6 12.5 6 15a6 6 0 0 0 12 0c0-2.5-1-4.5-2.5-6 .3 1.7-.5 3-2 3-1.4 0-2-1-2-2.3 0-2 1.3-3.7 1-5.2-.2-1.2-.5-1.8-.5-2.5z" />
     </Svg>
   );
 }

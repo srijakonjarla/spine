@@ -92,6 +92,7 @@ export function SignupConfirmScreen({
 
       {/* OTP input — single field with letter-spacing */}
       <input
+        id="signup-confirm-code"
         ref={inputRef}
         type="text"
         inputMode="numeric"

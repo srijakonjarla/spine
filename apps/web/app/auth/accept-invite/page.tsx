@@ -187,13 +187,13 @@ function AcceptInviteForm() {
             </p>
             <div>
               <label
-                htmlFor="name"
+                htmlFor="accept-invite-name"
                 className="text-xs text-stone-400 block mb-1"
               >
                 your name
               </label>
               <input
-                id="name"
+                id="accept-invite-name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -205,13 +205,13 @@ function AcceptInviteForm() {
             </div>
             <div>
               <label
-                htmlFor="password"
+                htmlFor="accept-invite-password"
                 className="text-xs text-stone-400 block mb-1"
               >
                 password
               </label>
               <input
-                id="password"
+                id="accept-invite-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -222,13 +222,13 @@ function AcceptInviteForm() {
             </div>
             <div>
               <label
-                htmlFor="confirm"
+                htmlFor="accept-invite-confirm"
                 className="text-xs text-stone-400 block mb-1"
               >
                 confirm password
               </label>
               <input
-                id="confirm"
+                id="accept-invite-confirm"
                 type="password"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}

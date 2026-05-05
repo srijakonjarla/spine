@@ -136,6 +136,7 @@ export function IdeaList({
             </span>
           )}
           <input
+            id="idea-list-add"
             ref={inlineRef}
             type="text"
             value={inlineText}

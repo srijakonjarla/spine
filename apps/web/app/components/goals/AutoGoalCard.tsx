@@ -73,6 +73,7 @@ export function AutoGoalCard({
       <div className="pt-4 border-t border-stone-100 flex flex-wrap items-baseline gap-2">
         <label className="text-xs text-stone-400">target</label>
         <input
+          id="auto-goal-target"
           type="number"
           value={target}
           min={1}

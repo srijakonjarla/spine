@@ -54,6 +54,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
       setLoading(false);
       return;
@@ -78,7 +79,7 @@ export default function Home() {
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [authLoading, user?.id]);
 
   const dismissImportModal = useCallback(() => {
     localStorage.setItem("spine:import-modal-dismissed", "1");
@@ -135,7 +136,7 @@ export default function Home() {
     );
   }
 
-  if (loading) return <HomeSkeleton />;
+  if (authLoading || loading) return <HomeSkeleton />;
 
   return (
     <div className="page">

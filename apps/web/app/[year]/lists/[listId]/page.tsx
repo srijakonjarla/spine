@@ -19,6 +19,7 @@ import { BookLedgerList } from "@/components/lists/BookLedgerList";
 import { IdeaList } from "@/components/lists/IdeaList";
 import { BookListItems } from "@/components/lists/BookListItems";
 import { ListSidebar } from "@/components/lists/ListSidebar";
+import { ListDetailSkeleton } from "@/components/skeletons/ListDetailSkeleton";
 import type { BookList, BookEntry, ListItem } from "@/types";
 import { toast } from "@/lib/toast";
 import {
@@ -131,17 +132,7 @@ export default function ListDetailPage() {
     setShowCoverModal(false);
   };
 
-  if (loading)
-    return (
-      <div className="page animate-pulse">
-        <div className="h-48 bg-hover mb-8" />
-        <div className="page-content space-y-2.5">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-10 bg-hover rounded-lg" />
-          ))}
-        </div>
-      </div>
-    );
+  if (loading) return <ListDetailSkeleton />;
 
   if (!list) return <div className="page" />;
 
@@ -193,6 +184,7 @@ export default function ListDetailPage() {
           {LIST_TYPE_LABELS[list.listType] ?? "list"}
         </p>
         <input
+          id="list-detail-title"
           type="text"
           value={list.title}
           onChange={(e) => {

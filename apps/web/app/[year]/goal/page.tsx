@@ -9,6 +9,7 @@ import type { ReadingGoal } from "@/types";
 import { PageHeader } from "@/components/PageHeader";
 import { AutoGoalCard } from "@/components/goals/AutoGoalCard";
 import { CustomGoalCard } from "@/components/goals/CustomGoalCard";
+import { YearGoalSkeleton } from "@/components/skeletons/YearGoalSkeleton";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 const CURRENT_YEAR = new Date().getFullYear();
@@ -115,16 +116,7 @@ export default function GoalPage() {
   const autoGoal = goals.find((g) => g.isAuto);
   const customGoals = goals.filter((g) => !g.isAuto);
 
-  if (loading) {
-    return (
-      <div className="page">
-        <div className="page-content animate-pulse">
-          <div className="h-4 w-16 bg-stone-200 rounded mb-8" />
-          <div className="h-8 w-48 bg-stone-200 rounded mb-3" />
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <YearGoalSkeleton />;
 
   return (
     <div className="page">
@@ -164,6 +156,7 @@ export default function GoalPage() {
                     target books
                   </label>
                   <input
+                    id="year-goal-yearly-target"
                     type="number"
                     value={yearlyTarget}
                     onChange={(e) => setYearlyTarget(e.target.value)}
@@ -210,6 +203,7 @@ export default function GoalPage() {
             <div>
               <label className="text-xs text-stone-400 block mb-1">name</label>
               <input
+                id="year-goal-custom-name"
                 type="text"
                 value={setupName}
                 onChange={(e) => setSetupName(e.target.value)}
@@ -223,6 +217,7 @@ export default function GoalPage() {
                 target books
               </label>
               <input
+                id="year-goal-custom-target"
                 type="number"
                 value={setupTarget}
                 onChange={(e) => setSetupTarget(e.target.value)}

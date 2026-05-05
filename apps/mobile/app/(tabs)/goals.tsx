@@ -29,7 +29,7 @@ function GoalCard({ goal }: { goal: GoalListItem }) {
     <View style={[s.statCard, { minHeight: 0, marginBottom: 12 }]}>
       <View style={[s.statTopBorder, { backgroundColor: accent }]} />
       <Text style={s.statLabel}>
-        {goal.year} {goal.isAuto ? "auto goal" : goal.name.toLowerCase()}
+        {goal.year} {goal.isAuto ? "reading goal" : goal.name.toLowerCase()}
       </Text>
       <Text style={s.statBig}>
         {current} <Text style={s.statBigSecondary}>/ {total || "—"}</Text>

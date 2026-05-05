@@ -205,12 +205,6 @@ export default function TimelineTab() {
           pagesByDay={pagesByDay}
           finishedDateStr={finishedDateStr}
         />
-        <EntriesList
-          sortedThoughts={sortedThoughts}
-          finishedDateStr={finishedDateStr}
-          onDelete={deleteThought}
-          bottomRef={bottomRef}
-        />
         <Composer
           pageInput={pageInput}
           thoughtInput={thoughtInput}
@@ -220,6 +214,12 @@ export default function TimelineTab() {
           hidden={!!viewedRead}
           dateValue={dateInput}
           onDateChange={setDateInput}
+        />
+        <EntriesList
+          sortedThoughts={sortedThoughts}
+          finishedDateStr={finishedDateStr}
+          onDelete={deleteThought}
+          bottomRef={bottomRef}
         />
       </div>
 

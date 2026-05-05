@@ -7,6 +7,7 @@ import { BookCover } from "@/components/BookCover";
 import { StarDisplay } from "@/components/StarDisplay";
 import { formatDate } from "@/lib/dates";
 import { MONTH_NAMES } from "@/lib/constants";
+import { YearReadSkeleton } from "@/components/skeletons/YearReadSkeleton";
 
 function monthIndex(iso: string): number {
   return parseInt(iso.slice(5, 7), 10) - 1;
@@ -26,19 +27,7 @@ export default function ReadThisYearPage() {
   });
   const months = Array.from(byMonth.keys()).sort((a, b) => a - b);
 
-  if (loading)
-    return (
-      <div className="page">
-        <div className="page-content animate-pulse">
-          <div className="h-4 w-28 bg-hover rounded mb-8" />
-          <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="aspect-[2/3] bg-hover rounded" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+  if (loading) return <YearReadSkeleton />;
 
   return (
     <div className="page">

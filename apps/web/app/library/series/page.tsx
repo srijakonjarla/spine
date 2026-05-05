@@ -12,6 +12,7 @@ import { getEntries } from "@/lib/db";
 import { toast } from "@/lib/toast";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
+import { SkeletonRoot, SkeletonBlock } from "@/components/Skeleton";
 import type { BookEntry } from "@/types";
 import SeriesCard from "@/components/series/SeriesCard";
 
@@ -125,11 +126,11 @@ export default function SeriesPage() {
         />
 
         {loading && (
-          <div className="space-y-4 animate-pulse">
-            {[1, 2].map((i) => (
-              <div key={i} className="h-40 bg-hover rounded-xl" />
+          <SkeletonRoot className="space-y-4">
+            {[0, 1].map((i) => (
+              <SkeletonBlock key={i} className="h-40" />
             ))}
-          </div>
+          </SkeletonRoot>
         )}
 
         {!loading && seriesList.length === 0 && !showAdd && (
@@ -165,6 +166,7 @@ export default function SeriesPage() {
                 series name
               </label>
               <input
+                id="series-new-name"
                 type="text"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
@@ -176,6 +178,7 @@ export default function SeriesPage() {
             <div>
               <label className="text-xs text-fg-faint block mb-1">author</label>
               <input
+                id="series-new-author"
                 type="text"
                 value={newAuthor}
                 onChange={(e) => setNewAuthor(e.target.value)}

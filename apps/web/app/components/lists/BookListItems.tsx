@@ -115,6 +115,7 @@ export function BookListItems({
     <>
       {items.length > 4 && (
         <input
+          id="book-list-items-search"
           type="text"
           value={itemSearch}
           onChange={(e) => setItemSearch(e.target.value)}
@@ -188,6 +189,7 @@ export function BookListItems({
                   </p>
                 )}
                 <input
+                  id={`book-list-item-${item.id}-note`}
                   type="text"
                   value={item.notes ?? ""}
                   onChange={(e) => onUpdateNotes(item.id, e.target.value)}
@@ -223,6 +225,7 @@ export function BookListItems({
       {showAdd ? (
         <div className="rounded-xl px-4 py-3 border border-dashed border-line bg-surface">
           <CatalogSearch
+            id="book-list-add-title"
             value={draftTitle}
             onChange={(v) => setDraftTitle(v)}
             onSelect={(s: CatalogEntry) => {
@@ -236,6 +239,7 @@ export function BookListItems({
             libraryEntries={libraryEntries}
           />
           <input
+            id="book-list-add-author"
             type="text"
             value={draftAuthor}
             onChange={(e) => setDraftAuthor(e.target.value)}

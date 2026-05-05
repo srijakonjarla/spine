@@ -71,6 +71,7 @@ export function ListSidebar({
         <>
           <p className="section-label mb-1.5">Library / Branch</p>
           <textarea
+            id="list-sidebar-library-branch"
             value={list.description}
             onChange={(e) => onDescriptionChange(e.target.value)}
             placeholder="e.g. Brooklyn Public Library, Central Branch"
@@ -158,6 +159,7 @@ export function ListSidebar({
         <>
           <p className="section-label mb-2">Quick notes</p>
           <textarea
+            id="list-sidebar-notes"
             value={list.description}
             onChange={(e) => onDescriptionChange(e.target.value)}
             placeholder="notes about this list…"

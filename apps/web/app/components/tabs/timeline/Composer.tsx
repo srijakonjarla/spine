@@ -32,6 +32,7 @@ export default function Composer({
     <>
       <div className={`flex gap-2 items-start${hidden ? " hidden" : ""}`}>
         <input
+          id="composer-page"
           type="number"
           value={pageInput}
           onChange={(e) => onPageInputChange(e.target.value)}
@@ -46,6 +47,7 @@ export default function Composer({
           className="w-16 shrink-0 font-hand text-note text-fg border-b border-line bg-transparent outline-none placeholder:text-fg-muted/50 pb-1 pt-1 text-center"
         />
         <textarea
+          id="composer-thought"
           value={thoughtInput}
           onChange={(e) => onThoughtInputChange(e.target.value)}
           onKeyDown={(e) => {
@@ -82,6 +84,7 @@ export default function Composer({
       {!hidden && showDate && (
         <div className="mt-2">
           <input
+            id="composer-date"
             type="date"
             value={dateValue}
             max={today}

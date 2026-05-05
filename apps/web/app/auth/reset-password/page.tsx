@@ -140,6 +140,7 @@ function ResetPasswordForm() {
             <form onSubmit={handleResend} className="space-y-3">
               <p className="text-xs text-stone-400">send a new link:</p>
               <input
+                id="reset-password-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -177,13 +178,13 @@ function ResetPasswordForm() {
             </p>
             <div>
               <label
-                htmlFor="password"
+                htmlFor="reset-password-new"
                 className="text-xs text-stone-400 block mb-1"
               >
                 new password
               </label>
               <input
-                id="password"
+                id="reset-password-new"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -195,13 +196,13 @@ function ResetPasswordForm() {
             </div>
             <div>
               <label
-                htmlFor="confirm"
+                htmlFor="reset-password-confirm"
                 className="text-xs text-stone-400 block mb-1"
               >
                 confirm password
               </label>
               <input
-                id="confirm"
+                id="reset-password-confirm"
                 type="password"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}

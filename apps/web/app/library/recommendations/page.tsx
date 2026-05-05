@@ -11,6 +11,7 @@ import {
 import { CatalogSearch } from "@/components/CatalogSearch";
 import { type CatalogEntry } from "@/lib/catalog";
 import { toast } from "@/lib/toast";
+import { SkeletonRoot, SkeletonBlock } from "@/components/Skeleton";
 
 export default function RecommendationsPage() {
   const [recs, setRecs] = useState<Recommendation[]>([]);
@@ -97,11 +98,11 @@ export default function RecommendationsPage() {
         </div>
 
         {loading && (
-          <div className="space-y-3 animate-pulse">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-stone-100 rounded-lg" />
+          <SkeletonRoot className="space-y-3">
+            {[0, 1, 2].map((i) => (
+              <SkeletonBlock key={i} className="h-16 rounded-lg" />
             ))}
-          </div>
+          </SkeletonRoot>
         )}
 
         {!loading && (
@@ -234,6 +235,7 @@ export default function RecommendationsPage() {
               </div>
 
               <CatalogSearch
+                id="recommendations-add-title"
                 value={title}
                 onChange={setTitle}
                 onSelect={handleCatalogSelect}
@@ -246,6 +248,7 @@ export default function RecommendationsPage() {
                     author
                   </label>
                   <input
+                    id="recommendations-add-author"
                     type="text"
                     value={author}
                     onChange={(e) => setAuthor(e.target.value)}
@@ -259,6 +262,7 @@ export default function RecommendationsPage() {
                       : "recommended to"}
                   </label>
                   <input
+                    id="recommendations-add-by"
                     type="text"
                     value={by}
                     onChange={(e) => setBy(e.target.value)}
@@ -272,6 +276,7 @@ export default function RecommendationsPage() {
                   notes
                 </label>
                 <input
+                  id="recommendations-add-notes"
                   type="text"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}

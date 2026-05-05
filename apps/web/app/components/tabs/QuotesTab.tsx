@@ -61,6 +61,7 @@ export default function QuotesTab() {
       {open && (
         <div className="book-surface p-5 mb-6">
           <textarea
+            id="quotes-tab-text"
             autoFocus
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -77,6 +78,7 @@ export default function QuotesTab() {
           />
           <div className="flex items-center gap-3">
             <input
+              id="quotes-tab-page"
               type="text"
               value={page}
               onChange={(e) => setPage(e.target.value)}

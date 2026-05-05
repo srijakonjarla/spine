@@ -1,25 +1,39 @@
+import {
+  SkeletonRoot,
+  SkeletonLine,
+  SkeletonBlock,
+  SkeletonCover,
+} from "../Skeleton";
+
 export function HomeSkeleton() {
   return (
     <div className="page">
-      <div className="page-content animate-pulse">
-        <div className="h-5 w-36 bg-hover rounded mb-1.5" />
-        <div className="h-3.5 w-48 bg-hover rounded mb-8" />
+      <SkeletonRoot className="page-content">
+        {/* Greeting */}
+        <SkeletonLine size="md" className="w-36 mb-1.5" />
+        <SkeletonLine size="sm" className="w-48 mb-8" />
+
+        {/* Three index cards (streak / goal / quick stat) */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 bg-hover rounded-xl" />
+          {[0, 1, 2].map((i) => (
+            <SkeletonBlock key={i} className="h-16" />
           ))}
         </div>
+
+        {/* Mini cover row */}
         <div className="flex gap-3 mb-8">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="w-14 aspect-[2/3] bg-hover rounded" />
+          {[0, 1, 2, 3].map((i) => (
+            <SkeletonCover key={i} className="w-14" />
           ))}
         </div>
+
+        {/* Recent entries */}
         <div className="space-y-2.5">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 bg-hover rounded-xl" />
+          {[0, 1, 2].map((i) => (
+            <SkeletonBlock key={i} className="h-20" />
           ))}
         </div>
-      </div>
+      </SkeletonRoot>
     </div>
   );
 }

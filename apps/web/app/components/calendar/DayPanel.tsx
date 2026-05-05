@@ -262,6 +262,7 @@ export function DayPanel({
         <div>
           {editMode ? (
             <textarea
+              id="day-panel-note"
               ref={textareaRef}
               value={draft}
               rows={7}
@@ -458,6 +459,7 @@ export function DayPanel({
               save a quote
             </p>
             <textarea
+              id="day-panel-quote-text"
               ref={quoteRef}
               value={quoteText}
               onChange={(e) => setQuoteText(e.target.value)}
@@ -474,6 +476,7 @@ export function DayPanel({
             <div className="flex gap-2">
               {activeDayBooks.length > 0 && (
                 <select
+                  id="day-panel-quote-book"
                   value={quoteBookId}
                   onChange={(e) => setQuoteBookId(e.target.value)}
                   className="flex-1 text-caption px-2.5 py-1.5 rounded-lg border border-line focus:outline-none bg-page text-fg-muted"
@@ -487,6 +490,7 @@ export function DayPanel({
                 </select>
               )}
               <input
+                id="day-panel-quote-page"
                 type="text"
                 value={quotePage}
                 onChange={(e) => setQuotePage(e.target.value)}

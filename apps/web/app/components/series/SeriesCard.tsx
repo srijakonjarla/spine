@@ -171,6 +171,7 @@ export default function SeriesCard({
       <div className="flex items-start justify-between gap-4 mb-4">
         <div className="flex-1 min-w-0">
           <input
+            id={`series-${series.id}-name`}
             type="text"
             value={name}
             onChange={(e) => handleFieldChange({ name: e.target.value })}
@@ -178,6 +179,7 @@ export default function SeriesCard({
             className="font-serif text-lg font-semibold text-fg-heading bg-transparent border-none outline-none w-full placeholder:text-fg-faint"
           />
           <input
+            id={`series-${series.id}-author`}
             type="text"
             value={author}
             onChange={(e) => handleFieldChange({ author: e.target.value })}
@@ -283,6 +285,7 @@ export default function SeriesCard({
       {addingBook ? (
         <div className="mt-2">
           <CatalogSearch
+            id={`series-${series.id}-add-book`}
             value={draftTitle}
             onChange={setDraftTitle}
             onSelect={(s) => handleAddBook(s)}

@@ -4,10 +4,12 @@ import { toast } from "@/lib/toast";
 import { CatalogSearch } from "../CatalogSearch";
 
 export default function InlineAdd({
+  id,
   placeholder,
   onAdd,
   libraryEntries,
 }: {
+  id?: string;
   placeholder: string;
   onAdd: (catalog?: CatalogEntry, raw?: string) => Promise<void>;
   libraryEntries?: import("@/types").BookEntry[];
@@ -44,6 +46,7 @@ export default function InlineAdd({
   return (
     <div className="mt-2">
       <CatalogSearch
+        id={id}
         value={value}
         onChange={setValue}
         onSelect={handleAdd}

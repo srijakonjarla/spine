@@ -104,6 +104,7 @@ export default function ReadTab({
               style={{ minHeight: "160px" }}
             >
               <textarea
+                id="read-tab-feeling"
                 ref={feelingRef}
                 value={draft.feeling}
                 onChange={(e) =>
@@ -149,6 +150,7 @@ export default function ReadTab({
                     Started
                   </label>
                   <input
+                    id="read-tab-date-started"
                     type="date"
                     value={draft.dateStarted}
                     onChange={(e) =>
@@ -164,6 +166,7 @@ export default function ReadTab({
                     Finished
                   </label>
                   <input
+                    id="read-tab-date-finished"
                     type="date"
                     value={draft.dateFinished}
                     onChange={(e) =>
@@ -244,6 +247,7 @@ export default function ReadTab({
           <p className="caveat-label mb-3">my reflection</p>
           <div className="journal-surface p-5" style={{ minHeight: "160px" }}>
             <textarea
+              id="read-tab-feeling-current"
               ref={feelingRef}
               value={entry.feeling}
               onChange={(e) => onUpdate({ feeling: e.target.value })}
@@ -373,6 +377,7 @@ export default function ReadTab({
                         Started
                       </label>
                       <input
+                        id="read-tab-log-date-started"
                         type="date"
                         value={logDraft.dateStarted}
                         onChange={(e) =>
@@ -389,6 +394,7 @@ export default function ReadTab({
                         Finished
                       </label>
                       <input
+                        id="read-tab-log-date-finished"
                         type="date"
                         value={logDraft.dateFinished}
                         onChange={(e) =>
@@ -431,6 +437,7 @@ export default function ReadTab({
                       Notes
                     </label>
                     <input
+                      id="read-tab-log-feeling"
                       type="text"
                       value={logDraft.feeling}
                       onChange={(e) =>

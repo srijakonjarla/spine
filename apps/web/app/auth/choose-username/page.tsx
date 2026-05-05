@@ -113,6 +113,7 @@ function ChooseUsernameForm() {
           <div>
             <label className="login-label">username</label>
             <input
+              id="auth-choose-username"
               type="text"
               value={username}
               onChange={(e) =>

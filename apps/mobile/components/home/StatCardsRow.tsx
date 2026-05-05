@@ -34,6 +34,7 @@ export function StatCardsRow({
   goalCaveat,
   hasGoal,
   onSetGoal,
+  onOpenGoal,
   year,
 }: {
   streakDays: number;
@@ -44,6 +45,7 @@ export function StatCardsRow({
   goalCaveat: string;
   hasGoal: boolean;
   onSetGoal?: () => void;
+  onOpenGoal?: () => void;
   year: number;
 }) {
   const goalPct =
@@ -61,7 +63,13 @@ export function StatCardsRow({
       </View>
 
       {hasGoal ? (
-        <View style={s.statCard}>
+        <Pressable
+          onPress={onOpenGoal}
+          style={({ pressed }) => [
+            s.statCard,
+            pressed && { backgroundColor: C.paperDeep },
+          ]}
+        >
           <View style={[s.statTopBorder, { backgroundColor: C.terraInk }]} />
           <Text style={s.statLabel}>{year} GOAL</Text>
           <Text style={s.statBig}>
@@ -77,7 +85,7 @@ export function StatCardsRow({
             />
           </View>
           <Text style={s.statCaveat}>{goalCaveat}</Text>
-        </View>
+        </Pressable>
       ) : (
         <Pressable
           onPress={onSetGoal}

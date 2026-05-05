@@ -9,6 +9,7 @@ import { parseGoodreadsCSV, type GoodreadsPreview } from "@/lib/goodreads";
 import { apiFetch } from "@/lib/api";
 import type { User } from "@supabase/supabase-js";
 import { STATUS_LABEL } from "@/lib/statusMeta";
+import { ProfileSkeleton } from "@/components/skeletons/ProfileSkeleton";
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 function Section({
@@ -267,6 +268,7 @@ function GoodreadsImport() {
         )}
       </p>
       <input
+        id="profile-goodreads-csv"
         ref={fileRef}
         type="file"
         accept=".csv"
@@ -450,6 +452,7 @@ function InviteFriend() {
       <div>
         <label className="text-xs text-stone-400 block mb-1">their email</label>
         <input
+          id="profile-invite-email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -463,6 +466,7 @@ function InviteFriend() {
           a note (optional)
         </label>
         <input
+          id="profile-invite-note"
           type="text"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
@@ -610,16 +614,7 @@ export default function ProfilePage() {
     router.replace("/");
   };
 
-  if (loading) {
-    return (
-      <div className="page">
-        <div className="page-content animate-pulse">
-          <div className="h-8 w-40 bg-stone-200 rounded mb-3" />
-          <div className="h-3 w-24 bg-stone-100 rounded" />
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <ProfileSkeleton />;
 
   return (
     <div className="page">
@@ -641,6 +636,7 @@ export default function ProfilePage() {
                 display name
               </label>
               <input
+                id="profile-display-name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -652,6 +648,7 @@ export default function ProfilePage() {
                 username
               </label>
               <input
+                id="profile-username"
                 type="text"
                 value={username}
                 onChange={(e) =>
@@ -690,6 +687,7 @@ export default function ProfilePage() {
                 new password
               </label>
               <input
+                id="profile-new-password"
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
@@ -702,6 +700,7 @@ export default function ProfilePage() {
                 confirm new password
               </label>
               <input
+                id="profile-confirm-password"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}

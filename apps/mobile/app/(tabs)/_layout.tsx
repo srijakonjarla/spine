@@ -93,9 +93,9 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="you"
+        name="year"
         options={{
-          title: "you",
+          title: "year",
           tabBarIcon: ({ color, focused }) => (
             <PersonIcon
               color={color}

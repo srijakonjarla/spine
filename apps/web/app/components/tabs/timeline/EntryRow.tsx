@@ -18,6 +18,7 @@ export default function EntryRow({
   onDelete,
 }: EntryRowProps) {
   const currPage = thought.pageNumber ?? null;
+  const TimeIcon = timeOfDayEmoji(thought.createdAt);
   // Missing previous page is treated as 0 so the very first entry still has a pages-read badge.
   const pagesRead = currPage != null ? currPage - (prevPage ?? 0) : null;
 
@@ -28,7 +29,12 @@ export default function EntryRow({
           month: "short",
           day: "numeric",
         })}{" "}
-        · {timeOfDayEmoji(thought.createdAt)}
+        ·{" "}
+        <TimeIcon
+          size={12}
+          weight="duotone"
+          className="inline-block align-text-bottom size-4 fill-gold"
+        />
       </span>
       {currPage != null && (
         <span className="thought-pages">

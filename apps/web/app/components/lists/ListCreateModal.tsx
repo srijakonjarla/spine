@@ -126,6 +126,7 @@ export function ListCreateModal({
           <div className="mb-5">
             <label className="section-label block mb-1.5">List name</label>
             <input
+              id="list-create-name"
               autoFocus
               type="text"
               value={name}
@@ -193,6 +194,7 @@ export function ListCreateModal({
               </span>
             </label>
             <input
+              id="list-create-description"
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}

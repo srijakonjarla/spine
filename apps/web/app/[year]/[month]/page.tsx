@@ -17,6 +17,7 @@ import {
   formatMonthYear,
 } from "@/lib/dates";
 import { MONTH_ABBRS } from "@/lib/constants";
+import { MonthSpreadSkeleton } from "@/components/skeletons/MonthSpreadSkeleton";
 
 function pad(n: number) {
   return String(n).padStart(2, "0");
@@ -211,30 +212,7 @@ export default function MonthSpreadPage() {
   const panelIsLogged = selectedDate ? loggedDates.has(selectedDate) : false;
   const panelOpen = selectedDate !== null;
 
-  if (loading)
-    return (
-      <div className="page animate-pulse">
-        <div className="mx-auto px-6 py-12">
-          <div className="flex items-center justify-between mb-6">
-            <div className="h-7 w-32 bg-hover rounded" />
-            <div className="flex gap-2">
-              <div className="h-7 w-7 bg-hover rounded-full" />
-              <div className="h-7 w-7 bg-hover rounded-full" />
-            </div>
-          </div>
-          <div className="grid grid-cols-7 gap-1 mb-1">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <div key={i} className="h-4 bg-hover rounded" />
-            ))}
-          </div>
-          <div className="grid grid-cols-7 gap-1">
-            {Array.from({ length: 35 }).map((_, i) => (
-              <div key={i} className="aspect-square bg-hover rounded" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+  if (loading) return <MonthSpreadSkeleton />;
 
   return (
     <div className="page">

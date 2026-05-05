@@ -204,6 +204,7 @@ export function LoginForm() {
             <div>
               <label className="login-label">email</label>
               <input
+                id="login-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -225,6 +226,7 @@ export function LoginForm() {
           <div className="fade-up">
             <label className="login-label">name</label>
             <input
+              id="login-name"
               ref={nameRef}
               type="text"
               value={name}
@@ -241,6 +243,7 @@ export function LoginForm() {
           <div className="fade-up">
             <label className="login-label">username</label>
             <input
+              id="login-username"
               ref={usernameRef}
               type="text"
               value={username}
@@ -273,6 +276,7 @@ export function LoginForm() {
           <div className="fade-up">
             <label className="login-label">password</label>
             <input
+              id="login-password"
               ref={step === "password" ? passwordRef : undefined}
               type="password"
               value={password}
@@ -300,6 +304,7 @@ export function LoginForm() {
           <div className="fade-up">
             <label className="login-label">confirm password</label>
             <input
+              id="login-confirm-password"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}

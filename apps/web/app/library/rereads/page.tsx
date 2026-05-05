@@ -8,6 +8,7 @@ import { BookCover } from "@/components/BookCover";
 import { EmptyState } from "@/components/EmptyState";
 import type { BookEntry, BookRead } from "@/types";
 import { StarDisplay } from "@/components/StarDisplay";
+import { RereadsSkeleton } from "@/components/skeletons/RereadsSkeleton";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -126,25 +127,7 @@ export default function RereadsPage() {
 
   const insight = buildInsight(entries);
 
-  if (loading)
-    return (
-      <div className="page">
-        <div className="page-content animate-pulse">
-          <div className="h-4 w-16 bg-hover rounded mb-8" />
-          <div className="h-6 w-24 bg-hover rounded mb-2" />
-          <div className="h-4 w-56 bg-hover rounded mb-8" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="space-y-2">
-                <div className="aspect-[2/3] bg-hover rounded" />
-                <div className="h-3 bg-hover rounded w-3/4" />
-                <div className="h-3 bg-hover rounded w-1/2" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+  if (loading) return <RereadsSkeleton />;
 
   return (
     <div className="page">
