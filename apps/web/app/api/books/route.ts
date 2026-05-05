@@ -7,7 +7,10 @@ export async function GET(req: NextRequest) {
   const supabase = createApiClient(req);
   const userId = getUserId(req);
   if (!userId)
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "unauthorized", at: "route-get" },
+      { status: 401 },
+    );
 
   const { searchParams } = req.nextUrl;
   const year = searchParams.get("year");
@@ -72,7 +75,10 @@ export async function POST(req: NextRequest) {
   const supabase = createApiClient(req);
   const userId = getUserId(req);
   if (!userId)
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "unauthorized", at: "route-post" },
+      { status: 401 },
+    );
 
   const { entry } = await req.json();
 

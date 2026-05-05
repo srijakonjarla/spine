@@ -34,7 +34,10 @@ export async function proxy(req: NextRequest) {
   ) {
     const auth = req.headers.get("Authorization");
     if (!auth?.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "unauthorized", at: "proxy" },
+        { status: 401 },
+      );
     }
   }
 
