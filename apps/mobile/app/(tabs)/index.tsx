@@ -3,11 +3,15 @@ import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { currentStreak, localDateStr, streakRuns } from "@spine/shared";
+import { addQuote } from "@/lib/library";
 import {
+  ConfirmSheet,
   CurrentlyReading,
   Greeting,
+  LogProgressModal,
   QuickActions,
   RecentEntries,
+  SaveQuoteModal,
   StatCardsRow,
   TopBar,
   homeStyles as s,
@@ -84,6 +88,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyAction, setBusyAction] = useState(false);
+  const [logOpen, setLogOpen] = useState(false);
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const [doneOpen, setDoneOpen] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -134,7 +141,7 @@ export default function Home() {
     .map((e) => ({
       id: e.id,
       date: formatEntryDate(e.logDate),
-      title: data?.reading[0]?.title ?? "today",
+      title: data?.reading[0]?.title,
       note: e.note,
       footer:
         e.pagesRead && e.pagesRead > 0
@@ -147,72 +154,73 @@ export default function Home() {
   // ─── Action handlers ────────────────────────────────────────────
   const handleMarkDone = useCallback(() => {
     if (!currentBookData) return;
-    Alert.alert(
-      "mark as finished?",
-      `${currentBookData.title} will be moved to your finished shelf.`,
-      [
-        { text: "cancel", style: "cancel" },
-        {
-          text: "finish",
-          style: "default",
-          onPress: async () => {
-            try {
-              setBusyAction(true);
-              await markBookFinished(currentBookData.id);
-              await refresh();
-            } catch (e) {
-              Alert.alert(
-                "couldn't mark done",
-                e instanceof Error ? e.message : "try again later.",
-              );
-            } finally {
-              setBusyAction(false);
-            }
-          },
-        },
-      ],
-    );
-  }, [currentBookData, refresh]);
+    setDoneOpen(true);
+  }, [currentBookData]);
 
-  const handleLogProgress = useCallback(() => {
-    if (!userId) return;
-    Alert.prompt(
-      "log progress",
-      "how many pages did you read?",
-      [
-        { text: "cancel", style: "cancel" },
-        {
-          text: "log",
-          onPress: async (input?: string) => {
-            const pages = Number(input);
-            if (!Number.isFinite(pages) || pages <= 0) {
-              Alert.alert("hmm", "enter a number greater than zero.");
-              return;
-            }
-            try {
-              setBusyAction(true);
-              await logProgress({ userId, pagesRead: Math.round(pages) });
-              await refresh();
-            } catch (e) {
-              Alert.alert(
-                "couldn't log",
-                e instanceof Error ? e.message : "try again later.",
-              );
-            } finally {
-              setBusyAction(false);
-            }
-          },
-        },
-      ],
-      "plain-text",
-      "",
-      "number-pad",
-    );
-  }, [userId, refresh]);
+  const confirmMarkDone = useCallback(async () => {
+    if (!currentBookData) return;
+    try {
+      setBusyAction(true);
+      const id = currentBookData.id;
+      await markBookFinished(id);
+      await refresh();
+      setDoneOpen(false);
+      router.push(`/book/${id}`);
+    } catch (e) {
+      Alert.alert(
+        "couldn't mark done",
+        e instanceof Error ? e.message : "try again later.",
+      );
+    } finally {
+      setBusyAction(false);
+    }
+  }, [currentBookData, refresh, router]);
 
-  const handleSaveQuote = useCallback(() => {
-    Alert.alert("coming soon", "quote capture is on the way.");
-  }, []);
+  const handleLogProgress = useCallback(() => setLogOpen(true), []);
+  const handleSaveQuote = useCallback(() => setQuoteOpen(true), []);
+
+  const submitLog = useCallback(
+    async ({ pages, note }: { pages: number; note: string }) => {
+      if (!userId) return;
+      try {
+        setBusyAction(true);
+        await logProgress({
+          userId,
+          pagesRead: pages,
+          note: note.trim() || undefined,
+        });
+        await refresh();
+        setLogOpen(false);
+      } catch (e) {
+        Alert.alert(
+          "couldn't log",
+          e instanceof Error ? e.message : "try again later.",
+        );
+      } finally {
+        setBusyAction(false);
+      }
+    },
+    [userId, refresh],
+  );
+
+  const submitQuote = useCallback(
+    async ({ text, page }: { text: string; page: string }) => {
+      if (!currentBookData) return;
+      try {
+        setBusyAction(true);
+        await addQuote(text.trim(), currentBookData.id, page.trim());
+        setQuoteOpen(false);
+      } catch (e) {
+        Alert.alert(
+          "couldn't save quote",
+          e instanceof Error ? e.message : "try again later.",
+        );
+      } finally {
+        setBusyAction(false);
+      }
+    },
+    [currentBookData],
+  );
 
   const handleSetGoal = useCallback(() => {
     if (!userId) return;
@@ -285,7 +293,13 @@ export default function Home() {
             {currentBook ? (
               <>
                 <Text style={s.sectionLabel}>currently reading</Text>
-                <CurrentlyReading book={currentBook} />
+                <CurrentlyReading
+                  book={currentBook}
+                  onPress={() =>
+                    currentBookData &&
+                    router.push(`/book/${currentBookData.id}`)
+                  }
+                />
               </>
             ) : (
               <View
@@ -306,12 +320,14 @@ export default function Home() {
               </View>
             )}
 
-            <QuickActions
-              disabled={busyAction || !currentBookData}
-              onLogProgress={handleLogProgress}
-              onSaveQuote={handleSaveQuote}
-              onMarkDone={handleMarkDone}
-            />
+            {currentBookData ? (
+              <QuickActions
+                disabled={busyAction}
+                onLogProgress={handleLogProgress}
+                onSaveQuote={handleSaveQuote}
+                onMarkDone={handleMarkDone}
+              />
+            ) : null}
 
             <StatCardsRow
               streakDays={streak}
@@ -344,12 +360,45 @@ export default function Home() {
               year={CURRENT_YEAR}
             />
 
-            <RecentEntries entries={recentEntries} />
+            <RecentEntries
+              entries={recentEntries}
+              onSelect={() =>
+                currentBookData && router.push(`/book/${currentBookData.id}`)
+              }
+            />
           </>
         )}
 
         <View style={{ height: 32 }} />
       </ScrollView>
+
+      <LogProgressModal
+        open={logOpen}
+        bookTitle={currentBookData?.title}
+        busy={busyAction}
+        onClose={() => setLogOpen(false)}
+        onSubmit={submitLog}
+      />
+      <SaveQuoteModal
+        open={quoteOpen}
+        bookTitle={currentBookData?.title}
+        busy={busyAction}
+        onClose={() => setQuoteOpen(false)}
+        onSubmit={submitQuote}
+      />
+      <ConfirmSheet
+        open={doneOpen}
+        title="mark as finished?"
+        message={
+          currentBookData
+            ? `${currentBookData.title} will move to your finished shelf as of today.`
+            : ""
+        }
+        confirmLabel="finish"
+        busy={busyAction}
+        onConfirm={confirmMarkDone}
+        onClose={() => setDoneOpen(false)}
+      />
     </SafeAreaView>
   );
 }

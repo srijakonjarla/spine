@@ -9,6 +9,7 @@
     "./types": "./src/types.ts",
     "./dates": "./src/dates.ts",
     "./constants": "./src/constants.ts",
+    "./heroGradients": "./src/heroGradients.ts",
     "./queries": "./src/queries/index.ts"
   },
   "peerDependencies": {

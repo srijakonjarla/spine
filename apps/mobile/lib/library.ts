@@ -1,4 +1,4 @@
-import type { BookEntry } from "@spine/shared";
+import type { BookEntry, Quote } from "@spine/shared";
 import { apiFetch, publicFetch } from "./api";
 
 export interface CatalogEntry {
@@ -16,6 +16,26 @@ export interface CatalogEntry {
   status?: string;
   bookId?: string;
   catalogBookId?: string;
+}
+
+interface ThoughtRow {
+  id: string;
+  text: string;
+  page_number?: number | null;
+  created_at: string;
+}
+
+interface BookReadRow {
+  id: string;
+  book_id?: string;
+  status?: string;
+  date_started?: string | null;
+  date_finished?: string | null;
+  date_shelved?: string | null;
+  rating?: number | null;
+  feeling?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface BookRow {
@@ -46,6 +66,8 @@ interface BookRow {
   page_count?: number | null;
   created_at: string;
   updated_at: string;
+  thoughts?: ThoughtRow[];
+  book_reads?: BookReadRow[];
 }
 
 interface CatalogRow {
@@ -89,8 +111,24 @@ function mapBook(row: BookRow): BookEntry {
     coverUrl: row.cover_url ?? "",
     isbn: row.isbn ?? "",
     pageCount: row.page_count ?? null,
-    thoughts: [],
-    reads: [],
+    thoughts: (row.thoughts ?? []).map((t) => ({
+      id: t.id,
+      text: t.text ?? "",
+      pageNumber: t.page_number ?? null,
+      createdAt: t.created_at,
+    })),
+    reads: (row.book_reads ?? []).map((r) => ({
+      id: r.id,
+      bookId: r.book_id ?? "",
+      status: (r.status ?? "finished") as BookEntry["status"],
+      dateStarted: r.date_started ?? "",
+      dateFinished: r.date_finished ?? "",
+      dateShelved: r.date_shelved ?? "",
+      rating: r.rating ?? 0,
+      feeling: r.feeling ?? "",
+      createdAt: r.created_at ?? "",
+      updatedAt: r.updated_at ?? "",
+    })),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -152,6 +190,89 @@ export async function createEntry(entry: BookEntry): Promise<{ id: string }> {
   });
   const data = await res.json();
   return { id: data.id ?? entry.id };
+}
+
+export async function getEntry(id: string): Promise<BookEntry | null> {
+  const res = await apiFetch(`/api/books/${id}`);
+  const data = await res.json();
+  if (!data) return null;
+  return mapBook(data as BookRow);
+}
+
+export async function updateEntry(
+  id: string,
+  patch: Partial<BookEntry>,
+): Promise<void> {
+  await apiFetch(`/api/books/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
+export async function addThought(
+  bookId: string,
+  thought: {
+    id: string;
+    text: string;
+    pageNumber: number | null;
+    createdAt: string;
+  },
+): Promise<void> {
+  await apiFetch(`/api/books/${bookId}/thoughts`, {
+    method: "POST",
+    body: JSON.stringify({ thought }),
+  });
+}
+
+export async function removeThought(
+  bookId: string,
+  thoughtId: string,
+): Promise<void> {
+  await apiFetch(`/api/books/${bookId}/thoughts`, {
+    method: "DELETE",
+    body: JSON.stringify({ thoughtId }),
+  });
+}
+
+interface QuoteRow {
+  id: string;
+  book_id: string | null;
+  text: string;
+  page_number: string;
+  created_at: string;
+}
+
+function mapQuote(row: QuoteRow): Quote {
+  return {
+    id: row.id,
+    bookId: row.book_id,
+    text: row.text,
+    pageNumber: row.page_number,
+    createdAt: row.created_at,
+  };
+}
+
+export async function getQuotes(bookId?: string): Promise<Quote[]> {
+  const qs = bookId ? `?bookId=${bookId}` : "";
+  const res = await apiFetch(`/api/quotes${qs}`);
+  const data = (await res.json()) as QuoteRow[];
+  return data.map(mapQuote);
+}
+
+export async function addQuote(
+  text: string,
+  bookId: string,
+  pageNumber: string,
+): Promise<Quote> {
+  const res = await apiFetch("/api/quotes", {
+    method: "POST",
+    body: JSON.stringify({ text, bookId, pageNumber }),
+  });
+  return mapQuote((await res.json()) as QuoteRow);
+}
+
+export async function deleteQuote(id: string): Promise<void> {
+  await apiFetch(`/api/quotes/${id}`, { method: "DELETE" });
 }
 
 export type { BookEntry };

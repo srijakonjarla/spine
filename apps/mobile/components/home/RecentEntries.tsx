@@ -4,7 +4,7 @@ import { homeStyles as s } from "./styles";
 export type Entry = {
   id: string;
   date: string; // already-formatted "READING APR 19"
-  title: string;
+  title?: string;
   note: string;
   footer: string; // "p. 519 · 22 mins"
 };
@@ -12,9 +12,11 @@ export type Entry = {
 export function RecentEntries({
   entries,
   onSeeAll,
+  onSelect,
 }: {
   entries: Entry[];
   onSeeAll?: () => void;
+  onSelect?: (entry: Entry) => void;
 }) {
   if (entries.length === 0) return null;
   return (
@@ -27,9 +29,9 @@ export function RecentEntries({
       </View>
 
       {entries.map((e) => (
-        <Pressable key={e.id} style={s.entryCard}>
+        <Pressable key={e.id} style={s.entryCard} onPress={() => onSelect?.(e)}>
           <Text style={s.entryDate}>{e.date}</Text>
-          <Text style={s.entryTitle}>{e.title}</Text>
+          {e.title ? <Text style={s.entryTitle}>{e.title}</Text> : null}
           <Text style={s.entryNote}>{e.note}</Text>
           <Text style={s.entryFooter}>{e.footer}</Text>
         </Pressable>

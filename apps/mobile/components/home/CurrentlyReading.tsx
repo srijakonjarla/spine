@@ -24,10 +24,16 @@ function daysAgo(iso: string): number | null {
   return Math.max(0, Math.round((todayMid - start) / 86400000));
 }
 
-export function CurrentlyReading({ book }: { book: ReadingBook }) {
+export function CurrentlyReading({
+  book,
+  onPress,
+}: {
+  book: ReadingBook;
+  onPress?: () => void;
+}) {
   const days = book.dateStarted ? daysAgo(book.dateStarted) : null;
   return (
-    <Pressable style={s.bookCard}>
+    <Pressable style={s.bookCard} onPress={onPress}>
       {book.coverUrl ? (
         <Image
           source={{ uri: book.coverUrl }}

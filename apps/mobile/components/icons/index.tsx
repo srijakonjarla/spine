@@ -130,6 +130,94 @@ export function QuoteIcon({ size = 16, color }: IconProps) {
   );
 }
 
+export function LeafIcon({ size = 14, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" {...stroke(color, 1.5)}>
+      <Path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z" />
+      <Path d="M2 21c0-3 1.85-5.36 5.08-6" />
+    </Svg>
+  );
+}
+
+export function BookOpenIcon({ size = 14, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" {...stroke(color, 1.5)}>
+      <Path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+      <Path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+    </Svg>
+  );
+}
+
+export function MoonIcon({ size = 14, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" {...stroke(color, 1.5)}>
+      <Path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </Svg>
+  );
+}
+
+export function SunIcon({ size = 14, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" {...stroke(color, 1.5)}>
+      <Circle cx="12" cy="12" r="4" />
+      <Line x1="12" y1="2" x2="12" y2="4" />
+      <Line x1="12" y1="20" x2="12" y2="22" />
+      <Line x1="4.93" y1="4.93" x2="6.34" y2="6.34" />
+      <Line x1="17.66" y1="17.66" x2="19.07" y2="19.07" />
+      <Line x1="2" y1="12" x2="4" y2="12" />
+      <Line x1="20" y1="12" x2="22" y2="12" />
+      <Line x1="4.93" y1="19.07" x2="6.34" y2="17.66" />
+      <Line x1="17.66" y1="6.34" x2="19.07" y2="4.93" />
+    </Svg>
+  );
+}
+
+export function StarIcon({ size = 14, color, weight = "regular" }: IconProps) {
+  const filled = weight === "bold";
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+        fill={filled ? color : "none"}
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+export function BookmarkIcon({
+  size = 18,
+  color,
+  weight = "regular",
+}: IconProps) {
+  const filled = weight === "bold";
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"
+        fill={filled ? color : "none"}
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+export function GridIcon({ size = 22, color, weight = "regular" }: IconProps) {
+  const w = weight === "bold" ? 2 : 1.5;
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" {...stroke(color, w)}>
+      <Rect x="3" y="3" width="7" height="7" rx="1" />
+      <Rect x="14" y="3" width="7" height="7" rx="1" />
+      <Rect x="3" y="14" width="7" height="7" rx="1" />
+      <Rect x="14" y="14" width="7" height="7" rx="1" />
+    </Svg>
+  );
+}
+
 export function FlameIcon({ size = 14, color }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>

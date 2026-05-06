@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -11,103 +11,65 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { dateYear, localDateStr, type BookEntry } from "@spine/shared";
+import { useRouter } from "expo-router";
+import { dateYear, type BookEntry } from "@spine/shared";
 import { TopBar, homeStyles as s } from "@/components/home";
-import { BookCoverThumb } from "@/components/library/BookCoverThumb";
+import { BookRow } from "@/components/library/BookRow";
 import { InlineAdd } from "@/components/library/InlineAdd";
-import { C } from "@/components/login/tokens";
 import {
-  createEntry,
-  getEntries,
-  lookupBook,
-  type CatalogEntry,
-} from "@/lib/library";
+  MoodChipRow,
+  SearchBar,
+  ViewToggle,
+  normalizeMood,
+} from "@/components/library/LibraryFilters";
+import { YearShelf, type ShelfGroup } from "@/components/library/YearShelf";
+import { C } from "@/components/login/tokens";
+import { useBooks } from "@/lib/booksContext";
+import { createEntry, lookupBook, type CatalogEntry } from "@/lib/library";
+import { makeEntry } from "@/lib/makeEntry";
 
 const SERIF = Platform.select({ ios: "Georgia", default: "serif" });
 
-function uuid(): string {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
-
-function makeEntry(
-  status: "reading" | "want-to-read",
-  catalog?: CatalogEntry,
-  raw?: string,
-): BookEntry | null {
-  const title = (catalog?.title ?? raw ?? "").trim();
-  if (!title) return null;
-  const now = new Date();
-  return {
-    id: uuid(),
-    catalogBookId: "",
-    title: catalog?.title ?? title,
-    author: catalog?.author ?? "",
-    publisher: catalog?.publisher ?? "",
-    releaseDate: catalog?.releaseDate ?? "",
-    genres: catalog?.genres ?? [],
-    userGenres: [],
-    moodTags: [],
-    diversityTags: catalog?.diversityTags ?? [],
-    userDiversityTags: [],
-    bookshelves: [],
-    status,
-    format: "",
-    audioDurationMinutes: catalog?.audioDurationMinutes ?? null,
-    dateStarted: status === "reading" ? localDateStr(now) : "",
-    dateFinished: "",
-    dateShelved: status === "want-to-read" ? localDateStr(now) : "",
-    rating: 0,
-    feeling: "",
-    thoughts: [],
-    reads: [],
-    bookmarked: false,
-    upNext: false,
-    coverUrl: catalog?.coverUrl ?? "",
-    isbn: catalog?.isbn ?? "",
-    pageCount: catalog?.pageCount ?? null,
-    createdAt: now.toISOString(),
-    updatedAt: now.toISOString(),
-  };
-}
-
 export default function LibraryTab() {
-  const [entries, setEntries] = useState<BookEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    books: entries,
+    loading,
+    error,
+    refresh,
+    addBook,
+    removeBook,
+  } = useBooks();
   const { width } = useWindowDimensions();
+  const router = useRouter();
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [search, setSearch] = useState("");
+  const [activeMood, setActiveMood] = useState<string | null>(null);
+  const [tagsOpen, setTagsOpen] = useState(true);
 
-  const refresh = useCallback(async () => {
-    try {
-      const data = await getEntries();
-      setEntries(data);
-      setError(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "load failed");
-    }
-  }, []);
+  const allMoods = useMemo(
+    () =>
+      Array.from(
+        new Set(entries.flatMap((e) => (e.moodTags ?? []).map(normalizeMood))),
+      )
+        .filter(Boolean)
+        .sort(),
+    [entries],
+  );
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    getEntries()
-      .then((data) => {
-        if (!cancelled) setEntries(data);
-      })
-      .catch((e) => {
-        if (!cancelled)
-          setError(e instanceof Error ? e.message : "load failed");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const matchesFilter = useCallback(
+    (e: BookEntry) => {
+      const q = search.trim().toLowerCase();
+      const matchesSearch =
+        !q ||
+        e.title.toLowerCase().includes(q) ||
+        (e.author ?? "").toLowerCase().includes(q);
+      const matchesMood =
+        !activeMood ||
+        (e.moodTags ?? []).some((m) => normalizeMood(m) === activeMood);
+      return matchesSearch && matchesMood;
+    },
+    [search, activeMood],
+  );
 
   const handleAdd = useCallback(
     async (
@@ -119,50 +81,67 @@ export default function LibraryTab() {
         catalog ?? (raw ? await lookupBook(raw).catch(() => null) : null);
       const entry = makeEntry(status, enriched ?? undefined, raw);
       if (!entry) return;
-      // Optimistic insert
-      setEntries((prev) => [entry, ...prev]);
+      addBook(entry);
       try {
         await createEntry(entry);
-        await refresh();
+        refresh();
       } catch (e) {
-        setEntries((prev) => prev.filter((b) => b.id !== entry.id));
+        removeBook(entry.id);
         Alert.alert(
           "couldn't add book",
           e instanceof Error ? e.message : "try again later.",
         );
       }
     },
-    [refresh],
+    [addBook, removeBook, refresh],
   );
 
   const currentlyReading = useMemo(
-    () => entries.filter((e) => e.status === "reading"),
-    [entries],
+    () => entries.filter((e) => e.status === "reading" && matchesFilter(e)),
+    [entries, matchesFilter],
   );
   const wantToRead = useMemo(
-    () => entries.filter((e) => e.status === "want-to-read"),
-    [entries],
+    () =>
+      entries.filter((e) => e.status === "want-to-read" && matchesFilter(e)),
+    [entries, matchesFilter],
   );
 
-  const yearGroups = useMemo(() => {
-    const finished = entries.filter((e) => e.status === "finished");
-    const map = new Map<number, BookEntry[]>();
+  const yearGroups = useMemo<ShelfGroup[]>(() => {
+    const finished = entries.filter(
+      (e) => e.status === "finished" && matchesFilter(e),
+    );
+    const yearMap = new Map<number, BookEntry[]>();
+    const earlier: BookEntry[] = [];
     finished.forEach((b) => {
-      const y = b.dateFinished ? (dateYear(b.dateFinished) ?? 0) : 0;
-      if (!map.has(y)) map.set(y, []);
-      map.get(y)!.push(b);
+      const y = b.dateFinished ? dateYear(b.dateFinished) : null;
+      if (y == null) {
+        earlier.push(b);
+        return;
+      }
+      if (!yearMap.has(y)) yearMap.set(y, []);
+      yearMap.get(y)!.push(b);
     });
-    return Array.from(map.entries())
+    const groups: ShelfGroup[] = Array.from(yearMap.entries())
       .sort((a, b) => b[0] - a[0])
       .map(([year, books]) => ({
+        kind: "year",
         year,
         books: books.sort((a, b) =>
           (b.dateFinished ?? "").localeCompare(a.dateFinished ?? ""),
         ),
       }));
-  }, [entries]);
+    if (earlier.length > 0) {
+      groups.push({
+        kind: "earlier",
+        books: earlier.sort((a, b) =>
+          (a.title ?? "").localeCompare(b.title ?? ""),
+        ),
+      });
+    }
+    return groups;
+  }, [entries, matchesFilter]);
 
-  // Grid: 3 columns on phones, 4 on wider screens
+  // Grid sizing: 3 cols on phones, 4 on wider screens.
   const cols = width >= 700 ? 4 : 3;
   const sidePadding = 24;
   const gap = 12;
@@ -181,17 +160,35 @@ export default function LibraryTab() {
       >
         <View style={local.header}>
           <Text style={local.title}>library</Text>
-          <Text style={local.count}>
-            {loading ? "" : `${entries.length} books`}
-          </Text>
+          <View style={local.headerRight}>
+            <Text style={local.count}>
+              {loading ? "" : `${entries.length} books`}
+            </Text>
+            <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
+          </View>
         </View>
+
+        <SearchBar
+          search={search}
+          setSearch={setSearch}
+          hasMoods={allMoods.length > 0}
+          tagsOpen={tagsOpen}
+          setTagsOpen={setTagsOpen}
+        />
+        {allMoods.length > 0 && tagsOpen ? (
+          <MoodChipRow
+            moods={allMoods}
+            activeMood={activeMood}
+            setActiveMood={setActiveMood}
+          />
+        ) : null}
 
         {loading ? (
           <View style={{ paddingVertical: 60, alignItems: "center" }}>
             <ActivityIndicator color={C.fgMuted} />
           </View>
         ) : error ? (
-          <Text style={local.error}>couldn't load library. {error}</Text>
+          <Text style={local.error}>couldn&apos;t load library. {error}</Text>
         ) : (
           <>
             <View style={local.sectionBlock}>
@@ -199,12 +196,12 @@ export default function LibraryTab() {
               {currentlyReading.length > 0 ? (
                 <View style={local.list}>
                   {currentlyReading.map((b) => (
-                    <BookRow
+                    <Pressable
                       key={b.id}
-                      entry={b}
-                      symbol="○"
-                      symbolColor={C.terra}
-                    />
+                      onPress={() => router.push(`/book/${b.id}`)}
+                    >
+                      <BookRow entry={b} symbol="○" symbolColor={C.terra} />
+                    </Pressable>
                   ))}
                 </View>
               ) : null}
@@ -218,19 +215,24 @@ export default function LibraryTab() {
             <View style={local.sectionBlock}>
               <View style={local.sectionHeaderRow}>
                 <Text style={s.sectionLabel}>want to read</Text>
-                {wantToRead.length > 8 ? (
-                  <Text style={local.allLink}>{wantToRead.length} total</Text>
+                {wantToRead.length > 6 ? (
+                  <Pressable
+                    hitSlop={8}
+                    onPress={() => router.push("/library/want-to-read")}
+                  >
+                    <Text style={local.allLink}>all {wantToRead.length} →</Text>
+                  </Pressable>
                 ) : null}
               </View>
               {wantToRead.length > 0 ? (
                 <View style={local.list}>
-                  {wantToRead.slice(0, 8).map((b) => (
-                    <BookRow
+                  {wantToRead.slice(0, 6).map((b) => (
+                    <Pressable
                       key={b.id}
-                      entry={b}
-                      symbol="◌"
-                      symbolColor={C.fgFaint}
-                    />
+                      onPress={() => router.push(`/book/${b.id}`)}
+                    >
+                      <BookRow entry={b} symbol="◌" symbolColor={C.plum} />
+                    </Pressable>
                   ))}
                 </View>
               ) : null}
@@ -244,40 +246,14 @@ export default function LibraryTab() {
             {yearGroups.length === 0 ? (
               <Text style={local.emptyHint}>no finished books yet.</Text>
             ) : (
-              yearGroups.map(({ year, books }) => (
-                <View key={year} style={local.yearBlock}>
-                  <View style={local.shelfDivider}>
-                    <View style={local.dividerLine} />
-                    <Text style={local.yearLabel}>
-                      {year || "—"} · {books.length}
-                    </Text>
-                    <View style={local.dividerLine} />
-                  </View>
-                  <View style={local.grid}>
-                    {books.map((b) => (
-                      <Pressable
-                        key={b.id}
-                        style={[local.gridItem, { width: tileWidth }]}
-                      >
-                        <BookCoverThumb
-                          coverUrl={b.coverUrl}
-                          title={b.title || "untitled"}
-                          author={b.author}
-                          width={tileWidth}
-                          height={tileHeight}
-                        />
-                        <Text style={local.gridTitle} numberOfLines={2}>
-                          {b.title || "untitled"}
-                        </Text>
-                        {b.author ? (
-                          <Text style={local.gridAuthor} numberOfLines={1}>
-                            {b.author}
-                          </Text>
-                        ) : null}
-                      </Pressable>
-                    ))}
-                  </View>
-                </View>
+              yearGroups.map((group) => (
+                <YearShelf
+                  key={group.kind === "year" ? group.year : "earlier"}
+                  group={group}
+                  viewMode={viewMode}
+                  tileWidth={tileWidth}
+                  tileHeight={tileHeight}
+                />
               ))
             )}
           </>
@@ -286,30 +262,6 @@ export default function LibraryTab() {
         <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-function BookRow({
-  entry,
-  symbol,
-  symbolColor,
-}: {
-  entry: BookEntry;
-  symbol: string;
-  symbolColor: string;
-}) {
-  return (
-    <View style={local.row}>
-      <Text style={[local.rowSymbol, { color: symbolColor }]}>{symbol}</Text>
-      <Text style={local.rowTitle} numberOfLines={1}>
-        {entry.title || "untitled"}
-      </Text>
-      {entry.author ? (
-        <Text style={local.rowAuthor} numberOfLines={1}>
-          {entry.author}
-        </Text>
-      ) : null}
-    </View>
   );
 }
 
@@ -333,10 +285,11 @@ const local = StyleSheet.create({
     color: C.plum,
     letterSpacing: -1.2,
   },
-  count: {
-    fontSize: 11,
-    color: C.fgMuted,
-    letterSpacing: 0.3,
+  count: { fontSize: 11, color: C.fgMuted, letterSpacing: 0.3 },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
   error: { color: "#b03a2e", paddingVertical: 16 },
   sectionBlock: { marginBottom: 24 },
@@ -347,46 +300,9 @@ const local = StyleSheet.create({
   },
   allLink: { fontSize: 11, color: C.fgFaint, letterSpacing: 0.3 },
   list: { marginTop: 4, gap: 4 },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 6,
-  },
-  rowSymbol: { fontSize: 12, width: 14 },
-  rowTitle: { flex: 1, fontSize: 14, color: C.fg },
-  rowAuthor: { fontSize: 11, color: C.fgFaint, maxWidth: 120 },
   emptyHint: {
     fontSize: 12,
     color: C.fgFaint,
     paddingVertical: 16,
   },
-  yearBlock: { marginBottom: 20 },
-  shelfDivider: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginTop: 12,
-    marginBottom: 14,
-  },
-  dividerLine: { flex: 1, height: 1, backgroundColor: C.line },
-  yearLabel: {
-    fontFamily: SERIF,
-    fontSize: 12,
-    color: C.fgMuted,
-    letterSpacing: 0.4,
-  },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  gridItem: { gap: 6 },
-  gridTitle: {
-    fontSize: 12,
-    color: C.fg,
-    fontWeight: "500",
-    letterSpacing: -0.1,
-  },
-  gridAuthor: { fontSize: 10, color: C.fgFaint },
 });

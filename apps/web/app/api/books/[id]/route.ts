@@ -3,6 +3,7 @@ import { createApiClient, getUserId } from "@/lib/supabase-server";
 import { autoLogToday } from "@/lib/autoLog";
 import { syncBookSeries } from "@/lib/seriesSync.server";
 import { flattenUserBook } from "@/lib/bookUpsert.server";
+import { normalizeMoodTags } from "@/lib/moodTags";
 
 export async function GET(
   req: NextRequest,
@@ -76,7 +77,8 @@ export async function PATCH(
   if ("feeling" in patch) userRow.feeling = patch.feeling;
   if ("bookmarked" in patch) userRow.bookmarked = patch.bookmarked;
   if ("upNext" in patch) userRow.up_next = patch.upNext;
-  if ("moodTags" in patch) userRow.mood_tags = patch.moodTags;
+  if ("moodTags" in patch)
+    userRow.mood_tags = normalizeMoodTags(patch.moodTags);
   if ("format" in patch) userRow.format = patch.format;
   if ("diversityTags" in patch) userRow.diversity_tags = patch.diversityTags;
   // Title and author become per-user overrides

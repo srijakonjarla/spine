@@ -4,4 +4,7 @@ export { CurrentlyReading, type ReadingBook } from "./CurrentlyReading";
 export { QuickActions } from "./QuickActions";
 export { StatCardsRow } from "./StatCardsRow";
 export { RecentEntries, type Entry } from "./RecentEntries";
+export { LogProgressModal } from "./LogProgressModal";
+export { SaveQuoteModal } from "./SaveQuoteModal";
+export { ConfirmSheet } from "./ConfirmSheet";
 export { homeStyles } from "./styles";

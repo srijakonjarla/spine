@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 interface DaysStripProps {
   calendarDays: { date: Date; dateStr: string }[];
   thoughtsByDay: Record<string, number>;
@@ -9,6 +11,8 @@ const LEGEND = [
   { bg: "var(--bg-sage-25)", label: "logged" },
   { bg: "var(--terra)", label: "finished" },
 ];
+
+const DAY_STRIP_THRESHOLD = 5;
 
 /**
  * Horizontal strip showing every day the user has spent with a book — including
@@ -22,7 +26,14 @@ export default function DaysStrip({
   pagesByDay,
   finishedDateStr,
 }: DaysStripProps) {
+  const [expanded, setExpanded] = useState(false);
   if (calendarDays.length === 0) return null;
+
+  const collapsed = calendarDays.length > DAY_STRIP_THRESHOLD && !expanded;
+  const visible = collapsed
+    ? [calendarDays[0], null, ...calendarDays.slice(-4)]
+    : calendarDays;
+  const hiddenCount = calendarDays.length - 5;
 
   return (
     <div className="mb-7">
@@ -33,7 +44,22 @@ export default function DaysStrip({
         className="flex gap-[5px] items-center overflow-x-auto pb-1 -mx-1 px-1 scroll-smooth snap-x"
         style={{ scrollbarWidth: "thin" }}
       >
-        {calendarDays.map(({ date, dateStr }) => {
+        {visible.map((entry, idx) => {
+          if (entry === null) {
+            return (
+              <button
+                key="ellipsis"
+                onClick={() => setExpanded(true)}
+                className="timeline-day-gap shrink-0 snap-start cursor-pointer hover:border-fg-muted hover:text-fg-muted transition-colors"
+                title={`Show ${hiddenCount} hidden day${hiddenCount === 1 ? "" : "s"}`}
+                style={{ borderStyle: "dashed" }}
+              >
+                +{hiddenCount}
+              </button>
+            );
+          }
+          const { date, dateStr } = entry;
+          void idx;
           const count = thoughtsByDay[dateStr] || 0;
           const pages = pagesByDay[dateStr] || 0;
           const isFinish = dateStr === finishedDateStr;

@@ -8,6 +8,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { normalizeMoodTags } from "@/lib/moodTags";
 
 export interface CatalogFields {
   title: string;
@@ -281,7 +282,7 @@ export async function upsertBookForUser(
         date_shelved: personal.date_shelved ?? null,
         rating: personal.rating ?? 0,
         feeling: personal.feeling ?? "",
-        mood_tags: personal.mood_tags ?? [],
+        mood_tags: normalizeMoodTags(personal.mood_tags ?? []),
         bookshelves: personal.bookshelves ?? [],
         bookmarked: personal.bookmarked ?? false,
         diversity_tags: personal.diversity_tags ?? [],

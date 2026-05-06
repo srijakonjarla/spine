@@ -2,7 +2,7 @@ import { supabase } from "./supabase";
 
 const WEB_API_URL =
   process.env.EXPO_PUBLIC_WEB_API_URL?.replace(/\/$/, "") ??
-  "https://spinereads.com";
+  "https://www.spinereads.com";
 
 export class ApiError extends Error {
   constructor(

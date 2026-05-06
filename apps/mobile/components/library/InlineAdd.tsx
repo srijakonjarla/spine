@@ -134,7 +134,7 @@ export function InlineAdd({
         style={styles.trigger}
         hitSlop={8}
       >
-        <Text style={styles.triggerText}>+ add</Text>
+        <Text style={styles.triggerText}>{placeholder}</Text>
       </Pressable>
     );
   }
@@ -222,8 +222,14 @@ export function InlineAdd({
 }
 
 const styles = StyleSheet.create({
-  trigger: { paddingVertical: 6 },
-  triggerText: { fontSize: 12, color: C.fgMuted, letterSpacing: 0.3 },
+  trigger: { paddingVertical: 8 },
+  triggerText: {
+    fontFamily: SERIF,
+    fontSize: 13,
+    color: C.fgFaint,
+    fontStyle: "italic",
+    letterSpacing: 0.1,
+  },
   wrap: { marginTop: 6 },
   inputRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   input: {

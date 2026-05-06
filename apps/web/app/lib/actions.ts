@@ -5,6 +5,7 @@ import { createActionClient } from "@/lib/supabase-server";
 import { upsertBookForUser } from "@/lib/bookUpsert.server";
 import { autoLogToday, autoLogDate } from "@/lib/autoLog";
 import { syncBookSeries } from "@/lib/seriesSync.server";
+import { normalizeMoodTags } from "@/lib/moodTags";
 import type { BookEntry, BookRead, Thought } from "@/types";
 
 // ── Auth helper ────────────────────────────────────────────────────────────────
@@ -77,7 +78,8 @@ export async function updateEntryAction(
   if ("feeling" in patch) userRow.feeling = patch.feeling;
   if ("bookmarked" in patch) userRow.bookmarked = patch.bookmarked;
   if ("upNext" in patch) userRow.up_next = patch.upNext;
-  if ("moodTags" in patch) userRow.mood_tags = patch.moodTags;
+  if ("moodTags" in patch)
+    userRow.mood_tags = normalizeMoodTags(patch.moodTags);
   if ("diversityTags" in patch) userRow.diversity_tags = patch.diversityTags;
   if ("bookshelves" in patch) userRow.bookshelves = patch.bookshelves;
   if ("userGenres" in patch) userRow.user_genres = patch.userGenres;

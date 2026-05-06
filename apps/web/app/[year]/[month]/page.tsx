@@ -18,6 +18,7 @@ import {
 } from "@/lib/dates";
 import { MONTH_ABBRS } from "@/lib/constants";
 import { MonthSpreadSkeleton } from "@/components/skeletons/MonthSpreadSkeleton";
+import { FlameIcon } from "@phosphor-icons/react";
 
 function pad(n: number) {
   return String(n).padStart(2, "0");
@@ -226,11 +227,16 @@ export default function MonthSpreadPage() {
             <h1 className="font-serif text-3xl font-semibold tracking-tight text-fg-heading">
               {monthLabel}
             </h1>
-            <p className="text-xs mt-2 text-fg-muted">
+            <p className="text-xs mt-2 text-fg-muted inline-flex items-center gap-1 flex-wrap">
               {finishedThisMonth.length > 0 &&
                 `${finishedThisMonth.length} books finished`}
               {daysRead > 0 && ` · ${daysRead} days read`}
-              {streak >= 3 && ` · ${streak}-day streak 🔥`}
+              {streak >= 3 && (
+                <>
+                  {` · ${streak}-day streak `}
+                  <FlameIcon size={12} weight="fill" />
+                </>
+              )}
               {quotesThisMonth.length > 0 &&
                 ` · ${quotesThisMonth.length} quotes`}
             </p>
