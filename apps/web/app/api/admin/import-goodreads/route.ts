@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createAdminClient, createApiClient } from "@/lib/supabase-server";
+import {
+  createAdminClient,
+  createApiClient,
+  getUserId,
+} from "@/lib/supabase-server";
 import { parseGoodreadsCSV } from "@/lib/goodreads";
 import { upsertBookForUser } from "@/lib/bookUpsert.server";
 import {
@@ -691,10 +695,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { csv } = await req.json();
@@ -706,13 +708,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "no books found" }, { status: 400 });
 
   console.log(
-    `[import] POST received, ${previews.length} books, user ${user.id}`,
+    `[import] POST received, ${previews.length} books, user ${userId}`,
   );
 
   // Use the service-role admin client for the background job — the user's
   // session JWT would expire mid-run for large imports.
   const admin = createAdminClient();
-  const userId = user.id;
   await setProgress(admin, userId, {
     status: "running",
     total: previews.length,

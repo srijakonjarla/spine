@@ -14,14 +14,24 @@ export async function GET(
   if (!userId) return NextResponse.json(null, { status: 401 });
 
   const { id } = await params;
+  const userBookColumns =
+    "id, user_id, catalog_book_id, title_override, author_override, status, format, " +
+    "diversity_tags, date_started, date_finished, date_shelved, rating, feeling, " +
+    "mood_tags, user_genres, bookmarked, up_next, created_at, updated_at";
+  const catalogColumns =
+    "title, author, publisher, cover_url, isbns, release_date, genres, page_count, audio_duration_minutes";
   const { data, error } = await supabase
     .from("user_books")
-    .select("*, catalog_books(*), thoughts(*), book_reads(*)")
+    .select(
+      `${userBookColumns}, catalog_books(${catalogColumns}), thoughts(*), book_reads(*)`,
+    )
     .eq("id", id)
     .eq("user_id", userId)
     .single();
   if (error || !data) return NextResponse.json(null, { status: 404 });
-  return NextResponse.json(flattenUserBook(data));
+  return NextResponse.json(
+    flattenUserBook(data as unknown as Parameters<typeof flattenUserBook>[0]),
+  );
 }
 
 // Fields the user can change that go to the shared catalog (improve it for everyone).

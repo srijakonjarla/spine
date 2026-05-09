@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/providers/AuthProvider";
+import { useBooks } from "@/providers/BooksProvider";
 import { signOut } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -55,25 +56,35 @@ interface ShelfCounts {
 export default function Nav() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { books } = useBooks();
   const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [quickLogOpen, setQuickLogOpen] = useState(false);
-  const [shelfCounts, setShelfCounts] = useState<ShelfCounts>({
-    reading: 0,
-    finished: 0,
-    wantToRead: 0,
-  });
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
+
+  // Derive shelf counts from the BooksProvider cache so they react to status
+  // changes immediately (e.g. marking a book finished updates the sidebar
+  // without a network refetch).
+  const shelfCounts = useMemo<ShelfCounts>(() => {
+    let reading = 0;
+    let finished = 0;
+    let wantToRead = 0;
+    for (const b of books) {
+      if (b.status === "reading") reading++;
+      else if (b.status === "finished") finished++;
+      else if (b.status === "want-to-read") wantToRead++;
+    }
+    return { reading, finished, wantToRead };
+  }, [books]);
 
   const userId = user?.id;
   useEffect(() => {
     if (!userId) return;
     apiFetch("/api/nav")
       .then((res) => res.json())
-      .then(({ bookmarks, shelfCounts }) => {
+      .then(({ bookmarks }) => {
         setBookmarks(bookmarks);
-        setShelfCounts(shelfCounts);
       })
       .catch(() => toast("Failed to load data. Please refresh."));
   }, [userId]);

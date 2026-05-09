@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -19,6 +19,7 @@ import {
   type ReadingBook,
 } from "@/components/home";
 import { useAuth } from "@/lib/auth";
+import { useBooks } from "@/lib/booksContext";
 import {
   createYearGoal,
   loadHomeData,
@@ -83,6 +84,7 @@ export default function Home() {
   const router = useRouter();
   const userId = session?.user?.id;
   const name = firstNameFromUser(session?.user);
+  const { books: allBooks } = useBooks();
 
   const [data, setData] = useState<HomeData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -123,33 +125,54 @@ export default function Home() {
   }, [session]);
 
   // Derived values
-  const loggedDates = new Set((data?.log ?? []).map((e) => e.logDate));
-  const streak = currentStreak(loggedDates);
-  const runs = streakRuns(loggedDates, CURRENT_YEAR);
-  const streakHistory = runs.length
-    ? runs.slice(-14).map((r) => r.length)
-    : [0];
+  const loggedDates = useMemo(
+    () => new Set((data?.log ?? []).map((e) => e.logDate)),
+    [data?.log],
+  );
+  const streak = useMemo(() => currentStreak(loggedDates), [loggedDates]);
+  const streakHistory = useMemo(() => {
+    const runs = streakRuns(loggedDates, CURRENT_YEAR);
+    return runs.length ? runs.slice(-14).map((r) => r.length) : [0];
+  }, [loggedDates]);
 
   const currentBookData = data?.reading[0];
-  const currentBook = currentBookData ? readingToBook(currentBookData) : null;
+  const currentBook = useMemo(
+    () => (currentBookData ? readingToBook(currentBookData) : null),
+    [currentBookData],
+  );
 
-  const todayStr = localDateStr(new Date());
-  const recentEntries: Entry[] = (data?.log ?? [])
-    .filter((e) => e.note.trim().length > 0)
-    .slice(-3)
-    .reverse()
-    .map((e) => ({
-      id: e.id,
-      date: formatEntryDate(e.logDate),
-      title: data?.reading[0]?.title,
-      note: e.note,
-      footer:
-        e.pagesRead && e.pagesRead > 0
-          ? `${e.pagesRead} pages${e.logDate === todayStr ? " · today" : ""}`
-          : e.logDate === todayStr
-            ? "today"
-            : "",
-    }));
+  const recentEntries = useMemo<Entry[]>(() => {
+    const todayStr = localDateStr(new Date());
+    // Resolve which book was being read on a given log date by checking
+    // each book's started/finished window. `reading_log` has no book_id,
+    // so this is a best-effort heuristic.
+    const bookForDate = (logDate: string): string | undefined => {
+      for (const b of allBooks) {
+        if (!b.dateStarted) continue;
+        if (logDate < b.dateStarted) continue;
+        if (b.dateFinished && logDate > b.dateFinished) continue;
+        // For "reading" books with no dateFinished, the window is open-ended
+        return b.title;
+      }
+      return undefined;
+    };
+    return (data?.log ?? [])
+      .filter((e) => e.note.trim().length > 0)
+      .slice(-3)
+      .reverse()
+      .map((e) => ({
+        id: e.id,
+        date: formatEntryDate(e.logDate),
+        title: bookForDate(e.logDate),
+        note: e.note,
+        footer:
+          e.pagesRead && e.pagesRead > 0
+            ? `${e.pagesRead} pages${e.logDate === todayStr ? " · today" : ""}`
+            : e.logDate === todayStr
+              ? "today"
+              : "",
+      }));
+  }, [data?.log, allBooks]);
 
   // ─── Action handlers ────────────────────────────────────────────
   const handleMarkDone = useCallback(() => {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createApiClient } from "@/lib/supabase-server";
+import { createApiClient, getUserId } from "@/lib/supabase-server";
 
 async function verifyOwner(
   supabase: ReturnType<typeof createApiClient>,
@@ -20,14 +20,12 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; readId: string }> },
 ) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { readId } = await params;
-  if (!(await verifyOwner(supabase, readId, user.id)))
+  if (!(await verifyOwner(supabase, readId, userId)))
     return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const body = await req.json();
@@ -56,14 +54,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; readId: string }> },
 ) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { readId } = await params;
-  if (!(await verifyOwner(supabase, readId, user.id)))
+  if (!(await verifyOwner(supabase, readId, userId)))
     return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const { error } = await supabase.from("book_reads").delete().eq("id", readId);

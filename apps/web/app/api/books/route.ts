@@ -15,14 +15,24 @@ export async function GET(req: NextRequest) {
   const offset = searchParams.get("offset");
   const sort = searchParams.get("order");
   const include = searchParams.get("include");
+  const status = searchParams.get("status");
+
+  const userBookColumns =
+    "id, user_id, catalog_book_id, title_override, author_override, status, format, " +
+    "diversity_tags, date_started, date_finished, date_shelved, rating, feeling, " +
+    "mood_tags, user_genres, bookmarked, up_next, created_at, updated_at";
+  const catalogColumns =
+    "title, author, publisher, cover_url, isbns, release_date, genres, page_count, audio_duration_minutes";
 
   // Only join thoughts/book_reads when explicitly requested (e.g. book detail page)
   const select =
     include === "nested"
-      ? "*, catalog_books(*), thoughts(*), book_reads(*)"
-      : "*, catalog_books(*)";
+      ? `${userBookColumns}, catalog_books(${catalogColumns}), thoughts(*), book_reads(*)`
+      : `${userBookColumns}, catalog_books(${catalogColumns})`;
 
   let query = supabase.from("user_books").select(select).eq("user_id", userId);
+
+  if (status) query = query.eq("status", status);
 
   // apply sorting
   if (sort) {

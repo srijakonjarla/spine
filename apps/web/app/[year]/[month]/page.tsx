@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useBooks } from "@/providers/BooksProvider";
@@ -54,9 +54,13 @@ export default function MonthSpreadPage() {
     removeEntry: removeLogEntry,
     updateNote: updateLogNote,
   } = useReadingLog();
-  const reading = allBooks.filter((b) => b.status === "reading");
-  const upNext = allBooks.filter(
-    (b) => b.status === "want-to-read" && b.upNext,
+  const reading = useMemo(
+    () => allBooks.filter((b) => b.status === "reading"),
+    [allBooks],
+  );
+  const upNext = useMemo(
+    () => allBooks.filter((b) => b.status === "want-to-read" && b.upNext),
+    [allBooks],
   );
 
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -69,42 +73,61 @@ export default function MonthSpreadPage() {
   const isCurrentMonth =
     year === now.getFullYear() && monthIndex === now.getMonth();
 
-  const loggedThisMonth = new Set(
-    logEntries.map((e) => e.logDate).filter((d) => d.startsWith(monthKey)),
+  const loggedThisMonth = useMemo(
+    () =>
+      new Set(
+        logEntries.map((e) => e.logDate).filter((d) => d.startsWith(monthKey)),
+      ),
+    [logEntries, monthKey],
   );
-  const streak = currentStreak(loggedDates);
-  const streakDays = streakDates(loggedDates);
+  const streak = useMemo(() => currentStreak(loggedDates), [loggedDates]);
+  const streakDays = useMemo(() => streakDates(loggedDates), [loggedDates]);
 
-  const finishedByDate = new Map<string, BookEntry>();
-  allBooks.forEach((b) => {
-    if (
-      (b.status === "finished" || b.status === "did-not-finish") &&
-      b.dateFinished?.startsWith(monthKey)
-    ) {
-      finishedByDate.set(b.dateFinished, b);
-    }
-  });
+  const finishedByDate = useMemo(() => {
+    const map = new Map<string, BookEntry>();
+    allBooks.forEach((b) => {
+      if (
+        (b.status === "finished" || b.status === "did-not-finish") &&
+        b.dateFinished?.startsWith(monthKey)
+      ) {
+        map.set(b.dateFinished, b);
+      }
+    });
+    return map;
+  }, [allBooks, monthKey]);
 
-  const quoteDateSet = new Set(
-    quotes
-      .map((q) => localDateStr(new Date(q.createdAt)))
-      .filter((d) => d.startsWith(monthKey)),
+  const quoteDateSet = useMemo(
+    () =>
+      new Set(
+        quotes
+          .map((q) => localDateStr(new Date(q.createdAt)))
+          .filter((d) => d.startsWith(monthKey)),
+      ),
+    [quotes, monthKey],
   );
 
-  const cells: { day: number | null; dateStr: string }[] = [];
-  for (let i = 0; i < firstDayOfWeek; i++)
-    cells.push({ day: null, dateStr: "" });
-  for (let d = 1; d <= daysInMonth; d++)
-    cells.push({ day: d, dateStr: `${monthKey}-${pad(d)}` });
+  const cells = useMemo(() => {
+    const out: { day: number | null; dateStr: string }[] = [];
+    for (let i = 0; i < firstDayOfWeek; i++)
+      out.push({ day: null, dateStr: "" });
+    for (let d = 1; d <= daysInMonth; d++)
+      out.push({ day: d, dateStr: `${monthKey}-${pad(d)}` });
+    return out;
+  }, [firstDayOfWeek, daysInMonth, monthKey]);
 
-  const finishedThisMonth = allBooks.filter(
-    (b) =>
-      (b.status === "finished" || b.status === "did-not-finish") &&
-      (b.dateFinished?.startsWith(monthKey) ||
-        b.dateShelved?.startsWith(monthKey)),
+  const finishedThisMonth = useMemo(
+    () =>
+      allBooks.filter(
+        (b) =>
+          (b.status === "finished" || b.status === "did-not-finish") &&
+          (b.dateFinished?.startsWith(monthKey) ||
+            b.dateShelved?.startsWith(monthKey)),
+      ),
+    [allBooks, monthKey],
   );
-  const quotesThisMonth = quotes.filter((q) =>
-    q.createdAt.startsWith(monthKey),
+  const quotesThisMonth = useMemo(
+    () => quotes.filter((q) => q.createdAt.startsWith(monthKey)),
+    [quotes, monthKey],
   );
   const daysRead = loggedThisMonth.size;
 

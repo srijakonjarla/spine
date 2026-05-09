@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createApiClient } from "@/lib/supabase-server";
+import { createApiClient, getUserId } from "@/lib/supabase-server";
 import { upsertBookForUser } from "@/lib/bookUpsert.server";
 
 interface CatalogMeta {
@@ -17,10 +17,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { id: seriesId } = await params;
@@ -29,7 +27,7 @@ export async function POST(
     .from("series")
     .select("id")
     .eq("id", seriesId)
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .single();
   if (!series)
     return NextResponse.json({ error: "not found" }, { status: 404 });
@@ -58,7 +56,7 @@ export async function POST(
     const now = new Date().toISOString();
     const result = await upsertBookForUser(
       supabase,
-      user.id,
+      userId,
       {
         title: title.trim(),
         author: catalog?.author ?? "",

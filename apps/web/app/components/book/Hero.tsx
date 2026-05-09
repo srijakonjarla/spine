@@ -108,18 +108,26 @@ export function Hero({
   quoteCount,
   saveState,
   viewedRead,
+  rereadLoading,
   onUpdate,
   onUpdateRead,
   onStatusChange,
+  onReread,
 }: {
   entry: BookEntry;
   quoteCount: number;
   saveState: "idle" | "saving" | "saved";
   viewedRead: BookEntry["reads"][number] | null;
+  rereadLoading: boolean;
   onUpdate: (patch: Partial<BookEntry>) => void;
   onUpdateRead: (readId: string, patch: ReadPatch) => Promise<void>;
   onStatusChange: (status: ReadingStatus) => void;
+  onReread: () => void;
 }) {
+  const canReread =
+    entry.reads.length > 0 ||
+    entry.status === "finished" ||
+    entry.status === "did-not-finish";
   const router = useRouter();
   const backLink = useBackLink();
   const heroClass = `hero-gradient-${heroGradientIndex(entry.title)}`;
@@ -211,17 +219,33 @@ export function Hero({
         </p>
 
         <div className="hero-overlay-card">
-          <div className="flex gap-1.5 flex-wrap mb-3.5">
-            {STATUSES.map(({ value, label }) => (
-              <button
-                key={value}
-                onClick={() => onStatusChange(value)}
-                className="hero-status-pill"
-                style={statusActiveStyle(entry.status, value)}
-              >
-                {label}
-              </button>
-            ))}
+          <div className="flex gap-1.5 flex-wrap items-center mb-3.5">
+            {STATUSES.map(({ value, label }) => {
+              const swapForReread =
+                value === "reading" && canReread && entry.status !== "reading";
+              if (swapForReread) {
+                return (
+                  <button
+                    key={value}
+                    onClick={onReread}
+                    disabled={rereadLoading}
+                    className="hero-status-pill disabled:opacity-50"
+                  >
+                    {rereadLoading ? "starting..." : "↺ re-read"}
+                  </button>
+                );
+              }
+              return (
+                <button
+                  key={value}
+                  onClick={() => onStatusChange(value)}
+                  className="hero-status-pill"
+                  style={statusActiveStyle(entry.status, value)}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
 
           <div className="mb-3.5">
@@ -232,7 +256,10 @@ export function Hero({
           </div>
 
           <div className="flex flex-wrap gap-1.5 items-center">
-            {entry.genres.map((g) => {
+            {[
+              ...entry.genres,
+              ...entry.userGenres.filter((g) => !entry.genres.includes(g)),
+            ].map((g) => {
               const isUserGenre = entry.userGenres.includes(g);
               return isUserGenre ? (
                 <button
@@ -256,7 +283,7 @@ export function Hero({
               );
             })}
             <HeroGenreAdd
-              genres={entry.genres}
+              genres={[...entry.genres, ...entry.userGenres]}
               onAdd={(g) => onUpdate({ userGenres: [...entry.userGenres, g] })}
             />
           </div>

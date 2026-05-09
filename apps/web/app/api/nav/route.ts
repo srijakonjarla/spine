@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createApiClient } from "@/lib/supabase-server";
+import { createApiClient, getUserId } from "@/lib/supabase-server";
 
 export async function GET(req: NextRequest) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const [booksRes, listsRes, readingRes, finishedRes, wantRes] =
@@ -14,31 +12,31 @@ export async function GET(req: NextRequest) {
       supabase
         .from("user_books")
         .select("id, title_override, catalog_books(title)")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .eq("bookmarked", true)
         .order("updated_at", { ascending: false })
         .limit(8),
       supabase
         .from("lists")
         .select("id, title, year")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .eq("bookmarked", true)
         .order("updated_at", { ascending: false })
         .limit(8),
       supabase
         .from("user_books")
         .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .eq("status", "reading"),
       supabase
         .from("user_books")
         .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .eq("status", "finished"),
       supabase
         .from("user_books")
         .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .eq("status", "want-to-read"),
     ]);
 

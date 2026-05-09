@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createApiClient } from "@/lib/supabase-server";
+import { createApiClient, getUserId } from "@/lib/supabase-server";
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { id: seriesId } = await params;
@@ -19,7 +17,7 @@ export async function POST(
     .from("series")
     .select("id")
     .eq("id", seriesId)
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .single();
   if (!series)
     return NextResponse.json({ error: "not found" }, { status: 404 });

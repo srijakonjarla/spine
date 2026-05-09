@@ -3,9 +3,36 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function proxy(req: NextRequest) {
   const res = NextResponse.next({ request: req });
+  const { pathname } = req.nextUrl;
 
-  // Create a Supabase client that reads/writes cookies on every request
-  // so expired auth tokens are refreshed server-side.
+  // API routes authenticate themselves via Bearer tokens — skip the
+  // cookie-based session refresh round-trip to Supabase.
+  if (pathname.startsWith("/api/")) {
+    if (pathname === "/api/catalog") return res;
+    const auth = req.headers.get("Authorization");
+    if (!auth?.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    return res;
+  }
+
+  // Redirect /login → / (login lives on the home page now)
+  if (pathname === "/login") {
+    const homeUrl = req.nextUrl.clone();
+    homeUrl.pathname = "/";
+    return NextResponse.redirect(homeUrl);
+  }
+
+  const isPublicPath =
+    pathname === "/" ||
+    pathname === "/privacy" ||
+    pathname === "/terms" ||
+    pathname.startsWith("/auth/");
+
+  // Public pages don't need a session check either.
+  if (isPublicPath) return res;
+
+  // Page navigations: refresh cookie-based session and gate on auth.
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
@@ -22,38 +49,11 @@ export async function proxy(req: NextRequest) {
     },
   );
 
-  // Refresh the session — rotates expired JWTs and clears stale sessions.
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Require a Bearer token on all API routes (except public catalog)
-  if (
-    req.nextUrl.pathname.startsWith("/api/") &&
-    req.nextUrl.pathname !== "/api/catalog"
-  ) {
-    const auth = req.headers.get("Authorization");
-    if (!auth?.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
-  }
-
-  // Server-side redirect: unauthenticated users → home (which shows login)
-  const isPublicPath =
-    req.nextUrl.pathname === "/" ||
-    req.nextUrl.pathname === "/login" ||
-    req.nextUrl.pathname === "/privacy" ||
-    req.nextUrl.pathname === "/terms" ||
-    req.nextUrl.pathname.startsWith("/auth/");
-
-  if (!user && !isPublicPath && !req.nextUrl.pathname.startsWith("/api/")) {
-    const homeUrl = req.nextUrl.clone();
-    homeUrl.pathname = "/";
-    return NextResponse.redirect(homeUrl);
-  }
-
-  // Redirect /login → / (login lives on the home page now)
-  if (req.nextUrl.pathname === "/login") {
+  if (!user) {
     const homeUrl = req.nextUrl.clone();
     homeUrl.pathname = "/";
     return NextResponse.redirect(homeUrl);

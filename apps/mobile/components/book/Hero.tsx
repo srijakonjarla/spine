@@ -132,8 +132,14 @@ export function Hero({
       ) : null}
 
       <View style={s.dateRow}>
-        <DateBlock label="STARTED" value={entry.dateStarted} />
-        <DateBlock label="SHELVED" value={entry.dateShelved} />
+        {entry.dateStarted ? (
+          <DateBlock label="STARTED" value={entry.dateStarted} />
+        ) : null}
+        {entry.dateFinished ? (
+          <DateBlock label="FINISHED" value={entry.dateFinished} />
+        ) : entry.dateShelved ? (
+          <DateBlock label="SHELVED" value={entry.dateShelved} />
+        ) : null}
       </View>
     </View>
   );

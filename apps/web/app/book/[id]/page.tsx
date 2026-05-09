@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
-  getEntry,
   updateEntry,
   deleteEntry,
   startNewRead,
@@ -11,12 +10,14 @@ import {
   logHistoricalRead,
   updateBookRead,
 } from "@/lib/db";
-import { getQuotes } from "@/lib/quotes";
+import { useEntry } from "@/lib/hooks";
+import { useQuotes } from "@/providers/QuotesProvider";
 import { BookDetailSkeleton } from "@/components/book/BookDetailSkeleton";
 import { Hero } from "@/components/book/Hero";
 import { ReadSelector } from "@/components/book/ReadSelector";
 import { TabBar } from "@/components/book/TabBar";
-import type { BookEntry, ReadingStatus, Quote } from "@/types";
+import { useBooks } from "@/providers/BooksProvider";
+import type { BookEntry, ReadingStatus } from "@/types";
 import { localDateStr } from "@/lib/dates";
 import { toast } from "@/lib/toast";
 import {
@@ -32,10 +33,16 @@ import type { ReadPatch } from "@/providers/BookContext";
 export default function BookPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { updateBook, removeBook } = useBooks();
 
-  const [entry, setEntry] = useState<BookEntry | null>(null);
+  const { data: entry, mutate: mutateEntry, isLoading } = useEntry(id);
+  const { quotes: allQuotes } = useQuotes();
+  const quotes = useMemo(
+    () => allQuotes.filter((q) => q.bookId === id),
+    [allQuotes, id],
+  );
+
   const [activeTab, setActiveTab] = useState<TabId>("reflection");
-  const [quotes, setQuotes] = useState<Quote[]>([]);
   const [selectedReadId, setSelectedReadId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">(
     "idle",
@@ -46,20 +53,8 @@ export default function BookPage() {
   const pendingPatch = useRef<Partial<BookEntry>>({});
 
   useEffect(() => {
-    getEntry(id).then((found) => {
-      if (!found) {
-        router.replace("/");
-        return;
-      }
-      setEntry(found);
-    });
-  }, [id, router]);
-
-  useEffect(() => {
-    getQuotes(id)
-      .then(setQuotes)
-      .catch(() => toast("Failed to load data. Please refresh."));
-  }, [id]);
+    if (!isLoading && entry === null) router.replace("/");
+  }, [isLoading, entry, router]);
 
   const save = useCallback(
     (patch: Partial<BookEntry>) => {
@@ -78,18 +73,23 @@ export default function BookPage() {
 
   const update = useCallback(
     (patch: Partial<BookEntry>) => {
-      setEntry((prev) =>
-        prev
-          ? { ...prev, ...patch, updatedAt: new Date().toISOString() }
-          : prev,
+      mutateEntry(
+        (prev) =>
+          prev
+            ? { ...prev, ...patch, updatedAt: new Date().toISOString() }
+            : prev,
+        { revalidate: false },
       );
+      updateBook(id, patch);
       save(patch);
     },
-    [save],
+    [id, save, updateBook, mutateEntry],
   );
 
   const handleStatusChange = (status: ReadingStatus) => {
     const patch: Partial<BookEntry> = { status };
+    if (status === "reading" && entry && !entry.dateStarted)
+      patch.dateStarted = localDateStr();
     if (status === "finished" && entry && !entry.dateFinished)
       patch.dateFinished = localDateStr();
     if (status === "did-not-finish" && entry && !entry.dateShelved)
@@ -102,8 +102,7 @@ export default function BookPage() {
     setRereadLoading(true);
     try {
       await startNewRead(entry);
-      const refreshed = await getEntry(id);
-      if (refreshed) setEntry(refreshed);
+      await mutateEntry();
     } finally {
       setRereadLoading(false);
     }
@@ -112,10 +111,12 @@ export default function BookPage() {
   const handleDeleteRead = async (readId: string) => {
     if (!entry) return;
     await deleteBookRead(readId);
-    setEntry((prev) =>
-      prev
-        ? { ...prev, reads: prev.reads.filter((r) => r.id !== readId) }
-        : prev,
+    mutateEntry(
+      (prev) =>
+        prev
+          ? { ...prev, reads: prev.reads.filter((r) => r.id !== readId) }
+          : prev,
+      { revalidate: false },
     );
   };
 
@@ -125,18 +126,21 @@ export default function BookPage() {
   ): Promise<void> => {
     if (!entry) return;
     await updateBookRead(entry.id, readId, patch);
-    setEntry((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        reads: prev.reads.map((read) =>
-          read.id === readId
-            ? { ...read, ...patch, updatedAt: new Date().toISOString() }
-            : read,
-        ),
-        updatedAt: new Date().toISOString(),
-      };
-    });
+    mutateEntry(
+      (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          reads: prev.reads.map((read) =>
+            read.id === readId
+              ? { ...read, ...patch, updatedAt: new Date().toISOString() }
+              : read,
+          ),
+          updatedAt: new Date().toISOString(),
+        };
+      },
+      { revalidate: false },
+    );
   };
 
   const handleLogRead = async (
@@ -147,32 +151,41 @@ export default function BookPage() {
       ...read,
       status: "finished",
     });
-    setEntry((prev) =>
-      prev ? { ...prev, reads: [...prev.reads, newRead] } : prev,
+    mutateEntry(
+      (prev) => (prev ? { ...prev, reads: [...prev.reads, newRead] } : prev),
+      { revalidate: false },
     );
   };
 
   const handleDelete = async () => {
     if (!entry) return;
     await deleteEntry(entry.id);
+    removeBook(entry.id);
     router.back();
   };
 
+  const viewedRead = useMemo(
+    () =>
+      selectedReadId && entry
+        ? (entry.reads.find((r) => r.id === selectedReadId) ?? null)
+        : null,
+    [entry, selectedReadId],
+  );
+
+  const tabs = useMemo<{ id: TabId; label: string }[]>(
+    () => [
+      { id: "reflection", label: "Reflection" },
+      { id: "timeline", label: "Timeline" },
+      {
+        id: "quotes",
+        label: `Quotes${quotes.length ? ` · ${quotes.length}` : ""}`,
+      },
+      { id: "details", label: "Details" },
+    ],
+    [quotes.length],
+  );
+
   if (!entry) return <BookDetailSkeleton />;
-
-  const viewedRead = selectedReadId
-    ? (entry.reads.find((r) => r.id === selectedReadId) ?? null)
-    : null;
-
-  const tabs: { id: TabId; label: string }[] = [
-    { id: "reflection", label: "Reflection" },
-    { id: "timeline", label: "Timeline" },
-    {
-      id: "quotes",
-      label: `Quotes${quotes.length ? ` · ${quotes.length}` : ""}`,
-    },
-    { id: "details", label: "Details" },
-  ];
 
   const renderTabContent = () => {
     if (activeTab === "timeline") return <TimelineTab />;
@@ -205,16 +218,16 @@ export default function BookPage() {
           quoteCount={quotes.length}
           saveState={saveState}
           viewedRead={viewedRead}
+          rereadLoading={rereadLoading}
           onUpdate={update}
           onUpdateRead={handleUpdateRead}
           onStatusChange={handleStatusChange}
+          onReread={handleReread}
         />
         <ReadSelector
           reads={entry.reads}
           selectedReadId={selectedReadId}
-          rereadLoading={rereadLoading}
           onSelect={setSelectedReadId}
-          onReread={handleReread}
         />
         <TabBar tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
         {renderTabContent()}

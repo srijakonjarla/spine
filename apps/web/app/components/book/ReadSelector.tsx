@@ -5,15 +5,11 @@ import type { BookEntry } from "@/types";
 export function ReadSelector({
   reads,
   selectedReadId,
-  rereadLoading,
   onSelect,
-  onReread,
 }: {
   reads: BookEntry["reads"];
   selectedReadId: string | null;
-  rereadLoading: boolean;
   onSelect: (readId: string | null) => void;
-  onReread: () => void;
 }) {
   if (reads.length === 0) return null;
   return (
@@ -49,15 +45,6 @@ export function ReadSelector({
       >
         Current
       </button>
-      <div className="ml-auto">
-        <button
-          onClick={onReread}
-          disabled={rereadLoading}
-          className="text-caption font-sans text-stone-400 hover:text-stone-700 transition-colors disabled:opacity-50"
-        >
-          {rereadLoading ? "starting..." : "↺ start a re-read"}
-        </button>
-      </div>
     </div>
   );
 }

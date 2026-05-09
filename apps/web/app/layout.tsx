@@ -9,6 +9,7 @@ import "@/globals.css";
 import AuthProvider from "@/providers/AuthProvider";
 import { BooksProvider } from "@/providers/BooksProvider";
 import { QuotesProvider } from "@/providers/QuotesProvider";
+import { SWRProvider } from "@/providers/SWRProvider";
 import Nav from "@/components/navigation/Nav";
 import { Toaster } from "@/components/Toaster";
 import { Footer } from "@/components/Footer";
@@ -94,20 +95,22 @@ export default function RootLayout({
         className={`${dmSans.variable} ${playfair.variable} ${caveat.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
-          <AuthProvider>
-            <BooksProvider>
-              <QuotesProvider>
-                <NavigationProvider>
-                  <Nav />
-                  <div className="pt-14 lg:pl-55">
-                    {children}
-                    <Footer />
-                  </div>
-                  <Toaster />
-                </NavigationProvider>
-              </QuotesProvider>
-            </BooksProvider>
-          </AuthProvider>
+          <SWRProvider>
+            <AuthProvider>
+              <BooksProvider>
+                <QuotesProvider>
+                  <NavigationProvider>
+                    <Nav />
+                    <div className="pt-14 lg:pl-55">
+                      {children}
+                      <Footer />
+                    </div>
+                    <Toaster />
+                  </NavigationProvider>
+                </QuotesProvider>
+              </BooksProvider>
+            </AuthProvider>
+          </SWRProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createAdminClient, createApiClient } from "@/lib/supabase-server";
+import {
+  createAdminClient,
+  createApiClient,
+  getUserId,
+} from "@/lib/supabase-server";
 import {
   BOOK_FIELDS,
   type RawHCBook,
@@ -277,21 +281,18 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const total = await countStale(supabase, user.id);
+  const total = await countStale(supabase, userId);
   console.log(
-    `[backfill] POST started for user ${user.id}, ${total} stale rows`,
+    `[backfill] POST started for user ${userId}, ${total} stale rows`,
   );
 
   // Use the service-role admin client for the background job — the user's
   // session JWT would expire mid-run for large backfills.
   const admin = createAdminClient();
-  const userId = user.id;
 
   const { data: u } = await admin.auth.admin.getUserById(userId);
   const meta = (u?.user?.user_metadata ?? {}) as Record<string, unknown>;

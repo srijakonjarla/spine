@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createEntry } from "@/lib/db";
@@ -23,48 +23,59 @@ export default function LibraryPage() {
   const [activeGenre, setActiveGenre] = useState<string | null>(null);
   const [view, setView] = useState<"grid" | "list">("grid");
 
-  const allMoods = Array.from(
-    new Set(entries.flatMap((e) => e.moodTags)),
-  ).sort();
-  const allGenres = Array.from(
-    new Set(entries.flatMap((e) => e.genres)),
-  ).sort();
-
-  const matchesFilter = (e: BookEntry) => {
-    const matchesSearch =
-      !search.trim() ||
-      e.title.toLowerCase().includes(search.toLowerCase()) ||
-      e.author.toLowerCase().includes(search.toLowerCase());
-    const matchesMood = !activeMood || e.moodTags.includes(activeMood);
-    const matchesGenre = !activeGenre || e.genres.includes(activeGenre);
-    return matchesSearch && matchesMood && matchesGenre;
-  };
-
-  const currentlyReading = entries.filter(
-    (e) => e.status === "reading" && matchesFilter(e),
+  const allMoods = useMemo(
+    () => Array.from(new Set(entries.flatMap((e) => e.moodTags))).sort(),
+    [entries],
   );
-  const wantToRead = entries.filter(
-    (e) => e.status === "want-to-read" && matchesFilter(e),
+  const allGenres = useMemo(
+    () => Array.from(new Set(entries.flatMap((e) => e.genres))).sort(),
+    [entries],
+  );
+
+  const matchesFilter = useCallback(
+    (e: BookEntry) => {
+      const q = search.trim().toLowerCase();
+      const matchesSearch =
+        !q ||
+        e.title.toLowerCase().includes(q) ||
+        e.author.toLowerCase().includes(q);
+      const matchesMood = !activeMood || e.moodTags.includes(activeMood);
+      const matchesGenre = !activeGenre || e.genres.includes(activeGenre);
+      return matchesSearch && matchesMood && matchesGenre;
+    },
+    [search, activeMood, activeGenre],
+  );
+
+  const currentlyReading = useMemo(
+    () => entries.filter((e) => e.status === "reading" && matchesFilter(e)),
+    [entries, matchesFilter],
+  );
+  const wantToRead = useMemo(
+    () =>
+      entries.filter((e) => e.status === "want-to-read" && matchesFilter(e)),
+    [entries, matchesFilter],
   );
 
   // Finished books grouped by year, descending
-  const finishedFiltered = entries.filter(
-    (e) => e.status === "finished" && matchesFilter(e),
-  );
-  const yearMap = new Map<number, BookEntry[]>();
-  finishedFiltered.forEach((b) => {
-    const y = b.dateFinished ? (dateYear(b.dateFinished) ?? 0) : 0;
-    if (!yearMap.has(y)) yearMap.set(y, []);
-    yearMap.get(y)!.push(b);
-  });
-  const yearGroups = Array.from(yearMap.entries())
-    .sort((a, b) => b[0] - a[0])
-    .map(([year, books]) => ({
-      year,
-      books: books.sort((a, b) =>
-        (b.dateFinished ?? "").localeCompare(a.dateFinished ?? ""),
-      ),
-    }));
+  const yearGroups = useMemo(() => {
+    const finished = entries.filter(
+      (e) => e.status === "finished" && matchesFilter(e),
+    );
+    const yearMap = new Map<number, BookEntry[]>();
+    finished.forEach((b) => {
+      const y = b.dateFinished ? (dateYear(b.dateFinished) ?? 0) : 0;
+      if (!yearMap.has(y)) yearMap.set(y, []);
+      yearMap.get(y)!.push(b);
+    });
+    return Array.from(yearMap.entries())
+      .sort((a, b) => b[0] - a[0])
+      .map(([year, books]) => ({
+        year,
+        books: books.sort((a, b) =>
+          (b.dateFinished ?? "").localeCompare(a.dateFinished ?? ""),
+        ),
+      }));
+  }, [entries, matchesFilter]);
 
   if (loading) return <LibrarySkeleton />;
 

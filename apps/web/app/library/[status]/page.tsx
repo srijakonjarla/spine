@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
-import { getEntries, createEntry } from "@/lib/db";
+import { createEntry } from "@/lib/db";
+import { useEntriesByStatus } from "@/lib/hooks";
 import { type CatalogEntry, lookupBook } from "@/lib/catalog";
 import { toast } from "@/lib/toast";
 import { CatalogSearch } from "@/components/CatalogSearch";
@@ -25,15 +26,26 @@ const VALID_STATUSES = new Set([
 
 export default function StatusCatalogPage() {
   const { status } = useParams<{ status: string }>();
-  const [entries, setEntries] = useState<BookEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const isValidStatus = VALID_STATUSES.has(status);
+  const {
+    data: fetched,
+    isLoading,
+    error,
+    mutate: mutateEntries,
+  } = useEntriesByStatus(isValidStatus ? status : undefined);
+  const entries = fetched ?? [];
+  const loading = isLoading;
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
   const [activeMood, setActiveMood] = useState<string | null>(null);
   const [addValue, setAddValue] = useState("");
   const [adding, setAdding] = useState(false);
 
-  if (!VALID_STATUSES.has(status)) notFound();
+  useEffect(() => {
+    if (error) toast("Failed to load data. Please refresh.");
+  }, [error]);
+
+  if (!isValidStatus) notFound();
 
   const addBook = async (catalog?: CatalogEntry) => {
     const title = (catalog?.title ?? addValue).trim();
@@ -76,7 +88,9 @@ export default function StatusCatalogPage() {
         updatedAt: now.toISOString(),
       };
       await createEntry(entry);
-      setEntries((prev) => [entry, ...prev]);
+      mutateEntries((prev) => (prev ? [entry, ...prev] : [entry]), {
+        revalidate: false,
+      });
       setAddValue("");
     } catch {
       toast("Something went wrong. Please try again.");
@@ -84,13 +98,6 @@ export default function StatusCatalogPage() {
       setAdding(false);
     }
   };
-
-  useEffect(() => {
-    getEntries({ status })
-      .then((all) => setEntries(all.filter((e) => e.status === status)))
-      .catch(() => toast("Failed to load data. Please refresh."))
-      .finally(() => setLoading(false));
-  }, [status]);
 
   const allMoods = Array.from(
     new Set(entries.flatMap((e) => e.moodTags)),

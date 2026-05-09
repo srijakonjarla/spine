@@ -141,6 +141,7 @@ export async function getEntries(opts?: {
   if (opts?.offset) params.set("offset", String(opts.offset));
   if (opts?.include) params.set("include", opts.include);
   if (opts?.status) {
+    params.set("status", opts.status);
     switch (opts.status) {
       case "finished":
         params.set("order", "date_finished.desc");

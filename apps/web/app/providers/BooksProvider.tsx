@@ -59,8 +59,15 @@ export function BooksProvider({ children }: { children: React.ReactNode }) {
     if (fetchedRef.current) return;
     fetchedRef.current = true;
 
-    getEntries({ include: "nested" })
-      .then(setBooks)
+    // Two-step load: shallow first (fast, ~600ms) so pages can render off
+    // book metadata, then nested (thoughts + book_reads) hydrates in the
+    // background so YearContext / month views get full read history.
+    getEntries()
+      .then((shallow) => {
+        setBooks(shallow);
+        setLoading(false);
+        return getEntries({ include: "nested" }).then(setBooks);
+      })
       .catch(() => toast("Failed to load books."))
       .finally(() => setLoading(false));
   }, [user]);
@@ -68,8 +75,12 @@ export function BooksProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(() => {
     fetchedRef.current = false;
     setLoading(true);
-    getEntries({ include: "nested" })
-      .then(setBooks)
+    getEntries()
+      .then((shallow) => {
+        setBooks(shallow);
+        setLoading(false);
+        return getEntries({ include: "nested" }).then(setBooks);
+      })
       .catch(() => toast("Failed to load books."))
       .finally(() => setLoading(false));
   }, []);

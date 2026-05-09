@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createApiClient } from "@/lib/supabase-server";
+import { createApiClient, getUserId } from "@/lib/supabase-server";
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ itemId: string }> },
 ) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { itemId } = await params;
@@ -19,7 +17,7 @@ export async function PATCH(
     .from("list_items")
     .select("list_id, lists!inner(user_id)")
     .eq("id", itemId)
-    .eq("lists.user_id", user.id)
+    .eq("lists.user_id", userId)
     .single();
   if (!item) return NextResponse.json({ error: "not found" }, { status: 404 });
 
@@ -43,10 +41,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; itemId: string }> },
 ) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { itemId } = await params;
@@ -56,7 +52,7 @@ export async function DELETE(
     .from("list_items")
     .select("list_id, lists!inner(user_id)")
     .eq("id", itemId)
-    .eq("lists.user_id", user.id)
+    .eq("lists.user_id", userId)
     .single();
   if (!item) return NextResponse.json({ error: "not found" }, { status: 404 });
 
@@ -68,6 +64,6 @@ export async function DELETE(
     .from("lists")
     .update({ updated_at: new Date().toISOString() })
     .eq("id", item.list_id)
-    .eq("user_id", user.id);
+    .eq("user_id", userId);
   return NextResponse.json({ ok: true });
 }

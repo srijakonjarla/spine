@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createApiClient } from "@/lib/supabase-server";
+import { createApiClient, getUserId } from "@/lib/supabase-server";
 import { autoLogToday } from "@/lib/autoLog";
 
 export async function POST(
@@ -10,10 +10,8 @@ export async function POST(
   const { id: bookId } = await params;
   const { thought } = await req.json();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { error } = await supabase.rpc("add_thought", {
@@ -27,7 +25,7 @@ export async function POST(
   if (error)
     return NextResponse.json({ error: error.message }, { status: 500 });
 
-  await autoLogToday(supabase, user.id);
+  await autoLogToday(supabase, userId);
   return NextResponse.json({ ok: true }, { status: 201 });
 }
 
@@ -36,10 +34,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const supabase = createApiClient(req);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
+  const userId = getUserId(req);
+  if (!userId)
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { id: bookId } = await params;
@@ -50,7 +46,7 @@ export async function DELETE(
     .from("user_books")
     .select("id")
     .eq("id", bookId)
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .single();
   if (!book) return NextResponse.json({ error: "not found" }, { status: 404 });
 
