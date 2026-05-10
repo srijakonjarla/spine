@@ -4,6 +4,7 @@ import { after } from "next/server";
 import { createActionClient } from "@/lib/supabase-server";
 import { upsertBookForUser } from "@/lib/bookUpsert.server";
 import { autoLogToday, autoLogDate } from "@/lib/autoLog";
+import { serverTodayLocal } from "@/lib/serverDate";
 import { syncBookSeries } from "@/lib/seriesSync.server";
 import { normalizeMoodTags } from "@/lib/moodTags";
 import type { BookEntry, BookRead, Thought } from "@/types";
@@ -189,7 +190,7 @@ export async function addThoughtAction(
 
   // Log the reading day — if the thought is backdated, log that date too
   const thoughtDate = thought.createdAt.slice(0, 10); // "YYYY-MM-DD"
-  const today = new Date().toISOString().slice(0, 10);
+  const today = await serverTodayLocal();
   await autoLogToday(supabase, user.id);
   if (thoughtDate !== today) {
     await autoLogDate(supabase, user.id, thoughtDate);

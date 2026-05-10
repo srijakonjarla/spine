@@ -144,14 +144,14 @@ export default function Nav() {
       {/* Mobile menu overlay */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 top-14 z-[28] bg-overlay lg:hidden"
+          className="fixed inset-0 top-14 z-28 bg-overlay lg:hidden"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
 
       {/* Mobile slide-out menu */}
       <div
-        className={`fixed top-14 right-0 h-[calc(100dvh-var(--nav-height))] w-72 z-[29] bg-page border-l border-line shadow-xl overflow-y-auto transition-transform duration-300 lg:hidden ${
+        className={`fixed top-14 right-0 h-[calc(100dvh-var(--nav-height))] w-72 z-29 bg-page border-l border-line shadow-xl overflow-y-auto transition-transform duration-300 lg:hidden ${
           mobileMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
         onClick={closeMobileMenu}

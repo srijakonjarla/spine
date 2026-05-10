@@ -15,6 +15,7 @@ import { Toaster } from "@/components/Toaster";
 import { Footer } from "@/components/Footer";
 import { NavigationProvider } from "@/providers/NavigationProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
+import { TimeZoneSync } from "@/components/TimeZoneSync";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -95,6 +96,7 @@ export default function RootLayout({
         className={`${dmSans.variable} ${playfair.variable} ${caveat.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
+          <TimeZoneSync />
           <SWRProvider>
             <AuthProvider>
               <BooksProvider>

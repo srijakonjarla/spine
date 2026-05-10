@@ -27,17 +27,17 @@ export function BookCover({
         width={256}
         height={384}
         sizes="(max-width: 640px) 33vw, 200px"
-        className={`${className} rounded shadow-sm shrink-0 self-start object-cover aspect-[2/3]`}
+        className={`${className} rounded shadow-sm shrink-0 self-start object-cover aspect-2/3`}
       />
     );
   }
 
   return (
     <div
-      className={`${className} rounded shadow-sm shrink-0 self-start aspect-[2/3] flex flex-col justify-end p-1.5`}
+      className={`${className} rounded shadow-sm shrink-0 self-start aspect-2/3 flex flex-col justify-end p-1.5`}
       style={{ backgroundColor: color }}
     >
-      <p className="text-label font-semibold leading-tight line-clamp-3 text-white/80 break-words">
+      <p className="text-label font-semibold leading-tight line-clamp-3 text-white/80 wrap-break-word">
         {title}
       </p>
       {author && (
@@ -88,7 +88,7 @@ export function BookCoverThumb({
       className={`${width} ${height} rounded-sm shrink-0 flex flex-col justify-end p-1.5`}
       style={{ backgroundColor: color }}
     >
-      <p className="text-micro-plus font-semibold leading-tight line-clamp-3 text-white/80 break-words">
+      <p className="text-micro-plus font-semibold leading-tight line-clamp-3 text-white/80 wrap-break-word">
         {title}
       </p>
       {author && (

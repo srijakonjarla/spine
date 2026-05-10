@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { localDateStr } from "@/lib/dates";
+import { serverTodayLocal } from "@/lib/serverDate";
 
 /**
  * Upserts today's date into reading_log for the authenticated user.
@@ -8,7 +8,7 @@ import { localDateStr } from "@/lib/dates";
  * Silently no-ops if the row already exists.
  */
 export async function autoLogToday(supabase: SupabaseClient, userId: string) {
-  const today = localDateStr();
+  const today = await serverTodayLocal();
   await supabase
     .from("reading_log")
     .upsert(
