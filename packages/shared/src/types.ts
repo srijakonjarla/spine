@@ -18,6 +18,7 @@ export interface BookRead {
   dateStarted: string;
   dateFinished: string;
   dateShelved: string;
+  dateDnfed: string;
   rating: number;
   feeling: string;
   createdAt: string;
@@ -45,6 +46,7 @@ export interface BookEntry {
   dateStarted: string;
   dateFinished: string;
   dateShelved: string;
+  dateDnfed: string;
   rating: number;
   feeling: string;
   thoughts: Thought[];

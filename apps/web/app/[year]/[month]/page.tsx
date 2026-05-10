@@ -86,11 +86,13 @@ export default function MonthSpreadPage() {
   const finishedByDate = useMemo(() => {
     const map = new Map<string, BookEntry>();
     allBooks.forEach((b) => {
-      if (
-        (b.status === "finished" || b.status === "did-not-finish") &&
-        b.dateFinished?.startsWith(monthKey)
-      ) {
+      if (b.status === "finished" && b.dateFinished?.startsWith(monthKey)) {
         map.set(b.dateFinished, b);
+      } else if (
+        b.status === "did-not-finish" &&
+        b.dateDnfed?.startsWith(monthKey)
+      ) {
+        map.set(b.dateDnfed, b);
       }
     });
     return map;
@@ -121,7 +123,7 @@ export default function MonthSpreadPage() {
         (b) =>
           (b.status === "finished" || b.status === "did-not-finish") &&
           (b.dateFinished?.startsWith(monthKey) ||
-            b.dateShelved?.startsWith(monthKey)),
+            b.dateDnfed?.startsWith(monthKey)),
       ),
     [allBooks, monthKey],
   );
@@ -186,7 +188,7 @@ export default function MonthSpreadPage() {
     ? allBooks.filter(
         (b) =>
           (b.status === "finished" || b.status === "did-not-finish") &&
-          (b.dateFinished === selectedDate || b.dateShelved === selectedDate),
+          (b.dateFinished === selectedDate || b.dateDnfed === selectedDate),
       )
     : [];
   const panelStarted = selectedDate
@@ -195,7 +197,7 @@ export default function MonthSpreadPage() {
           b.status !== "want-to-read" &&
           b.dateStarted === selectedDate &&
           b.dateFinished !== selectedDate &&
-          b.dateShelved !== selectedDate,
+          b.dateDnfed !== selectedDate,
       )
     : [];
   const panelReading = selectedDate === todayStr ? reading : [];
@@ -210,7 +212,7 @@ export default function MonthSpreadPage() {
               r.status === "finished"
                 ? r.dateFinished
                 : r.status === "did-not-finish"
-                  ? r.dateShelved
+                  ? r.dateDnfed
                   : r.dateStarted;
             return readDate === selectedDate;
           })

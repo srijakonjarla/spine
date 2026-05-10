@@ -16,7 +16,7 @@ export async function GET(
   const { id } = await params;
   const userBookColumns =
     "id, user_id, catalog_book_id, title_override, author_override, status, format, " +
-    "diversity_tags, date_started, date_finished, date_shelved, rating, feeling, " +
+    "diversity_tags, date_started, date_finished, date_shelved, date_dnfed, rating, feeling, " +
     "mood_tags, user_genres, bookmarked, up_next, created_at, updated_at";
   const catalogColumns =
     "title, author, publisher, cover_url, isbns, release_date, genres, page_count, audio_duration_minutes";
@@ -83,6 +83,7 @@ export async function PATCH(
   if ("dateFinished" in patch)
     userRow.date_finished = patch.dateFinished || null;
   if ("dateShelved" in patch) userRow.date_shelved = patch.dateShelved || null;
+  if ("dateDnfed" in patch) userRow.date_dnfed = patch.dateDnfed || null;
   if ("rating" in patch) userRow.rating = patch.rating;
   if ("feeling" in patch) userRow.feeling = patch.feeling;
   if ("bookmarked" in patch) userRow.bookmarked = patch.bookmarked;

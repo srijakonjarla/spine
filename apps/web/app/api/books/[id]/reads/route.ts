@@ -20,6 +20,7 @@ export async function POST(
     p_date_started: entry.dateStarted || null,
     p_date_finished: entry.dateFinished || null,
     p_date_shelved: entry.dateShelved || null,
+    p_date_dnfed: entry.dateDnfed || null,
     p_rating: entry.rating,
     p_feeling: entry.feeling,
     p_created_at: entry.createdAt,
@@ -54,6 +55,7 @@ export async function PUT(
       date_started: body.dateStarted || null,
       date_finished: body.dateFinished || null,
       date_shelved: body.dateShelved || null,
+      date_dnfed: body.dateDnfed || null,
       rating: body.rating ?? 0,
       feeling: body.feeling ?? "",
     })

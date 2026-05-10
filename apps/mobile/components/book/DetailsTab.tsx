@@ -16,7 +16,9 @@ export function DetailsTab({ entry }: { entry: BookEntry }) {
     rows.push({ label: "Started", value: formatDate(entry.dateStarted) });
   if (entry.dateFinished)
     rows.push({ label: "Finished", value: formatDate(entry.dateFinished) });
-  if (entry.dateShelved)
+  if (entry.dateDnfed)
+    rows.push({ label: "DNF'd", value: formatDate(entry.dateDnfed) });
+  if (entry.dateShelved && entry.status !== "did-not-finish")
     rows.push({ label: "Shelved", value: formatDate(entry.dateShelved) });
   if (entry.format) rows.push({ label: "Format", value: entry.format });
   if (entry.publisher)

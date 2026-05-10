@@ -32,6 +32,7 @@ interface BookReadRow {
   date_started?: string | null;
   date_finished?: string | null;
   date_shelved?: string | null;
+  date_dnfed?: string | null;
   rating?: number | null;
   feeling?: string | null;
   created_at?: string;
@@ -57,6 +58,7 @@ interface BookRow {
   date_started?: string | null;
   date_finished?: string | null;
   date_shelved?: string | null;
+  date_dnfed?: string | null;
   rating?: number;
   feeling?: string;
   bookmarked?: boolean;
@@ -104,6 +106,7 @@ function mapBook(row: BookRow): BookEntry {
     dateStarted: row.date_started ?? "",
     dateFinished: row.date_finished ?? "",
     dateShelved: row.date_shelved ?? "",
+    dateDnfed: row.date_dnfed ?? "",
     rating: row.rating ?? 0,
     feeling: row.feeling ?? "",
     bookmarked: row.bookmarked ?? false,
@@ -124,6 +127,7 @@ function mapBook(row: BookRow): BookEntry {
       dateStarted: r.date_started ?? "",
       dateFinished: r.date_finished ?? "",
       dateShelved: r.date_shelved ?? "",
+      dateDnfed: r.date_dnfed ?? "",
       rating: r.rating ?? 0,
       feeling: r.feeling ?? "",
       createdAt: r.created_at ?? "",

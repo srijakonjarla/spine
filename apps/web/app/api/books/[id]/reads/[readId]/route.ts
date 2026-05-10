@@ -36,6 +36,7 @@ export async function PATCH(
       date_started: body.dateStarted || null,
       date_finished: body.dateFinished || null,
       date_shelved: body.dateShelved || null,
+      date_dnfed: body.dateDnfed || null,
       rating: body.rating ?? 0,
       feeling: body.feeling ?? "",
       updated_at: new Date().toISOString(),

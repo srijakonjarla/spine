@@ -68,7 +68,9 @@ export default function YearReviewPage() {
   const libraryFinished = finishedBooks.filter((b) => libraryBookIds.has(b.id));
   const rereads = finishedBooks.filter((b) => b.reads.length > 0);
   const uniqueRereads = uniqueById(rereads);
-  const dnfs = yearEntries.filter((b) => b.status === "did-not-finish");
+  const dnfs = yearEntries.filter(
+    (b) => b.status === "did-not-finish" && b.dateDnfed?.startsWith(`${year}`),
+  );
 
   const ratingDist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   for (const b of finishedBooks) {

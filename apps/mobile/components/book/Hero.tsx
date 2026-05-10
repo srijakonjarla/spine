@@ -137,6 +137,8 @@ export function Hero({
         ) : null}
         {entry.dateFinished ? (
           <DateBlock label="FINISHED" value={entry.dateFinished} />
+        ) : entry.dateDnfed ? (
+          <DateBlock label="DNF'D" value={entry.dateDnfed} />
         ) : entry.dateShelved ? (
           <DateBlock label="SHELVED" value={entry.dateShelved} />
         ) : null}

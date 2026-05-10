@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { upgradeCoverUrl } from "@/lib/coverUrl";
 
 // ── Shared output shape ────────────────────────────────────────────────────
 interface BookResult {
@@ -414,7 +415,7 @@ async function searchGoogle(query: string): Promise<BookResult[]> {
       release_date: item.volumeInfo.publishedDate ?? "",
       genres: item.volumeInfo.categories ?? [],
       diversity_tags: [],
-      cover_url: thumbnail.replace(/^http:/, "https:"),
+      cover_url: upgradeCoverUrl(thumbnail.replace(/^http:/, "https:")),
       isbn: isbn13 || isbn10,
       isbns: [isbn13, isbn10].filter(Boolean),
       page_count: item.volumeInfo.pageCount ?? null,

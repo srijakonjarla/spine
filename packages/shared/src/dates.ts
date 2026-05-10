@@ -91,15 +91,18 @@ export function formatReadRange(read: {
   dateStarted: string;
   dateFinished: string;
   dateShelved: string;
+  dateDnfed?: string;
 }): string {
   const fmt = (iso: string) =>
     formatDate(iso, { month: "short", year: "numeric" });
   const start = read.dateStarted ? fmt(read.dateStarted) : "?";
   const end = read.dateFinished
     ? fmt(read.dateFinished)
-    : read.dateShelved
-      ? fmt(read.dateShelved)
-      : null;
+    : read.dateDnfed
+      ? fmt(read.dateDnfed)
+      : read.dateShelved
+        ? fmt(read.dateShelved)
+        : null;
   return end && end !== start ? `${start} – ${end}` : start;
 }
 
@@ -208,6 +211,7 @@ export function readingPeriod(entry: {
   dateStarted: string;
   dateFinished: string;
   dateShelved: string;
+  dateDnfed?: string;
   status: string;
 }): string {
   if (!entry.dateStarted) return "";
@@ -221,6 +225,7 @@ export function readingPeriod(entry: {
         : formatShortDate(entry.dateFinished);
     return `${start} – ${end}`;
   }
+  if (entry.dateDnfed) return `${start} – ${formatShortDate(entry.dateDnfed)}`;
   if (entry.dateShelved)
     return `${start} – ${formatShortDate(entry.dateShelved)}`;
   if (entry.status === "reading") return `since ${start}`;

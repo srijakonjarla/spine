@@ -43,6 +43,7 @@ export async function createEntryAction(entry: BookEntry): Promise<void> {
       date_started: entry.dateStarted || null,
       date_finished: entry.dateFinished || null,
       date_shelved: entry.dateShelved || null,
+      date_dnfed: entry.dateDnfed || null,
       rating: entry.rating ?? 0,
       feeling: entry.feeling ?? "",
       bookmarked: false,
@@ -74,6 +75,7 @@ export async function updateEntryAction(
   if ("dateFinished" in patch)
     userRow.date_finished = patch.dateFinished || null;
   if ("dateShelved" in patch) userRow.date_shelved = patch.dateShelved || null;
+  if ("dateDnfed" in patch) userRow.date_dnfed = patch.dateDnfed || null;
   if ("rating" in patch) userRow.rating = patch.rating;
   if ("feeling" in patch) userRow.feeling = patch.feeling;
   if ("bookmarked" in patch) userRow.bookmarked = patch.bookmarked;
@@ -225,6 +227,7 @@ export async function startNewReadAction(entry: BookEntry): Promise<void> {
     p_date_started: entry.dateStarted || null,
     p_date_finished: entry.dateFinished || null,
     p_date_shelved: entry.dateShelved || null,
+    p_date_dnfed: entry.dateDnfed || null,
     p_rating: entry.rating,
     p_feeling: entry.feeling,
     p_created_at: entry.createdAt,
@@ -266,6 +269,7 @@ export async function logHistoricalReadAction(
       date_started: read.dateStarted || null,
       date_finished: read.dateFinished || null,
       date_shelved: null,
+      date_dnfed: null,
       rating: read.rating ?? 0,
       feeling: read.feeling ?? "",
     })
@@ -279,6 +283,7 @@ export async function logHistoricalReadAction(
     dateStarted: data.date_started ?? "",
     dateFinished: data.date_finished ?? "",
     dateShelved: data.date_shelved ?? "",
+    dateDnfed: data.date_dnfed ?? "",
     rating: data.rating,
     feeling: data.feeling,
     createdAt: data.created_at,
@@ -312,6 +317,7 @@ export async function updateBookReadAction(
       date_started: patch.dateStarted || null,
       date_finished: patch.dateFinished || null,
       date_shelved: null,
+      date_dnfed: null,
       rating: patch.rating ?? 0,
       feeling: patch.feeling ?? "",
       updated_at: new Date().toISOString(),
@@ -327,6 +333,7 @@ export async function updateBookReadAction(
     dateStarted: data.date_started ?? "",
     dateFinished: data.date_finished ?? "",
     dateShelved: data.date_shelved ?? "",
+    dateDnfed: data.date_dnfed ?? "",
     rating: data.rating,
     feeling: data.feeling,
     createdAt: data.created_at,

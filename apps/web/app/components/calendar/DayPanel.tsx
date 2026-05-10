@@ -299,7 +299,7 @@ export function DayPanel({
                 read.status === "finished"
                   ? "finished"
                   : read.status === "did-not-finish"
-                    ? "shelved"
+                    ? "dnf'd"
                     : "started";
               const dates = [
                 read.dateStarted && `started ${read.dateStarted}`,

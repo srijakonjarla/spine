@@ -92,8 +92,8 @@ export default function BookPage() {
       patch.dateStarted = localDateStr();
     if (status === "finished" && entry && !entry.dateFinished)
       patch.dateFinished = localDateStr();
-    if (status === "did-not-finish" && entry && !entry.dateShelved)
-      patch.dateShelved = localDateStr();
+    if (status === "did-not-finish" && entry && !entry.dateDnfed)
+      patch.dateDnfed = localDateStr();
     update(patch);
   };
 

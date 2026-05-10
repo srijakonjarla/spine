@@ -103,6 +103,7 @@ export default function LibraryPage() {
       dateStarted: status === "reading" ? localDateStr(now) : "",
       dateFinished: "",
       dateShelved: status === "want-to-read" ? localDateStr(now) : "",
+      dateDnfed: "",
       rating: 0,
       feeling: "",
       thoughts: [],

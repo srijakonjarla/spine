@@ -45,6 +45,7 @@ create table if not exists user_books (
   date_started     date,
   date_finished    date,
   date_shelved     date,
+  date_dnfed       date,
   rating           integer     not null default 0,
   feeling          text        not null default '',
   mood_tags        text[]      not null default '{}',
@@ -74,6 +75,7 @@ create table if not exists book_reads (
   date_started  date,
   date_finished date,
   date_shelved  date,
+  date_dnfed    date,
   rating        integer     not null default 0,
   feeling       text        not null default '',
   created_at    timestamptz not null default now(),
@@ -331,6 +333,7 @@ create or replace function start_new_read(
   p_date_started  date,
   p_date_finished date,
   p_date_shelved  date,
+  p_date_dnfed    date,
   p_rating        integer,
   p_feeling       text,
   p_created_at    timestamptz
@@ -342,11 +345,11 @@ begin
   select * into v_book from user_books where id = p_book_id;
 
   insert into book_reads (
-    book_id, status, date_started, date_finished, date_shelved,
+    book_id, status, date_started, date_finished, date_shelved, date_dnfed,
     rating, feeling, created_at, updated_at
   ) values (
     p_book_id, v_book.status, v_book.date_started, v_book.date_finished,
-    v_book.date_shelved, v_book.rating, v_book.feeling, p_created_at, now()
+    v_book.date_shelved, v_book.date_dnfed, v_book.rating, v_book.feeling, p_created_at, now()
   );
 
   update user_books set
@@ -354,6 +357,7 @@ begin
     date_started  = p_date_started,
     date_finished = p_date_finished,
     date_shelved  = p_date_shelved,
+    date_dnfed    = p_date_dnfed,
     rating        = p_rating,
     feeling       = p_feeling,
     updated_at    = now()

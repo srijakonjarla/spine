@@ -370,14 +370,27 @@ export function Hero({
                     />
                   </div>
                 )}
-                {(entry.status === "did-not-finish" || entry.dateShelved) && (
+                {entry.status === "did-not-finish" && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="hero-date-label">dnf'd</span>
+                    <input
+                      id="book-current-date-dnfed"
+                      type="date"
+                      value={entry.dateDnfed}
+                      min={entry.dateStarted || undefined}
+                      max={localDateStr()}
+                      onChange={(e) => onUpdate({ dateDnfed: e.target.value })}
+                      className="hero-date-input"
+                    />
+                  </div>
+                )}
+                {entry.status !== "did-not-finish" && entry.dateShelved && (
                   <div className="flex items-center gap-1.5">
                     <span className="hero-date-label">shelved</span>
                     <input
                       id="book-current-date-shelved"
                       type="date"
                       value={entry.dateShelved}
-                      min={entry.dateStarted || undefined}
                       max={localDateStr()}
                       onChange={(e) =>
                         onUpdate({ dateShelved: e.target.value })

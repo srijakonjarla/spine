@@ -38,6 +38,7 @@ function BookSection({
                   author={e.author}
                   width="w-full"
                   height="h-full"
+                  size="lg"
                 />
                 {e.moodTags[0] && (
                   <span className="absolute top-1.5 left-1.5 z-10 text-label px-1.5 py-0.5 rounded-md bg-white/90 text-fg leading-none">
@@ -116,7 +117,9 @@ export default function BooksPage() {
 
   const finished = filtered.filter((e) => e.status === "finished");
   const reading = filtered.filter((e) => e.status === "reading");
-  const dnf = filtered.filter((e) => e.status === "did-not-finish");
+  const dnf = filtered.filter(
+    (e) => e.status === "did-not-finish" && e.dateDnfed?.startsWith(`${year}`),
+  );
   const wantToRead = filtered.filter((e) => e.status === "want-to-read");
 
   const addBook = async (catalog?: CatalogEntry) => {
@@ -146,6 +149,7 @@ export default function BooksPage() {
         dateStarted: localDateStr(now),
         dateFinished: "",
         dateShelved: "",
+        dateDnfed: "",
         rating: 0,
         feeling: "",
         thoughts: [],

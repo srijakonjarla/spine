@@ -31,6 +31,7 @@ export interface PersonalFields {
   date_started?: string | null;
   date_finished?: string | null;
   date_shelved?: string | null;
+  date_dnfed?: string | null;
   rating?: number;
   feeling?: string;
   mood_tags?: string[];
@@ -280,6 +281,7 @@ export async function upsertBookForUser(
         date_started: personal.date_started ?? null,
         date_finished: personal.date_finished ?? null,
         date_shelved: personal.date_shelved ?? null,
+        date_dnfed: personal.date_dnfed ?? null,
         rating: personal.rating ?? 0,
         feeling: personal.feeling ?? "",
         mood_tags: normalizeMoodTags(personal.mood_tags ?? []),
@@ -327,6 +329,7 @@ export function flattenUserBook(row: {
   date_started: string | null;
   date_finished: string | null;
   date_shelved: string | null;
+  date_dnfed: string | null;
   rating: number;
   feeling: string;
   mood_tags: string[];
@@ -382,6 +385,7 @@ export function flattenUserBook(row: {
     date_started: row.date_started,
     date_finished: row.date_finished,
     date_shelved: row.date_shelved,
+    date_dnfed: row.date_dnfed,
     rating: row.rating,
     feeling: row.feeling,
     mood_tags: row.mood_tags ?? [],

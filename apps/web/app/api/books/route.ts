@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
   const userBookColumns =
     "id, user_id, catalog_book_id, title_override, author_override, status, format, " +
-    "diversity_tags, date_started, date_finished, date_shelved, rating, feeling, " +
+    "diversity_tags, date_started, date_finished, date_shelved, date_dnfed, rating, feeling, " +
     "mood_tags, user_genres, bookmarked, up_next, created_at, updated_at";
   const catalogColumns =
     "title, author, publisher, cover_url, isbns, release_date, genres, page_count, audio_duration_minutes";
@@ -54,8 +54,8 @@ export async function GET(req: NextRequest) {
       `and(date_finished.gte.${start},date_finished.lt.${end}),` +
         `and(date_started.gte.${start},date_started.lt.${end}),` +
         `and(date_shelved.gte.${start},date_shelved.lt.${end}),` +
-        `and(status.eq.want-to-read,created_at.gte.${start},created_at.lt.${end}),` +
-        `and(status.eq.did-not-finish,date_shelved.is.null,updated_at.gte.${start},updated_at.lt.${end})`,
+        `and(date_dnfed.gte.${start},date_dnfed.lt.${end}),` +
+        `and(status.eq.want-to-read,created_at.gte.${start},created_at.lt.${end})`,
     );
   }
 
@@ -106,6 +106,7 @@ export async function POST(req: NextRequest) {
       date_started: entry.dateStarted || null,
       date_finished: entry.dateFinished || null,
       date_shelved: entry.dateShelved || null,
+      date_dnfed: entry.dateDnfed || null,
       rating: entry.rating ?? 0,
       feeling: entry.feeling ?? "",
       bookmarked: false,

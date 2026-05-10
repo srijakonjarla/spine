@@ -395,7 +395,7 @@ async function runImport(
             } else {
               const { data: ub } = await supabase
                 .from("user_books")
-                .select("id, status, date_finished, date_shelved")
+                .select("id, status, date_finished, date_shelved, date_dnfed")
                 .eq("user_id", userId)
                 .eq("catalog_book_id", byIsbn.id)
                 .maybeSingle();
@@ -470,7 +470,7 @@ async function runImport(
 
         const { data: ub } = await supabase
           .from("user_books")
-          .select("id, status, date_finished, date_shelved")
+          .select("id, status, date_finished, date_shelved, date_dnfed")
           .eq("user_id", userId)
           .eq("catalog_book_id", cb.id)
           .maybeSingle();
@@ -517,6 +517,7 @@ async function runImport(
             date_started: entry.dateStarted || null,
             date_finished: entry.dateFinished || null,
             date_shelved: entry.dateShelved || null,
+            date_dnfed: entry.dateDnfed || null,
             rating: entry.rating,
             feeling: entry.feeling,
             bookshelves: entry.genres,
@@ -546,6 +547,7 @@ async function runImport(
           userBookPatch.date_started = entry.dateStarted || null;
           userBookPatch.date_finished = entry.dateFinished || null;
           userBookPatch.date_shelved = entry.dateShelved || null;
+          userBookPatch.date_dnfed = entry.dateDnfed || null;
           if (entry.rating) userBookPatch.rating = entry.rating;
           if (entry.feeling) userBookPatch.feeling = entry.feeling;
         }
@@ -610,6 +612,7 @@ async function runImport(
         // Add a new book_reads row if this is a distinct re-read
         if (
           entry.status === "finished" &&
+          entry.dateFinished &&
           entry.dateFinished !== existing.date_finished
         ) {
           const { data: reads } = await supabase
@@ -636,16 +639,16 @@ async function runImport(
           }
         } else if (
           entry.status === "did-not-finish" &&
-          entry.dateShelved !== existing.date_shelved
+          entry.dateDnfed &&
+          entry.dateDnfed !== existing.date_dnfed
         ) {
           const { data: reads } = await supabase
             .from("book_reads")
-            .select("status, date_shelved")
+            .select("status, date_dnfed")
             .eq("book_id", existing.id);
           const alreadyLogged = (reads ?? []).some(
-            (r: { status: string; date_shelved: string | null }) =>
-              r.status === "did-not-finish" &&
-              r.date_shelved === entry.dateShelved,
+            (r: { status: string; date_dnfed: string | null }) =>
+              r.status === "did-not-finish" && r.date_dnfed === entry.dateDnfed,
           );
           if (!alreadyLogged) {
             await supabase.from("book_reads").insert({
@@ -654,7 +657,8 @@ async function runImport(
               status: entry.status,
               date_started: entry.dateStarted || null,
               date_finished: null,
-              date_shelved: entry.dateShelved || null,
+              date_shelved: null,
+              date_dnfed: entry.dateDnfed || null,
               rating: entry.rating,
               feeling: entry.feeling,
               created_at: entry.createdAt,

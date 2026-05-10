@@ -69,8 +69,8 @@ export default function StatusCatalogPage() {
         status: status as BookEntry["status"],
         dateStarted: status === "reading" ? today : "",
         dateFinished: status === "finished" ? today : "",
-        dateShelved:
-          status === "want-to-read" || status === "did-not-finish" ? today : "",
+        dateShelved: status === "want-to-read" ? today : "",
+        dateDnfed: status === "did-not-finish" ? today : "",
         rating: 0,
         feeling: "",
         thoughts: [],
