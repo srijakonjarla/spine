@@ -8,6 +8,7 @@ import {
 import "@/globals.css";
 import AuthProvider from "@/providers/AuthProvider";
 import { BooksProvider } from "@/providers/BooksProvider";
+import { ListBookmarksProvider } from "@/providers/ListBookmarksProvider";
 import { QuotesProvider } from "@/providers/QuotesProvider";
 import { SWRProvider } from "@/providers/SWRProvider";
 import Nav from "@/components/navigation/Nav";
@@ -100,16 +101,18 @@ export default function RootLayout({
           <SWRProvider>
             <AuthProvider>
               <BooksProvider>
-                <QuotesProvider>
-                  <NavigationProvider>
-                    <Nav />
-                    <div className="pt-14 lg:pl-55">
-                      {children}
-                      <Footer />
-                    </div>
-                    <Toaster />
-                  </NavigationProvider>
-                </QuotesProvider>
+                <ListBookmarksProvider>
+                  <QuotesProvider>
+                    <NavigationProvider>
+                      <Nav />
+                      <div className="pt-14 lg:pl-55">
+                        {children}
+                        <Footer />
+                      </div>
+                      <Toaster />
+                    </NavigationProvider>
+                  </QuotesProvider>
+                </ListBookmarksProvider>
               </BooksProvider>
             </AuthProvider>
           </SWRProvider>

@@ -31,6 +31,7 @@ import {
   TagIcon,
 } from "@phosphor-icons/react";
 import { BookmarkButton } from "@/components/BookmarkButton";
+import { useListBookmarks } from "@/providers/ListBookmarksProvider";
 import type { Icon } from "@phosphor-icons/react";
 import { coverGradientStyle } from "@/components/lists/coverConstants";
 
@@ -59,6 +60,7 @@ export default function ListDetailPage() {
   const [libraryEntries, setLibraryEntries] = useState<BookEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCoverModal, setShowCoverModal] = useState(false);
+  const { setBookmarked: setListBookmarked } = useListBookmarks();
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -169,6 +171,10 @@ export default function ListDetailPage() {
             const bookmarked = !list.bookmarked;
             setList((prev) => (prev ? { ...prev, bookmarked } : prev));
             saveListField({ bookmarked });
+            setListBookmarked(
+              { id: list.id, title: list.title, year: list.year },
+              bookmarked,
+            );
           }}
         />
       </div>

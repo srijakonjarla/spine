@@ -1,4 +1,6 @@
-import { useMemo } from "react";
+"use client";
+
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import { spineColor } from "@/lib/spineUtils";
 import { upgradeCoverUrl } from "@/lib/coverUrl";
@@ -18,15 +20,26 @@ export function BookCover({
   className = "w-16",
 }: BookCoverProps) {
   const color = useMemo(() => spineColor(title), [title]);
+  const [stage, setStage] = useState<"upgraded" | "original" | "failed">(
+    "upgraded",
+  );
+  const upgraded = upgradeCoverUrl(coverUrl);
+  const showImage = coverUrl && stage !== "failed";
+  const src = stage === "original" ? coverUrl! : upgraded;
 
-  if (coverUrl) {
+  if (showImage) {
     return (
       <Image
-        src={upgradeCoverUrl(coverUrl)}
+        src={src}
         alt={title}
         width={256}
         height={384}
         sizes="(max-width: 640px) 33vw, 200px"
+        onError={() =>
+          setStage((s) =>
+            s === "upgraded" && upgraded !== coverUrl ? "original" : "failed",
+          )
+        }
         className={`${className} rounded shadow-sm shrink-0 self-start object-cover aspect-2/3`}
       />
     );
@@ -67,17 +80,28 @@ export function BookCoverThumb({
   size?: "sm" | "lg";
 }) {
   const color = useMemo(() => spineColor(title), [title]);
+  const [stage, setStage] = useState<"upgraded" | "original" | "failed">(
+    "upgraded",
+  );
+  const upgraded = upgradeCoverUrl(coverUrl);
+  const showImage = coverUrl && stage !== "failed";
+  const src = stage === "original" ? coverUrl! : upgraded;
 
-  if (coverUrl) {
+  if (showImage) {
     const intrinsic = size === "lg" ? { w: 256, h: 384 } : { w: 96, h: 144 };
     const sizesAttr = size === "lg" ? "(max-width: 640px) 50vw, 250px" : "96px";
     return (
       <Image
-        src={upgradeCoverUrl(coverUrl)}
+        src={src}
         alt={title}
         width={intrinsic.w}
         height={intrinsic.h}
         sizes={sizesAttr}
+        onError={() =>
+          setStage((s) =>
+            s === "upgraded" && upgraded !== coverUrl ? "original" : "failed",
+          )
+        }
         className={`${width} ${height} object-cover rounded-sm shrink-0 shadow-sm`}
       />
     );

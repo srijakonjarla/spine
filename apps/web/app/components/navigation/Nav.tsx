@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/providers/AuthProvider";
 import { useBooks } from "@/providers/BooksProvider";
+import { useListBookmarks } from "@/providers/ListBookmarksProvider";
 import { signOut } from "@/lib/auth";
-import { apiFetch } from "@/lib/api";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   HouseIcon,
@@ -28,7 +28,6 @@ import {
   PlusIcon,
 } from "@phosphor-icons/react";
 import { MONTH_ABBRS } from "@/lib/constants";
-import { toast } from "@/lib/toast";
 import {
   SidebarLink,
   SidebarSection,
@@ -57,7 +56,7 @@ export default function Nav() {
   const pathname = usePathname();
   const { user } = useAuth();
   const { books } = useBooks();
-  const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
+  const { bookmarks: listBookmarks } = useListBookmarks();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [quickLogOpen, setQuickLogOpen] = useState(false);
 
@@ -78,16 +77,35 @@ export default function Nav() {
     return { reading, finished, wantToRead };
   }, [books]);
 
+  // Derive book bookmarks from the BooksProvider cache so toggling bookmark on
+  // a book reflects instantly in the sidebar (no refetch needed).
+  const bookBookmarks = useMemo<BookmarkItem[]>(
+    () =>
+      books
+        .filter((b) => b.bookmarked)
+        .sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""))
+        .slice(0, 8)
+        .map((b) => ({
+          id: b.id,
+          title: b.title || "untitled",
+          href: `/book/${b.id}`,
+        })),
+    [books],
+  );
+
+  const bookmarks = useMemo<BookmarkItem[]>(
+    () => [
+      ...bookBookmarks,
+      ...listBookmarks.map((l) => ({
+        id: l.id,
+        title: l.title,
+        href: `/${l.year}/lists/${l.id}`,
+      })),
+    ],
+    [bookBookmarks, listBookmarks],
+  );
+
   const userId = user?.id;
-  useEffect(() => {
-    if (!userId) return;
-    apiFetch("/api/nav")
-      .then((res) => res.json())
-      .then(({ bookmarks }) => {
-        setBookmarks(bookmarks);
-      })
-      .catch(() => toast("Failed to load data. Please refresh."));
-  }, [userId]);
 
   // Hide nav on auth pages, login page, and when not authenticated
   if (pathname.startsWith("/auth/") || pathname === "/login" || !userId)
