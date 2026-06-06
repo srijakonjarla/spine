@@ -17,6 +17,7 @@ export default function RootLayout() {
             <Stack.Screen name="profile" />
             <Stack.Screen name="library/want-to-read" />
             <Stack.Screen name="book/[id]" />
+            <Stack.Screen name="list/[id]" />
             <Stack.Screen name="terms" />
             <Stack.Screen name="privacy" />
           </Stack>

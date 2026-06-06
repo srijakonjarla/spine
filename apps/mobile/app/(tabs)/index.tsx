@@ -19,7 +19,6 @@ import {
   type ReadingBook,
 } from "@/components/home";
 import { useAuth } from "@/lib/auth";
-import { useBooks } from "@/lib/booksContext";
 import {
   createYearGoal,
   loadHomeData,
@@ -46,10 +45,13 @@ const MONTH_ABBRS = [
   "DEC",
 ];
 
-function formatEntryDate(iso: string): string {
+function formatEntryDate(iso: string, finished: boolean): string {
   const [y, m, d] = iso.split("-").map(Number);
   if (!y || !m || !d) return "";
-  return `READING · ${MONTH_ABBRS[m - 1]} ${d}`;
+  const base = `${MONTH_ABBRS[m - 1]} ${d}`;
+  // reading_log notes aren't tied to a book, so the only honest extra
+  // signal is whether a book was finished that day (matches web).
+  return finished ? `${base} · ✦ FINISHED` : base;
 }
 
 function firstNameFromUser(
@@ -84,7 +86,6 @@ export default function Home() {
   const router = useRouter();
   const userId = session?.user?.id;
   const name = firstNameFromUser(session?.user);
-  const { books: allBooks } = useBooks();
 
   const [data, setData] = useState<HomeData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -143,27 +144,19 @@ export default function Home() {
 
   const recentEntries = useMemo<Entry[]>(() => {
     const todayStr = localDateStr(new Date());
-    // Resolve which book was being read on a given log date by checking
-    // each book's started/finished window. `reading_log` has no book_id,
-    // so this is a best-effort heuristic.
-    const bookForDate = (logDate: string): string | undefined => {
-      for (const b of allBooks) {
-        if (!b.dateStarted) continue;
-        if (logDate < b.dateStarted) continue;
-        if (b.dateFinished && logDate > b.dateFinished) continue;
-        // For "reading" books with no dateFinished, the window is open-ended
-        return b.title;
-      }
-      return undefined;
-    };
+    // `reading_log` has no book_id, so we can't reliably say which book a
+    // note belongs to — don't guess a title. The one honest extra signal
+    // is whether a book was finished on that date.
+    const finishedDates = new Set(
+      (data?.recentlyFinished ?? []).map((b) => b.dateFinished).filter(Boolean),
+    );
     return (data?.log ?? [])
       .filter((e) => e.note.trim().length > 0)
       .slice(-3)
       .reverse()
       .map((e) => ({
         id: e.id,
-        date: formatEntryDate(e.logDate),
-        title: bookForDate(e.logDate),
+        date: formatEntryDate(e.logDate, finishedDates.has(e.logDate)),
         note: e.note,
         footer:
           e.pagesRead && e.pagesRead > 0
@@ -172,7 +165,7 @@ export default function Home() {
               ? "today"
               : "",
       }));
-  }, [data?.log, allBooks]);
+  }, [data?.log, data?.recentlyFinished]);
 
   // ─── Action handlers ────────────────────────────────────────────
   const handleMarkDone = useCallback(() => {
@@ -383,12 +376,7 @@ export default function Home() {
               year={CURRENT_YEAR}
             />
 
-            <RecentEntries
-              entries={recentEntries}
-              onSelect={() =>
-                currentBookData && router.push(`/book/${currentBookData.id}`)
-              }
-            />
+            <RecentEntries entries={recentEntries} />
           </>
         )}
 

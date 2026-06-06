@@ -34,15 +34,8 @@ import { BookmarkButton } from "@/components/BookmarkButton";
 import { useListBookmarks } from "@/providers/ListBookmarksProvider";
 import type { Icon } from "@phosphor-icons/react";
 import { coverGradientStyle } from "@/components/lists/coverConstants";
+import { listTypeMeta } from "@spine/shared";
 
-const LIST_TYPE_LABELS: Record<string, string> = {
-  book_list: "book list",
-  idea_list: "idea list",
-  checklist: "checklist",
-  bullet_list: "bullet points",
-  library_loan: "library loans",
-  book_ledger: "book ledger",
-};
 const LIST_TYPE_ICONS: Record<string, Icon> = {
   book_list: BooksIcon,
   idea_list: LightbulbIcon,
@@ -187,7 +180,7 @@ export default function ListDetailPage() {
         <div className="absolute bottom-0 right-0 w-44 h-44 rounded-full pointer-events-none translate-x-1/2 translate-y-1/2 [background:var(--cover-glow-orb)]" />
         <p className="flex items-center gap-1.5 font-hand text-sm mb-1 relative z-10 text-white/55">
           <TypeIcon size={14} />
-          {LIST_TYPE_LABELS[list.listType] ?? "list"}
+          {listTypeMeta(list.listType).label}
         </p>
         <input
           id="list-detail-title"

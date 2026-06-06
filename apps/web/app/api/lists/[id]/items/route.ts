@@ -36,5 +36,28 @@ export async function POST(
     .update({ updated_at: new Date().toISOString() })
     .eq("id", listId);
 
+  if (bookId) {
+    const { data: existing } = await supabase
+      .from("user_books")
+      .select("status, date_shelved")
+      .eq("id", bookId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const shelvedStatuses = ["reading", "finished", "did-not-finish"];
+    if (existing && !shelvedStatuses.includes(existing.status)) {
+      await supabase
+        .from("user_books")
+        .update({
+          status: "want-to-read",
+          date_shelved:
+            existing.date_shelved ?? new Date().toISOString().slice(0, 10),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", bookId)
+        .eq("user_id", userId);
+    }
+  }
+
   return NextResponse.json(data, { status: 201 });
 }

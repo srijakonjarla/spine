@@ -8,8 +8,10 @@ import type { ListItem, BookEntry } from "@/types";
 import type { CatalogEntry } from "@/lib/catalog";
 import { toast } from "@/lib/toast";
 
-export const TX_TYPES = ["bought", "sold", "gifted", "donated"] as const;
-export type TxType = (typeof TX_TYPES)[number];
+import { TX_TYPES, type TxType } from "@spine/shared";
+
+export { TX_TYPES, type TxType };
+
 export const TX_COLORS: Record<TxType, string> = {
   bought: "text-fg-heading bg-plum/10 border-plum/30",
   sold: "text-sage bg-sage/10 border-sage/30",

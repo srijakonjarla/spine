@@ -16,21 +16,11 @@ import {
   MagicWandIcon,
 } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
+import { COVER_COLORS, coverColorKey, type CoverColor } from "@spine/shared";
 
-export const COVER_COLORS = [
-  "plum",
-  "navy",
-  "forest",
-  "terra",
-  "ruby",
-  "violet",
-  "gold",
-  "sage",
-  "lavender",
-  "bark",
-] as const;
-
-export type CoverColor = (typeof COVER_COLORS)[number];
+// Color names + key resolution are shared with mobile; web keeps its own
+// Phosphor icon map and CSS-variable gradient implementation below.
+export { COVER_COLORS, type CoverColor };
 
 export const COVER_ICONS: Record<string, Icon> = {
   Books: BooksIcon,
@@ -50,12 +40,6 @@ export const COVER_ICONS: Record<string, Icon> = {
 };
 
 export const COVER_ICON_NAMES = Object.keys(COVER_ICONS);
-
-function coverColorKey(color: string): CoverColor {
-  return (COVER_COLORS as readonly string[]).includes(color)
-    ? (color as CoverColor)
-    : "plum";
-}
 
 const COVER_GRADIENT: Record<CoverColor, string> = {
   plum: "linear-gradient(135deg, var(--cover-plum-from), var(--cover-plum-to))",

@@ -1,4 +1,3 @@
-import { apiFetch } from "@/lib/api";
 import {
   mapList,
   mapListItem,
@@ -7,11 +6,13 @@ import {
   type ListItemRow,
   type ListRow,
 } from "@spine/shared";
+import { apiFetch } from "./api";
 
+// ─── API ─────────────────────────────────────────────────────────
 export async function getLists(year: number): Promise<BookList[]> {
   const res = await apiFetch(`/api/lists?year=${year}`);
-  const data = await res.json();
-  return (data as ListRow[]).map(mapList);
+  const data = (await res.json()) as ListRow[];
+  return data.map(mapList).sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
 export async function getList(id: string): Promise<BookList | null> {
@@ -21,25 +22,26 @@ export async function getList(id: string): Promise<BookList | null> {
   return mapList(data as ListRow);
 }
 
+export interface CreateListOpts {
+  listType?: string;
+  color?: string;
+  emoji?: string;
+  bulletSymbol?: string;
+  description?: string;
+  dateLabel?: string;
+  notesLabel?: string;
+}
+
 export async function createList(
   year: number,
   title: string,
-  opts?: {
-    listType?: string;
-    color?: string;
-    emoji?: string;
-    bulletSymbol?: string;
-    description?: string;
-    dateLabel?: string;
-    notesLabel?: string;
-  },
+  opts?: CreateListOpts,
 ): Promise<BookList> {
   const res = await apiFetch("/api/lists", {
     method: "POST",
     body: JSON.stringify({ year, title, ...opts }),
   });
-  const data = await res.json();
-  return mapList(data as ListRow);
+  return mapList((await res.json()) as ListRow);
 }
 
 export async function updateList(
@@ -58,16 +60,6 @@ export async function updateList(
   await apiFetch(`/api/lists/${id}`, {
     method: "PATCH",
     body: JSON.stringify(patch),
-  });
-}
-
-export async function toggleListBookmark(
-  id: string,
-  bookmarked: boolean,
-): Promise<void> {
-  await apiFetch(`/api/lists/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify({ bookmarked }),
   });
 }
 
@@ -91,8 +83,7 @@ export async function addListItem(
     method: "POST",
     body: JSON.stringify(fields),
   });
-  const data = await res.json();
-  return mapListItem(data as ListItemRow);
+  return mapListItem((await res.json()) as ListItemRow);
 }
 
 export async function updateListItem(
@@ -117,19 +108,4 @@ export async function removeListItem(
   await apiFetch(`/api/lists/${listId}/items/${id}`, { method: "DELETE" });
 }
 
-export async function reorderListItems(
-  listId: string,
-  orderedIds: string[],
-): Promise<void> {
-  await apiFetch(`/api/lists/${listId}/items/reorder`, {
-    method: "POST",
-    body: JSON.stringify({ orderedIds }),
-  });
-}
-
-export async function reorderLists(orderedIds: string[]): Promise<void> {
-  await apiFetch("/api/lists/reorder", {
-    method: "POST",
-    body: JSON.stringify({ orderedIds }),
-  });
-}
+export type { BookList, ListItem };

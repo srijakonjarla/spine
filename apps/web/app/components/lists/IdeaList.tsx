@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { BULLET_SYMBOLS } from "@spine/shared";
 import { addListItem } from "@/lib/lists";
 import { toast } from "@/lib/toast";
 import type { ListItem } from "@/types";
-
-const BULLET_SYMBOLS = ["→", "●", "✦", "◆", "○", "—", "✓", "★"];
 
 interface Props {
   listId: string;

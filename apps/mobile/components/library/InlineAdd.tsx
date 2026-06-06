@@ -10,23 +10,10 @@ import {
 } from "react-native";
 import type { BookEntry } from "@spine/shared";
 import { C } from "@/components/login/tokens";
+import { STATUS_PILL } from "@/components/lists/statusPill";
 import { searchCatalog, type CatalogEntry } from "@/lib/library";
 
 const SERIF = Platform.select({ ios: "Georgia", default: "serif" });
-
-const STATUS_SYMBOL: Record<string, string> = {
-  reading: "○",
-  finished: "✓",
-  "want-to-read": "◌",
-  "did-not-finish": "×",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  reading: "reading",
-  finished: "finished",
-  "want-to-read": "tbr",
-  "did-not-finish": "dnf",
-};
 
 export function InlineAdd({
   placeholder,
@@ -193,8 +180,8 @@ export function InlineAdd({
               </View>
               {s.status ? (
                 <Text style={styles.sugStatus}>
-                  {STATUS_SYMBOL[s.status] ?? "·"}{" "}
-                  {STATUS_LABEL[s.status] ?? s.status}
+                  {STATUS_PILL[s.status]?.symbol ?? "·"}{" "}
+                  {STATUS_PILL[s.status]?.label ?? s.status}
                 </Text>
               ) : null}
             </Pressable>

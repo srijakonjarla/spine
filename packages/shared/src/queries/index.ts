@@ -13,3 +13,4 @@ export {
 export { markBookFinished } from "./books";
 export { logProgress } from "./log";
 export { loadReadingLog, toggleLogEntry, setLogNote } from "./habits";
+export { type ListRow, type ListItemRow, mapList, mapListItem } from "./lists";
