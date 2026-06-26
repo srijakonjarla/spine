@@ -17,7 +17,12 @@ import { FireIcon, LeafIcon, StarIcon } from "@phosphor-icons/react";
 import { MoodChip } from "@/components/MoodChip";
 import { BookCoverThumb } from "@/components/BookCover";
 import { ProgressBar } from "@/components/ProgressBar";
-import { formatDate, currentStreak, streakRuns } from "@/lib/dates";
+import {
+  formatDate,
+  formatGreetingDate,
+  currentStreak,
+  streakRuns,
+} from "@/lib/dates";
 import { MONTH_ABBRS } from "@/lib/constants";
 import { CoverPanel } from "@/components/login/CoverPanel";
 import { LoginForm } from "@/components/login/LoginForm";
@@ -35,10 +40,6 @@ function greeting() {
   if (h < 12) return "good morning";
   if (h < 17) return "good afternoon";
   return "good evening";
-}
-
-function formatLogDate(iso: string) {
-  return formatDate(iso, { month: "long", day: "numeric", year: "numeric" });
 }
 
 export default function Home() {
@@ -101,12 +102,7 @@ export default function Home() {
   const goalProgress =
     goalTarget > 0 ? Math.min(1, finishedThisYear / goalTarget) : 0;
 
-  const todayLabel = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+  const todayLabel = formatGreetingDate();
 
   // Show login UI when not authenticated
   if (!authLoading && !user) {
@@ -341,7 +337,7 @@ export default function Home() {
                       <p
                         className={`text-detail font-semibold mb-1.5 ${isFinishDay ? "text-terra" : "text-sage"}`}
                       >
-                        {formatLogDate(entry.logDate)}
+                        {formatDate(entry.logDate)}
                         {isFinishDay ? " · ✦ Finished!" : ""}
                       </p>
                       <p className="text-note leading-relaxed line-clamp-3 text-fg font-serif">

@@ -6,8 +6,8 @@ import {
   Text,
   View,
 } from "react-native";
-import type { ListItem } from "@spine/shared";
-import { C } from "@/components/login/tokens";
+import { formatDate, type ListItem } from "@spine/shared";
+import { C, RGB, alpha } from "@/components/login/tokens";
 import { rowStyles } from "./rowStyles";
 import { STATUS_PILL } from "./statusPill";
 
@@ -15,7 +15,7 @@ const SERIF = Platform.select({ ios: "Georgia", default: "serif" });
 
 const TX_COLOR: Record<string, string> = {
   bought: C.plum,
-  sold: "#5f7d68",
+  sold: C.sageDeep,
   gifted: C.gold,
   donated: C.fgMuted,
 };
@@ -25,10 +25,10 @@ const TX_COLOR: Record<string, string> = {
  * "overdue" is derived from the due date — not stored as its own type.
  */
 function loanBadge(item: ListItem, today: string) {
-  if (item.type === "returned") return { label: "returned", color: "#5f7d68" };
+  if (item.type === "returned") return { label: "returned", color: C.sageDeep };
   if (item.type === "renewed") return { label: "renewed", color: C.gold };
   if (item.releaseDate && item.releaseDate < today)
-    return { label: "overdue", color: "#c0392b" };
+    return { label: "overdue", color: C.danger };
   return { label: "out", color: C.fgMuted };
 }
 
@@ -62,7 +62,7 @@ export function BookRow({
   if (isLoan) {
     badge = loanBadge(item, today);
     meta = [
-      item.releaseDate && `due ${item.releaseDate}`,
+      item.releaseDate && `due ${formatDate(item.releaseDate)}`,
       item.notes && `#${item.notes}`,
       item.price && `saved $${item.price}`,
     ]
@@ -71,7 +71,11 @@ export function BookRow({
   } else if (isLedger) {
     const tx = item.type || "bought";
     badge = { label: tx, color: TX_COLOR[tx] ?? C.plum };
-    meta = [item.price && `$${item.price}`, item.notes, item.releaseDate]
+    meta = [
+      item.price && `$${item.price}`,
+      item.notes,
+      item.releaseDate && formatDate(item.releaseDate),
+    ]
       .filter(Boolean)
       .join(" · ");
   } else {
@@ -133,7 +137,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(45,27,46,0.06)",
+    borderBottomColor: alpha(RGB.plum, 0.06),
   },
   thumb: {
     width: 44,

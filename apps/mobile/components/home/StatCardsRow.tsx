@@ -2,8 +2,6 @@ import { Pressable, Text, View } from "react-native";
 import { C } from "@/components/login/tokens";
 import { homeStyles as s } from "./styles";
 
-const SAGE = "#7b9e87";
-
 function MiniBars({ values }: { values: number[] }) {
   const max = Math.max(1, ...values);
   return (
@@ -56,7 +54,7 @@ export function StatCardsRow({
   return (
     <View style={s.statRow}>
       <View style={s.statCard}>
-        <View style={[s.statTopBorder, { backgroundColor: SAGE }]} />
+        <View style={[s.statTopBorder, { backgroundColor: C.sage }]} />
         <Text style={s.statLabel}>STREAK · {streakDays} DAYS</Text>
         <MiniBars values={streakHistory} />
         <Text style={s.statCaveat}>{streakCaveat}</Text>

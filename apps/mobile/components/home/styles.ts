@@ -1,5 +1,5 @@
 import { Platform, StyleSheet } from "react-native";
-import { C } from "@/components/login/tokens";
+import { C, RGB, alpha } from "@/components/login/tokens";
 
 const SERIF = Platform.select({ ios: "Georgia", default: "serif" });
 
@@ -116,7 +116,7 @@ export const homeStyles = StyleSheet.create({
     backgroundColor: C.paper,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "rgba(45,27,46,0.08)",
+    borderColor: alpha(RGB.plum, 0.08),
     padding: 14,
     flexDirection: "row",
     gap: 14,
@@ -145,7 +145,7 @@ export const homeStyles = StyleSheet.create({
   },
   bookCoverAuthor: {
     fontSize: 6,
-    color: "rgba(250,246,240,0.6)",
+    color: alpha(RGB.cream, 0.6),
     letterSpacing: 0.4,
     textTransform: "uppercase",
   },
@@ -188,7 +188,7 @@ export const homeStyles = StyleSheet.create({
     flex: 1,
     height: 4,
     borderRadius: 2,
-    backgroundColor: "rgba(45,27,46,0.08)",
+    backgroundColor: alpha(RGB.plum, 0.08),
     overflow: "hidden",
   },
   progressFill: {
@@ -222,7 +222,7 @@ export const homeStyles = StyleSheet.create({
     backgroundColor: C.paper,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(45,27,46,0.08)",
+    borderColor: alpha(RGB.plum, 0.08),
     paddingVertical: 14,
     alignItems: "center",
     justifyContent: "center",
@@ -246,7 +246,7 @@ export const homeStyles = StyleSheet.create({
     backgroundColor: C.paper,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(45,27,46,0.08)",
+    borderColor: alpha(RGB.plum, 0.08),
     padding: 14,
     minHeight: 130,
     overflow: "hidden",
@@ -315,7 +315,7 @@ export const homeStyles = StyleSheet.create({
     backgroundColor: C.paper,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(45,27,46,0.08)",
+    borderColor: alpha(RGB.plum, 0.08),
     padding: 14,
     marginBottom: 10,
   },

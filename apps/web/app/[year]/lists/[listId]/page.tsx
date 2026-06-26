@@ -35,6 +35,7 @@ import { useListBookmarks } from "@/providers/ListBookmarksProvider";
 import type { Icon } from "@phosphor-icons/react";
 import { coverGradientStyle } from "@/components/lists/coverConstants";
 import { listTypeMeta } from "@spine/shared";
+import { localDateStr } from "@/lib/dates";
 
 const LIST_TYPE_ICONS: Record<string, Icon> = {
   book_list: BooksIcon,
@@ -145,7 +146,7 @@ export default function ListDetailPage() {
       : isBookLedger
         ? "entries"
         : "books";
-  const today = new Date().toISOString().split("T")[0];
+  const today = localDateStr();
   const TypeIcon = LIST_TYPE_ICONS[list.listType] ?? BooksIcon;
 
   return (

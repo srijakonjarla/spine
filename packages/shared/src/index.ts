@@ -3,5 +3,6 @@ export * from "./dates";
 export * from "./constants";
 export * from "./heroGradients";
 export * from "./lists";
+export * from "./month";
 export * from "./statusMeta";
 export * from "./queries";

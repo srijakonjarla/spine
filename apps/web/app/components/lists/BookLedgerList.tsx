@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { CatalogSearch } from "@/components/CatalogSearch";
+import { DisplayDateInput } from "@/components/lists/DisplayDateInput";
 import { addListItem } from "@/lib/lists";
 import type { ListItem, BookEntry } from "@/types";
 import type { CatalogEntry } from "@/lib/catalog";
@@ -177,12 +178,12 @@ export function BookLedgerList({
               className="w-28 shrink-0 hidden sm:block text-xs text-fg-muted bg-transparent border-none outline-none placeholder:text-fg-faint/50"
             />
             {/* Date */}
-            <input
+            <DisplayDateInput
               id={`ledger-item-${item.id}-date`}
-              type="date"
               value={item.releaseDate ?? ""}
-              onChange={(e) => onUpdateDate(item.id, e.target.value)}
-              className="w-24 shrink-0 hidden md:block text-xs text-fg-faint bg-transparent border-none outline-none"
+              onChange={(v) => onUpdateDate(item.id, v)}
+              className="w-24 shrink-0 hidden md:block text-xs text-fg-faint hover:text-fg-muted transition-colors"
+              placeholder="pick date"
             />
             <button
               onClick={() => onRemove(item.id)}
@@ -250,12 +251,11 @@ export function BookLedgerList({
               placeholder="from / to…"
               className="flex-1 text-xs text-fg-muted bg-transparent border-b border-line outline-none pb-0.5 placeholder:text-fg-faint"
             />
-            <input
+            <DisplayDateInput
               id="ledger-add-date"
-              type="date"
               value={draftTxDate}
-              onChange={(e) => setDraftTxDate(e.target.value)}
-              className="text-xs text-fg-faint bg-transparent border-none outline-none"
+              onChange={setDraftTxDate}
+              className="text-xs text-fg-faint hover:text-fg-muted transition-colors"
             />
           </div>
           <div className="flex gap-3 pt-2 border-t border-line">

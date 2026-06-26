@@ -2,6 +2,7 @@
 
 import { PaletteIcon, TrashIcon } from "@phosphor-icons/react";
 import type { BookList } from "@/types";
+import { localDateStr } from "@/lib/dates";
 
 interface Props {
   list: BookList;
@@ -24,7 +25,7 @@ export function ListSidebar({
   onShowCoverModal,
   onDelete,
 }: Props) {
-  const today = new Date().toISOString().split("T")[0];
+  const today = localDateStr();
 
   // Library loan stats
   const loansOut = list.items.filter((i) => i.type !== "returned").length;

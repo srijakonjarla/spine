@@ -102,7 +102,21 @@ export default function BookPage() {
     setRereadLoading(true);
     try {
       await startNewRead(entry);
-      await mutateEntry();
+      const refreshed = await mutateEntry();
+      // Sync the books cache so the sidebar reflects the re-read transition
+      // (status / dates / reads) without waiting for a full refetch.
+      if (refreshed) {
+        updateBook(entry.id, {
+          status: refreshed.status,
+          dateStarted: refreshed.dateStarted,
+          dateFinished: refreshed.dateFinished,
+          dateShelved: refreshed.dateShelved,
+          dateDnfed: refreshed.dateDnfed,
+          rating: refreshed.rating,
+          feeling: refreshed.feeling,
+          reads: refreshed.reads,
+        });
+      }
     } finally {
       setRereadLoading(false);
     }

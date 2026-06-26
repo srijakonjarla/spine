@@ -18,7 +18,6 @@ import {
 } from "@/components/goals/GoalCreateModal";
 import { C } from "@/components/login/tokens";
 
-const SAGE = "#7b9e87";
 const CURRENT_YEAR = new Date().getFullYear();
 
 function GoalCard({ goal }: { goal: GoalListItem }) {
@@ -26,7 +25,7 @@ function GoalCard({ goal }: { goal: GoalListItem }) {
   const total = goal.target || goal.pinnedBookIds.length || 0;
   const pct =
     total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
-  const accent = goal.isAuto ? C.terraInk : SAGE;
+  const accent = goal.isAuto ? C.terraInk : C.sage;
   const caveat =
     pct >= 100
       ? "goal reached"

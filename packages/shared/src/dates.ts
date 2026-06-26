@@ -71,6 +71,22 @@ export function formatMonthYear(iso: string): string {
   return formatDate(iso, { month: "long", year: "numeric" });
 }
 
+/**
+ * Format a Date as the greeting line used on the home screens:
+ * "sunday · jan 15, 2025" — lowercased to match the home greeting prose.
+ */
+export function formatGreetingDate(d: Date = new Date()): string {
+  return d
+    .toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
+    .replace(",", " ·")
+    .toLowerCase();
+}
+
 /** Format a DATE string to just the 4-digit year number, or null. */
 export function dateYear(iso: string): number | null {
   const d = parseLocalDate(iso);

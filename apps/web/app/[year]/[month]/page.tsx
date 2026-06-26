@@ -6,7 +6,13 @@ import Link from "next/link";
 import { useBooks } from "@/providers/BooksProvider";
 import { useQuotes } from "@/providers/QuotesProvider";
 import { useReadingLog } from "@/providers/ReadingLogProvider";
-import type { BookEntry, BookRead, Quote } from "@/types";
+import type { Quote } from "@/types";
+import {
+  buildMonthCells,
+  computeDayPanelData,
+  computeMonthSpread,
+  stepMonth,
+} from "@spine/shared";
 
 import { DayPanel } from "@/components/calendar/DayPanel";
 import { MonthCalendar } from "@/components/calendar/MonthCalendar";
@@ -19,10 +25,6 @@ import {
 import { MONTH_ABBRS } from "@/lib/constants";
 import { MonthSpreadSkeleton } from "@/components/skeletons/MonthSpreadSkeleton";
 import { FlameIcon } from "@phosphor-icons/react";
-
-function pad(n: number) {
-  return String(n).padStart(2, "0");
-}
 
 export default function MonthSpreadPage() {
   const { year: yearParam, month: monthParam } = useParams<{
@@ -54,107 +56,59 @@ export default function MonthSpreadPage() {
     removeEntry: removeLogEntry,
     updateNote: updateLogNote,
   } = useReadingLog();
-  const reading = useMemo(
-    () => allBooks.filter((b) => b.status === "reading"),
-    [allBooks],
-  );
-  const upNext = useMemo(
-    () => allBooks.filter((b) => b.status === "want-to-read" && b.upNext),
-    [allBooks],
-  );
-
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const loading = booksLoading || quotesLoading || logLoading;
 
-  const monthKey = `${year}-${pad(monthIndex + 1)}`;
-  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
-  const firstDayOfWeek = new Date(year, monthIndex, 1).getDay();
   const isCurrentMonth =
     year === now.getFullYear() && monthIndex === now.getMonth();
 
-  const loggedThisMonth = useMemo(
+  const spread = useMemo(
     () =>
-      new Set(
-        logEntries.map((e) => e.logDate).filter((d) => d.startsWith(monthKey)),
-      ),
-    [logEntries, monthKey],
+      computeMonthSpread({
+        books: allBooks,
+        quotes,
+        logEntries,
+        year,
+        monthIndex,
+      }),
+    [allBooks, quotes, logEntries, year, monthIndex],
   );
+  const {
+    monthKey,
+    reading,
+    upNext,
+    finishedByDate,
+    quoteDatesThisMonth: quoteDateSet,
+    finishedThisMonth,
+    quotesThisMonth,
+    daysRead,
+  } = spread;
+
   const streak = useMemo(() => currentStreak(loggedDates), [loggedDates]);
   const streakDays = useMemo(() => streakDates(loggedDates), [loggedDates]);
 
-  const finishedByDate = useMemo(() => {
-    const map = new Map<string, BookEntry>();
-    allBooks.forEach((b) => {
-      if (b.status === "finished" && b.dateFinished?.startsWith(monthKey)) {
-        map.set(b.dateFinished, b);
-      } else if (
-        b.status === "did-not-finish" &&
-        b.dateDnfed?.startsWith(monthKey)
-      ) {
-        map.set(b.dateDnfed, b);
-      }
-    });
-    return map;
-  }, [allBooks, monthKey]);
-
-  const quoteDateSet = useMemo(
-    () =>
-      new Set(
-        quotes
-          .map((q) => localDateStr(new Date(q.createdAt)))
-          .filter((d) => d.startsWith(monthKey)),
-      ),
-    [quotes, monthKey],
+  const cells = useMemo(
+    () => buildMonthCells(year, monthIndex),
+    [year, monthIndex],
   );
 
-  const cells = useMemo(() => {
-    const out: { day: number | null; dateStr: string }[] = [];
-    for (let i = 0; i < firstDayOfWeek; i++)
-      out.push({ day: null, dateStr: "" });
-    for (let d = 1; d <= daysInMonth; d++)
-      out.push({ day: d, dateStr: `${monthKey}-${pad(d)}` });
-    return out;
-  }, [firstDayOfWeek, daysInMonth, monthKey]);
-
-  const finishedThisMonth = useMemo(
-    () =>
-      allBooks.filter(
-        (b) =>
-          (b.status === "finished" || b.status === "did-not-finish") &&
-          (b.dateFinished?.startsWith(monthKey) ||
-            b.dateDnfed?.startsWith(monthKey)),
-      ),
-    [allBooks, monthKey],
-  );
-  const quotesThisMonth = useMemo(
-    () => quotes.filter((q) => q.createdAt.startsWith(monthKey)),
-    [quotes, monthKey],
-  );
-  const daysRead = loggedThisMonth.size;
-
-  // streak is already computed above via streak(loggedDates)
-
-  const monthLabel = formatMonthYear(
-    `${year}-${String(monthIndex + 1).padStart(2, "0")}-01`,
-  );
+  const monthLabel = formatMonthYear(`${monthKey}-01`);
 
   // Prefetch adjacent months for instant navigation
   useEffect(() => {
-    const prevM = monthIndex - 1;
-    const nextM = monthIndex + 1;
-    const prevYear = prevM < 0 ? year - 1 : year;
-    const prevMonth = prevM < 0 ? 11 : prevM;
-    const nextYear = nextM > 11 ? year + 1 : year;
-    const nextMonth = nextM > 11 ? 0 : nextM;
-    router.prefetch(`/${prevYear}/${MONTH_ABBRS[prevMonth]}`);
-    router.prefetch(`/${nextYear}/${MONTH_ABBRS[nextMonth]}`);
+    const prev = stepMonth(year, monthIndex, -1);
+    const next = stepMonth(year, monthIndex, 1);
+    router.prefetch(`/${prev.year}/${MONTH_ABBRS[prev.monthIndex]}`);
+    router.prefetch(`/${next.year}/${MONTH_ABBRS[next.monthIndex]}`);
   }, [router, year, monthIndex]);
 
   const goToMonth = (y: number, m: number) => {
-    const newYear = m < 0 ? y - 1 : m > 11 ? y + 1 : y;
-    const newMonth = m < 0 ? 11 : m > 11 ? 0 : m;
-    router.push(`/${newYear}/${MONTH_ABBRS[newMonth]}`);
+    router.push(`/${y}/${MONTH_ABBRS[m]}`);
+  };
+  const stepTo = (delta: number) => {
+    const next = stepMonth(year, monthIndex, delta);
+    goToMonth(next.year, next.monthIndex);
   };
 
   const handleToggled = (date: string, result: "added" | "removed") => {
@@ -178,64 +132,16 @@ export default function MonthSpreadPage() {
     addQuoteToCache(q);
   };
 
-  const panelLog = selectedDate
-    ? logEntries.find((e) => e.logDate === selectedDate)
-    : undefined;
-  const panelQuotes = selectedDate
-    ? quotes.filter((q) => localDateStr(new Date(q.createdAt)) === selectedDate)
-    : [];
-  const panelFinished = selectedDate
-    ? allBooks.filter(
-        (b) =>
-          (b.status === "finished" || b.status === "did-not-finish") &&
-          (b.dateFinished === selectedDate || b.dateDnfed === selectedDate),
-      )
-    : [];
-  const panelStarted = selectedDate
-    ? allBooks.filter(
-        (b) =>
-          b.status !== "want-to-read" &&
-          b.dateStarted === selectedDate &&
-          b.dateFinished !== selectedDate &&
-          b.dateDnfed !== selectedDate,
-      )
-    : [];
-  const panelReading = selectedDate === todayStr ? reading : [];
-  const panelFinishedIds = new Set(panelFinished.map((b) => b.id));
-  const panelStartedIds = new Set(panelStarted.map((b) => b.id));
-  const panelBookLog = selectedDate
-    ? allBooks.flatMap((b) => {
-        if (panelFinishedIds.has(b.id) || panelStartedIds.has(b.id)) return [];
-        return b.reads
-          .filter((r) => {
-            const readDate =
-              r.status === "finished"
-                ? r.dateFinished
-                : r.status === "did-not-finish"
-                  ? r.dateDnfed
-                  : r.dateStarted;
-            return readDate === selectedDate;
-          })
-          .map((r) => ({
-            bookTitle: b.title,
-            bookId: b.id,
-            read: r as BookRead,
-          }));
+  const panel = selectedDate
+    ? computeDayPanelData({
+        books: allBooks,
+        quotes,
+        logEntries,
+        loggedDates,
+        date: selectedDate,
       })
-    : [];
-  const panelThoughts = selectedDate
-    ? allBooks.flatMap((b) =>
-        b.thoughts
-          .filter((t) => localDateStr(new Date(t.createdAt)) === selectedDate)
-          .map((t) => ({
-            id: t.id,
-            text: t.text,
-            bookTitle: b.title,
-            bookId: b.id,
-          })),
-      )
-    : [];
-  const panelIsLogged = selectedDate ? loggedDates.has(selectedDate) : false;
+    : null;
+  const panelReading = selectedDate === todayStr ? reading : [];
   const panelOpen = selectedDate !== null;
 
   if (loading) return <MonthSpreadSkeleton />;
@@ -268,7 +174,7 @@ export default function MonthSpreadPage() {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => goToMonth(year, monthIndex - 1)}
+              onClick={() => stepTo(-1)}
               className="text-sm px-2 py-1 rounded hover:bg-subtle transition-colors text-fg-muted"
             >
               ←
@@ -282,7 +188,7 @@ export default function MonthSpreadPage() {
               </button>
             )}
             <button
-              onClick={() => goToMonth(year, monthIndex + 1)}
+              onClick={() => stepTo(1)}
               className="text-sm px-2 py-1 rounded hover:bg-subtle transition-colors text-fg-muted"
             >
               →
@@ -457,19 +363,19 @@ export default function MonthSpreadPage() {
           panelOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        {selectedDate && (
+        {selectedDate && panel && (
           <DayPanel
             key={selectedDate}
             date={selectedDate}
             todayStr={todayStr}
-            log={panelLog}
-            dayQuotes={panelQuotes}
-            dayFinished={panelFinished}
-            dayStarted={panelStarted}
+            log={panel.log}
+            dayQuotes={panel.quotes}
+            dayFinished={panel.finished}
+            dayStarted={panel.started}
             dayReading={panelReading}
-            dayThoughts={panelThoughts}
-            dayBookLog={panelBookLog}
-            isLogged={panelIsLogged}
+            dayThoughts={panel.thoughts}
+            dayBookLog={panel.bookLog}
+            isLogged={panel.isLogged}
             onClose={() => setSelectedDate(null)}
             onToggled={handleToggled}
             onNoteSaved={handleNoteSaved}

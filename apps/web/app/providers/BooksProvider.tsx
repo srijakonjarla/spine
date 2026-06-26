@@ -2,7 +2,6 @@
 
 import {
   createContext,
-  startTransition,
   useCallback,
   useContext,
   useEffect,
@@ -85,24 +84,21 @@ export function BooksProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
+  // No startTransition: these mutations drive sidebar counts and other
+  // book-cache derived UI that must reflect the change on the same render
+  // as the user's click. Deferring them caused stale counts.
   const updateBook = useCallback((id: string, patch: Partial<BookEntry>) => {
-    startTransition(() => {
-      setBooks((prev) =>
-        prev.map((b) => (b.id === id ? { ...b, ...patch } : b)),
-      );
-    });
+    setBooks((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, ...patch } : b)),
+    );
   }, []);
 
   const addBook = useCallback((entry: BookEntry) => {
-    startTransition(() => {
-      setBooks((prev) => [entry, ...prev]);
-    });
+    setBooks((prev) => [entry, ...prev]);
   }, []);
 
   const removeBook = useCallback((id: string) => {
-    startTransition(() => {
-      setBooks((prev) => prev.filter((b) => b.id !== id));
-    });
+    setBooks((prev) => prev.filter((b) => b.id !== id));
   }, []);
 
   const value = useMemo<BooksContextValue>(

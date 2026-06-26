@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useYear } from "@/providers/YearContext";
 import type { BookEntry } from "@/types";
-import { localDateStr, dateMonth } from "@/lib/dates";
+import { localDateStr, dateMonth, formatShortDate } from "@/lib/dates";
 import { MONTH_ABBRS, MONTH_NAMES } from "@/lib/constants";
 import MiniMonthCal from "@/components/calendar/MiniMonthCal";
 import { BookCoverThumb } from "@/components/BookCover";
@@ -75,7 +75,7 @@ export default function YearPage() {
     .filter(({ books }) => books.length > 0);
 
   const statusLabel = isCurrentYear
-    ? `in progress · ${now.toLocaleDateString("en-US", { month: "long", day: "numeric" })}`
+    ? `in progress · ${formatShortDate(localDateStr(now))}`
     : `complete · ${finishedBooks.length} books`;
 
   if (loading) return <YearSkeleton />;

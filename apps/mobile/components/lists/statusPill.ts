@@ -13,7 +13,7 @@ export const STATUS_PILL: Record<
   { symbol: string; label: string; color: string }
 > = {
   reading: { symbol: "○", label: "reading", color: C.terraInk },
-  finished: { symbol: "✓", label: "finished", color: "#5f7d68" },
+  finished: { symbol: "✓", label: "finished", color: C.sageDeep },
   "want-to-read": { symbol: "◌", label: "tbr", color: C.plum },
   "did-not-finish": { symbol: "×", label: "dnf", color: C.fgMuted },
 };

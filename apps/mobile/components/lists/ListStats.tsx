@@ -1,6 +1,6 @@
 import { Platform, StyleSheet, Text, View } from "react-native";
 import type { BookList } from "@spine/shared";
-import { C } from "@/components/login/tokens";
+import { C, RGB, alpha } from "@/components/login/tokens";
 
 const SERIF = Platform.select({ ios: "Georgia", default: "serif" });
 
@@ -15,12 +15,12 @@ export function LoanStats({ list, today }: { list: BookList; today: string }) {
   return (
     <View style={styles.row}>
       <Stat label="out" value={String(out)} color={C.terraInk} />
-      <Stat label="returned" value={String(returned)} color="#5f7d68" />
+      <Stat label="returned" value={String(returned)} color={C.sageDeep} />
       {overdue > 0 ? (
-        <Stat label="overdue" value={String(overdue)} color="#c0392b" />
+        <Stat label="overdue" value={String(overdue)} color={C.danger} />
       ) : null}
       {saved > 0 ? (
-        <Stat label="saved" value={`$${saved.toFixed(0)}`} color="#5f7d68" />
+        <Stat label="saved" value={`$${saved.toFixed(0)}`} color={C.sageDeep} />
       ) : null}
     </View>
   );
@@ -37,12 +37,12 @@ export function LedgerStats({ list }: { list: BookList }) {
   return (
     <View style={styles.row}>
       <Stat label="spent" value={`$${spent.toFixed(0)}`} color={C.terraInk} />
-      <Stat label="earned" value={`$${earned.toFixed(0)}`} color="#5f7d68" />
+      <Stat label="earned" value={`$${earned.toFixed(0)}`} color={C.sageDeep} />
       {earned > 0 ? (
         <Stat
           label="net"
           value={`${earned - spent >= 0 ? "+" : "−"}$${Math.abs(earned - spent).toFixed(0)}`}
-          color={earned - spent >= 0 ? "#5f7d68" : C.terraInk}
+          color={earned - spent >= 0 ? C.sageDeep : C.terraInk}
         />
       ) : null}
     </View>
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: C.paper,
     borderWidth: 1,
-    borderColor: "rgba(45,27,46,0.08)",
+    borderColor: alpha(RGB.plum, 0.08),
     borderRadius: 12,
     paddingVertical: 10,
     alignItems: "center",

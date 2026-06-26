@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { CatalogSearch } from "@/components/CatalogSearch";
+import { DisplayDateInput } from "@/components/lists/DisplayDateInput";
 import { addListItem } from "@/lib/lists";
 import type { ListItem, BookEntry } from "@/types";
 import type { CatalogEntry } from "@/lib/catalog";
@@ -222,12 +223,11 @@ export function LibraryLoanList({
                   >
                     due
                   </span>
-                  <input
+                  <DisplayDateInput
                     id={`loan-item-${item.id}-due-date`}
-                    type="date"
                     value={item.releaseDate ?? ""}
-                    onChange={(e) => onUpdateDate(item.id, e.target.value)}
-                    className={`text-caption bg-transparent border-none outline-none ${isOverdue && !isReturned ? "text-red-400" : "text-fg-muted"}`}
+                    onChange={(v) => onUpdateDate(item.id, v)}
+                    className={`text-caption hover:opacity-80 transition-opacity ${isOverdue && !isReturned ? "text-red-400" : "text-fg-muted"}`}
                   />
                 </div>
                 <div className="flex items-center gap-0.5 shrink-0 ml-auto">
@@ -291,12 +291,11 @@ export function LibraryLoanList({
               <span className="text-detail font-semibold uppercase tracking-wide text-fg-faint">
                 Due
               </span>
-              <input
+              <DisplayDateInput
                 id="loan-add-due-date"
-                type="date"
                 value={draftDueDate}
-                onChange={(e) => setDraftDueDate(e.target.value)}
-                className="text-xs text-fg-muted bg-transparent border-none outline-none"
+                onChange={setDraftDueDate}
+                className="text-xs text-fg-muted hover:text-fg-heading transition-colors"
               />
             </div>
             <div className="flex items-center gap-1 ml-auto">

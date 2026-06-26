@@ -6,14 +6,14 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 import {
+  formatDate,
   heroGradientFor,
-  parseLocalDate,
   type BookEntry,
   type ReadingStatus,
 } from "@spine/shared";
 import { BookmarkIcon, CalendarIcon, StarIcon } from "@/components/icons";
 import { BookCoverThumb } from "@/components/library/BookCoverThumb";
-import { C } from "@/components/login/tokens";
+import { C, RGB, alpha } from "@/components/login/tokens";
 
 const SERIF = Platform.select({ ios: "Georgia", default: "serif" });
 
@@ -23,12 +23,6 @@ const STATUSES: { id: ReadingStatus; label: string }[] = [
   { id: "did-not-finish", label: "did not finish" },
   { id: "want-to-read", label: "want to read" },
 ];
-
-function shortNumeric(iso: string): string {
-  const d = parseLocalDate(iso);
-  if (!d) return "";
-  return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
-}
 
 export function Hero({
   entry,
@@ -155,7 +149,7 @@ function RatingStars({ rating }: { rating: number }) {
         <StarIcon
           key={i}
           size={14}
-          color="#d4a843"
+          color={C.gold}
           weight={i <= value ? "bold" : "regular"}
         />
       ))}
@@ -169,7 +163,7 @@ function DateBlock({ label, value }: { label: string; value?: string }) {
       <Text style={s.dateLabel}>{label}</Text>
       <View style={s.dateValueRow}>
         <CalendarIcon size={12} color={C.cream} />
-        <Text style={s.dateValue}>{value ? shortNumeric(value) : "—"}</Text>
+        <Text style={s.dateValue}>{value ? formatDate(value) : "—"}</Text>
       </View>
     </View>
   );
@@ -227,11 +221,11 @@ const s = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
-    backgroundColor: "rgba(250,246,240,0.06)",
+    backgroundColor: alpha(RGB.cream, 0.06),
     borderWidth: 1,
-    borderColor: "rgba(250,246,240,0.12)",
+    borderColor: alpha(RGB.cream, 0.12),
   },
-  statusPillActive: { backgroundColor: "#7b9e87", borderColor: "#7b9e87" },
+  statusPillActive: { backgroundColor: C.sage, borderColor: C.sage },
   statusPillText: { fontSize: 11, color: C.cream, opacity: 0.7 },
   statusPillTextActive: { color: C.cream, opacity: 1, fontWeight: "600" },
 
@@ -246,7 +240,7 @@ const s = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "rgba(250,246,240,0.18)",
+    borderColor: alpha(RGB.cream, 0.18),
   },
   genreChipAdd: { borderStyle: "dashed" },
   genreChipText: { fontSize: 11, color: C.cream, opacity: 0.65 },
