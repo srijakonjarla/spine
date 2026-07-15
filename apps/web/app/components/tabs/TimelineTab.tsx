@@ -214,6 +214,7 @@ export default function TimelineTab() {
           hidden={!!viewedRead}
           dateValue={dateInput}
           onDateChange={setDateInput}
+          pageCount={entry.pageCount}
         />
         <EntriesList
           sortedThoughts={sortedThoughts}

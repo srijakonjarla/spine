@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { localDateStr } from "@/lib/dates";
 
 interface ComposerProps {
@@ -11,7 +11,11 @@ interface ComposerProps {
   /** Currently selected date for the thought (YYYY-MM-DD). */
   dateValue: string;
   onDateChange: (v: string) => void;
+  /** Total page count of the book — enables % mode when provided. */
+  pageCount?: number | null;
 }
+
+type PageMode = "page" | "percent";
 
 /** The "add a reading note" input row at the bottom of the timeline. */
 export default function Composer({
@@ -23,29 +27,92 @@ export default function Composer({
   hidden,
   dateValue,
   onDateChange,
+  pageCount,
 }: ComposerProps) {
   const [showDate, setShowDate] = useState(false);
+  const [pageMode, setPageMode] = useState<PageMode>("page");
+  const [displayValue, setDisplayValue] = useState("");
   const today = localDateStr();
   const isBackdated = dateValue !== today;
+  const canUsePercent = !!pageCount && pageCount > 0;
+
+  // When parent resets pageInput to "" (after post), clear display value
+  useEffect(() => {
+    if (pageInput === "") setDisplayValue("");
+  }, [pageInput]);
+
+  const handleDisplayChange = (v: string) => {
+    setDisplayValue(v);
+    if (pageMode === "page") {
+      onPageInputChange(v);
+    } else {
+      const n = Number(v);
+      if (canUsePercent && Number.isFinite(n) && n > 0 && n <= 100) {
+        onPageInputChange(String(Math.round((n / 100) * pageCount)));
+      } else {
+        onPageInputChange("");
+      }
+    }
+  };
+
+  const toggleMode = () => {
+    if (!canUsePercent) return;
+    const next: PageMode = pageMode === "page" ? "percent" : "page";
+    setPageMode(next);
+    setDisplayValue("");
+    onPageInputChange("");
+  };
+
+  const percentPage =
+    pageMode === "percent" && canUsePercent && displayValue.trim()
+      ? (() => {
+          const n = Number(displayValue);
+          return Number.isFinite(n) && n > 0 && n <= 100
+            ? Math.round((n / 100) * pageCount)
+            : null;
+        })()
+      : null;
 
   return (
     <>
       <div className={`flex gap-2 items-start${hidden ? " hidden" : ""}`}>
-        <input
-          id="composer-page"
-          type="number"
-          value={pageInput}
-          onChange={(e) => onPageInputChange(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              onPost();
+        <div className="shrink-0 flex flex-col items-center gap-0.5">
+          <button
+            type="button"
+            onClick={toggleMode}
+            title={
+              canUsePercent ? "toggle page / %" : "add a page count to use %"
             }
-          }}
-          placeholder="p."
-          min={1}
-          className="w-16 shrink-0 font-hand text-note text-fg border-b border-line bg-transparent outline-none placeholder:text-fg-muted/50 pb-1 pt-1 text-center"
-        />
+            className={`text-detail font-medium leading-none px-1.5 py-0.5 rounded transition-colors select-none ${
+              pageMode === "percent"
+                ? "bg-terra/15 text-terra"
+                : "text-fg-muted/50 hover:text-fg-muted"
+            } ${!canUsePercent ? "cursor-default" : "cursor-pointer"}`}
+          >
+            {pageMode === "page" ? "p." : "%"}
+          </button>
+          <input
+            id="composer-page"
+            type="number"
+            value={displayValue}
+            onChange={(e) => handleDisplayChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                onPost();
+              }
+            }}
+            placeholder={pageMode === "page" ? "—" : "0"}
+            min={1}
+            max={pageMode === "percent" ? 100 : undefined}
+            className="w-12 font-hand text-note text-fg border-b border-line bg-transparent outline-none placeholder:text-fg-muted/30 pb-1 pt-0.5 text-center"
+          />
+          {percentPage != null && (
+            <span className="text-detail text-fg-muted/60 leading-none">
+              p. {percentPage}
+            </span>
+          )}
+        </div>
         <textarea
           id="composer-thought"
           value={thoughtInput}
