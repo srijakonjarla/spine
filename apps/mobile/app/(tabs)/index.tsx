@@ -386,6 +386,7 @@ export default function Home() {
       <LogProgressModal
         open={logOpen}
         bookTitle={currentBookData?.title}
+        pageCount={currentBookData?.pageCount}
         busy={busyAction}
         onClose={() => setLogOpen(false)}
         onSubmit={submitLog}
