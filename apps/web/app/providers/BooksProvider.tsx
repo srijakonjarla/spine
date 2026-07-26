@@ -88,9 +88,7 @@ export function BooksProvider({ children }: { children: React.ReactNode }) {
   // book-cache derived UI that must reflect the change on the same render
   // as the user's click. Deferring them caused stale counts.
   const updateBook = useCallback((id: string, patch: Partial<BookEntry>) => {
-    setBooks((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, ...patch } : b)),
-    );
+    setBooks((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b)));
   }, []);
 
   const addBook = useCallback((entry: BookEntry) => {

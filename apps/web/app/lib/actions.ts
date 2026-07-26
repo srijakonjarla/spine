@@ -22,9 +22,11 @@ async function authed() {
 
 // ── Books ──────────────────────────────────────────────────────────────────────
 
-export async function createEntryAction(entry: BookEntry): Promise<void> {
+export async function createEntryAction(
+  entry: BookEntry,
+): Promise<{ id: string }> {
   const { supabase, user } = await authed();
-  await upsertBookForUser(
+  const result = await upsertBookForUser(
     supabase,
     user.id,
     {
@@ -53,6 +55,8 @@ export async function createEntryAction(entry: BookEntry): Promise<void> {
       updated_at: entry.updatedAt,
     },
   );
+  if (!result) throw new Error("failed to create book");
+  return { id: result.userBookId };
 }
 
 export async function updateEntryAction(

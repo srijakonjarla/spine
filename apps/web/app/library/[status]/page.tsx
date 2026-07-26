@@ -87,8 +87,9 @@ export default function StatusCatalogPage() {
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
       };
-      await createEntry(entry);
-      mutateEntries((prev) => (prev ? [entry, ...prev] : [entry]), {
+      const { id } = await createEntry(entry);
+      const saved = { ...entry, id };
+      mutateEntries((prev) => (prev ? [saved, ...prev] : [saved]), {
         revalidate: false,
       });
       setAddValue("");

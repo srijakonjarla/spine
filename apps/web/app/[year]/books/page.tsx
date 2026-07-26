@@ -161,8 +161,8 @@ export default function BooksPage() {
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
       };
-      await createEntry(entry);
-      router.push(`/book/${entry.id}`);
+      const { id } = await createEntry(entry);
+      router.push(`/book/${id}`);
     } catch {
       toast("something went wrong. please try again.");
       setAdding(false);

@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  Alert,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { SheetModal, sheetStyles as m } from "@/components/SheetModal";
 import { C } from "@/components/login/tokens";
 
@@ -113,7 +120,8 @@ export function LogProgressModal({
         <Text style={s.hint}>
           {(() => {
             const n = Number(value.trim());
-            if (!Number.isFinite(n) || n <= 0 || n > 100) return `of ${pageCount} pages`;
+            if (!Number.isFinite(n) || n <= 0 || n > 100)
+              return `of ${pageCount} pages`;
             return `≈ ${Math.round((n / 100) * pageCount)} of ${pageCount} pages`;
           })()}
         </Text>

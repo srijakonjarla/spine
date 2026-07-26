@@ -75,15 +75,16 @@ export function BookListItems({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            title,
-            author: draftAuthor.trim(),
-            status: "want-to-read",
+            entry: {
+              title,
+              author: draftAuthor.trim(),
+              status: "want-to-read",
+            },
           }),
         });
-        if (res.ok) {
-          const book = await res.json();
-          bookId = book.id ?? "";
-        }
+        if (!res.ok) throw new Error("failed to create book");
+        const book = await res.json();
+        bookId = book.id ?? "";
       }
       const item = await addListItem(listId, {
         title,

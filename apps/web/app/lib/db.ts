@@ -179,8 +179,8 @@ export async function getEntry(id: string): Promise<BookEntry | null> {
   return mapBook(data as BookRow);
 }
 
-export async function createEntry(entry: BookEntry): Promise<void> {
-  await createEntryAction(entry);
+export async function createEntry(entry: BookEntry): Promise<{ id: string }> {
+  return createEntryAction(entry);
 }
 
 export async function updateEntry(

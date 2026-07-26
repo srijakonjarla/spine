@@ -120,11 +120,11 @@ export default function LibraryPage() {
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     };
-    await createEntry(entry);
+    const { id } = await createEntry(entry);
     if (status === "reading") {
-      router.push(`/book/${entry.id}`);
+      router.push(`/book/${id}`);
     } else {
-      addToCache(entry);
+      addToCache({ ...entry, id });
     }
   };
 
