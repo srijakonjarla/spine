@@ -7,6 +7,7 @@ import { autoLogToday, autoLogDate } from "@/lib/autoLog";
 import { serverTodayLocal } from "@/lib/serverDate";
 import { syncBookSeries } from "@/lib/seriesSync.server";
 import { normalizeMoodTags } from "@/lib/moodTags";
+import { STATUS_LABEL } from "@spine/shared";
 import type { BookEntry, BookRead, Thought } from "@/types";
 
 // ── Auth helper ────────────────────────────────────────────────────────────────
@@ -56,6 +57,10 @@ export async function createEntryAction(
     },
   );
   if (!result) throw new Error("failed to create book");
+  if (result.alreadyExists && result.existingStatus !== entry.status) {
+    const label = STATUS_LABEL[result.existingStatus ?? ""] ?? result.existingStatus;
+    throw new Error(`"${entry.title}" is already in your library (${label}).`);
+  }
   return { id: result.userBookId };
 }
 

@@ -46,14 +46,23 @@ export interface PersonalFields {
  * Upserts a catalog_books entry (deduped by isbn when non-empty) and inserts a
  * user_books row linking the user to it.
  *
- * Returns { userBookId, catalogBookId } or null on failure.
+ * Returns { userBookId, catalogBookId, alreadyExists, existingStatus } or null
+ * on failure. `alreadyExists` is true when the user already had a user_books
+ * row for this catalog_book_id (any status) — the row is returned as-is, its
+ * status is NOT changed to `personal.status`, since (user_id, catalog_book_id)
+ * is unique per user.
  */
 export async function upsertBookForUser(
   supabase: SupabaseClient,
   userId: string,
   catalog: CatalogFields,
   personal: PersonalFields,
-): Promise<{ userBookId: string; catalogBookId: string } | null> {
+): Promise<{
+  userBookId: string;
+  catalogBookId: string;
+  alreadyExists: boolean;
+  existingStatus: string | null;
+} | null> {
   // ── 1. Resolve or create the catalog_books entry ──────────────────────────
   let catalogBookId: string | null = null;
   // Fallback: if ISBN lookup finds a row but title doesn't match, we keep the
@@ -296,21 +305,31 @@ export async function upsertBookForUser(
     .select("id")
     .maybeSingle();
 
+  let alreadyExists = false;
+  let existingStatus: string | null = null;
+
   if (inserted) {
     userBookId = inserted.id;
   } else {
     // Row already existed — fetch it
     const { data: existing } = await supabase
       .from("user_books")
-      .select("id")
+      .select("id, status")
       .eq("user_id", userId)
       .eq("catalog_book_id", catalogBookId!)
       .single();
     if (!existing) return null;
     userBookId = existing.id;
+    alreadyExists = true;
+    existingStatus = existing.status;
   }
 
-  return { userBookId: userBookId!, catalogBookId: catalogBookId! };
+  return {
+    userBookId: userBookId!,
+    catalogBookId: catalogBookId!,
+    alreadyExists,
+    existingStatus,
+  };
 }
 
 /**

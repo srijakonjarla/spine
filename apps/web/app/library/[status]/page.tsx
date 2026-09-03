@@ -93,8 +93,12 @@ export default function StatusCatalogPage() {
         revalidate: false,
       });
       setAddValue("");
-    } catch {
-      toast("Something went wrong. Please try again.");
+    } catch (err) {
+      toast(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.",
+      );
     } finally {
       setAdding(false);
     }

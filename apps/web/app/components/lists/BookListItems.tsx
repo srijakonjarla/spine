@@ -31,7 +31,7 @@ function SpinePlaceholder({ title }: { title: string }) {
   return (
     <svg
       viewBox="0 0 38 54"
-      className="rounded-sm w-9.5 h-13.5 shadow-[var(--shadow-spine-card)]"
+      className="rounded-sm w-9.5 h-13.5 shadow-(--shadow-spine-card)"
     >
       <rect width="38" height="54" rx="3" fill={spineColor(title)} />
       <rect
@@ -82,7 +82,10 @@ export function BookListItems({
             },
           }),
         });
-        if (!res.ok) throw new Error("failed to create book");
+        if (!res.ok) {
+          const body = await res.json().catch(() => null);
+          throw new Error(body?.error || "failed to create book");
+        }
         const book = await res.json();
         bookId = book.id ?? "";
       }
@@ -96,8 +99,12 @@ export function BookListItems({
       setDraftAuthor("");
       setDraftBookId("");
       setShowAdd(false);
-    } catch {
-      toast("Something went wrong. Please try again.");
+    } catch (err) {
+      toast(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.",
+      );
     } finally {
       setAdding(false);
     }

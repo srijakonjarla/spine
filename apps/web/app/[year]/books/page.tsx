@@ -163,8 +163,12 @@ export default function BooksPage() {
       };
       const { id } = await createEntry(entry);
       router.push(`/book/${id}`);
-    } catch {
-      toast("something went wrong. please try again.");
+    } catch (err) {
+      toast(
+        err instanceof Error
+          ? err.message
+          : "something went wrong. please try again.",
+      );
       setAdding(false);
     }
   };

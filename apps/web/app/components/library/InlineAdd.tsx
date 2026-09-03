@@ -25,8 +25,12 @@ export default function InlineAdd({
       await onAdd(catalog, value);
       setValue("");
       setOpen(false);
-    } catch {
-      toast("Something went wrong. Please try again.");
+    } catch (err) {
+      toast(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.",
+      );
     } finally {
       setAdding(false);
     }

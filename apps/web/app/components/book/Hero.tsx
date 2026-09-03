@@ -13,12 +13,6 @@ import { usePreviousRoute } from "@/providers/NavigationProvider";
 import type { ReadPatch } from "@/providers/BookContext";
 import type { BookEntry, ReadingStatus } from "@/types";
 
-function addDays(date: string, n: number): string {
-  const d = new Date(date);
-  d.setUTCDate(d.getUTCDate() + n);
-  return d.toISOString().slice(0, 10);
-}
-
 function HeroGenreAdd({
   genres,
   onAdd,
@@ -297,11 +291,7 @@ export function Hero({
                     id={`book-read-${viewedRead.id}-date-started`}
                     type="date"
                     value={viewedRead.dateStarted}
-                    max={
-                      viewedRead.dateFinished
-                        ? addDays(viewedRead.dateFinished, -1)
-                        : localDateStr()
-                    }
+                    max={viewedRead.dateFinished || localDateStr()}
                     onChange={(e) =>
                       onUpdateRead(viewedRead.id, {
                         ...viewedRead,
@@ -317,11 +307,7 @@ export function Hero({
                     id={`book-read-${viewedRead.id}-date-finished`}
                     type="date"
                     value={viewedRead.dateFinished}
-                    min={
-                      viewedRead.dateStarted
-                        ? addDays(viewedRead.dateStarted, 1)
-                        : undefined
-                    }
+                    min={viewedRead.dateStarted || undefined}
                     max={localDateStr()}
                     onChange={(e) =>
                       onUpdateRead(viewedRead.id, {
@@ -341,11 +327,7 @@ export function Hero({
                     id="book-current-date-started"
                     type="date"
                     value={entry.dateStarted}
-                    max={
-                      entry.dateFinished
-                        ? addDays(entry.dateFinished, -1)
-                        : localDateStr()
-                    }
+                    max={entry.dateFinished || localDateStr()}
                     onChange={(e) => onUpdate({ dateStarted: e.target.value })}
                     className="hero-date-input"
                   />
@@ -357,11 +339,7 @@ export function Hero({
                       id="book-current-date-finished"
                       type="date"
                       value={entry.dateFinished}
-                      min={
-                        entry.dateStarted
-                          ? addDays(entry.dateStarted, 1)
-                          : undefined
-                      }
+                      min={entry.dateStarted || undefined}
                       max={localDateStr()}
                       onChange={(e) =>
                         onUpdate({ dateFinished: e.target.value })

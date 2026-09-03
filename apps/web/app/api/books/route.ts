@@ -2,6 +2,7 @@ import { NextRequest, NextResponse, after } from "next/server";
 import { createApiClient, getUserId } from "@/lib/supabase-server";
 import { syncBookSeries } from "@/lib/seriesSync.server";
 import { upsertBookForUser, flattenUserBook } from "@/lib/bookUpsert.server";
+import { STATUS_LABEL } from "@spine/shared";
 
 export async function GET(req: NextRequest) {
   const supabase = createApiClient(req);
@@ -121,6 +122,15 @@ export async function POST(req: NextRequest) {
       { error: "failed to create book" },
       { status: 500 },
     );
+
+  if (result.alreadyExists && result.existingStatus !== entry.status) {
+    const label =
+      STATUS_LABEL[result.existingStatus ?? ""] ?? result.existingStatus;
+    return NextResponse.json(
+      { error: `"${entry.title}" is already in your library (${label}).` },
+      { status: 409 },
+    );
+  }
 
   after(async () => {
     await syncBookSeries(supabase, userId, {
