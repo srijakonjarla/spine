@@ -149,17 +149,16 @@ export function titlesMatch(hcTitle: string, sourceTitle: string): boolean {
 // ── Edition / tag extractors ──────────────────────────────────────────────
 
 /**
- * Up to 5 genres from HC cached_tags. Uses the "Genre" category when present —
- * other categories (moods, reader tags like "Loveable Characters") are not
- * genres — and falls back to every category only when it's missing.
+ * Up to 5 genres from HC cached_tags' "Genre" category. Other categories
+ * (moods, reader tags like "Loveable Characters") are not genres, so a book
+ * without a Genre category gets none.
  */
 export function extractGenres(cached_tags: unknown): string[] {
   if (!cached_tags) return [];
   if (Array.isArray(cached_tags)) return cached_tags as string[];
   if (typeof cached_tags !== "object") return [];
-  const obj = cached_tags as Record<string, { tag?: string }[]>;
-  const source = obj.Genre?.length ? obj.Genre : Object.values(obj).flat();
-  return source
+  const genre = (cached_tags as Record<string, { tag?: string }[]>).Genre;
+  return (genre ?? [])
     .map((t) => t?.tag ?? "")
     .filter(Boolean)
     .slice(0, 5);

@@ -210,8 +210,8 @@ The refresh patch (`hardcoverRefreshPatch`) overwrites page count, release
 date, publisher and audio duration, and merges ISBNs. It leaves title and
 author alone, and **only fills `cover_url` and `genres` when they're empty**:
 Hardcover's default edition often isn't the cover people recognise, and its
-tags are noisy. Genres come from Hardcover's `Genre` tag category when it
-exists.
+tags are noisy. Genres come only from Hardcover's `Genre` tag category;
+books without one get no genres.
 
 Every row that gets a Hardcover answer is stamped `synced_at = now()`, so rows
 Hardcover can't resolve aren't retried for 30 days. If a Hardcover **request

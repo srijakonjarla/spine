@@ -144,15 +144,15 @@ filter by `user_id` itself.
 
 ## Functions and triggers
 
-| Name                                                               | Kind                         | Notes                                                                                  |
-| ------------------------------------------------------------------ | ---------------------------- | -------------------------------------------------------------------------------------- |
-| `handle_new_user()`                                                | trigger fn, SECURITY DEFINER | `AFTER INSERT ON auth.users`: creates the `profiles` row                               |
-| `is_username_available(p_username)`                                | SECURITY DEFINER             | Username check during signup                                                           |
-| `user_books_normalize_mood_tags()` / `normalize_mood_tags(text[])` | trigger fn                   | `BEFORE INSERT/UPDATE ON user_books`                                                   |
-| `start_new_read(...)`                                              | SECURITY DEFINER             | Moves the current read into `book_reads` and resets `user_books` (two overloads exist) |
-| `add_thought(...)`, `remove_thought(...)`                          |                              | Thought RPCs (`add_thought` has two overloads, one SECURITY DEFINER)                   |
-| `reorder_lists(ids, orders)`, `reorder_list_items(ids, orders)`    |                              | Batch `sort_order` updates                                                             |
-| `rls_auto_enable()`                                                | SECURITY DEFINER             | Supabase helper                                                                        |
+| Name                                                               | Kind                         | Notes                                                            |
+| ------------------------------------------------------------------ | ---------------------------- | ---------------------------------------------------------------- |
+| `handle_new_user()`                                                | trigger fn, SECURITY DEFINER | `AFTER INSERT ON auth.users`: creates the `profiles` row         |
+| `is_username_available(p_username)`                                | SECURITY DEFINER             | Username check during signup                                     |
+| `user_books_normalize_mood_tags()` / `normalize_mood_tags(text[])` | trigger fn                   | `BEFORE INSERT/UPDATE ON user_books`                             |
+| `start_new_read(...)`                                              | SECURITY DEFINER             | Moves the current read into `book_reads` and resets `user_books` |
+| `add_thought(...)`, `remove_thought(...)`                          |                              | Thought RPCs                                                     |
+| `reorder_lists(ids, orders)`, `reorder_list_items(ids, orders)`    |                              | Batch `sort_order` updates                                       |
+| `rls_auto_enable()`                                                | SECURITY DEFINER             | Supabase helper                                                  |
 
 ## Migrations
 
@@ -191,24 +191,29 @@ drop policy if exists "authenticated update catalog_books" on public.catalog_boo
 revoke insert, update, delete on public.catalog_books from authenticated, anon;
 ```
 
+### Recent: `drop_stale_rpc_overloads` (2026-10-06)
+
+Dropped the unused older overloads `add_thought(uuid, uuid, text,
+timestamptz)` (it still updated the long-dropped `books` table) and
+`start_new_read` without `p_date_dnfed`. All callers pass the newer
+parameter sets.
+
+### Data fix: merged duplicate "King of Gluttony" (2026-10-06)
+
+One user had two `user_books` rows for the same book. Kept the row with the
+reading data (finished, rating, thought, series entry), moved the other row's
+list item onto it, pointed it at the catalog row linked to Hardcover id
+801802 (ISBNs merged), and deleted the empty row and the unlinked catalog row.
+
 ## Known issues
 
 - `series.user_id`, `recommendations.user_id` and `goal_books.user_id`
   reference `auth.users` **without** `ON DELETE CASCADE`, so deleting a user
   who has rows there fails.
-- `add_thought` and `start_new_read` each have two overloads. The older
-  4-argument `add_thought` still runs `UPDATE books …` on the long-dropped
-  `books` table, so calling it errors. The stale overloads (`add_thought`
-  without `p_page_number`, `start_new_read` without `p_date_dnfed`) should be
-  dropped once the callers are confirmed.
-- "King of Gluttony" (Ana Huang) has two `user_books`/`catalog_books` rows for
-  one user. The second is reported by catalog sync as a duplicate of the row
-  linked to Hardcover id 801802 and stays unlinked. Merging them means moving
-  thoughts/quotes/reads onto one `user_books` row.
-- 13 catalog rows aren't linked to Hardcover after the initial sync (titles
-  Hardcover lacks, title mismatches such as "Sorcerer's" vs "Philosopher's
-  Stone", and the duplicate above). The cron retries them every 30 days.
-- When Hardcover has no `Genre` tag category for a book, genres fall back to
-  all tag categories, so a few rows (e.g. "The Housemaid") hold reader tags
-  instead of genres.
+- 12 catalog rows aren't linked to Hardcover after the initial sync (titles
+  Hardcover lacks, or title mismatches such as "Sorcerer's" vs "Philosopher's
+  Stone"). The cron retries them every 30 days.
+- Genres synced before 2026-10-06 mixed Hardcover's `Genre` category with
+  moods (e.g. "emotional", "funny") and sometimes reader tags. New syncs use
+  only the `Genre` category.
 - `supabase/setup.sql` doesn't match the live schema.
