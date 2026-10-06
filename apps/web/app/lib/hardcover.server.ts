@@ -8,11 +8,14 @@ const HC_ENDPOINT = "https://api.hardcover.app/v1/graphql";
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 2000;
 
-/** Shared field selection for every `books` query. */
+/**
+ * Shared field selection for every `books` query. Don't request author
+ * `gender`/`nationality` — Hardcover answers 403 for the whole query.
+ */
 export const BOOK_FIELDS = `
   id title pages release_date
   images { url }
-  contributions { author { name gender nationality } }
+  contributions { author { name } }
   cached_tags
   default_physical_edition_id
   editions { id isbn_13 isbn_10 image { url } publisher { name } audio_seconds }
@@ -37,13 +40,7 @@ export interface RawHCBook {
   pages?: number;
   release_date?: string;
   images?: { url?: string }[];
-  contributions?: {
-    author: {
-      name: string;
-      gender?: string | null;
-      nationality?: string | null;
-    };
-  }[];
+  contributions?: { author: { name: string } }[];
   cached_tags?: unknown;
   default_physical_edition_id?: number;
   editions?: RawHCEdition[];
@@ -181,23 +178,14 @@ const DIVERSITY_TAG_KEYS = [
   "Own Voices",
 ];
 
-/** Diversity tags from HC representation tags + author identity fields. */
+/** Diversity tags from HC representation-category cached tags. */
 function extractDiversityTags(book: RawHCBook): string[] {
-  const tags = new Set<string>();
   const cached = book.cached_tags;
-  if (cached && typeof cached === "object" && !Array.isArray(cached)) {
-    const obj = cached as Record<string, { tag?: string }[]>;
-    for (const key of DIVERSITY_TAG_KEYS)
-      for (const e of obj[key] ?? []) if (e?.tag) tags.add(e.tag);
-  }
-  for (const { author } of book.contributions ?? []) {
-    const g = author.gender?.toLowerCase();
-    if (g === "female" || g === "woman") tags.add("woman author");
-    else if (g === "non-binary" || g === "nonbinary" || g === "non binary")
-      tags.add("non-binary author");
-    else if (g && g !== "male" && g !== "man") tags.add(`${g} author`);
-    if (author.nationality) tags.add(`${author.nationality} author`);
-  }
+  if (!cached || typeof cached !== "object" || Array.isArray(cached)) return [];
+  const obj = cached as Record<string, { tag?: string }[]>;
+  const tags = new Set<string>();
+  for (const key of DIVERSITY_TAG_KEYS)
+    for (const e of obj[key] ?? []) if (e?.tag) tags.add(e.tag);
   return [...tags];
 }
 
@@ -366,18 +354,22 @@ const EDITIONS_QUERY = `
   }
 `;
 
-/** Fetch full book rows by Hardcover id. Missing ids are absent from the map. */
+/**
+ * Fetch full book rows by Hardcover id. Ids Hardcover doesn't have are absent
+ * from the map; `null` means the request itself failed.
+ */
 export async function fetchBooksByIds(
   ids: number[],
   opts: { logPrefix?: string; revalidate?: number } = {},
-): Promise<Map<number, HCBook>> {
+): Promise<Map<number, HCBook> | null> {
   const out = new Map<number, HCBook>();
   if (!ids.length) return out;
   const json = await hcPost(BOOKS_BY_IDS_QUERY, {
     variables: { ids },
     ...opts,
   });
-  const books = (json?.data?.books ?? []) as RawHCBook[];
+  if (!json?.data) return null;
+  const books = (json.data.books ?? []) as RawHCBook[];
   for (const raw of books) {
     const parsed = parseBookRow(raw);
     if (parsed?.hardcoverBookId != null)
@@ -387,7 +379,7 @@ export async function fetchBooksByIds(
 }
 
 export async function fetchBookById(id: number): Promise<HCBook | null> {
-  return (await fetchBooksByIds([id])).get(id) ?? null;
+  return (await fetchBooksByIds([id]))?.get(id) ?? null;
 }
 
 export async function lookupBookByIsbn(
@@ -429,7 +421,7 @@ export async function searchBooks(
   return docs
     .map((doc) => {
       const id = docId(doc);
-      return (id != null && full.get(id)) || parseSearchDoc(doc);
+      return (id != null && full?.get(id)) || parseSearchDoc(doc);
     })
     .filter((b) => b.title);
 }

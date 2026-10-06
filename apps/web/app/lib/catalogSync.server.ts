@@ -50,6 +50,8 @@ export interface SyncRow {
 }
 
 export interface SyncResult {
+  /** True when Hardcover requests failed and the run stopped early. */
+  aborted: boolean;
   refreshed: number;
   linked: number;
   unresolved: number;
@@ -75,8 +77,14 @@ function pickIsbnHit(books: RawHCBook[], row: SyncRow): HCBook | null {
   return parsed;
 }
 
-/** Resolve Hardcover books for unlinked rows (by ISBN, else title search). */
-async function resolveUnlinked(rows: SyncRow[]): Promise<Map<string, HCBook>> {
+/**
+ * Resolve Hardcover books for unlinked rows (by ISBN, else title search).
+ * Returns null when a Hardcover request fails, so callers don't mistake an
+ * outage for "not on Hardcover".
+ */
+async function resolveUnlinked(
+  rows: SyncRow[],
+): Promise<Map<string, HCBook> | null> {
   const out = new Map<string, HCBook>();
   if (!rows.length) return out;
 
@@ -98,7 +106,8 @@ async function resolveUnlinked(rows: SyncRow[]): Promise<Map<string, HCBook>> {
   const json = await hcPost(`query SyncResolve { ${fragments.join("\n")} }`, {
     logPrefix: LOG,
   });
-  const data = (json?.data ?? {}) as Record<string, unknown>;
+  if (!json?.data) return null;
+  const data = json.data as Record<string, unknown>;
 
   const searchIds = new Map<string, number>();
   rows.forEach((row, i) => {
@@ -125,6 +134,7 @@ async function resolveUnlinked(rows: SyncRow[]): Promise<Map<string, HCBook>> {
     const books = await fetchBooksByIds([...searchIds.values()], {
       logPrefix: LOG,
     });
+    if (!books) return null;
     for (const [rowId, hcId] of searchIds) {
       const b = books.get(hcId);
       if (b) out.set(rowId, b);
@@ -138,6 +148,7 @@ export async function syncCatalogRows(
   rows: SyncRow[],
 ): Promise<SyncResult> {
   const result: SyncResult = {
+    aborted: false,
     refreshed: 0,
     linked: 0,
     unresolved: 0,
@@ -156,6 +167,12 @@ export async function syncCatalogRows(
       ),
       resolveUnlinked(unlinkedRows),
     ]);
+    // Stop without touching synced_at so the rows are retried next run.
+    if (!byId || !resolved) {
+      console.error(`${LOG} Hardcover request failed — stopping run`);
+      result.aborted = true;
+      break;
+    }
 
     for (const row of batch) {
       const hc =
@@ -205,7 +222,7 @@ export async function syncCatalogRows(
   }
 
   console.log(
-    `${LOG} done: ${result.refreshed} refreshed, ${result.linked} linked, ` +
+    `${LOG} ${result.aborted ? "aborted" : "done"}: ${result.refreshed} refreshed, ${result.linked} linked, ` +
       `${result.unresolved} unresolved, ${result.duplicates.length} duplicates`,
   );
   return result;
