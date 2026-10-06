@@ -13,14 +13,18 @@ import {
   updateSeriesBook,
   deleteSeriesBook,
 } from "@/lib/series";
-import { BookEntry } from "@/types";
+import { updateEntry } from "@/lib/db";
+import { localDateStr } from "@/lib/dates";
+import { BookEntry, ReadingStatus } from "@/types";
 import Link from "next/link";
 import { useState, useRef } from "react";
 import { toast } from "@/lib/toast";
 
 const STATUS_BG_CLS: Record<SeriesBook["status"], string> = {
   read: "bg-sage border-sage",
-  reading: "bg-terra border-terra",
+  // Half-filled: in progress.
+  reading:
+    "bg-linear-to-r from-terra from-50% to-transparent to-50% border-terra",
   unread: "bg-transparent border-[var(--border-stone-300)]",
   skipped: "bg-transparent border-[var(--border-stone-300)]",
 };
@@ -32,12 +36,42 @@ const STATUS_TEXT_CLS: Record<SeriesBook["status"], string> = {
   skipped: "text-stone-400",
 };
 
+// Fallback cycle for a series book whose library entry isn't loaded.
 const STATUS_CYCLE: Record<SeriesBook["status"], SeriesBook["status"]> = {
   unread: "reading",
   reading: "read",
   read: "unread",
   skipped: "unread",
 };
+
+// A series book's status is its library entry's status.
+const SERIES_STATUS: Record<ReadingStatus, SeriesBook["status"]> = {
+  "want-to-read": "unread",
+  reading: "reading",
+  finished: "read",
+  "did-not-finish": "skipped",
+};
+
+const NEXT_LIBRARY_STATUS: Record<ReadingStatus, ReadingStatus> = {
+  "want-to-read": "reading",
+  reading: "finished",
+  finished: "want-to-read",
+  "did-not-finish": "want-to-read",
+};
+
+const LIBRARY_LABEL: Record<ReadingStatus, string> = {
+  "want-to-read": "tbr",
+  reading: "reading",
+  finished: "read",
+  "did-not-finish": "dnf",
+};
+
+function displayStatus(
+  book: SeriesBook,
+  libraryBook: BookEntry | undefined,
+): SeriesBook["status"] {
+  return libraryBook ? SERIES_STATUS[libraryBook.status] : book.status;
+}
 
 function matchLibraryBook(
   seriesBook: SeriesBook,
@@ -59,6 +93,7 @@ export default function SeriesCard({
   onBookDelete,
   onBookAdd,
   onBooksReorder,
+  onLibraryBookUpdate,
 }: {
   series: Series;
   library: BookEntry[];
@@ -72,6 +107,7 @@ export default function SeriesCard({
   onBookDelete: (seriesId: string, bookId: string) => void;
   onBookAdd: (seriesId: string, book: SeriesBook) => void;
   onBooksReorder: (seriesId: string, books: SeriesBook[]) => void;
+  onLibraryBookUpdate: (bookId: string, patch: Partial<BookEntry>) => void;
 }) {
   const [name, setName] = useState(series.name);
   const [author, setAuthor] = useState(series.author);
@@ -100,7 +136,9 @@ export default function SeriesCard({
     saveTimer.current = setTimeout(() => updateSeries(series.id, patch), 600);
   };
 
-  const readCount = series.books.filter((b) => b.status === "read").length;
+  const readCount = series.books.filter(
+    (b) => displayStatus(b, matchLibraryBook(b, library)) === "read",
+  ).length;
   const total = series.books.length;
 
   const handleAddBook = async (catalog?: CatalogEntry) => {
@@ -155,10 +193,36 @@ export default function SeriesCard({
     }
   };
 
-  const handleBookStatus = async (book: SeriesBook) => {
-    const next = STATUS_CYCLE[book.status];
-    onBookStatusChange(series.id, book.id, next);
-    await updateSeriesBook(series.id, book.id, next);
+  const handleBookStatus = async (
+    book: SeriesBook,
+    libraryBook: BookEntry | undefined,
+  ) => {
+    if (!libraryBook) {
+      const next = STATUS_CYCLE[book.status];
+      onBookStatusChange(series.id, book.id, next);
+      await updateSeriesBook(series.id, book.id, next);
+      return;
+    }
+
+    // Same date rules as changing status on the book page.
+    const next = NEXT_LIBRARY_STATUS[libraryBook.status];
+    const patch: Partial<BookEntry> = { status: next };
+    if (next === "reading" && !libraryBook.dateStarted)
+      patch.dateStarted = localDateStr();
+    if (next === "finished" && !libraryBook.dateFinished)
+      patch.dateFinished = localDateStr();
+
+    onLibraryBookUpdate(libraryBook.id, patch);
+    try {
+      await updateEntry(libraryBook.id, patch);
+    } catch {
+      onLibraryBookUpdate(libraryBook.id, {
+        status: libraryBook.status,
+        dateStarted: libraryBook.dateStarted,
+        dateFinished: libraryBook.dateFinished,
+      });
+      toast("Couldn't update the book. Please try again.");
+    }
   };
 
   const handleBookDelete = async (book: SeriesBook) => {
@@ -210,6 +274,7 @@ export default function SeriesCard({
       <div className="space-y-1.5 mb-4">
         {series.books.map((book, index) => {
           const libraryBook = matchLibraryBook(book, library);
+          const status = displayStatus(book, libraryBook);
           return (
             <div
               key={book.id}
@@ -228,21 +293,22 @@ export default function SeriesCard({
 
               {/* Status dot */}
               <button
-                onClick={() => handleBookStatus(book)}
-                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${STATUS_BG_CLS[book.status]}`}
-                title={`Mark as ${STATUS_CYCLE[book.status]}`}
+                onClick={() => handleBookStatus(book, libraryBook)}
+                className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${STATUS_BG_CLS[status]}`}
+                title={
+                  libraryBook
+                    ? `Mark as ${LIBRARY_LABEL[NEXT_LIBRARY_STATUS[libraryBook.status]]}`
+                    : `Mark as ${STATUS_CYCLE[book.status]}`
+                }
               >
-                {book.status === "read" && (
+                {status === "read" && (
                   <span className="text-white text-micro-plus">✓</span>
-                )}
-                {book.status === "reading" && (
-                  <span className="text-white text-micro-plus">○</span>
                 )}
               </button>
 
               {/* Title */}
               <span
-                className={`flex-1 text-sm truncate ${book.status === "read" ? "text-fg-faint" : "text-fg"} ${book.status === "skipped" ? "line-through" : ""}`}
+                className={`flex-1 text-sm truncate ${status === "read" ? "text-fg-faint" : "text-fg"} ${status === "skipped" ? "line-through" : ""}`}
               >
                 {book.title}
               </span>
@@ -251,14 +317,10 @@ export default function SeriesCard({
               {libraryBook && (
                 <Link
                   href={`/book/${libraryBook.id}`}
-                  className={`text-detail shrink-0 px-1.5 py-0.5 rounded-full border transition-colors ${STATUS_TEXT_CLS[book.status]} border-current hover:opacity-70`}
+                  className={`text-detail shrink-0 px-1.5 py-0.5 rounded-full border transition-colors ${STATUS_TEXT_CLS[status]} border-current hover:opacity-70`}
                   title="View in your library"
                 >
-                  {libraryBook.status === "finished"
-                    ? "read"
-                    : libraryBook.status === "reading"
-                      ? "reading"
-                      : "tbr"}
+                  {LIBRARY_LABEL[libraryBook.status]}
                 </Link>
               )}
 

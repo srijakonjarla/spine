@@ -9,6 +9,7 @@ import {
   type SeriesBook,
 } from "@/lib/series";
 import { getEntries } from "@/lib/db";
+import { useBooks } from "@/providers/BooksProvider";
 import { toast } from "@/lib/toast";
 import { EmptyState } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
@@ -24,6 +25,7 @@ export default function SeriesPage() {
   const [newName, setNewName] = useState("");
   const [newAuthor, setNewAuthor] = useState("");
   const [saving, setSaving] = useState(false);
+  const { updateBook } = useBooks();
 
   useEffect(() => {
     Promise.all([getSeries(), getEntries()])
@@ -99,6 +101,20 @@ export default function SeriesPage() {
         s.id !== seriesId ? s : { ...s, books: [...s.books, book] },
       ),
     );
+    // Adding a book can create a new library entry; reload so it's matched.
+    getEntries()
+      .then(setLibrary)
+      .catch(() => {});
+  };
+
+  const handleLibraryBookUpdate = (
+    bookId: string,
+    patch: Partial<BookEntry>,
+  ) => {
+    setLibrary((prev) =>
+      prev.map((b) => (b.id === bookId ? { ...b, ...patch } : b)),
+    );
+    updateBook(bookId, patch);
   };
 
   const handleBooksReorder = (seriesId: string, books: SeriesBook[]) => {
@@ -213,6 +229,7 @@ export default function SeriesPage() {
                 onBookDelete={handleBookDelete}
                 onBookAdd={handleBookAdd}
                 onBooksReorder={handleBooksReorder}
+                onLibraryBookUpdate={handleLibraryBookUpdate}
               />
             ))}
           </div>
