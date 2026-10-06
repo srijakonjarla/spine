@@ -275,6 +275,7 @@ export default function SeriesCard({
         {series.books.map((book, index) => {
           const libraryBook = matchLibraryBook(book, library);
           const status = displayStatus(book, libraryBook);
+          const href = book.bookId ? `/book/${book.bookId}` : null;
           return (
             <div
               key={book.id}
@@ -289,7 +290,13 @@ export default function SeriesCard({
               </span>
 
               {/* Cover thumbnail */}
-              <BookCoverThumb coverUrl={book.coverUrl} title={book.title} />
+              {href ? (
+                <Link href={href} draggable={false} className="shrink-0">
+                  <BookCoverThumb coverUrl={book.coverUrl} title={book.title} />
+                </Link>
+              ) : (
+                <BookCoverThumb coverUrl={book.coverUrl} title={book.title} />
+              )}
 
               {/* Status dot */}
               <button
@@ -307,11 +314,21 @@ export default function SeriesCard({
               </button>
 
               {/* Title */}
-              <span
-                className={`flex-1 text-sm truncate ${status === "read" ? "text-fg-faint" : "text-fg"} ${status === "skipped" ? "line-through" : ""}`}
-              >
-                {book.title}
-              </span>
+              {href ? (
+                <Link
+                  href={href}
+                  draggable={false}
+                  className={`flex-1 text-sm truncate hover:underline underline-offset-2 ${status === "read" ? "text-fg-faint" : "text-fg"} ${status === "skipped" ? "line-through" : ""}`}
+                >
+                  {book.title}
+                </Link>
+              ) : (
+                <span
+                  className={`flex-1 text-sm truncate ${status === "read" ? "text-fg-faint" : "text-fg"} ${status === "skipped" ? "line-through" : ""}`}
+                >
+                  {book.title}
+                </span>
+              )}
 
               {/* Library cross-reference badge */}
               {libraryBook && (
