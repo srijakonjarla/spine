@@ -130,14 +130,14 @@ Reading rule: **`effective_x = x_override ?? catalog_books.x`**. See
 
 RLS is enabled on every table. Policies as of 2026-10-06:
 
-| Table                                                                                                      | Policy                                                                                                                                                        |
-| ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `user_books`, `lists`, `reading_log`, `quotes`, `reading_goals`, `series`, `recommendations`, `goal_books` | Owner only: `auth.uid() = user_id` (quotes: select/insert/delete, no update; reading_goals and reading_log: per-command policies)                             |
-| `thoughts`, `book_reads`                                                                                   | Through the parent: `book_id IN (user's user_books)`                                                                                                          |
-| `list_items`                                                                                               | Through the parent: `list_id IN (user's lists)`                                                                                                               |
-| `series_books`                                                                                             | Through the parent: `EXISTS series with user_id = auth.uid()`                                                                                                 |
-| `profiles`                                                                                                 | Any authenticated user can read; owner inserts/updates                                                                                                        |
-| `catalog_books`                                                                                            | Any authenticated user can **read**. ⚠️ Authenticated INSERT/UPDATE policies still exist; see [pending migration](#pending-migration-lock-down-catalog_books) |
+| Table                                                                                                      | Policy                                                                                                                              |
+| ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `user_books`, `lists`, `reading_log`, `quotes`, `reading_goals`, `series`, `recommendations`, `goal_books` | Owner only: `auth.uid() = user_id` (quotes: select/insert/delete, no update; reading_goals and reading_log: per-command policies)   |
+| `thoughts`, `book_reads`                                                                                   | Through the parent: `book_id IN (user's user_books)`                                                                                |
+| `list_items`                                                                                               | Through the parent: `list_id IN (user's lists)`                                                                                     |
+| `series_books`                                                                                             | Through the parent: `EXISTS series with user_id = auth.uid()`                                                                       |
+| `profiles`                                                                                                 | Any authenticated user can read; owner inserts/updates                                                                              |
+| `catalog_books`                                                                                            | Authenticated users can **read only**. INSERT/UPDATE/DELETE are revoked from `authenticated` and `anon`; only `service_role` writes |
 
 `service_role` bypasses RLS. Server code using it (`createAdminClient`) must
 filter by `user_id` itself.
@@ -180,10 +180,10 @@ Checklist for a new table:
 - Deleted 10 `catalog_books` rows that no `user_books` row referenced
   (leftovers from the removed `/api/catalog/upsert` route).
 
-### Pending migration: lock down `catalog_books`
+### Recent: `lock_down_catalog_books_writes` (2026-10-06)
 
-Apply **after** the code that writes the catalog with the service role is
-deployed. Until then, production writes catalog rows with user JWTs.
+Applied once the service-role write path was deployed and the library had
+been enriched (967 of 980 rows linked to Hardcover):
 
 ```sql
 drop policy if exists "authenticated insert catalog_books" on public.catalog_books;
@@ -202,7 +202,13 @@ revoke insert, update, delete on public.catalog_books from authenticated, anon;
   without `p_page_number`, `start_new_read` without `p_date_dnfed`) should be
   dropped once the callers are confirmed.
 - "King of Gluttony" (Ana Huang) has two `user_books`/`catalog_books` rows for
-  one user. Catalog sync will report the second as a duplicate when both
-  resolve to the same Hardcover id. Merging them means moving
+  one user. The second is reported by catalog sync as a duplicate of the row
+  linked to Hardcover id 801802 and stays unlinked. Merging them means moving
   thoughts/quotes/reads onto one `user_books` row.
+- 13 catalog rows aren't linked to Hardcover after the initial sync (titles
+  Hardcover lacks, title mismatches such as "Sorcerer's" vs "Philosopher's
+  Stone", and the duplicate above). The cron retries them every 30 days.
+- When Hardcover has no `Genre` tag category for a book, genres fall back to
+  all tag categories, so a few rows (e.g. "The Housemaid") hold reader tags
+  instead of genres.
 - `supabase/setup.sql` doesn't match the live schema.
