@@ -27,11 +27,9 @@ export async function GET(req: NextRequest) {
   const title = searchParams.get("title") ?? "";
   if (bookId == null && title.trim()) {
     const author = searchParams.get("author") ?? "";
-    const [hit] = await searchDocs(
-      [title, author].filter(Boolean).join(" "),
-      5,
-      cache,
-    );
+    const [hit] =
+      (await searchDocs([title, author].filter(Boolean).join(" "), 5, cache)) ??
+      [];
     bookId = hit ? docId(hit) : null;
   }
 

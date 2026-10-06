@@ -138,8 +138,16 @@ Rules:
    enters the catalog** (add, import).
 3. **All Hardcover calls go through `hardcover.server.ts`** (`hcPost`): one
    place for the token, retries on 408/5xx, and caching.
-4. Hardcover's limit is about 60 requests/min. Batch jobs alias up to 10
-   lookups into one GraphQL request and sleep 2 s between batches.
+4. **One top-level field per GraphQL request.** Hardcover counts every
+   top-level field as a request, and answers **403** when a query has more
+   than its burst limit allows, so aliased batches (`b0: books(…) b1: books(…)`)
+   fail. To batch, use a single field with `_in` (`fetchBooksByIds`,
+   `fetchBooksByIsbns`), and pass values as GraphQL variables, never string
+   interpolation.
+5. The rate limit is about 60 requests/min. Batch jobs sleep 2 s between
+   batches and 1 s after each title search.
+6. Some author fields (`gender`, `nationality`) are restricted, and requesting
+   them makes Hardcover answer 403 for the whole query.
 
 ## Adding a book (the catalog write path)
 
@@ -221,7 +229,8 @@ Triggers:
 ## Other server-side flows
 
 - **Goodreads import** (`/api/admin/import-goodreads`): parses the CSV, looks
-  up 10 books per Hardcover request (ISBN, else search), checks that titles
+  up each batch of 10 with one ISBN request plus a search per ISBN-less row,
+  checks that titles
   match, then calls `upsertBookForUser`. For books already in the library it
   upgrades status by priority (finished > reading > dnf > want-to-read) and
   records distinct re-reads in `book_reads`. Progress is kept in

@@ -8,53 +8,25 @@ import {
 import { parseGoodreadsCSV } from "@/lib/goodreads";
 import { upsertBookForUser } from "@/lib/bookUpsert.server";
 import {
-  BOOK_FIELDS,
   type HCBook,
   type RawHCBook,
   authorLastName,
   docId,
-  gqlStr,
-  hcPost,
+  fetchBooksByIds,
+  fetchBooksByIsbns,
   normTitle,
   parseBookRow,
   parseSearchDoc,
-  parseSearchHits,
+  searchDocs,
   sleep,
   stripTitle,
   titlesMatch,
 } from "@/lib/hardcover.server";
 
 const DELAY_MS = 1100;
+// Hardcover allows ~60 requests/min; title searches are one request each.
+const SEARCH_DELAY_MS = 1000;
 const BATCH_SIZE = 10;
-
-function buildBatchQuery(
-  books: { title: string; author: string; isbn?: string }[],
-) {
-  const fragments = books.map((b, i) => {
-    if (b.isbn) {
-      const isbn = gqlStr(b.isbn);
-      return `
-        b${i}: books(where: {
-          _or: [
-            { editions: { isbn_13: { _eq: "${isbn}" } } },
-            { editions: { isbn_10: { _eq: "${isbn}" } } }
-          ]
-        }, limit: 3) { ${BOOK_FIELDS} }
-      `;
-    }
-    // No ISBN — HC does not allow _ilike queries; use the search endpoint instead.
-    // Strip series suffix ("Title (Series, #N)") before searching — HC titles
-    // don't include series info and the suffix breaks search results.
-    const baseTitle = stripTitle(b.title);
-    const lastName = authorLastName(b.author);
-    const searchQuery = gqlStr(
-      lastName ? `${baseTitle} ${lastName}` : baseTitle,
-      120,
-    );
-    return `b${i}: search(query: "${searchQuery}", query_type: "Book", per_page: 3) { results }`;
-  });
-  return `query BatchLookup { ${fragments.join("\n")} }`;
-}
 
 /**
  * Validate that a HC result actually matches the Goodreads title + author.
@@ -116,105 +88,77 @@ function bestMatchFromBooks(
   return null;
 }
 
+/**
+ * Look up a batch of Goodreads rows on Hardcover: one request for every ISBN
+ * in the batch, one search per row without an ISBN, and one follow-up to
+ * hydrate search hits. Each request has a single top-level field — Hardcover
+ * rejects (403) queries with more top-level fields than its burst limit.
+ */
 async function fetchHCBatch(
   previews: ReturnType<typeof parseGoodreadsCSV>,
 ): Promise<(HCBook | null)[]> {
-  const queryBooks = previews.map(({ entry, isbn }) => ({
-    title: entry.title,
-    author: entry.author,
-    isbn: isbn || undefined,
-  }));
-  const batchQuery = buildBatchQuery(queryBooks);
-  console.log("[import] Batch query:\n", batchQuery);
-  const json = await hcPost(batchQuery, { logPrefix: "[import]" });
-  const data = (json?.data ?? {}) as Record<string, unknown>;
-  if (json?.errors)
-    console.error("[import] GraphQL errors:", JSON.stringify(json.errors));
+  const byIsbn =
+    (await fetchBooksByIsbns(
+      previews.map((p) => p.isbn),
+      { logPrefix: "[import]" },
+    )) ?? new Map<string, RawHCBook[]>();
 
-  // Search path returns a thin document (no editions, no cached_tags, year-only
-  // date). Track hit ids so we can follow up with the full `books` fetch that
-  // the ISBN path uses, then merge the richer data in below.
+  // Search hits are thin documents (no editions, no cached_tags, year-only
+  // date); remember their ids to hydrate them with full book rows below.
   const enrichmentTargets: { idx: number; bookId: number }[] = [];
+  const results: (HCBook | null)[] = [];
 
-  const results: (HCBook | null)[] = previews.map(({ entry, isbn }, i) => {
-    const raw = data[`b${i}`];
-
+  for (const [i, { entry, isbn }] of previews.entries()) {
     if (isbn) {
-      // ISBN path — response is books[]
-      const books: RawHCBook[] = Array.isArray(raw) ? raw : [];
-      console.log(
-        `[import] b${i} ISBN="${isbn}" title="${entry.title}" → ${books.length} book(s) from HC`,
-      );
+      const books = byIsbn.get(isbn) ?? [];
       const result = bestMatchFromBooks(books, entry.title, entry.author, isbn);
-      if (!result) {
-        console.log(
-          `[import]   └─ no match (${books.map((b) => b.title).join(", ") || "empty"})`,
-        );
-      } else {
-        console.log(
-          `[import]   └─ matched "${result.title}" isbn=${result.isbn}`,
-        );
-      }
-      return result;
-    } else {
-      // No-ISBN path — response is { results: JSON blob }
-      const hits = parseSearchHits(
-        (raw as { results?: unknown } | undefined)?.results,
-      );
       console.log(
-        `[import] b${i} search title="${entry.title}" → ${hits.length} hit(s): ${hits.map((d) => d.title).join(", ")}`,
+        `[import] ISBN="${isbn}" "${entry.title}" → ${result ? `matched "${result.title}"` : `no match (${books.map((b) => b.title).join(", ") || "empty"})`}`,
       );
-
-      const hintLast = normTitle(authorLastName(entry.author));
-
-      for (const doc of hits) {
-        if (!doc.title) continue;
-        if (!titlesMatch(doc.title, entry.title)) continue;
-        if (hintLast.length >= 3 && doc.author_names?.length) {
-          const authorOk = doc.author_names.some((a) =>
-            normTitle(a).includes(hintLast),
-          );
-          if (!authorOk) continue;
-        }
-        const book = parseSearchDoc(doc, isbn);
-        console.log(`[import]   └─ matched "${book.title}" isbn=${book.isbn}`);
-        const hcId = docId(doc);
-        if (hcId != null) enrichmentTargets.push({ idx: i, bookId: hcId });
-        return book;
-      }
-
-      console.log(`[import]   └─ no hit matched title/author filters`);
-      return null;
+      results.push(result);
+      continue;
     }
-  });
 
-  // Follow-up: fetch full `books` rows for search-path hits so they get the
-  // same editions/cached_tags/release_date as the ISBN path.
-  if (enrichmentTargets.length) {
-    const fragments = enrichmentTargets.map(
-      ({ idx, bookId }) =>
-        `b${idx}: books(where: {id: {_eq: ${bookId}}}, limit: 1) { ${BOOK_FIELDS} }`,
+    // HC titles don't include series info; the suffix breaks search results.
+    const baseTitle = stripTitle(entry.title);
+    const lastName = authorLastName(entry.author);
+    const hits =
+      (await searchDocs(lastName ? `${baseTitle} ${lastName}` : baseTitle, 3, {
+        logPrefix: "[import]",
+      })) ?? [];
+    await sleep(SEARCH_DELAY_MS);
+
+    const hintLast = normTitle(lastName);
+    const doc = hits.find(
+      (d) =>
+        d.title &&
+        titlesMatch(d.title, entry.title) &&
+        (hintLast.length < 3 ||
+          !d.author_names?.length ||
+          d.author_names.some((a) => normTitle(a).includes(hintLast))),
     );
-    const followUpQuery = `query FollowUpLookup { ${fragments.join("\n")} }`;
     console.log(
-      `[import] Follow-up enrichment for ${enrichmentTargets.length} search-path hit(s)`,
+      `[import] search "${entry.title}" → ${doc ? `matched "${doc.title}"` : `no match among ${hits.length} hit(s)`}`,
     );
-    const followUpJson = await hcPost(followUpQuery, { logPrefix: "[import]" });
-    const followUpData = (followUpJson?.data ?? {}) as Record<string, unknown>;
-    if (followUpJson?.errors)
-      console.error(
-        "[import] Follow-up GraphQL errors:",
-        JSON.stringify(followUpJson.errors),
-      );
+    if (!doc) {
+      results.push(null);
+      continue;
+    }
+    results.push(parseSearchDoc(doc, isbn));
+    const hcId = docId(doc);
+    if (hcId != null) enrichmentTargets.push({ idx: i, bookId: hcId });
+  }
 
-    for (const { idx } of enrichmentTargets) {
-      const raw = followUpData[`b${idx}`];
-      const books: RawHCBook[] = Array.isArray(raw) ? raw : [];
-      const book = books[0];
+  if (enrichmentTargets.length) {
+    const full =
+      (await fetchBooksByIds(
+        enrichmentTargets.map((t) => t.bookId),
+        { logPrefix: "[import]" },
+      )) ?? new Map<number, HCBook>();
+    for (const { idx, bookId } of enrichmentTargets) {
+      const parsed = full.get(bookId);
       const existing = results[idx];
-      if (!book || !existing) continue;
-      const parsed = parseBookRow(book, existing.isbn);
-      if (!parsed) continue;
+      if (!parsed || !existing) continue;
       results[idx] = {
         ...parsed,
         title: existing.title,
@@ -229,9 +173,6 @@ async function fetchHCBatch(
           parsed.audioDurationMinutes ?? existing.audioDurationMinutes,
         publisher: parsed.publisher || existing.publisher,
       };
-      console.log(
-        `[import]   └─ enriched b${idx}: isbns=${parsed.isbns.length}, genres=${parsed.genres.length}, date=${parsed.releaseDate || "(none)"}, audio=${parsed.audioDurationMinutes ?? "—"}m`,
-      );
     }
   }
 

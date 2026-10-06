@@ -5,23 +5,22 @@
  * - Unlinked rows are resolved to a Hardcover id by ISBN, then by
  *   title + author search, and linked on success.
  *
- * Every attempted row gets `synced_at = now()`, so a row Hardcover can't
- * resolve isn't retried until it goes stale again.
+ * Every row Hardcover answered for gets `synced_at = now()`, so a row it
+ * can't resolve isn't retried until it goes stale again. A failed request
+ * stops the run without stamping anything.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
-  BOOK_FIELDS,
   type HCBook,
   type RawHCBook,
   authorLastName,
   docId,
   fetchBooksByIds,
-  gqlStr,
-  hcPost,
+  fetchBooksByIsbns,
   normTitle,
   parseBookRow,
-  parseSearchHits,
+  searchDocs,
   sleep,
   stripTitle,
   titlesMatch,
@@ -33,8 +32,10 @@ import {
 
 const LOG = "[catalog-sync]";
 const BATCH_SIZE = 10;
-// Hardcover allows ~60 requests/min; each batch makes at most two.
+// Hardcover allows ~60 requests/min. A batch makes up to three requests
+// (ISBNs, refresh by id, search follow-up) plus one per title search.
 const BATCH_DELAY_MS = 2000;
+const SEARCH_DELAY_MS = 1000;
 export const STALE_AFTER_DAYS = 30;
 
 export const SYNC_COLUMNS =
@@ -79,9 +80,10 @@ function pickIsbnHit(books: RawHCBook[], row: SyncRow): HCBook | null {
 }
 
 /**
- * Resolve Hardcover books for unlinked rows (by ISBN, else title search).
- * Returns null when a Hardcover request fails, so callers don't mistake an
- * outage for "not on Hardcover".
+ * Resolve Hardcover books for unlinked rows: one batched ISBN request, then a
+ * title + author search for rows without an ISBN hit. Returns null when a
+ * Hardcover request fails, so callers don't mistake an outage for "not on
+ * Hardcover".
  */
 async function resolveUnlinked(
   rows: SyncRow[],
@@ -89,37 +91,30 @@ async function resolveUnlinked(
   const out = new Map<string, HCBook>();
   if (!rows.length) return out;
 
-  const fragments = rows.map((row, i) => {
-    const isbn = row.isbns?.[0];
-    if (isbn) {
-      const v = gqlStr(isbn);
-      return `b${i}: books(where: { _or: [
-        { editions: { isbn_13: { _eq: "${v}" } } },
-        { editions: { isbn_10: { _eq: "${v}" } } }
-      ]}, limit: 3) { ${BOOK_FIELDS} }`;
-    }
-    const last = authorLastName(row.author);
-    const q = gqlStr(
-      last ? `${stripTitle(row.title)} ${last}` : stripTitle(row.title),
-    );
-    return `b${i}: search(query: "${q}", query_type: "Book", per_page: 3) { results }`;
-  });
-  const json = await hcPost(`query SyncResolve { ${fragments.join("\n")} }`, {
-    logPrefix: LOG,
-  });
-  if (!json?.data) return null;
-  const data = json.data as Record<string, unknown>;
+  const byIsbn = await fetchBooksByIsbns(
+    rows.map((r) => r.isbns?.[0] ?? ""),
+    { logPrefix: LOG },
+  );
+  if (!byIsbn) return null;
 
   const searchIds = new Map<string, number>();
-  rows.forEach((row, i) => {
-    const raw = data[`b${i}`];
-    if (row.isbns?.[0]) {
-      const hit = pickIsbnHit(Array.isArray(raw) ? raw : [], row);
-      if (hit) out.set(row.id, hit);
-      return;
+  for (const row of rows) {
+    const isbn = row.isbns?.[0];
+    const hit = isbn ? pickIsbnHit(byIsbn.get(isbn) ?? [], row) : null;
+    if (hit) {
+      out.set(row.id, hit);
+      continue;
     }
-    const hintLast = normTitle(authorLastName(row.author));
-    const doc = parseSearchHits((raw as { results?: unknown })?.results).find(
+
+    const last = authorLastName(row.author);
+    const base = stripTitle(row.title);
+    const docs = await searchDocs(last ? `${base} ${last}` : base, 3, {
+      logPrefix: LOG,
+    });
+    if (!docs) return null;
+    await sleep(SEARCH_DELAY_MS);
+    const hintLast = normTitle(last);
+    const doc = docs.find(
       (d) =>
         d.title &&
         titlesMatch(d.title, row.title) &&
@@ -129,7 +124,7 @@ async function resolveUnlinked(
     );
     const id = doc ? docId(doc) : null;
     if (id != null) searchIds.set(row.id, id);
-  });
+  }
 
   if (searchIds.size) {
     const books = await fetchBooksByIds([...searchIds.values()], {

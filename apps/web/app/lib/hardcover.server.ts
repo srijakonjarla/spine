@@ -12,7 +12,7 @@ const RETRY_DELAY_MS = 2000;
  * Shared field selection for every `books` query. Don't request author
  * `gender`/`nationality` — Hardcover answers 403 for the whole query.
  */
-export const BOOK_FIELDS = `
+const BOOK_FIELDS = `
   id title pages release_date
   images { url }
   contributions { author { name } }
@@ -85,16 +85,6 @@ export interface HCEdition {
 }
 
 // ── String utilities ──────────────────────────────────────────────────────
-
-/** Sanitize a string for safe inline embedding in a GQL query literal. */
-export function gqlStr(s: string, maxLen = 120): string {
-  return s
-    .replace(/\\/g, "\\\\")
-    .replace(/"/g, '\\"')
-    .replace(/[\n\r]/g, " ")
-    .trim()
-    .slice(0, maxLen);
-}
 
 /**
  * Extract the surname from an author name, handling both "First Last" and
@@ -344,6 +334,20 @@ const BOOK_BY_ISBN_QUERY = `
   }
 `;
 
+// One top-level field: Hardcover counts each top-level field as a request
+// and answers 403 when a query has more than the burst limit allows, so
+// batch lookups use `_in` rather than aliased root fields.
+const BOOKS_BY_ISBNS_QUERY = `
+  query BooksByIsbns($isbns: [String!]!) {
+    books(where: {
+      _or: [
+        { editions: { isbn_13: { _in: $isbns } } },
+        { editions: { isbn_10: { _in: $isbns } } }
+      ]
+    }) { ${BOOK_FIELDS} }
+  }
+`;
+
 const SEARCH_QUERY = `
   query SearchBooks($query: String!, $perPage: Int!) {
     search(query: $query, query_type: "Book", per_page: $perPage) { results }
@@ -398,16 +402,49 @@ export async function lookupBookByIsbn(
   return raw ? parseBookRow(raw, isbn) : null;
 }
 
-/** Raw search hits (thin documents) in relevance order. */
+/**
+ * Every Hardcover book owning any of the given ISBNs, keyed by ISBN, in a
+ * single request. `null` means the request failed.
+ */
+export async function fetchBooksByIsbns(
+  isbns: string[],
+  opts: { logPrefix?: string } = {},
+): Promise<Map<string, RawHCBook[]> | null> {
+  const out = new Map<string, RawHCBook[]>();
+  const wanted = new Set(isbns.filter(Boolean));
+  if (!wanted.size) return out;
+  const json = await hcPost(BOOKS_BY_ISBNS_QUERY, {
+    variables: { isbns: [...wanted] },
+    ...opts,
+  });
+  if (!json?.data) return null;
+  for (const book of (json.data.books ?? []) as RawHCBook[]) {
+    for (const e of book.editions ?? []) {
+      for (const isbn of [e.isbn_13, e.isbn_10]) {
+        if (!isbn || !wanted.has(isbn)) continue;
+        const list = out.get(isbn) ?? [];
+        if (!list.includes(book)) list.push(book);
+        out.set(isbn, list);
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Raw search hits (thin documents) in relevance order. `null` means the
+ * request failed.
+ */
 export async function searchDocs(
   query: string,
   perPage: number,
-  opts: { revalidate?: number } = {},
-): Promise<HardcoverDocument[]> {
+  opts: { logPrefix?: string; revalidate?: number } = {},
+): Promise<HardcoverDocument[] | null> {
   const json = await hcPost(SEARCH_QUERY, {
     variables: { query, perPage },
     ...opts,
   });
+  if (!json?.data) return null;
   return parseSearchHits(
     (json?.data?.search as { results?: unknown } | undefined)?.results,
   );
@@ -419,7 +456,7 @@ export async function searchBooks(
   perPage = 8,
   opts: { revalidate?: number } = {},
 ): Promise<HCBook[]> {
-  const docs = await searchDocs(query, perPage, opts);
+  const docs = (await searchDocs(query, perPage, opts)) ?? [];
   const ids = docs.map(docId).filter((id): id is number => id != null);
   const full = await fetchBooksByIds(ids, opts);
   return docs
