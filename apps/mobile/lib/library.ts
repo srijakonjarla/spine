@@ -3,6 +3,7 @@ import { apiFetch, publicFetch } from "./api";
 
 export interface CatalogEntry {
   id: string;
+  hardcoverBookId: number | null;
   title: string;
   author: string;
   releaseDate: string;
@@ -42,6 +43,7 @@ interface BookReadRow {
 interface BookRow {
   id: string;
   catalog_book_id?: string;
+  hardcover_book_id?: number | null;
   title: string;
   author: string;
   publisher?: string;
@@ -74,6 +76,7 @@ interface BookRow {
 
 interface CatalogRow {
   id: string;
+  hardcover_book_id?: number | null;
   title: string;
   author: string;
   release_date?: string;
@@ -90,6 +93,7 @@ function mapBook(row: BookRow): BookEntry {
   return {
     id: row.id,
     catalogBookId: row.catalog_book_id ?? "",
+    hardcoverBookId: row.hardcover_book_id ?? null,
     title: row.title ?? "",
     author: row.author ?? "",
     publisher: row.publisher ?? "",
@@ -141,6 +145,7 @@ function mapBook(row: BookRow): BookEntry {
 function mapCatalog(row: CatalogRow): CatalogEntry {
   return {
     id: row.id,
+    hardcoverBookId: row.hardcover_book_id ?? null,
     title: row.title,
     author: row.author,
     releaseDate: row.release_date ?? "",

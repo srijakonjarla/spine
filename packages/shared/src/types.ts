@@ -28,6 +28,8 @@ export interface BookRead {
 export interface BookEntry {
   id: string;
   catalogBookId: string;
+  /** Hardcover books.id of the linked catalog row; null for non-Hardcover books */
+  hardcoverBookId: number | null;
   title: string;
   author: string;
   publisher: string;

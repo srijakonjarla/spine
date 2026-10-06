@@ -60,6 +60,7 @@ export function CatalogSearch({
             )
             .map((b) => ({
               id: b.id,
+              hardcoverBookId: b.hardcoverBookId,
               title: b.title,
               author: b.author,
               releaseDate: "",
@@ -80,6 +81,11 @@ export function CatalogSearch({
           const deduped = remote.filter(
             (r) =>
               !libMatches.some((lm) => {
+                if (
+                  r.hardcoverBookId &&
+                  r.hardcoverBookId === lm.hardcoverBookId
+                )
+                  return true;
                 if (r.isbn && lm.isbn && r.isbn === lm.isbn) return true;
                 return (
                   r.title.toLowerCase() === lm.title.toLowerCase() &&

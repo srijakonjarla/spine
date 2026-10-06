@@ -31,6 +31,7 @@ interface BookReadRow {
 interface BookRow {
   id: string;
   catalog_book_id: string;
+  hardcover_book_id: number | null;
   title: string;
   author: string;
   publisher: string;
@@ -89,6 +90,7 @@ function mapBook(row: BookRow): BookEntry {
   return {
     id: row.id,
     catalogBookId: row.catalog_book_id ?? "",
+    hardcoverBookId: row.hardcover_book_id ?? null,
     title: row.title ?? "",
     author: row.author ?? "",
     publisher: row.publisher ?? "",

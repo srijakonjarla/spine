@@ -3,6 +3,7 @@ import { createApiClient, getUserId } from "@/lib/supabase-server";
 import { upsertBookForUser } from "@/lib/bookUpsert.server";
 
 interface CatalogMeta {
+  hardcoverBookId?: number | null;
   coverUrl?: string;
   author?: string;
   isbn?: string;
@@ -45,26 +46,27 @@ export async function POST(
   const resolvedStatus = VALID_STATUSES.includes(status ?? "")
     ? status!
     : "unread";
-  const coverUrl = catalog?.coverUrl ?? "";
 
   // Resolve user_books.id — find existing entry or create a TBR book
   let bookId: string | null = catalog?.bookId ?? null;
 
   if (!bookId) {
-    // upsertBookForUser handles catalog deduplication (by ISBN with title
-    // validation, then by title+author) and creates a TBR entry if needed.
+    // Not in the library yet — add it as a TBR entry.
     const now = new Date().toISOString();
     const result = await upsertBookForUser(
       supabase,
       userId,
       {
+        hardcover_book_id: catalog?.hardcoverBookId ?? null,
         title: title.trim(),
         author: catalog?.author ?? "",
-        cover_url: coverUrl,
-        isbn: catalog?.isbn ?? "",
+        cover_url: catalog?.coverUrl ?? "",
+        isbns: catalog?.isbn ? [catalog.isbn] : [],
         release_date: catalog?.releaseDate ?? "",
         genres: catalog?.genres ?? [],
         page_count: catalog?.pageCount ?? null,
+        publisher: "",
+        audio_duration_minutes: null,
       },
       {
         status: "want-to-read",
@@ -73,6 +75,7 @@ export async function POST(
         created_at: now,
         updated_at: now,
       },
+      { verified: false },
     );
     if (result) bookId = result.userBookId;
   }

@@ -29,6 +29,7 @@ interface SeriesRow {
     book_id: string | null;
     user_books: {
       title_override: string | null;
+      cover_url_override: string | null;
       catalog_books: { title: string; cover_url: string } | null;
     } | null;
   }[];
@@ -51,7 +52,8 @@ function mapSeries(row: SeriesRow): Series {
           position: b.position,
           status: b.status as SeriesBook["status"],
           bookId: b.book_id,
-          coverUrl: ub?.catalog_books?.cover_url ?? "",
+          coverUrl:
+            ub?.cover_url_override ?? ub?.catalog_books?.cover_url ?? "",
         };
       }),
   };
@@ -94,6 +96,7 @@ export async function addSeriesBook(
   title: string,
   position: number,
   catalog?: {
+    hardcoverBookId?: number | null;
     coverUrl?: string;
     author?: string;
     isbn?: string;

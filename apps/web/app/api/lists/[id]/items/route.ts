@@ -25,7 +25,9 @@ export async function POST(
       type: type ?? "",
       book_id: bookId ?? null,
     })
-    .select("*, user_books(title_override, catalog_books(title, cover_url))")
+    .select(
+      "*, user_books(title_override, cover_url_override, catalog_books(title, cover_url))",
+    )
     .single();
 
   if (error)

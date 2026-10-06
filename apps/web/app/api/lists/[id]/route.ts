@@ -12,7 +12,7 @@ export async function GET(
   const { data, error } = await supabase
     .from("lists")
     .select(
-      "*, list_items(*, user_books(title_override, catalog_books(title, cover_url)))",
+      "*, list_items(*, user_books(title_override, cover_url_override, catalog_books(title, cover_url)))",
     )
     .eq("id", id)
     .eq("user_id", userId)

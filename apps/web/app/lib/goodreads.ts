@@ -146,6 +146,7 @@ export function parseGoodreadsCSV(text: string): GoodreadsPreview[] {
       const entry: BookEntry = {
         id: crypto.randomUUID(),
         catalogBookId: "",
+        hardcoverBookId: null,
         title: row["Title"] ?? "",
         author: row["Author"] ?? "",
         publisher: "",

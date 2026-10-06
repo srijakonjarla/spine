@@ -25,6 +25,7 @@ export function makeEntry(
   return {
     id: uuid(),
     catalogBookId: "",
+    hardcoverBookId: catalog?.hardcoverBookId ?? null,
     title: catalog?.title ?? title,
     author: catalog?.author ?? "",
     publisher: catalog?.publisher ?? "",

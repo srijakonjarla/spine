@@ -91,6 +91,7 @@ export default function LibraryPage() {
     const entry: BookEntry = {
       id: crypto.randomUUID(),
       catalogBookId: "",
+      hardcoverBookId: enriched?.hardcoverBookId ?? null,
       title: enriched?.title ?? title,
       author: enriched?.author ?? "",
       releaseDate: enriched?.releaseDate ?? "",

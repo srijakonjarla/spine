@@ -117,6 +117,7 @@ export default function SeriesCard({
             : undefined;
       const catalogMeta = catalog
         ? {
+            hardcoverBookId: catalog.hardcoverBookId,
             coverUrl: catalog.coverUrl,
             author: catalog.author,
             isbn: catalog.isbn,

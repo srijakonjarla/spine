@@ -21,6 +21,7 @@ export interface ListItemRow {
   book_id: string | null;
   user_books?: {
     title_override: string | null;
+    cover_url_override?: string | null;
     catalog_books: { title: string; cover_url: string } | null;
   } | null;
 }
@@ -60,7 +61,10 @@ export function mapListItem(row: ListItemRow): ListItem {
     sortOrder: row.sort_order,
     createdAt: row.created_at,
     bookId: row.book_id ?? undefined,
-    coverUrl: row.user_books?.catalog_books?.cover_url ?? undefined,
+    coverUrl:
+      row.user_books?.cover_url_override ??
+      row.user_books?.catalog_books?.cover_url ??
+      undefined,
   };
 }
 

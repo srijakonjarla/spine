@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supabase
     .from("lists")
     .select(
-      "*, list_items(*, user_books(title_override, catalog_books(title, cover_url)))",
+      "*, list_items(*, user_books(title_override, cover_url_override, catalog_books(title, cover_url)))",
     )
     .eq("user_id", userId)
     .eq("year", Number(year))
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       notes_label: notesLabel ?? "notes",
     })
     .select(
-      "*, list_items(*, user_books(title_override, catalog_books(title, cover_url)))",
+      "*, list_items(*, user_books(title_override, cover_url_override, catalog_books(title, cover_url)))",
     )
     .single();
 

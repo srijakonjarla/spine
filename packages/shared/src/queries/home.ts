@@ -8,6 +8,8 @@ interface UserBookRow {
   status: string;
   title_override: string | null;
   author_override: string | null;
+  cover_url_override: string | null;
+  page_count_override: number | null;
   mood_tags: string[] | null;
   date_started: string | null;
   date_finished: string | null;
@@ -61,7 +63,7 @@ export async function loadHomeData(
       supabase
         .from("user_books")
         .select(
-          "id, status, mood_tags, date_started, title_override, author_override, catalog_books(title, author, cover_url, page_count)",
+          "id, status, mood_tags, date_started, title_override, author_override, cover_url_override, page_count_override, catalog_books(title, author, cover_url, page_count)",
         )
         .eq("status", "reading")
         .order("date_started", { ascending: false }),
@@ -69,7 +71,7 @@ export async function loadHomeData(
       supabase
         .from("user_books")
         .select(
-          "id, status, rating, date_finished, title_override, author_override, catalog_books(title, author, cover_url, page_count)",
+          "id, status, rating, date_finished, title_override, author_override, cover_url_override, page_count_override, catalog_books(title, author, cover_url, page_count)",
         )
         .eq("status", "finished")
         .not("date_finished", "is", null)
@@ -104,10 +106,10 @@ export async function loadHomeData(
     id: row.id,
     title: row.title_override ?? row.catalog_books?.title ?? "",
     author: row.author_override ?? row.catalog_books?.author ?? "",
-    coverUrl: row.catalog_books?.cover_url ?? "",
+    coverUrl: row.cover_url_override ?? row.catalog_books?.cover_url ?? "",
     moodTags: row.mood_tags ?? [],
     dateStarted: row.date_started ?? "",
-    pageCount: row.catalog_books?.page_count ?? null,
+    pageCount: row.page_count_override ?? row.catalog_books?.page_count ?? null,
   }));
 
   const recentlyFinished: HomeFinished[] = (
@@ -116,7 +118,7 @@ export async function loadHomeData(
     id: row.id,
     title: row.title_override ?? row.catalog_books?.title ?? "",
     author: row.author_override ?? row.catalog_books?.author ?? "",
-    coverUrl: row.catalog_books?.cover_url ?? "",
+    coverUrl: row.cover_url_override ?? row.catalog_books?.cover_url ?? "",
     rating: row.rating,
     dateFinished: row.date_finished ?? "",
   }));

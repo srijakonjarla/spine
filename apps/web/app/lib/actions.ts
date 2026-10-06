@@ -1,10 +1,14 @@
 "use server";
 
 import { createActionClient } from "@/lib/supabase-server";
-import { upsertBookForUser } from "@/lib/bookUpsert.server";
+import {
+  catalogFieldsFromEntry,
+  personalFieldsFromEntry,
+  upsertBookForUser,
+  userBookPatchFromEntry,
+} from "@/lib/bookUpsert.server";
 import { autoLogToday, autoLogDate } from "@/lib/autoLog";
 import { serverTodayLocal } from "@/lib/serverDate";
-import { normalizeMoodTags } from "@/lib/moodTags";
 import { STATUS_LABEL } from "@spine/shared";
 import type { BookEntry, BookRead, Thought } from "@/types";
 
@@ -28,35 +32,14 @@ export async function createEntryAction(
   const result = await upsertBookForUser(
     supabase,
     user.id,
-    {
-      title: entry.title ?? "",
-      author: entry.author ?? "",
-      cover_url: entry.coverUrl ?? "",
-      isbn: entry.isbn ?? "",
-      release_date: entry.releaseDate ?? "",
-      genres: entry.genres ?? [],
-      page_count: entry.pageCount ?? null,
-      publisher: entry.publisher ?? "",
-      audio_duration_minutes: entry.audioDurationMinutes ?? null,
-    },
-    {
-      id: entry.id,
-      status: entry.status,
-      date_started: entry.dateStarted || null,
-      date_finished: entry.dateFinished || null,
-      date_shelved: entry.dateShelved || null,
-      date_dnfed: entry.dateDnfed || null,
-      rating: entry.rating ?? 0,
-      feeling: entry.feeling ?? "",
-      bookmarked: false,
-      diversity_tags: entry.diversityTags ?? [],
-      created_at: entry.createdAt,
-      updated_at: entry.updatedAt,
-    },
+    catalogFieldsFromEntry(entry),
+    personalFieldsFromEntry(entry),
+    { verified: false },
   );
   if (!result) throw new Error("failed to create book");
   if (result.alreadyExists && result.existingStatus !== entry.status) {
-    const label = STATUS_LABEL[result.existingStatus ?? ""] ?? result.existingStatus;
+    const label =
+      STATUS_LABEL[result.existingStatus ?? ""] ?? result.existingStatus;
     throw new Error(`"${entry.title}" is already in your library (${label}).`);
   }
   return { id: result.userBookId };
@@ -67,69 +50,17 @@ export async function updateEntryAction(
   patch: Partial<BookEntry>,
 ): Promise<void> {
   const { supabase, user } = await authed();
-  const now = new Date().toISOString();
-
-  const { data: ub } = await supabase
+  const { data: updated, error } = await supabase
     .from("user_books")
-    .select("id, catalog_book_id")
+    .update({
+      ...userBookPatchFromEntry(patch),
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", id)
     .eq("user_id", user.id)
-    .single();
-  if (!ub) throw new Error("not found");
-
-  const userRow: Record<string, unknown> = { updated_at: now };
-  if ("status" in patch) userRow.status = patch.status;
-  if ("dateStarted" in patch) userRow.date_started = patch.dateStarted || null;
-  if ("dateFinished" in patch)
-    userRow.date_finished = patch.dateFinished || null;
-  if ("dateShelved" in patch) userRow.date_shelved = patch.dateShelved || null;
-  if ("dateDnfed" in patch) userRow.date_dnfed = patch.dateDnfed || null;
-  if ("rating" in patch) userRow.rating = patch.rating;
-  if ("feeling" in patch) userRow.feeling = patch.feeling;
-  if ("bookmarked" in patch) userRow.bookmarked = patch.bookmarked;
-  if ("upNext" in patch) userRow.up_next = patch.upNext;
-  if ("moodTags" in patch)
-    userRow.mood_tags = normalizeMoodTags(patch.moodTags);
-  if ("diversityTags" in patch) userRow.diversity_tags = patch.diversityTags;
-  if ("bookshelves" in patch) userRow.bookshelves = patch.bookshelves;
-  if ("userGenres" in patch) userRow.user_genres = patch.userGenres;
-  if ("format" in patch) userRow.format = patch.format;
-  if ("title" in patch) userRow.title_override = patch.title || null;
-  if ("author" in patch) userRow.author_override = patch.author || null;
-
-  const { error: ubErr } = await supabase
-    .from("user_books")
-    .update(userRow)
-    .eq("id", id)
-    .eq("user_id", user.id);
-  if (ubErr) throw new Error(ubErr.message);
-
-  const catalogRow: Record<string, unknown> = {};
-  if ("coverUrl" in patch) catalogRow.cover_url = patch.coverUrl;
-  if ("pageCount" in patch) catalogRow.page_count = patch.pageCount;
-  if ("releaseDate" in patch) catalogRow.release_date = patch.releaseDate;
-  if ("genres" in patch) catalogRow.genres = patch.genres;
-  if ("publisher" in patch) catalogRow.publisher = patch.publisher;
-  if ("audioDurationMinutes" in patch)
-    catalogRow.audio_duration_minutes = patch.audioDurationMinutes ?? null;
-  if ("isbn" in patch && patch.isbn) {
-    const { data: cb } = await supabase
-      .from("catalog_books")
-      .select("isbns")
-      .eq("id", ub.catalog_book_id)
-      .single();
-    const stored = (cb?.isbns as string[] | null) ?? [];
-    const merged = [...new Set([...stored, patch.isbn as string])];
-    if (merged.length !== stored.length) catalogRow.isbns = merged;
-  }
-
-  if (Object.keys(catalogRow).length) {
-    catalogRow.updated_at = now;
-    await supabase
-      .from("catalog_books")
-      .update(catalogRow)
-      .eq("id", ub.catalog_book_id);
-  }
+    .select("id");
+  if (error) throw new Error(error.message);
+  if (!updated?.length) throw new Error("not found");
 
   const READING_ACTIVITY = new Set([
     "status",

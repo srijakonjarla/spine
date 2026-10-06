@@ -33,6 +33,8 @@ packages/
 
 ## Architecture
 
+Full details: [`docs/architecture.md`](docs/architecture.md) (data flow, catalog/Hardcover design, server modules) and [`docs/database.md`](docs/database.md) (live schema, RLS, migrations).
+
 Both clients talk to the same Postgres database directly. **Row-Level Security policies are the enforcement boundary** — there is no separate backend service.
 
 - **Shared queries (`packages/shared/src/queries/`)** are the single source of truth for read/write logic. Each function takes a `SupabaseClient` and runs against the user's session JWT; RLS scopes results to the current user.
@@ -48,12 +50,12 @@ Both clients talk to the same Postgres database directly. **Row-Level Security p
 - **Habit tracker** — Year grid of reading days with inline journal entries
 - **Quote collection** — All saved quotes across books, per year
 - **Reading goals** — Annual yearly goal + custom goals with manually pinned books; created explicitly via the goals page
-- **Series tracker** — Track progress through multi-book series; auto-populated from Hardcover when books are added or marked read
+- **Series tracker** — Track progress through multi-book series
 - **Recommendations** — Log books recommended to/by you with context
 - **Custom lists** — Flexible lists (anticipated reads, book club, favorites, etc.)
 - **Stats** — Year-in-review with genre breakdown, mood cloud, pace chart, top books
 - **Goodreads import** — Import reading history from a Goodreads CSV export; enriched with Hardcover metadata (cover, ISBN, page count, genres) via batched ISBN lookup
-- **Library enrichment** — Backfill cover art, ISBNs, page counts, and genres for existing books from Hardcover
+- **Library enrichment** — Link existing books to Hardcover and backfill cover art, ISBNs, page counts, and genres; a daily cron keeps catalog metadata fresh
 - **Dark mode** — Warm lamplight dark theme (web)
 
 ## Routes (Web)
@@ -98,18 +100,20 @@ Both clients talk to the same Postgres database directly. **Row-Level Security p
 
 Only routes that need server-side compute remain. CRUD-only routes (home, goals, habits) were removed; their logic now lives in `packages/shared/src/queries/` and is called directly from both clients.
 
-| Route                         | Why it's server-side                                            |
-| ----------------------------- | --------------------------------------------------------------- |
-| `/api/books/[id]` (PATCH)     | Triggers auto-log + series sync + catalog merge as side effects |
-| `/api/catalog`                | Calls Hardcover with secret bearer token                        |
-| `/api/items`, `/api/lists`    | Custom list management                                          |
-| `/api/quotes`, `/api/reads`   | Quote + re-read CRUD with ordering logic                        |
-| `/api/recommendations`        | Recommendation CRUD                                             |
-| `/api/series`                 | Series tracker (transactional updates)                          |
-| `/api/nav`                    | Navigation data (year list, current month)                      |
-| `/api/invite`                 | Invite-code auth flow                                           |
-| `/api/admin/import-goodreads` | CSV import via `after()` so the user can navigate away          |
-| `/api/admin/backfill`         | Bulk Hardcover enrichment of existing library                   |
+| Route                           | Why it's server-side                                                   |
+| ------------------------------- | ---------------------------------------------------------------------- |
+| `/api/books`, `/api/books/[id]` | Mobile's book API; add-book resolves the shared catalog (service role) |
+| `/api/catalog`                  | Calls Hardcover with secret bearer token                               |
+| `/api/catalog/editions`         | Edition/cover list for the cover picker (Hardcover)                    |
+| `/api/items`, `/api/lists`      | Custom list management                                                 |
+| `/api/quotes`, `/api/reads`     | Quote + re-read CRUD with ordering logic                               |
+| `/api/recommendations`          | Recommendation CRUD                                                    |
+| `/api/series`                   | Series tracker (transactional updates)                                 |
+| `/api/nav`                      | Navigation data (year list, current month)                             |
+| `/api/invite`                   | Invite-code auth flow                                                  |
+| `/api/admin/import-goodreads`   | CSV import via `after()` so the user can navigate away                 |
+| `/api/admin/backfill`           | Links/enriches the user's unsynced catalog rows from Hardcover         |
+| `/api/cron/catalog-sync`        | Daily Vercel cron refreshing stale catalog rows (`CRON_SECRET`)        |
 
 ## Setup
 
@@ -123,7 +127,7 @@ npm install
 
 ### 2. Supabase
 
-Create a project at [supabase.com](https://supabase.com), then run `supabase/setup.sql` in the SQL editor to create all tables, RLS policies, and functions.
+Create a project at [supabase.com](https://supabase.com). Note that `supabase/setup.sql` is out of date relative to the live schema — use [`docs/database.md`](docs/database.md) as the reference.
 
 ### 3. Environment variables
 
@@ -134,7 +138,8 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your-anon-key
 HARDCOVER_API_TOKEN=your-hardcover-bearer-token   # required for book search & enrichment
 GOOGLE_BOOKS_API_KEY=your-google-books-api-key    # optional fallback if Hardcover misses
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key   # required for admin imports/backfill
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key   # required — all catalog_books writes use it
+CRON_SECRET=random-string                         # authenticates the Vercel cron (production)
 ```
 
 `HARDCOVER_API_TOKEN` is a personal Bearer token from [hardcover.app](https://hardcover.app). Without it, catalog search falls back to Google Books only and library enrichment is disabled.
@@ -170,8 +175,8 @@ cd apps/mobile && npx expo run:ios
 
 | Table             | Description                                                          |
 | ----------------- | -------------------------------------------------------------------- |
-| `catalog_books`   | Shared book catalog (title, author, cover, ISBN, genres, page count) |
-| `user_books`      | Per-user book entries with status, rating, feeling, dates, mood tags |
+| `catalog_books`   | Shared Hardcover cache keyed by `hardcover_book_id` (server-written) |
+| `user_books`      | Per-user book entries + per-user overrides (title, author, cover…)   |
 | `thoughts`        | Reflection notes per book                                            |
 | `book_reads`      | Re-read history per book                                             |
 | `quotes`          | Saved quotes linked to books                                         |

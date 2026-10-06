@@ -21,6 +21,7 @@ export function CoverPickerModal({
   useEffect(() => {
     let cancelled = false;
     fetchCoverEditions({
+      hardcoverBookId: entry.hardcoverBookId,
       isbn: entry.isbn,
       title: entry.title,
       author: entry.author,
@@ -30,7 +31,7 @@ export function CoverPickerModal({
     return () => {
       cancelled = true;
     };
-  }, [entry.isbn, entry.title, entry.author]);
+  }, [entry.hardcoverBookId, entry.isbn, entry.title, entry.author]);
 
   return (
     <div

@@ -1,20 +1,18 @@
 /**
- * Shared Hardcover GraphQL helpers for admin routes (backfill, goodreads import).
- *
- * Keeps `BOOK_FIELDS`, the `RawHCBook` shape, string utilities (`stripTitle`,
- * `titlesMatch`, `authorLastName`, ...), and the POST client in one place so
- * both routes stay in lockstep.
+ * The single Hardcover GraphQL client. Every Hardcover call in the app goes
+ * through `hcPost` here — catalog search, edition lookup, add-book resolution,
+ * Goodreads import, and catalog sync.
  */
 
 const HC_ENDPOINT = "https://api.hardcover.app/v1/graphql";
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 2000;
 
-/** Shared field selection for both ISBN-path and search-path follow-up queries. */
+/** Shared field selection for every `books` query. */
 export const BOOK_FIELDS = `
   id title pages release_date
   images { url }
-  contributions { author { name } }
+  contributions { author { name gender nationality } }
   cached_tags
   default_physical_edition_id
   editions { id isbn_13 isbn_10 image { url } publisher { name } audio_seconds }
@@ -24,28 +22,38 @@ export const BOOK_FIELDS = `
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
+interface RawHCEdition {
+  id?: number;
+  isbn_13?: string;
+  isbn_10?: string;
+  image?: { url?: string };
+  publisher?: { name?: string } | null;
+  audio_seconds?: number | null;
+}
+
 export interface RawHCBook {
   id?: number;
   title?: string;
   pages?: number;
   release_date?: string;
   images?: { url?: string }[];
-  contributions?: { author: { name: string } }[];
+  contributions?: {
+    author: {
+      name: string;
+      gender?: string | null;
+      nationality?: string | null;
+    };
+  }[];
   cached_tags?: unknown;
   default_physical_edition_id?: number;
-  editions?: {
-    id?: number;
-    isbn_13?: string;
-    isbn_10?: string;
-    image?: { url?: string };
-    publisher?: { name?: string } | null;
-    audio_seconds?: number | null;
-  }[];
+  editions?: RawHCEdition[];
   default_audio_edition_id?: number | null;
   default_audio_edition?: { audio_seconds?: number | null } | null;
 }
 
 export interface HCBook {
+  /** Hardcover `books.id`. Null only for thin search documents without an id. */
+  hardcoverBookId: number | null;
   title: string;
   author: string;
   coverUrl: string;
@@ -53,6 +61,7 @@ export interface HCBook {
   isbns: string[];
   pageCount: number | null;
   genres: string[];
+  diversityTags: string[];
   releaseDate: string;
   audioDurationMinutes: number | null;
   publisher: string;
@@ -69,6 +78,13 @@ export interface HardcoverDocument {
   cached_tags?: unknown;
   release_year?: number | string;
   release_date?: string;
+}
+
+export interface HCEdition {
+  id: number;
+  coverUrl: string;
+  isbn: string;
+  publisher: string;
 }
 
 // ── String utilities ──────────────────────────────────────────────────────
@@ -158,6 +174,33 @@ export function extractGenres(cached_tags: unknown): string[] {
   return [];
 }
 
+const DIVERSITY_TAG_KEYS = [
+  "Representation",
+  "Diverse Voices",
+  "Identity",
+  "Own Voices",
+];
+
+/** Diversity tags from HC representation tags + author identity fields. */
+function extractDiversityTags(book: RawHCBook): string[] {
+  const tags = new Set<string>();
+  const cached = book.cached_tags;
+  if (cached && typeof cached === "object" && !Array.isArray(cached)) {
+    const obj = cached as Record<string, { tag?: string }[]>;
+    for (const key of DIVERSITY_TAG_KEYS)
+      for (const e of obj[key] ?? []) if (e?.tag) tags.add(e.tag);
+  }
+  for (const { author } of book.contributions ?? []) {
+    const g = author.gender?.toLowerCase();
+    if (g === "female" || g === "woman") tags.add("woman author");
+    else if (g === "non-binary" || g === "nonbinary" || g === "non binary")
+      tags.add("non-binary author");
+    else if (g && g !== "male" && g !== "man") tags.add(`${g} author`);
+    if (author.nationality) tags.add(`${author.nationality} author`);
+  }
+  return [...tags];
+}
+
 export function collectIsbns(
   editions: { isbn_13?: string; isbn_10?: string }[],
 ): string[] {
@@ -183,15 +226,11 @@ export function resolveAudioSeconds(book: RawHCBook): number | null {
   return fromEdition ?? null;
 }
 
-/**
- * Parse a raw HC `books` row into the canonical HCBook shape. Returns null if
- * the book lacks a title. `bookId` piggybacks on the return so callers can
- * thread it into follow-up queries without a second parse.
- */
+/** Parse a raw HC `books` row into the canonical HCBook shape. */
 export function parseBookRow(
   book: RawHCBook,
   fallbackIsbn = "",
-): (HCBook & { bookId: number }) | null {
+): HCBook | null {
   if (!book?.title) return null;
   const editions = book.editions ?? [];
   const defaultEdition = editions.find(
@@ -211,6 +250,7 @@ export function parseBookRow(
     "";
 
   return {
+    hardcoverBookId: book.id ?? null,
     title: book.title,
     author: (book.contributions ?? []).map((c) => c.author.name).join(", "),
     coverUrl,
@@ -218,12 +258,29 @@ export function parseBookRow(
     isbns,
     pageCount: book.pages ?? null,
     genres: extractGenres(book.cached_tags),
+    diversityTags: extractDiversityTags(book),
     releaseDate: book.release_date ?? "",
     audioDurationMinutes:
       audioSeconds != null ? Math.round(audioSeconds / 60) : null,
     publisher,
-    bookId: book.id!,
   };
+}
+
+/** Parse the `results` blob of a HC `search` query into its hit documents. */
+export function parseSearchHits(raw: unknown): HardcoverDocument[] {
+  if (!raw) return [];
+  try {
+    const parsed: { hits?: { document: HardcoverDocument }[] } =
+      typeof raw === "string" ? JSON.parse(raw) : raw;
+    return (parsed?.hits ?? []).map((h) => h.document).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+export function docId(doc: HardcoverDocument): number | null {
+  const n = typeof doc.id === "string" ? Number(doc.id) : doc.id;
+  return typeof n === "number" && Number.isFinite(n) ? n : null;
 }
 
 // ── HTTP ──────────────────────────────────────────────────────────────────
@@ -235,12 +292,17 @@ export function sleep(ms: number) {
 /**
  * POST a GraphQL query to Hardcover. Retries on 408 and 5xx with linear
  * backoff. Returns the parsed JSON body, or null on permanent failure /
- * missing token.
+ * missing token. `revalidate` opts into the Next.js data cache (seconds).
  */
 export async function hcPost(
   query: string,
-  logPrefix = "[hardcover]",
+  opts: {
+    variables?: Record<string, unknown>;
+    logPrefix?: string;
+    revalidate?: number;
+  } = {},
 ): Promise<{ data?: Record<string, unknown>; errors?: unknown } | null> {
+  const { variables, logPrefix = "[hardcover]", revalidate } = opts;
   const token = process.env.HARDCOVER_API_TOKEN;
   if (!token) {
     console.warn(`${logPrefix} HARDCOVER_API_TOKEN not set`);
@@ -253,7 +315,8 @@ export async function hcPost(
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ query }),
+      body: JSON.stringify({ query, variables }),
+      ...(revalidate != null ? { next: { revalidate } } : {}),
     });
     if (res.ok) return res.json();
     const retryable = res.status === 408 || res.status >= 500;
@@ -268,4 +331,163 @@ export async function hcPost(
     return null;
   }
   return null;
+}
+
+// ── Queries ───────────────────────────────────────────────────────────────
+
+const BOOKS_BY_IDS_QUERY = `
+  query BooksByIds($ids: [Int!]!) {
+    books(where: { id: { _in: $ids } }) { ${BOOK_FIELDS} }
+  }
+`;
+
+const BOOK_BY_ISBN_QUERY = `
+  query BookByIsbn($isbn: String!) {
+    books(where: {
+      _or: [
+        { editions: { isbn_13: { _eq: $isbn } } },
+        { editions: { isbn_10: { _eq: $isbn } } }
+      ]
+    }, limit: 1) { ${BOOK_FIELDS} }
+  }
+`;
+
+const SEARCH_QUERY = `
+  query SearchBooks($query: String!, $perPage: Int!) {
+    search(query: $query, query_type: "Book", per_page: $perPage) { results }
+  }
+`;
+
+const EDITIONS_QUERY = `
+  query Editions($id: Int!) {
+    books(where: { id: { _eq: $id } }) {
+      editions { id isbn_13 isbn_10 image { url } publisher { name } }
+    }
+  }
+`;
+
+/** Fetch full book rows by Hardcover id. Missing ids are absent from the map. */
+export async function fetchBooksByIds(
+  ids: number[],
+  opts: { logPrefix?: string; revalidate?: number } = {},
+): Promise<Map<number, HCBook>> {
+  const out = new Map<number, HCBook>();
+  if (!ids.length) return out;
+  const json = await hcPost(BOOKS_BY_IDS_QUERY, {
+    variables: { ids },
+    ...opts,
+  });
+  const books = (json?.data?.books ?? []) as RawHCBook[];
+  for (const raw of books) {
+    const parsed = parseBookRow(raw);
+    if (parsed?.hardcoverBookId != null)
+      out.set(parsed.hardcoverBookId, parsed);
+  }
+  return out;
+}
+
+export async function fetchBookById(id: number): Promise<HCBook | null> {
+  return (await fetchBooksByIds([id])).get(id) ?? null;
+}
+
+export async function lookupBookByIsbn(
+  isbn: string,
+  opts: { revalidate?: number } = {},
+): Promise<HCBook | null> {
+  const json = await hcPost(BOOK_BY_ISBN_QUERY, {
+    variables: { isbn },
+    ...opts,
+  });
+  const raw = (json?.data?.books as RawHCBook[] | undefined)?.[0];
+  return raw ? parseBookRow(raw, isbn) : null;
+}
+
+/** Raw search hits (thin documents) in relevance order. */
+export async function searchDocs(
+  query: string,
+  perPage: number,
+  opts: { revalidate?: number } = {},
+): Promise<HardcoverDocument[]> {
+  const json = await hcPost(SEARCH_QUERY, {
+    variables: { query, perPage },
+    ...opts,
+  });
+  return parseSearchHits(
+    (json?.data?.search as { results?: unknown } | undefined)?.results,
+  );
+}
+
+/** Search, then hydrate every hit with full book data, preserving order. */
+export async function searchBooks(
+  query: string,
+  perPage = 8,
+  opts: { revalidate?: number } = {},
+): Promise<HCBook[]> {
+  const docs = await searchDocs(query, perPage, opts);
+  const ids = docs.map(docId).filter((id): id is number => id != null);
+  const full = await fetchBooksByIds(ids, opts);
+  return docs
+    .map((doc) => {
+      const id = docId(doc);
+      return (id != null && full.get(id)) || parseSearchDoc(doc);
+    })
+    .filter((b) => b.title);
+}
+
+/** Best-effort HCBook from a thin search document (no editions/tags). */
+export function parseSearchDoc(
+  doc: HardcoverDocument,
+  fallbackIsbn = "",
+): HCBook {
+  const rawIsbn13 = Array.isArray(doc.isbn_13) ? doc.isbn_13[0] : doc.isbn_13;
+  const rawIsbn10 = Array.isArray(doc.isbn_10) ? doc.isbn_10[0] : doc.isbn_10;
+  const isbns = [
+    ...new Set([rawIsbn13, rawIsbn10].filter((v): v is string => !!v)),
+  ];
+  return {
+    hardcoverBookId: docId(doc),
+    title: doc.title ?? "",
+    author: (doc.author_names ?? []).join(", "),
+    coverUrl: doc.cover_image_url ?? "",
+    isbn: rawIsbn13 || rawIsbn10 || fallbackIsbn,
+    isbns,
+    pageCount: doc.pages ?? null,
+    genres: extractGenres(doc.cached_tags),
+    diversityTags: [],
+    releaseDate: doc.release_date
+      ? String(doc.release_date)
+      : doc.release_year
+        ? `${doc.release_year}-01-01`
+        : "",
+    audioDurationMinutes: null,
+    publisher: "",
+  };
+}
+
+/** All editions of a book that have a cover image, deduped by image URL. */
+export async function fetchEditions(
+  hardcoverBookId: number,
+  opts: { revalidate?: number } = {},
+): Promise<HCEdition[]> {
+  const json = await hcPost(EDITIONS_QUERY, {
+    variables: { id: hardcoverBookId },
+    ...opts,
+  });
+  const editions =
+    (json?.data?.books as { editions?: RawHCEdition[] }[] | undefined)?.[0]
+      ?.editions ?? [];
+  const seen = new Set<string>();
+  const out: HCEdition[] = [];
+  for (const e of editions) {
+    const url = e.image?.url;
+    if (!url || seen.has(url)) continue;
+    seen.add(url);
+    out.push({
+      id: e.id ?? 0,
+      coverUrl: url,
+      isbn: e.isbn_13 || e.isbn_10 || "",
+      publisher: e.publisher?.name ?? "",
+    });
+  }
+  return out;
 }

@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createApiClient, getUserId } from "@/lib/supabase-server";
-import { upsertBookForUser, flattenUserBook } from "@/lib/bookUpsert.server";
+import {
+  CATALOG_COLUMNS,
+  USER_BOOK_COLUMNS,
+  catalogFieldsFromEntry,
+  flattenUserBook,
+  personalFieldsFromEntry,
+  upsertBookForUser,
+} from "@/lib/bookUpsert.server";
 import { STATUS_LABEL } from "@spine/shared";
 
 export async function GET(req: NextRequest) {
@@ -17,18 +24,11 @@ export async function GET(req: NextRequest) {
   const include = searchParams.get("include");
   const status = searchParams.get("status");
 
-  const userBookColumns =
-    "id, user_id, catalog_book_id, title_override, author_override, status, format, " +
-    "diversity_tags, date_started, date_finished, date_shelved, date_dnfed, rating, feeling, " +
-    "mood_tags, user_genres, bookmarked, up_next, created_at, updated_at";
-  const catalogColumns =
-    "title, author, publisher, cover_url, isbns, release_date, genres, page_count, audio_duration_minutes";
-
   // Only join thoughts/book_reads when explicitly requested (e.g. book detail page)
   const select =
     include === "nested"
-      ? `${userBookColumns}, catalog_books(${catalogColumns}), thoughts(*), book_reads(*)`
-      : `${userBookColumns}, catalog_books(${catalogColumns})`;
+      ? `${USER_BOOK_COLUMNS}, catalog_books(${CATALOG_COLUMNS}), thoughts(*), book_reads(*)`
+      : `${USER_BOOK_COLUMNS}, catalog_books(${CATALOG_COLUMNS})`;
 
   let query = supabase.from("user_books").select(select).eq("user_id", userId);
 
@@ -89,31 +89,9 @@ export async function POST(req: NextRequest) {
   const result = await upsertBookForUser(
     supabase,
     userId,
-    {
-      title: entry.title ?? "",
-      author: entry.author ?? "",
-      cover_url: entry.coverUrl ?? "",
-      isbn: entry.isbn ?? "",
-      release_date: entry.releaseDate ?? "",
-      genres: entry.genres ?? [],
-      page_count: entry.pageCount ?? null,
-      publisher: entry.publisher ?? "",
-      audio_duration_minutes: entry.audioDurationMinutes ?? null,
-    },
-    {
-      id: entry.id,
-      status: entry.status,
-      date_started: entry.dateStarted || null,
-      date_finished: entry.dateFinished || null,
-      date_shelved: entry.dateShelved || null,
-      date_dnfed: entry.dateDnfed || null,
-      rating: entry.rating ?? 0,
-      feeling: entry.feeling ?? "",
-      bookmarked: false,
-      diversity_tags: entry.diversityTags ?? [],
-      created_at: entry.createdAt,
-      updated_at: entry.updatedAt,
-    },
+    catalogFieldsFromEntry(entry),
+    personalFieldsFromEntry(entry),
+    { verified: false },
   );
 
   if (!result)

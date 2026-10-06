@@ -1,5 +1,9 @@
+import { apiFetch } from "./api";
+
 export interface CatalogEntry {
   id: string;
+  /** Hardcover books.id — null for Google Books fallback results */
+  hardcoverBookId: number | null;
   title: string;
   author: string;
   releaseDate: string;
@@ -20,6 +24,7 @@ export interface CatalogEntry {
 
 interface BookRow {
   id: string;
+  hardcover_book_id?: number | null;
   title: string;
   author: string;
   release_date: string;
@@ -35,6 +40,7 @@ interface BookRow {
 function mapEntry(row: BookRow): CatalogEntry {
   return {
     id: row.id,
+    hardcoverBookId: row.hardcover_book_id ?? null,
     title: row.title,
     author: row.author,
     releaseDate: row.release_date,
@@ -48,7 +54,7 @@ function mapEntry(row: BookRow): CatalogEntry {
   };
 }
 
-// Searches Google Books
+// Searches Hardcover (Google Books fallback) via /api/catalog
 export async function searchCatalog(query: string): Promise<CatalogEntry[]> {
   if (!query.trim()) {
     return [];
@@ -71,21 +77,27 @@ export interface CoverEdition {
 // Fetch alternate cover editions for a book (so the user can pick a different
 // one than whatever edition got auto-selected at add-time).
 export async function fetchCoverEditions(params: {
+  hardcoverBookId?: number | null;
   isbn?: string;
   title: string;
   author?: string;
 }): Promise<CoverEdition[]> {
   const qs = new URLSearchParams();
+  if (params.hardcoverBookId)
+    qs.set("hardcoverBookId", String(params.hardcoverBookId));
   if (params.isbn) qs.set("isbn", params.isbn);
   qs.set("title", params.title);
   if (params.author) qs.set("author", params.author);
-  const res = await fetch(`/api/catalog/editions?${qs.toString()}`);
-  if (!res.ok) return [];
-  const data = await res.json();
-  return (data.editions ?? []) as CoverEdition[];
+  try {
+    const res = await apiFetch(`/api/catalog/editions?${qs.toString()}`);
+    const data = await res.json();
+    return (data.editions ?? []) as CoverEdition[];
+  } catch {
+    return [];
+  }
 }
 
-// Fetch the best-matching Google Books entry.
+// Fetch the best-matching catalog entry.
 // Pass an ISBN for exact lookup, or title + optional author for a text search.
 export async function lookupBook(
   titleOrIsbn: string,

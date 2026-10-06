@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supabase
     .from("series")
     .select(
-      "*, series_books(id, position, status, book_id, user_books!book_id(title_override, catalog_books(title, cover_url)))",
+      "*, series_books(id, position, status, book_id, user_books!book_id(title_override, cover_url_override, catalog_books(title, cover_url)))",
     )
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       author: author?.trim() ?? "",
     })
     .select(
-      "*, series_books(id, position, status, book_id, user_books!book_id(title_override, catalog_books(title, cover_url)))",
+      "*, series_books(id, position, status, book_id, user_books!book_id(title_override, cover_url_override, catalog_books(title, cover_url)))",
     )
     .single();
   if (error)

@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createApiClient, getUserId } from "@/lib/supabase-server";
 import { autoLogToday } from "@/lib/autoLog";
-import { flattenUserBook } from "@/lib/bookUpsert.server";
-import { normalizeMoodTags } from "@/lib/moodTags";
+import {
+  CATALOG_COLUMNS,
+  USER_BOOK_COLUMNS,
+  flattenUserBook,
+  userBookPatchFromEntry,
+} from "@/lib/bookUpsert.server";
 
 export async function GET(
   req: NextRequest,
@@ -13,16 +17,10 @@ export async function GET(
   if (!userId) return NextResponse.json(null, { status: 401 });
 
   const { id } = await params;
-  const userBookColumns =
-    "id, user_id, catalog_book_id, title_override, author_override, status, format, " +
-    "diversity_tags, date_started, date_finished, date_shelved, date_dnfed, rating, feeling, " +
-    "mood_tags, user_genres, bookmarked, up_next, created_at, updated_at";
-  const catalogColumns =
-    "title, author, publisher, cover_url, isbns, release_date, genres, page_count, audio_duration_minutes";
   const { data, error } = await supabase
     .from("user_books")
     .select(
-      `${userBookColumns}, catalog_books(${catalogColumns}), thoughts(*), book_reads(*)`,
+      `${USER_BOOK_COLUMNS}, catalog_books(${CATALOG_COLUMNS}), thoughts(*), book_reads(*)`,
     )
     .eq("id", id)
     .eq("user_id", userId)
@@ -33,17 +31,6 @@ export async function GET(
   );
 }
 
-// Fields the user can change that go to the shared catalog (improve it for everyone).
-const CATALOG_FIELDS = new Set([
-  "coverUrl",
-  "isbn",
-  "pageCount",
-  "releaseDate",
-  "genres",
-]);
-// Fields that become per-user overrides when edited.
-const OVERRIDE_FIELDS = new Set(["title", "author"]);
-// Fields that go directly on user_books.
 const READING_ACTIVITY_FIELDS = new Set([
   "status",
   "dateStarted",
@@ -64,81 +51,26 @@ export async function PATCH(
 
   const { id } = await params;
   const patch = await req.json();
-  const now = new Date().toISOString();
 
-  // Verify ownership and get the catalog_book_id
-  const { data: ub } = await supabase
+  const { data: updated, error } = await supabase
     .from("user_books")
-    .select("id, catalog_book_id")
+    .update({
+      ...userBookPatchFromEntry(patch),
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", id)
     .eq("user_id", userId)
-    .single();
-  if (!ub) return NextResponse.json({ error: "not found" }, { status: 404 });
-
-  // ── Personal fields → user_books ──────────────────────────────────────────
-  const userRow: Record<string, unknown> = { updated_at: now };
-  if ("status" in patch) userRow.status = patch.status;
-  if ("dateStarted" in patch) userRow.date_started = patch.dateStarted || null;
-  if ("dateFinished" in patch)
-    userRow.date_finished = patch.dateFinished || null;
-  if ("dateShelved" in patch) userRow.date_shelved = patch.dateShelved || null;
-  if ("dateDnfed" in patch) userRow.date_dnfed = patch.dateDnfed || null;
-  if ("rating" in patch) userRow.rating = patch.rating;
-  if ("feeling" in patch) userRow.feeling = patch.feeling;
-  if ("bookmarked" in patch) userRow.bookmarked = patch.bookmarked;
-  if ("upNext" in patch) userRow.up_next = patch.upNext;
-  if ("moodTags" in patch)
-    userRow.mood_tags = normalizeMoodTags(patch.moodTags);
-  if ("format" in patch) userRow.format = patch.format;
-  if ("diversityTags" in patch) userRow.diversity_tags = patch.diversityTags;
-  // Title and author become per-user overrides
-  if ("title" in patch) userRow.title_override = patch.title || null;
-  if ("author" in patch) userRow.author_override = patch.author || null;
-
-  const { error: ubErr } = await supabase
-    .from("user_books")
-    .update(userRow)
-    .eq("id", id)
-    .eq("user_id", userId);
-  if (ubErr)
-    return NextResponse.json({ error: ubErr.message }, { status: 500 });
-
-  // ── Catalog fields → catalog_books (shared, benefits all users) ───────────
-  const catalogRow: Record<string, unknown> = {};
-  if ("coverUrl" in patch) catalogRow.cover_url = patch.coverUrl;
-  if ("pageCount" in patch) catalogRow.page_count = patch.pageCount;
-  if ("releaseDate" in patch) catalogRow.release_date = patch.releaseDate;
-  if ("genres" in patch) catalogRow.genres = patch.genres;
-  if ("publisher" in patch) catalogRow.publisher = patch.publisher;
-  if ("audioDurationMinutes" in patch)
-    catalogRow.audio_duration_minutes = patch.audioDurationMinutes ?? null;
-  // ISBN edits merge into the isbns[] array rather than replacing a singular column.
-  if ("isbn" in patch && patch.isbn) {
-    const { data: cb } = await supabase
-      .from("catalog_books")
-      .select("isbns")
-      .eq("id", ub.catalog_book_id)
-      .single();
-    const stored = (cb?.isbns as string[] | null) ?? [];
-    const merged = [...new Set([...stored, patch.isbn])];
-    if (merged.length !== stored.length) catalogRow.isbns = merged;
-  }
-
-  if (Object.keys(catalogRow).length) {
-    catalogRow.updated_at = now;
-    await supabase
-      .from("catalog_books")
-      .update(catalogRow)
-      .eq("id", ub.catalog_book_id);
-  }
+    .select("id");
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!updated?.length)
+    return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const isReadingActivity = Object.keys(patch).some((k) =>
     READING_ACTIVITY_FIELDS.has(k),
   );
   if (isReadingActivity) await autoLogToday(supabase, userId);
 
-  void CATALOG_FIELDS;
-  void OVERRIDE_FIELDS; // consumed above
   return NextResponse.json({ ok: true });
 }
 
