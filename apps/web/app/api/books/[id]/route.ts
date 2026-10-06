@@ -1,7 +1,6 @@
-import { NextRequest, NextResponse, after } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createApiClient, getUserId } from "@/lib/supabase-server";
 import { autoLogToday } from "@/lib/autoLog";
-import { syncBookSeries } from "@/lib/seriesSync.server";
 import { flattenUserBook } from "@/lib/bookUpsert.server";
 import { normalizeMoodTags } from "@/lib/moodTags";
 
@@ -137,33 +136,6 @@ export async function PATCH(
     READING_ACTIVITY_FIELDS.has(k),
   );
   if (isReadingActivity) await autoLogToday(supabase, userId);
-
-  // When status changes to reading/finished, sync series membership
-  if ("status" in patch && ["reading", "finished"].includes(patch.status)) {
-    after(async () => {
-      const { data: book } = await supabase
-        .from("user_books")
-        .select(
-          "id, status, title_override, author_override, catalog_books(title, author, cover_url)",
-        )
-        .eq("id", id)
-        .single();
-      if (book) {
-        const cb = book.catalog_books as unknown as {
-          title: string;
-          author: string;
-          cover_url: string;
-        } | null;
-        await syncBookSeries(supabase, userId, {
-          id: book.id,
-          title: book.title_override ?? cb?.title ?? "",
-          author: book.author_override ?? cb?.author ?? "",
-          status: book.status,
-          coverUrl: cb?.cover_url ?? "",
-        });
-      }
-    });
-  }
 
   void CATALOG_FIELDS;
   void OVERRIDE_FIELDS; // consumed above

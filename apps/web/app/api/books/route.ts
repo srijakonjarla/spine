@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse, after } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createApiClient, getUserId } from "@/lib/supabase-server";
-import { syncBookSeries } from "@/lib/seriesSync.server";
 import { upsertBookForUser, flattenUserBook } from "@/lib/bookUpsert.server";
 import { STATUS_LABEL } from "@spine/shared";
 
@@ -131,16 +130,6 @@ export async function POST(req: NextRequest) {
       { status: 409 },
     );
   }
-
-  after(async () => {
-    await syncBookSeries(supabase, userId, {
-      id: result.userBookId,
-      title: entry.title ?? "",
-      author: entry.author ?? "",
-      status: entry.status,
-      coverUrl: entry.coverUrl ?? "",
-    });
-  });
 
   return NextResponse.json(
     { ok: true, id: result.userBookId },

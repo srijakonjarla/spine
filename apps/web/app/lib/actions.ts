@@ -1,11 +1,9 @@
 "use server";
 
-import { after } from "next/server";
 import { createActionClient } from "@/lib/supabase-server";
 import { upsertBookForUser } from "@/lib/bookUpsert.server";
 import { autoLogToday, autoLogDate } from "@/lib/autoLog";
 import { serverTodayLocal } from "@/lib/serverDate";
-import { syncBookSeries } from "@/lib/seriesSync.server";
 import { normalizeMoodTags } from "@/lib/moodTags";
 import { STATUS_LABEL } from "@spine/shared";
 import type { BookEntry, BookRead, Thought } from "@/types";
@@ -142,32 +140,6 @@ export async function updateEntryAction(
   ]);
   if (Object.keys(patch).some((k) => READING_ACTIVITY.has(k))) {
     await autoLogToday(supabase, user.id);
-  }
-
-  if ("status" in patch && ["reading", "finished"].includes(patch.status!)) {
-    after(async () => {
-      const { data: book } = await supabase
-        .from("user_books")
-        .select(
-          "id, status, title_override, author_override, catalog_books(title, author, cover_url)",
-        )
-        .eq("id", id)
-        .single();
-      if (book) {
-        const cb = book.catalog_books as unknown as {
-          title: string;
-          author: string;
-          cover_url: string;
-        } | null;
-        await syncBookSeries(supabase, user.id, {
-          id: book.id,
-          title: book.title_override ?? cb?.title ?? "",
-          author: book.author_override ?? cb?.author ?? "",
-          status: book.status,
-          coverUrl: cb?.cover_url ?? "",
-        });
-      }
-    });
   }
 }
 
