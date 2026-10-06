@@ -108,6 +108,26 @@ export default function DetailsTab() {
               className="underline-input text-sm mb-4"
             />
 
+            <label className="detail-field-label" htmlFor="details-pages">
+              Pages
+            </label>
+            <input
+              id="details-pages"
+              type="text"
+              inputMode="numeric"
+              value={entry.pageCount ?? ""}
+              onChange={(e) => {
+                const n = parseInt(e.target.value.replace(/\D/g, ""), 10);
+                onUpdate({ pageCount: n > 0 ? n : null });
+              }}
+              placeholder="—"
+              className="underline-input text-sm mb-1"
+            />
+            <p className="text-caption text-fg-faint mb-4">
+              Your edition&apos;s page count. Leave blank to use
+              Hardcover&apos;s.
+            </p>
+
             {/* Publisher — auto-populated from Hardcover, shown read-only if set */}
             {entry.publisher && (
               <>
