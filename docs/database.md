@@ -210,9 +210,11 @@ list item onto it, pointed it at the catalog row linked to Hardcover id
 - `series.user_id`, `recommendations.user_id` and `goal_books.user_id`
   reference `auth.users` **without** `ON DELETE CASCADE`, so deleting a user
   who has rows there fails.
-- 12 catalog rows aren't linked to Hardcover after the initial sync (titles
-  Hardcover lacks, or title mismatches such as "Sorcerer's" vs "Philosopher's
-  Stone"). The cron retries them every 30 days.
+- 2 catalog rows have no Hardcover match ("Shammoo of the North" and Gillian
+  Flynn's "Untitled 1 of 2"). The cron retries them every 30 days. Ten others
+  that automatic matching missed (title mismatches such as "Sorcerer's" vs
+  "Philosopher's Stone", placeholder titles like "A Court of Thorns and Roses
+  6") were linked by hand on 2026-10-06.
 - Genres synced before 2026-10-06 mixed Hardcover's `Genre` category with
   moods (e.g. "emotional", "funny") and sometimes reader tags. New syncs use
   only the `Genre` category.
