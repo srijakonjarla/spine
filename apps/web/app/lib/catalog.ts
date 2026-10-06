@@ -61,6 +61,30 @@ export async function searchCatalog(query: string): Promise<CatalogEntry[]> {
   return (data as BookRow[]).map(mapEntry);
 }
 
+export interface CoverEdition {
+  id: number;
+  coverUrl: string;
+  isbn: string;
+  publisher: string;
+}
+
+// Fetch alternate cover editions for a book (so the user can pick a different
+// one than whatever edition got auto-selected at add-time).
+export async function fetchCoverEditions(params: {
+  isbn?: string;
+  title: string;
+  author?: string;
+}): Promise<CoverEdition[]> {
+  const qs = new URLSearchParams();
+  if (params.isbn) qs.set("isbn", params.isbn);
+  qs.set("title", params.title);
+  if (params.author) qs.set("author", params.author);
+  const res = await fetch(`/api/catalog/editions?${qs.toString()}`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return (data.editions ?? []) as CoverEdition[];
+}
+
 // Fetch the best-matching Google Books entry.
 // Pass an ISBN for exact lookup, or title + optional author for a text search.
 export async function lookupBook(

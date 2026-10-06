@@ -6,6 +6,7 @@ import Image from "next/image";
 import { BookOpenTextIcon, QuotesIcon } from "@phosphor-icons/react";
 import { heroGradientIndex } from "@spine/shared";
 import { BookmarkButton } from "@/components/BookmarkButton";
+import { CoverPickerModal } from "@/components/book/CoverPickerModal";
 import { StarRating } from "@/components/StarRating";
 import { STATUSES } from "@/lib/statusMeta";
 import { localDateStr } from "@/lib/dates";
@@ -125,6 +126,7 @@ export function Hero({
   const router = useRouter();
   const backLink = useBackLink();
   const heroClass = `hero-gradient-${heroGradientIndex(entry.title)}`;
+  const [showCoverPicker, setShowCoverPicker] = useState(false);
 
   return (
     <div
@@ -174,31 +176,50 @@ export function Hero({
 
       {/* Cover */}
       <div className="pt-6 relative z-[1]">
-        {entry.coverUrl ? (
-          <Image
-            src={entry.coverUrl}
-            alt={entry.title}
-            width={180}
-            height={270}
-            sizes="180px"
-            priority
-            className="w-30 sm:w-37.5 md:w-45 rounded-lg block object-cover aspect-[2/3]"
-            style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.45)" }}
-          />
-        ) : (
-          <div
-            className="w-30 sm:w-37.5 md:w-45 aspect-[2/3] rounded-lg bg-white/10 flex flex-col justify-end p-3 sm:p-4"
-            style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.45)" }}
+        <div className="relative group w-30 sm:w-37.5 md:w-45">
+          {entry.coverUrl ? (
+            <Image
+              src={entry.coverUrl}
+              alt={entry.title}
+              width={180}
+              height={270}
+              sizes="180px"
+              priority
+              className="w-full rounded-lg block object-cover aspect-[2/3]"
+              style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.45)" }}
+            />
+          ) : (
+            <div
+              className="w-full aspect-[2/3] rounded-lg bg-white/10 flex flex-col justify-end p-3 sm:p-4"
+              style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.45)" }}
+            >
+              <p className="font-serif text-body-md italic text-white/80 leading-[1.3] mb-1.5">
+                {entry.title}
+              </p>
+              <p className="text-detail text-white/45 font-sans">
+                {entry.author}
+              </p>
+            </div>
+          )}
+          <button
+            onClick={() => setShowCoverPicker(true)}
+            className="absolute inset-x-0 bottom-0 rounded-b-lg py-1.5 text-micro-plus text-white/90 bg-linear-to-t from-black/75 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
           >
-            <p className="font-serif text-body-md italic text-white/80 leading-[1.3] mb-1.5">
-              {entry.title}
-            </p>
-            <p className="text-detail text-white/45 font-sans">
-              {entry.author}
-            </p>
-          </div>
-        )}
+            change cover
+          </button>
+        </div>
       </div>
+
+      {showCoverPicker && (
+        <CoverPickerModal
+          entry={entry}
+          onClose={() => setShowCoverPicker(false)}
+          onSelect={(coverUrl) => {
+            onUpdate({ coverUrl });
+            setShowCoverPicker(false);
+          }}
+        />
+      )}
 
       {/* Info */}
       <div className="flex flex-col justify-center relative z-[1] pt-6">
