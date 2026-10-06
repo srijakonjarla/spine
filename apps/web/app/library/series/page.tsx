@@ -125,40 +125,10 @@ export default function SeriesPage() {
           }
         />
 
-        {loading && (
-          <SkeletonRoot className="space-y-4">
-            {[0, 1].map((i) => (
-              <SkeletonBlock key={i} className="h-40" />
-            ))}
-          </SkeletonRoot>
-        )}
-
-        {!loading && seriesList.length === 0 && !showAdd && (
-          <EmptyState message="No series tracked yet." />
-        )}
-
-        {!loading && (
-          <div className="space-y-4 mb-6">
-            {seriesList.map((s) => (
-              <SeriesCard
-                key={s.id}
-                series={s}
-                library={library}
-                onDelete={handleDelete}
-                onUpdate={handleUpdate}
-                onBookStatusChange={handleBookStatusChange}
-                onBookDelete={handleBookDelete}
-                onBookAdd={handleBookAdd}
-                onBooksReorder={handleBooksReorder}
-              />
-            ))}
-          </div>
-        )}
-
         {showAdd ? (
           <form
             onSubmit={handleCreate}
-            className="border border-line rounded-xl p-6 space-y-4"
+            className="border border-line rounded-xl p-6 space-y-4 mb-6"
           >
             <p className="section-label">new series</p>
             <div>
@@ -211,11 +181,41 @@ export default function SeriesPage() {
           !loading && (
             <button
               onClick={() => setShowAdd(true)}
-              className="text-xs text-fg-faint hover:text-fg-muted transition-colors"
+              className="text-xs text-fg-faint hover:text-fg-muted transition-colors mb-6"
             >
               + add series
             </button>
           )
+        )}
+
+        {loading && (
+          <SkeletonRoot className="space-y-4">
+            {[0, 1].map((i) => (
+              <SkeletonBlock key={i} className="h-40" />
+            ))}
+          </SkeletonRoot>
+        )}
+
+        {!loading && seriesList.length === 0 && !showAdd && (
+          <EmptyState message="No series tracked yet." />
+        )}
+
+        {!loading && (
+          <div className="space-y-4 mb-6">
+            {seriesList.map((s) => (
+              <SeriesCard
+                key={s.id}
+                series={s}
+                library={library}
+                onDelete={handleDelete}
+                onUpdate={handleUpdate}
+                onBookStatusChange={handleBookStatusChange}
+                onBookDelete={handleBookDelete}
+                onBookAdd={handleBookAdd}
+                onBooksReorder={handleBooksReorder}
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>
