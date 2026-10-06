@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import { spineColor } from "@/lib/spineUtils";
-import { upgradeCoverUrl } from "@/lib/coverUrl";
 
 interface BookCoverProps {
   coverUrl?: string;
@@ -20,26 +19,18 @@ export function BookCover({
   className = "w-16",
 }: BookCoverProps) {
   const color = useMemo(() => spineColor(title), [title]);
-  const [stage, setStage] = useState<"upgraded" | "original" | "failed">(
-    "upgraded",
-  );
-  const upgraded = upgradeCoverUrl(coverUrl);
-  const showImage = coverUrl && stage !== "failed";
-  const src = stage === "original" ? coverUrl! : upgraded;
+  const [failed, setFailed] = useState(false);
+  const showImage = coverUrl && !failed;
 
   if (showImage) {
     return (
       <Image
-        src={src}
+        src={coverUrl}
         alt={title}
         width={256}
         height={384}
         sizes="(max-width: 640px) 33vw, 200px"
-        onError={() =>
-          setStage((s) =>
-            s === "upgraded" && upgraded !== coverUrl ? "original" : "failed",
-          )
-        }
+        onError={() => setFailed(true)}
         className={`${className} rounded shadow-sm shrink-0 self-start object-cover aspect-2/3`}
       />
     );
@@ -80,28 +71,20 @@ export function BookCoverThumb({
   size?: "sm" | "lg";
 }) {
   const color = useMemo(() => spineColor(title), [title]);
-  const [stage, setStage] = useState<"upgraded" | "original" | "failed">(
-    "upgraded",
-  );
-  const upgraded = upgradeCoverUrl(coverUrl);
-  const showImage = coverUrl && stage !== "failed";
-  const src = stage === "original" ? coverUrl! : upgraded;
+  const [failed, setFailed] = useState(false);
+  const showImage = coverUrl && !failed;
 
   if (showImage) {
     const intrinsic = size === "lg" ? { w: 256, h: 384 } : { w: 96, h: 144 };
     const sizesAttr = size === "lg" ? "(max-width: 640px) 50vw, 250px" : "96px";
     return (
       <Image
-        src={src}
+        src={coverUrl}
         alt={title}
         width={intrinsic.w}
         height={intrinsic.h}
         sizes={sizesAttr}
-        onError={() =>
-          setStage((s) =>
-            s === "upgraded" && upgraded !== coverUrl ? "original" : "failed",
-          )
-        }
+        onError={() => setFailed(true)}
         className={`${width} ${height} object-cover rounded-sm shrink-0 shadow-sm`}
       />
     );
