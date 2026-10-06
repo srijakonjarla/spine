@@ -46,12 +46,17 @@ export function catalogFieldsFromHardcover(b: HCBook): CatalogFields {
 
 /**
  * Patch that refreshes a catalog row from Hardcover-verified fields. Title and
- * author are left alone (they drive matching and display), cover is only
- * filled when empty (Hardcover's default edition is often not the one people
- * recognise), ISBNs are merged, and everything else is overwritten.
+ * author are left alone (they drive matching and display), cover and genres
+ * are only filled when empty (Hardcover's default edition is often not the
+ * one people recognise; its tags are noisy), ISBNs are merged, and everything
+ * else is overwritten.
  */
 export function hardcoverRefreshPatch(
-  existing: { cover_url?: string | null; isbns?: string[] | null },
+  existing: {
+    cover_url?: string | null;
+    isbns?: string[] | null;
+    genres?: string[] | null;
+  },
   f: CatalogFields,
 ): Record<string, unknown> {
   const now = new Date().toISOString();
@@ -64,7 +69,7 @@ export function hardcoverRefreshPatch(
   const merged = [...new Set([...stored, ...f.isbns])];
   if (merged.length > stored.length) patch.isbns = merged;
   if (f.cover_url && !existing.cover_url) patch.cover_url = f.cover_url;
-  if (f.genres.length) patch.genres = f.genres;
+  if (f.genres.length && !existing.genres?.length) patch.genres = f.genres;
   if (f.page_count != null) patch.page_count = f.page_count;
   if (f.release_date) patch.release_date = f.release_date;
   if (f.publisher) patch.publisher = f.publisher;
@@ -79,9 +84,11 @@ type MatchRow = {
   author: string | null;
   cover_url: string | null;
   isbns: string[] | null;
+  genres: string[] | null;
   hardcover_book_id: number | null;
 };
-const MATCH_COLUMNS = "id, title, author, cover_url, isbns, hardcover_book_id";
+const MATCH_COLUMNS =
+  "id, title, author, cover_url, isbns, genres, hardcover_book_id";
 
 /**
  * Fuzzy match against existing rows by ISBN, then stripped title + author.

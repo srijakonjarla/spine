@@ -158,17 +158,21 @@ export function titlesMatch(hcTitle: string, sourceTitle: string): boolean {
 
 // ── Edition / tag extractors ──────────────────────────────────────────────
 
+/**
+ * Up to 5 genres from HC cached_tags. Uses the "Genre" category when present —
+ * other categories (moods, reader tags like "Loveable Characters") are not
+ * genres — and falls back to every category only when it's missing.
+ */
 export function extractGenres(cached_tags: unknown): string[] {
   if (!cached_tags) return [];
   if (Array.isArray(cached_tags)) return cached_tags as string[];
-  if (typeof cached_tags === "object") {
-    return Object.values(cached_tags as Record<string, { tag?: string }[]>)
-      .flat()
-      .map((t) => t?.tag ?? "")
-      .filter(Boolean)
-      .slice(0, 5);
-  }
-  return [];
+  if (typeof cached_tags !== "object") return [];
+  const obj = cached_tags as Record<string, { tag?: string }[]>;
+  const source = obj.Genre?.length ? obj.Genre : Object.values(obj).flat();
+  return source
+    .map((t) => t?.tag ?? "")
+    .filter(Boolean)
+    .slice(0, 5);
 }
 
 const DIVERSITY_TAG_KEYS = [

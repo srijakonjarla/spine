@@ -198,12 +198,17 @@ Key properties:
 - **Unlinked rows**: resolved by ISBN (title must match) or by title + author
   search, then linked.
 
-The refresh patch (`hardcoverRefreshPatch`) overwrites genres, page count,
-release date, publisher and audio duration, and merges ISBNs. It leaves title
-and author alone, and **only fills `cover_url` when it's empty**, because
-Hardcover's default edition often isn't the cover people recognise. Every
-attempted row gets `synced_at = now()`, so rows Hardcover can't resolve aren't
-retried for 30 days. A row whose Hardcover id already belongs to another
+The refresh patch (`hardcoverRefreshPatch`) overwrites page count, release
+date, publisher and audio duration, and merges ISBNs. It leaves title and
+author alone, and **only fills `cover_url` and `genres` when they're empty**:
+Hardcover's default edition often isn't the cover people recognise, and its
+tags are noisy. Genres come from Hardcover's `Genre` tag category when it
+exists.
+
+Every row that gets a Hardcover answer is stamped `synced_at = now()`, so rows
+Hardcover can't resolve aren't retried for 30 days. If a Hardcover **request
+fails** (403, outage), the run stops without stamping anything, so the rows
+are retried next time. A row whose Hardcover id already belongs to another
 catalog row is reported as a duplicate and left unlinked.
 
 Triggers:

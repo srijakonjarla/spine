@@ -38,7 +38,7 @@ const BATCH_DELAY_MS = 2000;
 export const STALE_AFTER_DAYS = 30;
 
 export const SYNC_COLUMNS =
-  "id, title, author, cover_url, isbns, hardcover_book_id";
+  "id, title, author, cover_url, isbns, genres, hardcover_book_id";
 
 export interface SyncRow {
   id: string;
@@ -46,6 +46,7 @@ export interface SyncRow {
   author: string;
   cover_url: string | null;
   isbns: string[] | null;
+  genres: string[] | null;
   hardcover_book_id: number | null;
 }
 
