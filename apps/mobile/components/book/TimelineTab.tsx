@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import {
+  Alert,
   Platform,
   Pressable,
   ScrollView,
@@ -41,10 +42,11 @@ function TimeOfDayIcon({ iso, size = 14 }: { iso: string; size?: number }) {
 
 export function TimelineTab({
   entry,
-  onEntryChange,
+  onThoughtsChange,
 }: {
   entry: BookEntry;
-  onEntryChange: (next: BookEntry) => void;
+  /** Functional update so concurrent adds/deletes never clobber each other. */
+  onThoughtsChange: (update: (prev: Thought[]) => Thought[]) => void;
 }) {
   const [activeDay, setActiveDay] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
@@ -112,7 +114,7 @@ export function TimelineTab({
       createdAt: new Date().toISOString(),
     };
     setPosting(true);
-    onEntryChange({ ...entry, thoughts: [...thoughts, newThought] });
+    onThoughtsChange((prev) => [...prev, newThought]);
     setNoteDraft("");
     setPageDraft("");
     try {
@@ -123,26 +125,29 @@ export function TimelineTab({
         createdAt: newThought.createdAt,
       });
     } catch {
-      onEntryChange(entry);
+      onThoughtsChange((prev) => prev.filter((t) => t.id !== newThought.id));
+      Alert.alert("couldn't save note", "try again later.");
     } finally {
       setPosting(false);
     }
-  }, [entry, noteDraft, onEntryChange, pageDraft, posting, thoughts]);
+  }, [entry.id, noteDraft, onThoughtsChange, pageDraft, posting]);
 
   const handleDelete = useCallback(
     async (id: string) => {
-      const prev = thoughts;
-      onEntryChange({
-        ...entry,
-        thoughts: thoughts.filter((t) => t.id !== id),
-      });
+      const removed = thoughts.find((t) => t.id === id);
+      if (!removed) return;
+      onThoughtsChange((prev) => prev.filter((t) => t.id !== id));
       try {
         await removeThought(entry.id, id);
       } catch {
-        onEntryChange({ ...entry, thoughts: prev });
+        // Put back only this note, leaving any other edits intact.
+        onThoughtsChange((prev) =>
+          prev.some((t) => t.id === id) ? prev : [...prev, removed],
+        );
+        Alert.alert("couldn't delete note", "try again later.");
       }
     },
-    [entry, onEntryChange, thoughts],
+    [entry.id, onThoughtsChange, thoughts],
   );
 
   const finishedDay = entry.dateFinished

@@ -14,6 +14,7 @@ import {
   localDateStr,
   type BookEntry,
   type ReadingStatus,
+  type Thought,
 } from "@spine/shared";
 import { DetailsTab, type PastReadDraft } from "@/components/book/DetailsTab";
 import { Hero } from "@/components/book/Hero";
@@ -155,6 +156,21 @@ export default function BookDetailScreen() {
     }
   }, [entry, removeBook, router]);
 
+  const handleThoughtsChange = useCallback(
+    (update: (prev: Thought[]) => Thought[]) =>
+      setEntry((prev) =>
+        prev ? { ...prev, thoughts: update(prev.thoughts) } : prev,
+      ),
+    [],
+  );
+
+  // Keep the shared books cache in step so home's progress and pages-today
+  // reflect added/deleted notes without a refetch.
+  const thoughts = entry?.thoughts;
+  useEffect(() => {
+    if (id && thoughts) updateBook(id, { thoughts });
+  }, [id, thoughts, updateBook]);
+
   if (loading || !entry) {
     return (
       <SafeAreaView style={s.shell} edges={["top"]}>
@@ -202,7 +218,10 @@ export default function BookDetailScreen() {
               onDelete={handleDelete}
             />
           ) : tab === "timeline" ? (
-            <TimelineTab entry={entry} onEntryChange={setEntry} />
+            <TimelineTab
+              entry={entry}
+              onThoughtsChange={handleThoughtsChange}
+            />
           ) : (
             <QuotesTab bookId={entry.id} />
           )}
