@@ -1,4 +1,12 @@
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import {
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import Svg, {
   Defs,
   LinearGradient as SvgLinearGradient,
@@ -8,12 +16,23 @@ import Svg, {
 import {
   formatDate,
   heroGradientFor,
+  localDateStr,
   type BookEntry,
   type ReadingStatus,
 } from "@spine/shared";
 import { BookmarkIcon, CalendarIcon, StarIcon } from "@/components/icons";
 import { BookCoverThumb } from "@/components/library/BookCoverThumb";
 import { C, RGB, alpha } from "@/components/login/tokens";
+import { DatePickerSheet } from "@/components/ui/DatePickerSheet";
+
+type DateField = "dateStarted" | "dateFinished" | "dateDnfed" | "dateShelved";
+
+const DATE_LABEL: Record<DateField, string> = {
+  dateStarted: "STARTED",
+  dateFinished: "FINISHED",
+  dateDnfed: "DNF'D",
+  dateShelved: "SHELVED",
+};
 
 const SERIF = Platform.select({ ios: "Georgia", default: "serif" });
 
@@ -40,6 +59,8 @@ export function Hero({
   rereadLoading: boolean;
 }) {
   const gradient = heroGradientFor(entry.title);
+  const [editing, setEditing] = useState<DateField | null>(null);
+  const dateFields = visibleDateFields(entry);
   const canReread =
     entry.reads.length > 0 ||
     entry.status === "finished" ||
@@ -140,37 +161,142 @@ export function Hero({
         })}
       </View>
 
-      {entry.genres && entry.genres.length > 0 ? (
-        <View style={s.genreRow}>
-          {entry.genres.slice(0, 6).map((g) => (
-            <View key={g} style={s.genreChip}>
-              <Text style={s.genreChipText}>{g}</Text>
-            </View>
-          ))}
-          <View style={[s.genreChip, s.genreChipAdd]}>
-            <Text style={s.genreChipText}>+ genre</Text>
-          </View>
-        </View>
-      ) : null}
+      <GenreRow entry={entry} onPatch={onPatch} />
 
       <View style={s.dateRow}>
-        {entry.status === "want-to-read" ? (
-          entry.dateShelved ? (
-            <DateBlock label="SHELVED" value={entry.dateShelved} />
-          ) : null
-        ) : (
-          <>
-            {entry.dateStarted ? (
-              <DateBlock label="STARTED" value={entry.dateStarted} />
-            ) : null}
-            {entry.status === "finished" && entry.dateFinished ? (
-              <DateBlock label="FINISHED" value={entry.dateFinished} />
-            ) : entry.status === "did-not-finish" && entry.dateDnfed ? (
-              <DateBlock label="DNF'D" value={entry.dateDnfed} />
-            ) : null}
-          </>
-        )}
+        {dateFields.map((f) => (
+          <DateBlock
+            key={f}
+            label={DATE_LABEL[f]}
+            value={entry[f]}
+            onPress={() => setEditing(f)}
+          />
+        ))}
       </View>
+
+      <DatePickerSheet
+        open={editing !== null}
+        title={editing ? `${DATE_LABEL[editing].toLowerCase()} on` : ""}
+        value={editing ? entry[editing] : ""}
+        min={editing ? dateBounds(entry, editing).min : undefined}
+        max={editing ? dateBounds(entry, editing).max : undefined}
+        onClose={() => setEditing(null)}
+        onPick={(d) => editing && onPatch({ [editing]: d })}
+      />
+    </View>
+  );
+}
+
+/** Which dates the hero shows for each status (matches web). */
+function visibleDateFields(entry: BookEntry): DateField[] {
+  switch (entry.status) {
+    case "want-to-read":
+      return ["dateShelved"];
+    case "finished":
+      return ["dateStarted", "dateFinished"];
+    case "did-not-finish":
+      return ["dateStarted", "dateDnfed"];
+    default:
+      return ["dateStarted"];
+  }
+}
+
+/** Same bounds as web's date inputs: no future dates, start ≤ end. */
+function dateBounds(
+  entry: BookEntry,
+  field: DateField,
+): { min?: string; max: string } {
+  const today = localDateStr();
+  if (field === "dateStarted") {
+    const end =
+      entry.status === "finished"
+        ? entry.dateFinished
+        : entry.status === "did-not-finish"
+          ? entry.dateDnfed
+          : "";
+    return { max: end && end < today ? end : today };
+  }
+  if (field === "dateFinished" || field === "dateDnfed")
+    return { min: entry.dateStarted || undefined, max: today };
+  return { max: today };
+}
+
+/**
+ * Catalog genres are read-only; genres you add live in userGenres and can
+ * be removed by tapping them (same as web's hero).
+ */
+function GenreRow({
+  entry,
+  onPatch,
+}: {
+  entry: BookEntry;
+  onPatch: (p: Partial<BookEntry>) => void;
+}) {
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState("");
+  const userGenres = entry.userGenres ?? [];
+  const all = [
+    ...(entry.genres ?? []),
+    ...userGenres.filter((g) => !(entry.genres ?? []).includes(g)),
+  ];
+
+  const add = () => {
+    const g = draft.trim();
+    setDraft("");
+    setAdding(false);
+    if (!g || all.some((x) => x.toLowerCase() === g.toLowerCase())) return;
+    onPatch({
+      userGenres: [...userGenres, g],
+      genres: [...(entry.genres ?? []), g],
+    });
+  };
+  const remove = (g: string) =>
+    onPatch({
+      userGenres: userGenres.filter((x) => x !== g),
+      genres: (entry.genres ?? []).filter((x) => x !== g),
+    });
+
+  return (
+    <View style={s.genreRow}>
+      {all.map((g) =>
+        userGenres.includes(g) ? (
+          <Pressable
+            key={g}
+            hitSlop={4}
+            onPress={() => remove(g)}
+            accessibilityLabel={`remove ${g}`}
+            style={[s.genreChip, s.genreChipUser]}
+          >
+            <Text style={[s.genreChipText, { opacity: 0.9 }]}>{g} ×</Text>
+          </Pressable>
+        ) : (
+          <View key={g} style={s.genreChip}>
+            <Text style={s.genreChipText}>{g}</Text>
+          </View>
+        ),
+      )}
+      {adding ? (
+        <TextInput
+          value={draft}
+          onChangeText={setDraft}
+          // Return blurs a single-line input, so committing on blur alone
+          // covers both Return and tapping away without a double add.
+          onBlur={add}
+          autoFocus
+          placeholder="genre…"
+          placeholderTextColor={alpha(RGB.cream, 0.4)}
+          returnKeyType="done"
+          style={[s.genreChip, s.genreInput]}
+        />
+      ) : (
+        <Pressable
+          hitSlop={4}
+          onPress={() => setAdding(true)}
+          style={[s.genreChip, s.genreChipAdd]}
+        >
+          <Text style={s.genreChipText}>+ genre</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -191,15 +317,30 @@ function RatingStars({ rating }: { rating: number }) {
   );
 }
 
-function DateBlock({ label, value }: { label: string; value?: string }) {
+function DateBlock({
+  label,
+  value,
+  onPress,
+}: {
+  label: string;
+  value?: string;
+  onPress: () => void;
+}) {
   return (
-    <View style={s.dateBlock}>
+    <Pressable
+      hitSlop={8}
+      onPress={onPress}
+      accessibilityLabel={`edit ${label.toLowerCase()} date`}
+      style={({ pressed }) => [s.dateBlock, pressed && { opacity: 0.6 }]}
+    >
       <Text style={s.dateLabel}>{label}</Text>
       <View style={s.dateValueRow}>
         <CalendarIcon size={12} color={C.cream} />
-        <Text style={s.dateValue}>{value ? formatDate(value) : "—"}</Text>
+        <Text style={s.dateValue}>
+          {value ? formatDate(value) : "add date"}
+        </Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -277,6 +418,13 @@ const s = StyleSheet.create({
     borderColor: alpha(RGB.cream, 0.18),
   },
   genreChipAdd: { borderStyle: "dashed" },
+  genreChipUser: { borderColor: alpha(RGB.cream, 0.45) },
+  genreInput: {
+    minWidth: 90,
+    fontSize: 11,
+    color: C.cream,
+    paddingVertical: 3,
+  },
   genreChipText: { fontSize: 11, color: C.cream, opacity: 0.65 },
 
   dateRow: { flexDirection: "row", gap: 24 },
