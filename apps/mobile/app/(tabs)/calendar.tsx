@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useLocalSearchParams } from "expo-router";
 import {
   buildMonthCells,
   computeDayPanelData,
@@ -30,6 +31,8 @@ import { C } from "@/components/login/tokens";
 export default function CalendarTab() {
   const { session } = useAuth();
   const { books, loading: booksLoading } = useBooks();
+  // Optional deep link from the year overview: /calendar?year=2026&month=3
+  const params = useLocalSearchParams<{ year?: string; month?: string }>();
 
   const now = useMemo(() => new Date(), []);
   const todayStr = useMemo(() => localDateStr(now), [now]);
@@ -37,6 +40,14 @@ export default function CalendarTab() {
   const [year, setYear] = useState(now.getFullYear());
   const [monthIndex, setMonthIndex] = useState(now.getMonth());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  useEffect(() => {
+    const y = Number(params.year);
+    const m = Number(params.month);
+    if (!Number.isInteger(y) || !Number.isInteger(m) || m < 0 || m > 11) return;
+    setYear(y);
+    setMonthIndex(m);
+  }, [params.year, params.month]);
 
   const [logEntries, setLogEntries] = useState<ReadingLogEntry[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
