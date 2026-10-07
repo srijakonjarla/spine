@@ -16,6 +16,8 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { C, SERIF } from "@/components/login/tokens";
 import { homeStyles as s } from "@/components/home";
+import { EnrichLibrary } from "@/components/profile/EnrichLibrary";
+import { InviteFriend } from "@/components/profile/InviteFriend";
 
 function displayNameFromUser(
   user:
@@ -320,6 +322,14 @@ export default function ProfileScreen() {
               library from goodreads (my books → export library), then upload
               the csv from your profile page on the web.
             </Text>
+          </Section>
+
+          <Section title="enrich library metadata">
+            <EnrichLibrary />
+          </Section>
+
+          <Section title="invite a friend">
+            <InviteFriend />
           </Section>
 
           <Section title="account">

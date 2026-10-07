@@ -8,10 +8,17 @@ import {
   Pressable,
   ScrollView,
   Text,
+  TextInput,
   useWindowDimensions,
   View,
 } from "react-native";
 import { useAuth } from "@/lib/auth";
+import {
+  resendConfirmation,
+  resetPassword,
+  signUp,
+  verifySignupOtp,
+} from "@/lib/account";
 import {
   ConfirmPasswordField,
   Divider,
@@ -29,7 +36,9 @@ import {
   loginStyles as styles,
 } from "@/components/login";
 
-type Step = "landing" | "login" | "signup" | "username" | "forgot";
+type Step = "landing" | "login" | "signup" | "username" | "confirm" | "forgot";
+
+const OTP_LENGTH = 8;
 
 const HEADLINES: Record<
   Exclude<Step, "landing">,
@@ -43,6 +52,7 @@ const HEADLINES: Record<
     caption: "no inbox blasts. ever.",
   },
   username: { pre: "claim your", accent: "handle", post: "." },
+  confirm: { pre: "check your", accent: "inbox", post: "." },
   forgot: { pre: "forgot your", accent: "password", post: "?" },
 };
 
@@ -57,19 +67,23 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   const coverHeight = step === "landing" ? Math.round(screenHeight * 0.6) : 220;
 
   const goTo = (next: Step) => {
     setStep(next);
     setError("");
+    setMessage("");
   };
 
   const goBack = () => {
     if (step === "forgot") goTo("login");
     else if (step === "username") goTo("signup");
+    else if (step === "confirm") goTo("login");
     else goTo("landing");
   };
 
@@ -94,12 +108,74 @@ export default function Login() {
     goTo("username");
   }
 
-  function handleClaimHandle() {
+  async function handleClaimHandle() {
     if (!username.trim()) {
       setError("please choose a username");
       return;
     }
-    Alert.alert("welcome", `account creation coming soon, @${username}.`);
+    setBusy(true);
+    setError("");
+    try {
+      await signUp(email, password, name.trim(), username);
+      setCode("");
+      goTo("confirm");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "sign-up failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleVerify(otp: string) {
+    if (otp.length !== OTP_LENGTH) {
+      setError(`please enter the full ${OTP_LENGTH}-digit code`);
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      await verifySignupOtp(email, otp);
+      router.replace("/(tabs)");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "invalid code");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleResend() {
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      await resendConfirmation(email);
+      setCode("");
+      setMessage("confirmation email resent.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "failed to resend");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleForgot() {
+    if (!email.trim()) {
+      setError("please enter your email");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      await resetPassword(email);
+      setMessage(
+        "check your email for a reset link. once you've set a new password, sign in here.",
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "couldn't send reset link.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleSignIn() {
@@ -127,7 +203,8 @@ export default function Login() {
     setError("");
     try {
       const ok = await signInWithGoogle();
-      if (ok) router.replace("/(tabs)");
+      // Route through the index gate so first-time Google users pick a username.
+      if (ok) router.replace("/");
       // user cancelled — leave the form alone, no error
     } catch (e) {
       setError(e instanceof Error ? e.message : "google sign-in failed.");
@@ -304,12 +381,78 @@ export default function Login() {
 
                 <Pressable
                   onPress={handleClaimHandle}
+                  disabled={busy}
                   style={({ pressed }) => [
                     styles.ctaTerra,
                     pressed && styles.ctaTerraPressed,
+                    busy && styles.disabled,
                   ]}
                 >
-                  <Text style={styles.ctaTerraText}>claim your shelf →</Text>
+                  {busy ? (
+                    <ActivityIndicator color={C.cream} />
+                  ) : (
+                    <Text style={styles.ctaTerraText}>claim your shelf →</Text>
+                  )}
+                </Pressable>
+              </View>
+            )}
+
+            {step === "confirm" && (
+              <View style={styles.formBlock}>
+                <Text style={styles.footerHint}>
+                  enter the {OTP_LENGTH}-digit code we sent to{" "}
+                  <Text style={{ fontWeight: "600" }}>{email.trim()}</Text>.
+                  check your spam folder if you don&apos;t see it.
+                </Text>
+                <TextInput
+                  value={code}
+                  onChangeText={(v) => {
+                    const cleaned = v.replace(/\D/g, "").slice(0, OTP_LENGTH);
+                    setCode(cleaned);
+                    setError("");
+                    if (cleaned.length === OTP_LENGTH && !busy)
+                      void handleVerify(cleaned);
+                  }}
+                  keyboardType="number-pad"
+                  textContentType="oneTimeCode"
+                  autoComplete="one-time-code"
+                  maxLength={OTP_LENGTH}
+                  autoFocus
+                  placeholder={"0".repeat(OTP_LENGTH)}
+                  placeholderTextColor={C.fgFaint}
+                  style={[
+                    styles.inputBoxed,
+                    {
+                      textAlign: "center",
+                      letterSpacing: 8,
+                      fontSize: 22,
+                    },
+                  ]}
+                />
+                {!!error && <Text style={styles.error}>{error}</Text>}
+                {!!message && <Text style={styles.footerHint}>{message}</Text>}
+                <Pressable
+                  onPress={() => handleVerify(code)}
+                  disabled={busy}
+                  style={({ pressed }) => [
+                    styles.ctaTerra,
+                    pressed && styles.ctaTerraPressed,
+                    busy && styles.disabled,
+                  ]}
+                >
+                  {busy ? (
+                    <ActivityIndicator color={C.cream} />
+                  ) : (
+                    <Text style={styles.ctaTerraText}>confirm →</Text>
+                  )}
+                </Pressable>
+                <Pressable
+                  onPress={handleResend}
+                  disabled={busy}
+                  style={styles.linkRow}
+                  hitSlop={8}
+                >
+                  <Text style={styles.linkRowText}>resend code</Text>
                 </Pressable>
               </View>
             )}
@@ -317,13 +460,22 @@ export default function Login() {
             {step === "forgot" && (
               <View style={styles.formBlock}>
                 <EmailField email={email} setEmail={setEmail} autoFocus />
+                {!!error && <Text style={styles.error}>{error}</Text>}
+                {!!message && <Text style={styles.footerHint}>{message}</Text>}
                 <Pressable
+                  onPress={handleForgot}
+                  disabled={busy}
                   style={({ pressed }) => [
                     styles.ctaTerra,
                     pressed && styles.ctaTerraPressed,
+                    busy && styles.disabled,
                   ]}
                 >
-                  <Text style={styles.ctaTerraText}>send reset link →</Text>
+                  {busy ? (
+                    <ActivityIndicator color={C.cream} />
+                  ) : (
+                    <Text style={styles.ctaTerraText}>send reset link →</Text>
+                  )}
                 </Pressable>
               </View>
             )}
