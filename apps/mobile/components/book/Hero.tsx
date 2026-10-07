@@ -28,12 +28,22 @@ export function Hero({
   entry,
   onBack,
   onPatch,
+  onStatusChange,
+  onReread,
+  rereadLoading,
 }: {
   entry: BookEntry;
   onBack: () => void;
   onPatch: (p: Partial<BookEntry>) => void;
+  onStatusChange: (status: ReadingStatus) => void;
+  onReread: () => void;
+  rereadLoading: boolean;
 }) {
   const gradient = heroGradientFor(entry.title);
+  const canReread =
+    entry.reads.length > 0 ||
+    entry.status === "finished" ||
+    entry.status === "did-not-finish";
   return (
     <View style={[s.hero, { backgroundColor: gradient[1] }]}>
       <Svg
@@ -95,11 +105,27 @@ export function Hero({
       <View style={s.statusRow}>
         {STATUSES.map((opt) => {
           const active = entry.status === opt.id;
+          // Once a book has been read, "reading" means starting a re-read.
+          if (opt.id === "reading" && canReread && entry.status !== "reading") {
+            return (
+              <Pressable
+                key={opt.id}
+                hitSlop={6}
+                disabled={rereadLoading}
+                onPress={onReread}
+                style={[s.statusPill, rereadLoading && { opacity: 0.5 }]}
+              >
+                <Text style={s.statusPillText}>
+                  {rereadLoading ? "starting…" : "↺ re-read"}
+                </Text>
+              </Pressable>
+            );
+          }
           return (
             <Pressable
               key={opt.id}
               hitSlop={6}
-              onPress={() => onPatch({ status: opt.id })}
+              onPress={() => onStatusChange(opt.id)}
               style={[s.statusPill, active && s.statusPillActive]}
             >
               <Text

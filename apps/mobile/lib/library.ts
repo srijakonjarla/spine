@@ -1,4 +1,4 @@
-import type { BookEntry, Quote } from "@spine/shared";
+import type { BookEntry, BookRead, Quote } from "@spine/shared";
 import { apiFetch, publicFetch } from "./api";
 
 export interface CatalogEntry {
@@ -124,21 +124,25 @@ function mapBook(row: BookRow): BookEntry {
       pageNumber: t.page_number ?? null,
       createdAt: t.created_at,
     })),
-    reads: (row.book_reads ?? []).map((r) => ({
-      id: r.id,
-      bookId: r.book_id ?? "",
-      status: (r.status ?? "finished") as BookEntry["status"],
-      dateStarted: r.date_started ?? "",
-      dateFinished: r.date_finished ?? "",
-      dateShelved: r.date_shelved ?? "",
-      dateDnfed: r.date_dnfed ?? "",
-      rating: r.rating ?? 0,
-      feeling: r.feeling ?? "",
-      createdAt: r.created_at ?? "",
-      updatedAt: r.updated_at ?? "",
-    })),
+    reads: (row.book_reads ?? []).map(mapRead),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+function mapRead(r: BookReadRow): BookRead {
+  return {
+    id: r.id,
+    bookId: r.book_id ?? "",
+    status: (r.status ?? "finished") as BookRead["status"],
+    dateStarted: r.date_started ?? "",
+    dateFinished: r.date_finished ?? "",
+    dateShelved: r.date_shelved ?? "",
+    dateDnfed: r.date_dnfed ?? "",
+    rating: r.rating ?? 0,
+    feeling: r.feeling ?? "",
+    createdAt: r.created_at ?? "",
+    updatedAt: r.updated_at ?? "",
   };
 }
 
@@ -223,6 +227,47 @@ export async function updateEntry(
     method: "PATCH",
     body: JSON.stringify(patch),
   });
+}
+
+export async function deleteEntry(id: string): Promise<void> {
+  await apiFetch(`/api/books/${id}`, { method: "DELETE" });
+}
+
+// ─── Re-reads ────────────────────────────────────────────────────
+
+/**
+ * Archives the current read into book_reads and resets the entry to a
+ * fresh "reading" read (server-side `start_new_read` RPC).
+ */
+export async function startNewRead(entry: BookEntry): Promise<void> {
+  await apiFetch(`/api/books/${entry.id}/reads`, {
+    method: "POST",
+    body: JSON.stringify({ entry }),
+  });
+}
+
+/** Logs a past read without touching the current entry. */
+export async function logPastRead(
+  bookId: string,
+  read: {
+    dateStarted: string;
+    dateFinished: string;
+    rating: number;
+    feeling: string;
+  },
+): Promise<BookRead> {
+  const res = await apiFetch(`/api/books/${bookId}/reads`, {
+    method: "PUT",
+    body: JSON.stringify({ ...read, status: "finished" }),
+  });
+  return mapRead((await res.json()) as BookReadRow);
+}
+
+export async function deleteRead(
+  bookId: string,
+  readId: string,
+): Promise<void> {
+  await apiFetch(`/api/books/${bookId}/reads/${readId}`, { method: "DELETE" });
 }
 
 export async function addThought(
