@@ -48,6 +48,8 @@ export function Hero({
     <View style={[s.hero, { backgroundColor: gradient[1] }]}>
       <Svg
         style={StyleSheet.absoluteFill}
+        width="100%"
+        height="100%"
         preserveAspectRatio="none"
         viewBox="0 0 100 100"
       >
@@ -152,16 +154,22 @@ export function Hero({
       ) : null}
 
       <View style={s.dateRow}>
-        {entry.dateStarted ? (
-          <DateBlock label="STARTED" value={entry.dateStarted} />
-        ) : null}
-        {entry.dateFinished ? (
-          <DateBlock label="FINISHED" value={entry.dateFinished} />
-        ) : entry.dateDnfed ? (
-          <DateBlock label="DNF'D" value={entry.dateDnfed} />
-        ) : entry.dateShelved ? (
-          <DateBlock label="SHELVED" value={entry.dateShelved} />
-        ) : null}
+        {entry.status === "want-to-read" ? (
+          entry.dateShelved ? (
+            <DateBlock label="SHELVED" value={entry.dateShelved} />
+          ) : null
+        ) : (
+          <>
+            {entry.dateStarted ? (
+              <DateBlock label="STARTED" value={entry.dateStarted} />
+            ) : null}
+            {entry.status === "finished" && entry.dateFinished ? (
+              <DateBlock label="FINISHED" value={entry.dateFinished} />
+            ) : entry.status === "did-not-finish" && entry.dateDnfed ? (
+              <DateBlock label="DNF'D" value={entry.dateDnfed} />
+            ) : null}
+          </>
+        )}
       </View>
     </View>
   );

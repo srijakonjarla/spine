@@ -9,7 +9,6 @@ import {
   View,
 } from "react-native";
 import {
-  formatDate,
   localDateStr,
   parseLocalDate,
   type BookEntry,
@@ -236,7 +235,7 @@ export function TimelineTab({
                 <View style={s.entryBody}>
                   <View style={s.entryMeta}>
                     <Text style={s.entryDate}>
-                      {formatDate(t.createdAt, {
+                      {new Date(t.createdAt).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
                       })}
