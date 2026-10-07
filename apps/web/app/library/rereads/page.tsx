@@ -6,84 +6,16 @@ import { getEntries } from "@/lib/db";
 import { toast } from "@/lib/toast";
 import { BookCover } from "@/components/BookCover";
 import { EmptyState } from "@/components/EmptyState";
-import type { BookEntry, BookRead } from "@/types";
+import type { BookEntry } from "@/types";
+import {
+  isReread,
+  ratingTrend,
+  readCount,
+  readTimeline,
+  rereadInsight,
+} from "@spine/shared";
 import { StarDisplay } from "@/components/StarDisplay";
 import { RereadsSkeleton } from "@/components/skeletons/RereadsSkeleton";
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-/** All read instances for a book, chronologically (oldest → newest). */
-function readTimeline(
-  entry: BookEntry,
-): { rating: number; status: string; dateFinished: string }[] {
-  const historical = [...entry.reads]
-    .filter(
-      (r) => r.status !== "did-not-finish" && (r.dateFinished || r.dateStarted),
-    )
-    .sort((a, b) => (a.createdAt ?? "").localeCompare(b.createdAt ?? ""))
-    .map((r: BookRead) => ({
-      rating: r.rating,
-      status: r.status,
-      dateFinished: r.dateFinished,
-    }));
-  return [
-    ...historical,
-    {
-      rating: entry.rating,
-      status: entry.status,
-      dateFinished: entry.dateFinished,
-    },
-  ];
-}
-
-/** Total number of times this book has been read (including the current read). */
-function readCount(entry: BookEntry): number {
-  const validReads = entry.reads.filter(
-    (r) => r.status !== "did-not-finish" && (r.dateFinished || r.dateStarted),
-  );
-  return validReads.length + 1;
-}
-
-type Trend = "up" | "down" | "same" | "unknown";
-function ratingTrend(timeline: { rating: number }[]): Trend {
-  const rated = timeline.filter((r) => r.rating > 0);
-  if (rated.length < 1) return "unknown";
-  const first = rated[0].rating;
-  const last = rated[rated.length - 1].rating;
-  if (last > first) return "up";
-  if (last < first) return "down";
-  return "same";
-}
-
-// ─── Insight generator ───────────────────────────────────────────────────────
-
-function buildInsight(books: BookEntry[]): string | null {
-  if (books.length < 2) return null;
-
-  const trends = books.map((b) => ratingTrend(readTimeline(b)));
-  const improved = trends.filter((t) => t === "up").length;
-  const dropped = trends.filter((t) => t === "down").length;
-  const same = trends.filter((t) => t === "same").length;
-  const total = books.length;
-
-  if (improved === total) {
-    return `Every one of your ${total} re-reads earned a higher rating the second time. You're drawn back to books that keep giving.`;
-  }
-  if (dropped === total) {
-    return `All ${total} re-reads scored lower on a second visit — but returning still meant something, or you wouldn't have picked them back up.`;
-  }
-  if (improved > dropped && improved > 0) {
-    const droppedBook = books.find((_, i) => trends[i] === "down");
-    if (droppedBook && dropped === 1) {
-      return `${improved} of your ${total} re-reads scored higher the second time. The one that didn't — ${droppedBook.title} — changed meaning with the distance.`;
-    }
-    return `${improved} of your ${total} re-reads scored higher on a return visit. These books still had more to say.`;
-  }
-  if (same > 0 && improved === 0 && dropped === 0) {
-    return `Your re-reads all landed exactly where they started — consistent taste, or books that simply hold their shape.`;
-  }
-  return `${total} books you've returned to. The first read is curiosity; the re-read is a conversation.`;
-}
 
 // ─── Filter types ────────────────────────────────────────────────────────────
 
@@ -99,17 +31,8 @@ export default function RereadsPage() {
   useEffect(() => {
     getEntries({ include: "nested" })
       .then((all) =>
-        setEntries(
-          all.filter((b) => {
-            // Must have at least one historical read that finished (not DNF, has a date)
-            const validReads = b.reads.filter(
-              (r) =>
-                r.status !== "did-not-finish" &&
-                (r.dateFinished || r.dateStarted),
-            );
-            return validReads.length > 0;
-          }),
-        ),
+        // Must have at least one historical read that finished (not DNF, has a date)
+        setEntries(all.filter(isReread)),
       )
       .catch(() => toast("Failed to load data. Please refresh."))
       .finally(() => setLoading(false));
@@ -125,7 +48,7 @@ export default function RereadsPage() {
     return true;
   });
 
-  const insight = buildInsight(entries);
+  const insight = rereadInsight(entries);
 
   if (loading) return <RereadsSkeleton />;
 

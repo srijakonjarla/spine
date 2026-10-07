@@ -159,8 +159,15 @@ function mapCatalog(row: CatalogRow): CatalogEntry {
   };
 }
 
-export async function getEntries(): Promise<BookEntry[]> {
-  const res = await apiFetch("/api/books");
+/**
+ * Lists the user's library. `nested` also joins thoughts + book_reads,
+ * which re-read stats and the month/day views depend on.
+ */
+export async function getEntries(opts?: {
+  include?: "nested";
+}): Promise<BookEntry[]> {
+  const qs = opts?.include ? `?include=${opts.include}` : "";
+  const res = await apiFetch(`/api/books${qs}`);
   const data = await res.json();
   const rows = Array.isArray(data) ? data : data.data;
   return (rows as BookRow[]).map(mapBook);

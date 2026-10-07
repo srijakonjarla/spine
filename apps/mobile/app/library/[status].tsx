@@ -2,7 +2,6 @@ import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,22 +10,45 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import {
+  STATUS_LABEL,
+  type BookEntry,
+  type ReadingStatus,
+} from "@spine/shared";
 import { homeStyles as h } from "@/components/home";
-import { GridIcon, ListIcon } from "@/components/icons";
 import { BookCoverThumb } from "@/components/library/BookCoverThumb";
 import { BookRow } from "@/components/library/BookRow";
 import { InlineAdd } from "@/components/library/InlineAdd";
+import {
+  MoodChipRow,
+  SearchBar,
+  ViewToggle,
+  normalizeMood,
+} from "@/components/library/LibraryFilters";
 import { C } from "@/components/login/tokens";
+import { BackBar, EmptyHint, ScreenHeader } from "@/components/ui/ScreenHeader";
+import { Stars } from "@/components/ui/Stars";
 import { useBooks } from "@/lib/booksContext";
 import { createEntry, lookupBook, type CatalogEntry } from "@/lib/library";
 import { makeEntry } from "@/lib/makeEntry";
 
-const SERIF = Platform.select({ ios: "Georgia", default: "serif" });
+const STATUS_ROW: Record<ReadingStatus, { symbol: string; color: string }> = {
+  reading: { symbol: "○", color: C.terra },
+  "want-to-read": { symbol: "◌", color: C.plum },
+  finished: { symbol: "●", color: C.sage },
+  "did-not-finish": { symbol: "◌", color: C.fgMuted },
+};
 
-export default function WantToReadScreen() {
+function isStatus(s: string | undefined): s is ReadingStatus {
+  return !!s && s in STATUS_ROW;
+}
+
+export default function StatusShelfScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const params = useLocalSearchParams<{ status: string }>();
+  const status = isStatus(params.status) ? params.status : null;
   const {
     books: entries,
     loading,
@@ -36,18 +58,49 @@ export default function WantToReadScreen() {
     removeBook,
   } = useBooks();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [search, setSearch] = useState("");
+  const [activeMood, setActiveMood] = useState<string | null>(null);
+  const [tagsOpen, setTagsOpen] = useState(false);
 
   const all = useMemo(
-    () => entries.filter((b) => b.status === "want-to-read"),
-    [entries],
+    () =>
+      status
+        ? entries
+            .filter((b) => b.status === status)
+            .sort((a, b) =>
+              sortKey(b, status).localeCompare(sortKey(a, status)),
+            )
+        : [],
+    [entries, status],
   );
   const upNext = useMemo(() => all.filter((b) => b.upNext), [all]);
+  const moods = useMemo(
+    () =>
+      Array.from(
+        new Set(all.flatMap((e) => (e.moodTags ?? []).map(normalizeMood))),
+      )
+        .filter(Boolean)
+        .sort(),
+    [all],
+  );
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return all.filter(
+      (e) =>
+        (!q ||
+          e.title.toLowerCase().includes(q) ||
+          (e.author ?? "").toLowerCase().includes(q)) &&
+        (!activeMood ||
+          (e.moodTags ?? []).some((m) => normalizeMood(m) === activeMood)),
+    );
+  }, [all, search, activeMood]);
 
   const handleAdd = useCallback(
     async (catalog?: CatalogEntry, raw?: string) => {
+      if (!status) return;
       const enriched =
         catalog ?? (raw ? await lookupBook(raw).catch(() => null) : null);
-      const entry = makeEntry("want-to-read", enriched ?? undefined, raw);
+      const entry = makeEntry(status, enriched ?? undefined, raw);
       if (!entry) return;
       addBook(entry);
       try {
@@ -61,76 +114,73 @@ export default function WantToReadScreen() {
         );
       }
     },
-    [addBook, removeBook, refresh],
+    [status, addBook, removeBook, refresh],
   );
 
-  // Grid sizing — matches the library tab
   const cols = width >= 700 ? 4 : 3;
-  const sidePadding = 24;
   const gap = 12;
-  const tileWidth = Math.floor(
-    (width - sidePadding * 2 - gap * (cols - 1)) / cols,
-  );
+  const tileWidth = Math.floor((width - 48 - gap * (cols - 1)) / cols);
   const tileHeight = Math.round(tileWidth * 1.5);
+
+  if (!status) {
+    return (
+      <SafeAreaView style={h.safe} edges={["top"]}>
+        <BackBar label="library" />
+        <View style={h.scrollContent}>
+          <EmptyHint>that shelf doesn&apos;t exist.</EmptyHint>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const row = STATUS_ROW[status];
+  const label = STATUS_LABEL[status];
 
   return (
     <SafeAreaView style={h.safe} edges={["top"]}>
-      <View style={s.topBar}>
-        <Pressable hitSlop={8} onPress={() => router.back()}>
-          <Text style={s.back}>← library</Text>
-        </Pressable>
-      </View>
+      <BackBar label="library" />
       <ScrollView
         style={h.scroll}
         contentContainerStyle={h.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <View style={s.header}>
-          <View>
-            <Text style={s.title}>want to read</Text>
-            <Text style={s.count}>{loading ? "" : `${all.length} books`}</Text>
-          </View>
-          <View style={s.viewToggle}>
-            <Pressable
-              hitSlop={6}
-              onPress={() => setViewMode("grid")}
-              style={[s.viewBtn, viewMode === "grid" && s.viewBtnActive]}
-            >
-              <GridIcon
-                size={16}
-                color={viewMode === "grid" ? C.plum : C.fgFaint}
-              />
-            </Pressable>
-            <Pressable
-              hitSlop={6}
-              onPress={() => setViewMode("list")}
-              style={[s.viewBtn, viewMode === "list" && s.viewBtnActive]}
-            >
-              <ListIcon
-                size={16}
-                color={viewMode === "list" ? C.plum : C.fgFaint}
-              />
-            </Pressable>
-          </View>
-        </View>
+        <ScreenHeader
+          title={label}
+          subtitle={loading ? undefined : `${all.length} books`}
+          right={<ViewToggle viewMode={viewMode} setViewMode={setViewMode} />}
+        />
 
         <View style={s.addRow}>
           <InlineAdd
-            placeholder="add to tbr…"
+            placeholder={`add to ${label}…`}
             onAdd={handleAdd}
             libraryEntries={entries}
           />
         </View>
 
+        <SearchBar
+          search={search}
+          setSearch={setSearch}
+          hasMoods={moods.length > 0}
+          tagsOpen={tagsOpen}
+          setTagsOpen={setTagsOpen}
+        />
+        {moods.length > 0 && tagsOpen ? (
+          <MoodChipRow
+            moods={moods}
+            activeMood={activeMood}
+            setActiveMood={setActiveMood}
+          />
+        ) : null}
+
         {loading ? (
-          <View style={{ paddingVertical: 60, alignItems: "center" }}>
-            <ActivityIndicator color={C.fgMuted} />
-          </View>
+          <ActivityIndicator color={C.fgMuted} style={{ marginTop: 48 }} />
         ) : error ? (
           <Text style={s.error}>couldn&apos;t load. {error}</Text>
         ) : (
           <>
-            {upNext.length > 0 ? (
+            {upNext.length > 0 && !search && !activeMood ? (
               <View style={s.section}>
                 <Text style={s.sectionLabel}>up next</Text>
                 <View style={s.upNextList}>
@@ -140,6 +190,7 @@ export default function WantToReadScreen() {
                       onPress={() => router.push(`/book/${b.id}`)}
                       style={({ pressed }) => [
                         s.upNextRow,
+                        i > 0 && s.upNextDivider,
                         pressed && { backgroundColor: C.paperDeep },
                       ]}
                     >
@@ -147,10 +198,10 @@ export default function WantToReadScreen() {
                         coverUrl={b.coverUrl}
                         title={b.title || "untitled"}
                         author={b.author}
-                        width={56}
-                        height={84}
+                        width={40}
+                        height={60}
                       />
-                      <View style={s.upNextText}>
+                      <View style={{ flex: 1, gap: 2 }}>
                         <Text style={s.upNextTitle} numberOfLines={2}>
                           {b.title || "untitled"}
                         </Text>
@@ -160,10 +211,7 @@ export default function WantToReadScreen() {
                           </Text>
                         ) : null}
                       </View>
-                      <Text style={s.upNextChevron}>›</Text>
-                      {i < upNext.length - 1 ? (
-                        <View style={s.upNextDivider} />
-                      ) : null}
+                      <Text style={s.chevron}>›</Text>
                     </Pressable>
                   ))}
                 </View>
@@ -171,16 +219,20 @@ export default function WantToReadScreen() {
             ) : null}
 
             <View style={s.section}>
-              <Text style={s.sectionLabel}>all · {all.length}</Text>
-              {all.length === 0 ? (
-                <Text style={s.emptyHint}>nothing on your tbr yet.</Text>
+              <Text style={s.sectionLabel}>
+                {search || activeMood ? "matches" : "all"} · {filtered.length}
+              </Text>
+              {filtered.length === 0 ? (
+                <EmptyHint>
+                  {search || activeMood ? "no matches." : "no books here yet."}
+                </EmptyHint>
               ) : viewMode === "grid" ? (
-                <View style={s.grid}>
-                  {all.map((b) => (
+                <View style={[s.grid, { gap }]}>
+                  {filtered.map((b) => (
                     <Pressable
                       key={b.id}
                       onPress={() => router.push(`/book/${b.id}`)}
-                      style={[s.gridItem, { width: tileWidth }]}
+                      style={{ width: tileWidth, gap: 4 }}
                     >
                       <BookCoverThumb
                         coverUrl={b.coverUrl}
@@ -192,7 +244,9 @@ export default function WantToReadScreen() {
                       <Text style={s.gridTitle} numberOfLines={2}>
                         {b.title || "untitled"}
                       </Text>
-                      {b.author ? (
+                      {b.rating > 0 ? (
+                        <Stars rating={b.rating} size={10} />
+                      ) : b.author ? (
                         <Text style={s.gridAuthor} numberOfLines={1}>
                           {b.author}
                         </Text>
@@ -201,13 +255,17 @@ export default function WantToReadScreen() {
                   ))}
                 </View>
               ) : (
-                <View style={s.list}>
-                  {all.map((b) => (
+                <View style={{ gap: 4 }}>
+                  {filtered.map((b) => (
                     <Pressable
                       key={b.id}
                       onPress={() => router.push(`/book/${b.id}`)}
                     >
-                      <BookRow entry={b} symbol="◌" symbolColor={C.plum} />
+                      <BookRow
+                        entry={b}
+                        symbol={row.symbol}
+                        symbolColor={row.color}
+                      />
                     </Pressable>
                   ))}
                 </View>
@@ -215,60 +273,33 @@ export default function WantToReadScreen() {
             </View>
           </>
         )}
-
-        <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+/** Most-recent-first ordering by the date that matters for each shelf. */
+function sortKey(b: BookEntry, status: ReadingStatus): string {
+  switch (status) {
+    case "reading":
+      return b.dateStarted || b.createdAt;
+    case "finished":
+      return b.dateFinished || b.updatedAt;
+    case "did-not-finish":
+      return b.dateDnfed || b.updatedAt;
+    default:
+      return b.dateShelved || b.createdAt;
+  }
+}
+
 const s = StyleSheet.create({
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    backgroundColor: C.cream,
-  },
-  back: { fontSize: 13, color: C.fgMuted },
-  header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    marginTop: 4,
-    marginBottom: 4,
-  },
-  title: {
-    fontFamily: SERIF,
-    fontSize: 32,
-    fontWeight: "700",
-    color: C.plum,
-    letterSpacing: -1.2,
-  },
-  count: { fontSize: 12, color: C.fgMuted, letterSpacing: 0.3, marginTop: 2 },
-  viewToggle: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: C.paperDeep,
-    borderRadius: 6,
-    padding: 2,
-    gap: 2,
-  },
-  viewBtn: {
-    width: 26,
-    height: 26,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 4,
-  },
-  viewBtnActive: { backgroundColor: C.cream },
   addRow: {
     paddingBottom: 6,
     borderBottomWidth: 1,
     borderBottomColor: C.line,
-    marginBottom: 18,
+    marginBottom: 14,
   },
-  section: { marginBottom: 24 },
+  section: { marginTop: 18, marginBottom: 8 },
   sectionLabel: {
     fontSize: 11,
     color: C.fgMuted,
@@ -276,6 +307,7 @@ const s = StyleSheet.create({
     textTransform: "uppercase",
     marginBottom: 12,
   },
+  error: { color: C.danger, paddingVertical: 16 },
   upNextList: {
     borderWidth: 1,
     borderColor: C.line,
@@ -288,40 +320,13 @@ const s = StyleSheet.create({
     alignItems: "center",
     gap: 14,
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    position: "relative",
+    paddingVertical: 10,
   },
-  upNextText: { flex: 1, gap: 2 },
-  upNextTitle: {
-    fontFamily: SERIF,
-    fontSize: 16,
-    color: C.fg,
-    letterSpacing: -0.2,
-  },
+  upNextDivider: { borderTopWidth: 1, borderTopColor: C.line },
+  upNextTitle: { fontSize: 15, color: C.fg },
   upNextAuthor: { fontSize: 12, color: C.fgMuted },
-  upNextChevron: {
-    fontSize: 20,
-    color: C.fgFaint,
-    marginLeft: 4,
-  },
-  upNextDivider: {
-    position: "absolute",
-    left: 14,
-    right: 14,
-    bottom: 0,
-    height: 1,
-    backgroundColor: C.line,
-  },
-  error: { color: "#b03a2e", paddingVertical: 16 },
-  emptyHint: { fontSize: 12, color: C.fgFaint, paddingVertical: 16 },
-  list: { gap: 4 },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
-  gridItem: { gap: 6 },
-  gridTitle: {
-    fontSize: 12,
-    color: C.fg,
-    fontWeight: "500",
-    letterSpacing: -0.1,
-  },
+  chevron: { fontSize: 20, color: C.fgFaint },
+  grid: { flexDirection: "row", flexWrap: "wrap" },
+  gridTitle: { fontSize: 12, color: C.fg, fontWeight: "500" },
   gridAuthor: { fontSize: 10, color: C.fgFaint },
 });
