@@ -45,7 +45,17 @@ export function LogProgressModal({
     if (mode === "percent" && !canUsePercent) setMode("pages");
   }, [mode, canUsePercent]);
 
+  // Pages and note are each optional, but at least one is required.
+  const hasPages = value.trim() !== "";
+  const hasNote = note.trim() !== "";
+  const canSubmit = hasPages || hasNote;
+
   const submit = () => {
+    if (!canSubmit) return;
+    if (!hasPages) {
+      void onSubmit({ pages: 0, note });
+      return;
+    }
     const n = Number(value.trim());
     if (!Number.isFinite(n) || n <= 0) {
       Alert.alert("hmm", "enter a number greater than zero.");
@@ -105,7 +115,7 @@ export function LogProgressModal({
       )}
 
       <Text style={m.fieldLabel}>
-        {mode === "pages" ? "pages read" : "percent read"}
+        {mode === "pages" ? "pages read" : "percent read"} (optional)
       </Text>
       <TextInput
         value={value}
@@ -138,16 +148,20 @@ export function LogProgressModal({
         textAlignVertical="top"
       />
 
+      {!canSubmit ? (
+        <Text style={s.hint}>add pages, a note, or both.</Text>
+      ) : null}
+
       <View style={m.actionsRow}>
         <Pressable hitSlop={8} onPress={onClose} style={m.cancelBtn}>
           <Text style={m.cancelText}>cancel</Text>
         </Pressable>
         <Pressable
           onPress={submit}
-          disabled={busy || !value.trim()}
+          disabled={busy || !canSubmit}
           style={({ pressed }) => [
             m.primaryBtn,
-            (busy || !value.trim()) && { opacity: 0.4 },
+            (busy || !canSubmit) && { opacity: 0.4 },
             pressed && { backgroundColor: C.terraPressed },
           ]}
         >
