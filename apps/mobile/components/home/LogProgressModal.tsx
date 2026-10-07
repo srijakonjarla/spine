@@ -12,10 +12,16 @@ import { C } from "@/components/login/tokens";
 
 type Mode = "pages" | "percent";
 
+/**
+ * Logs a progress entry on a book (a thought), same as web's quick log:
+ * an optional "up to page" position and an optional note — at least one.
+ * Day-level journal notes live on the calendar instead.
+ */
 export function LogProgressModal({
   open,
   bookTitle,
   pageCount,
+  currentPage = 0,
   busy,
   onClose,
   onSubmit,
@@ -23,9 +29,11 @@ export function LogProgressModal({
   open: boolean;
   bookTitle?: string;
   pageCount?: number | null;
+  /** Furthest page already logged for this book (0 if none). */
+  currentPage?: number;
   busy: boolean;
   onClose: () => void;
-  onSubmit: (v: { pages: number; note: string }) => Promise<void>;
+  onSubmit: (v: { page: number | null; note: string }) => Promise<void>;
 }) {
   const [mode, setMode] = useState<Mode>("pages");
   const [value, setValue] = useState("");
@@ -45,32 +53,56 @@ export function LogProgressModal({
     if (mode === "percent" && !canUsePercent) setMode("pages");
   }, [mode, canUsePercent]);
 
+  // Pages and note are each optional, but at least one is required.
+  const hasPages = value.trim() !== "";
+  const hasNote = note.trim() !== "";
+  const canSubmit = hasPages || hasNote;
+
   const submit = () => {
+    if (!canSubmit) return;
+    if (!hasPages) {
+      void onSubmit({ page: null, note: note.trim() });
+      return;
+    }
     const n = Number(value.trim());
     if (!Number.isFinite(n) || n <= 0) {
       Alert.alert("hmm", "enter a number greater than zero.");
       return;
     }
+    let page: number;
     if (mode === "percent") {
       if (n > 100) {
         Alert.alert("hmm", "percentage can't be more than 100.");
         return;
       }
-      const pages = Math.round((n / 100) * (pageCount ?? 0));
-      if (pages <= 0) {
-        Alert.alert("hmm", "that percentage rounds to zero pages.");
+      page = Math.round((n / 100) * (pageCount ?? 0));
+      if (page <= 0) {
+        Alert.alert("hmm", "that percentage rounds to page zero.");
         return;
       }
-      void onSubmit({ pages, note });
     } else {
-      void onSubmit({ pages: Math.round(n), note });
+      page = Math.round(n);
+      if (pageCount && page > pageCount) {
+        Alert.alert("hmm", `this book has ${pageCount} pages.`);
+        return;
+      }
     }
+    void onSubmit({ page, note: note.trim() });
   };
 
   return (
     <SheetModal open={open} onClose={onClose}>
       <Text style={m.title}>log progress</Text>
-      {bookTitle ? <Text style={m.subtitle}>{bookTitle}</Text> : null}
+      {bookTitle ? (
+        <Text style={m.subtitle}>
+          {bookTitle}
+          {pageCount
+            ? ` · p. ${currentPage} / ${pageCount}`
+            : currentPage > 0
+              ? ` · p. ${currentPage}`
+              : ""}
+        </Text>
+      ) : null}
 
       <View style={s.toggle}>
         <Pressable
@@ -105,12 +137,16 @@ export function LogProgressModal({
       )}
 
       <Text style={m.fieldLabel}>
-        {mode === "pages" ? "pages read" : "percent read"}
+        {mode === "pages" ? "up to page" : "percent through"} (optional)
       </Text>
       <TextInput
         value={value}
         onChangeText={setValue}
-        placeholder={mode === "pages" ? "e.g. 32" : "e.g. 15"}
+        placeholder={
+          mode === "pages"
+            ? `e.g. ${currentPage > 0 ? currentPage + 30 : 50}`
+            : "e.g. 15"
+        }
         placeholderTextColor={C.fgFaint}
         keyboardType="number-pad"
         style={m.input}
@@ -122,7 +158,7 @@ export function LogProgressModal({
             const n = Number(value.trim());
             if (!Number.isFinite(n) || n <= 0 || n > 100)
               return `of ${pageCount} pages`;
-            return `≈ ${Math.round((n / 100) * pageCount)} of ${pageCount} pages`;
+            return `≈ page ${Math.round((n / 100) * pageCount)} of ${pageCount}`;
           })()}
         </Text>
       ) : null}
@@ -131,12 +167,16 @@ export function LogProgressModal({
       <TextInput
         value={note}
         onChangeText={setNote}
-        placeholder="anything to remember about today's reading?"
+        placeholder="how's it going?"
         placeholderTextColor={C.fgFaint}
         multiline
         style={[m.input, m.inputMulti]}
         textAlignVertical="top"
       />
+
+      {!canSubmit ? (
+        <Text style={s.hint}>add a page, a note, or both.</Text>
+      ) : null}
 
       <View style={m.actionsRow}>
         <Pressable hitSlop={8} onPress={onClose} style={m.cancelBtn}>
@@ -144,10 +184,10 @@ export function LogProgressModal({
         </Pressable>
         <Pressable
           onPress={submit}
-          disabled={busy || !value.trim()}
+          disabled={busy || !canSubmit}
           style={({ pressed }) => [
             m.primaryBtn,
-            (busy || !value.trim()) && { opacity: 0.4 },
+            (busy || !canSubmit) && { opacity: 0.4 },
             pressed && { backgroundColor: C.terraPressed },
           ]}
         >

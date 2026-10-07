@@ -2,8 +2,17 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { currentStreak, localDateStr, streakRuns } from "@spine/shared";
-import { addQuote } from "@/lib/library";
+import {
+  currentStreak,
+  latestPage,
+  localDateStr,
+  pagesReadOn,
+  streakRuns,
+  type Thought,
+} from "@spine/shared";
+import { addQuote, addThought } from "@/lib/library";
+import { useBooks } from "@/lib/booksContext";
+import { uuid } from "@/lib/uuid";
 import {
   ConfirmSheet,
   CurrentlyReading,
@@ -22,7 +31,6 @@ import { useAuth } from "@/lib/auth";
 import {
   createYearGoal,
   loadHomeData,
-  logProgress,
   markBookFinished,
   type HomeData,
 } from "@/lib/home";
@@ -86,6 +94,7 @@ export default function Home() {
   const router = useRouter();
   const userId = session?.user?.id;
   const name = firstNameFromUser(session?.user);
+  const { books, updateBook } = useBooks();
 
   const [data, setData] = useState<HomeData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -141,6 +150,13 @@ export default function Home() {
     () => (currentBookData ? readingToBook(currentBookData) : null),
     [currentBookData],
   );
+  const currentLibraryBook = useMemo(
+    () => books.find((b) => b.id === currentBookData?.id),
+    [books, currentBookData?.id],
+  );
+  // Progress is "up to page N" entries on books, so pages today is the
+  // distance moved today across books (needs the nested books cache).
+  const pagesToday = useMemo(() => pagesReadOn(books, localDateStr()), [books]);
 
   const recentEntries = useMemo<Entry[]>(() => {
     const todayStr = localDateStr(new Date());
@@ -195,16 +211,29 @@ export default function Home() {
   const handleLogProgress = useCallback(() => setLogOpen(true), []);
   const handleSaveQuote = useCallback(() => setQuoteOpen(true), []);
 
+  // A progress entry is a thought on the book (same as web's quick log);
+  // the server marks today as a reading day.
   const submitLog = useCallback(
-    async ({ pages, note }: { pages: number; note: string }) => {
-      if (!userId) return;
+    async ({ page, note }: { page: number | null; note: string }) => {
+      if (!currentBookData) return;
+      const thought: Thought = {
+        id: uuid(),
+        text: note,
+        pageNumber: page,
+        createdAt: new Date().toISOString(),
+      };
       try {
         setBusyAction(true);
-        await logProgress({
-          userId,
-          pagesRead: pages,
-          note: note.trim() || undefined,
+        await addThought(currentBookData.id, {
+          id: thought.id,
+          text: thought.text,
+          pageNumber: thought.pageNumber ?? null,
+          createdAt: thought.createdAt,
         });
+        if (currentLibraryBook)
+          updateBook(currentLibraryBook.id, {
+            thoughts: [...currentLibraryBook.thoughts, thought],
+          });
         await refresh();
         setLogOpen(false);
       } catch (e) {
@@ -216,7 +245,7 @@ export default function Home() {
         setBusyAction(false);
       }
     },
-    [userId, refresh],
+    [currentBookData, currentLibraryBook, updateBook, refresh],
   );
 
   const submitQuote = useCallback(
@@ -286,11 +315,7 @@ export default function Home() {
         contentContainerStyle={s.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Greeting
-          name={name}
-          streakDays={streak}
-          pagesToday={data?.pagesToday ?? 0}
-        />
+        <Greeting name={name} streakDays={streak} pagesToday={pagesToday} />
 
         {loading && (
           <View style={{ paddingVertical: 60, alignItems: "center" }}>
@@ -387,6 +412,7 @@ export default function Home() {
         open={logOpen}
         bookTitle={currentBookData?.title}
         pageCount={currentBookData?.pageCount}
+        currentPage={currentLibraryBook ? latestPage(currentLibraryBook) : 0}
         busy={busyAction}
         onClose={() => setLogOpen(false)}
         onSubmit={submitLog}

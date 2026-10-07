@@ -1,10 +1,6 @@
 import type { Metadata } from "next";
-import {
-  DM_Sans,
-  Playfair_Display,
-  Caveat,
-  Geist_Mono,
-} from "next/font/google";
+import { DM_Sans, Caveat, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "@/globals.css";
 import AuthProvider from "@/providers/AuthProvider";
 import { BooksProvider } from "@/providers/BooksProvider";
@@ -25,11 +21,25 @@ const dmSans = DM_Sans({
   style: ["normal", "italic"],
 });
 
-const playfair = Playfair_Display({
+// Self-hosted (Latin variable files from Google Fonts v40): fetching
+// Playfair via next/font/google at build time started failing on Vercel
+// ("next/font/google queries have exactly one entry").
+const playfair = localFont({
   variable: "--font-playfair",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
+  src: [
+    {
+      path: "./fonts/PlayfairDisplay-latin.woff2",
+      weight: "400 900",
+      style: "normal",
+    },
+    {
+      path: "./fonts/PlayfairDisplay-Italic-latin.woff2",
+      weight: "400 900",
+      style: "italic",
+    },
+  ],
+  display: "swap",
+  fallback: ["Georgia", "serif"],
 });
 
 const caveat = Caveat({

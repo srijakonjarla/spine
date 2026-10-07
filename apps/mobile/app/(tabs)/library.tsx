@@ -30,6 +30,16 @@ import { makeEntry } from "@/lib/makeEntry";
 
 const SERIF = Platform.select({ ios: "Georgia", default: "serif" });
 
+const SHELF_LINKS = [
+  { label: "reading", href: "/library/reading" },
+  { label: "want to read", href: "/library/want-to-read" },
+  { label: "read", href: "/library/finished" },
+  { label: "dnf", href: "/library/did-not-finish" },
+  { label: "series", href: "/library/series" },
+  { label: "re-reads", href: "/library/rereads" },
+  { label: "recommendations", href: "/library/recommendations" },
+] as const;
+
 export default function LibraryTab() {
   const {
     books: entries,
@@ -106,6 +116,12 @@ export default function LibraryTab() {
     [entries, matchesFilter],
   );
 
+  const dnf = useMemo(
+    () =>
+      entries.filter((e) => e.status === "did-not-finish" && matchesFilter(e)),
+    [entries, matchesFilter],
+  );
+
   const yearGroups = useMemo<ShelfGroup[]>(() => {
     const finished = entries.filter(
       (e) => e.status === "finished" && matchesFilter(e),
@@ -167,6 +183,26 @@ export default function LibraryTab() {
             <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
           </View>
         </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={local.shelves}
+          contentContainerStyle={{ gap: 8 }}
+        >
+          {SHELF_LINKS.map((l) => (
+            <Pressable
+              key={l.href}
+              onPress={() => router.push(l.href)}
+              style={({ pressed }) => [
+                local.shelfChip,
+                pressed && { backgroundColor: C.paperDeep },
+              ]}
+            >
+              <Text style={local.shelfChipText}>{l.label}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
 
         <SearchBar
           search={search}
@@ -256,6 +292,32 @@ export default function LibraryTab() {
                 />
               ))
             )}
+
+            {dnf.length > 0 ? (
+              <View style={local.sectionBlock}>
+                <View style={local.sectionHeaderRow}>
+                  <Text style={s.sectionLabel}>did not finish</Text>
+                  {dnf.length > 6 ? (
+                    <Pressable
+                      hitSlop={8}
+                      onPress={() => router.push("/library/did-not-finish")}
+                    >
+                      <Text style={local.allLink}>all {dnf.length} →</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+                <View style={local.list}>
+                  {dnf.slice(0, 6).map((b) => (
+                    <Pressable
+                      key={b.id}
+                      onPress={() => router.push(`/book/${b.id}`)}
+                    >
+                      <BookRow entry={b} symbol="◌" symbolColor={C.fgMuted} />
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            ) : null}
           </>
         )}
 
@@ -300,6 +362,21 @@ const local = StyleSheet.create({
   },
   allLink: { fontSize: 11, color: C.fgFaint, letterSpacing: 0.3 },
   list: { marginTop: 4, gap: 4 },
+  shelves: {
+    flexGrow: 0,
+    marginHorizontal: -24,
+    paddingHorizontal: 24,
+    marginBottom: 14,
+  },
+  shelfChip: {
+    borderWidth: 1,
+    borderColor: C.line,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: C.paper,
+  },
+  shelfChipText: { fontSize: 12, color: C.plum },
   emptyHint: {
     fontSize: 12,
     color: C.fgFaint,

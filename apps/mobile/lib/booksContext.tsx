@@ -42,11 +42,22 @@ export function BooksProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const fetchedRef = useRef(false);
 
+  // Two-step load, same as web: shallow first so screens render fast, then
+  // nested (thoughts + book_reads) hydrates in the background so re-read
+  // stats and the calendar get full read history.
   const load = useCallback(() => {
     setLoading(true);
     setError(null);
     return getEntries()
-      .then((data) => setBooks(data))
+      .then((shallow) => {
+        setBooks(shallow);
+        setLoading(false);
+        return getEntries({ include: "nested" })
+          .then(setBooks)
+          .catch(() => {
+            // Keep the shallow list; nested data is an enhancement.
+          });
+      })
       .catch((e) => setError(e instanceof Error ? e.message : "load failed"))
       .finally(() => setLoading(false));
   }, []);

@@ -6,7 +6,6 @@
 import {
   createYearGoal as createYearGoalShared,
   loadHomeData as loadHomeDataShared,
-  logProgress as logProgressShared,
   markBookFinished as markBookFinishedShared,
   type HomeData,
 } from "@spine/shared";
@@ -31,9 +30,3 @@ export const createYearGoal = (opts: {
   year: number;
   target: number;
 }) => createYearGoalShared(supabase, opts);
-
-export const logProgress = (opts: {
-  userId: string;
-  pagesRead: number;
-  note?: string;
-}) => logProgressShared(supabase, opts);

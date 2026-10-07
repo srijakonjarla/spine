@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect, useRouter } from "expo-router";
 import { TopBar, homeStyles as s } from "@/components/home";
 import { useAuth } from "@/lib/auth";
 import { loadGoals, setGoal, type GoalListItem } from "@/lib/goals";
@@ -21,6 +22,7 @@ import { C } from "@/components/login/tokens";
 const CURRENT_YEAR = new Date().getFullYear();
 
 function GoalCard({ goal }: { goal: GoalListItem }) {
+  const router = useRouter();
   const current = goal.isAuto ? goal.yearFinished : goal.pinnedFinished;
   const total = goal.target || goal.pinnedBookIds.length || 0;
   const pct =
@@ -38,7 +40,19 @@ function GoalCard({ goal }: { goal: GoalListItem }) {
             : "not started yet";
 
   return (
-    <View style={[s.statCard, { minHeight: 0, marginBottom: 12 }]}>
+    <Pressable
+      onPress={() =>
+        router.push({
+          pathname: "/goal/[id]",
+          params: { id: goal.id, year: String(goal.year) },
+        })
+      }
+      style={({ pressed }) => [
+        s.statCard,
+        { minHeight: 0, marginBottom: 12 },
+        pressed && { opacity: 0.8 },
+      ]}
+    >
       <View style={[s.statTopBorder, { backgroundColor: accent }]} />
       <Text style={s.statLabel}>
         {goal.year} {goal.isAuto ? "reading goal" : goal.name.toLowerCase()}
@@ -58,7 +72,7 @@ function GoalCard({ goal }: { goal: GoalListItem }) {
         />
       </View>
       <Text style={s.statCaveat}>{caveat}</Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -96,6 +110,13 @@ export default function GoalsTab() {
       cancelled = true;
     };
   }, [session]);
+
+  // Pick up edits made on the goal detail screen.
+  useFocusEffect(
+    useCallback(() => {
+      if (session) void refresh();
+    }, [session, refresh]),
+  );
 
   const hasYearly = !!goals?.some((g) => g.isAuto && g.year === CURRENT_YEAR);
 
