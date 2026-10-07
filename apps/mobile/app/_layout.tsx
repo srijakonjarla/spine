@@ -25,6 +25,7 @@ export default function RootLayout() {
             <Stack.Screen name="year/[year]/quotes" />
             <Stack.Screen name="book/[id]" />
             <Stack.Screen name="list/[id]" />
+            <Stack.Screen name="goal/[id]" />
             <Stack.Screen name="terms" />
             <Stack.Screen name="privacy" />
           </Stack>
