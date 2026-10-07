@@ -18,17 +18,10 @@ import {
 import { BookOpenIcon, LeafIcon, MoonIcon, SunIcon } from "@/components/icons";
 import { C } from "@/components/login/tokens";
 import { addThought, removeThought } from "@/lib/library";
+import { uuid } from "@/lib/uuid";
 
 const SERIF = Platform.select({ ios: "Georgia", default: "serif" });
 const DAY_STRIP_THRESHOLD = 5;
-
-function uuid(): string {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
 
 function timeOfDay(iso: string): "morning" | "afternoon" | "evening" | "night" {
   const h = new Date(iso).getHours();
