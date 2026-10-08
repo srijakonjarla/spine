@@ -203,6 +203,28 @@ export async function lookupBook(
   );
 }
 
+export interface CoverEdition {
+  id: number;
+  coverUrl: string;
+  isbn: string;
+  publisher: string;
+}
+
+/** A book's other cover-bearing editions, so the user can swap covers. */
+export async function fetchCoverEditions(
+  entry: Pick<BookEntry, "hardcoverBookId" | "isbn" | "title" | "author">,
+): Promise<CoverEdition[]> {
+  const params: [string, string][] = [["title", entry.title]];
+  if (entry.hardcoverBookId)
+    params.push(["hardcoverBookId", String(entry.hardcoverBookId)]);
+  if (entry.isbn) params.push(["isbn", entry.isbn]);
+  if (entry.author) params.push(["author", entry.author]);
+  const qs = params.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
+  const res = await apiFetch(`/api/catalog/editions?${qs}`);
+  const data = (await res.json()) as { editions?: CoverEdition[] };
+  return data.editions ?? [];
+}
+
 export async function createEntry(entry: BookEntry): Promise<{ id: string }> {
   const res = await apiFetch("/api/books", {
     method: "POST",
@@ -259,6 +281,24 @@ export async function logPastRead(
   const res = await apiFetch(`/api/books/${bookId}/reads`, {
     method: "PUT",
     body: JSON.stringify({ ...read, status: "finished" }),
+  });
+  return mapRead((await res.json()) as BookReadRow);
+}
+
+export type ReadPatch = Pick<
+  BookRead,
+  "dateStarted" | "dateFinished" | "rating" | "feeling"
+>;
+
+/** Edits a past read's dates / rating / reflection. */
+export async function updateRead(
+  bookId: string,
+  readId: string,
+  patch: ReadPatch,
+): Promise<BookRead> {
+  const res = await apiFetch(`/api/books/${bookId}/reads/${readId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ ...patch, status: "finished" }),
   });
   return mapRead((await res.json()) as BookReadRow);
 }

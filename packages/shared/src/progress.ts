@@ -1,4 +1,4 @@
-import { localDateStr } from "./dates";
+import { daysApart, localDateStr } from "./dates";
 import type { BookEntry } from "./types";
 
 // Reading progress lives on thoughts: a thought with a pageNumber records
@@ -35,4 +35,14 @@ export function pagesReadOn(books: BookEntry[], date: string): number {
     if (endOfDay != null) total += Math.max(0, endOfDay - before);
   }
   return total;
+}
+
+/** Average pages read per day given a book entry's page count and date range. */
+export function avgPagesPerDay(
+  entry: Pick<BookEntry, "pageCount" | "dateStarted" | "dateFinished">,
+): number | null {
+  if (!entry.pageCount || !entry.dateStarted) return null;
+  const end = entry.dateFinished || localDateStr();
+  const days = daysApart(entry.dateStarted, end) + 1 || 1;
+  return Math.round(entry.pageCount / days);
 }

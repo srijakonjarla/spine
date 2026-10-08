@@ -108,4 +108,14 @@ export async function removeListItem(
   await apiFetch(`/api/lists/${listId}/items/${id}`, { method: "DELETE" });
 }
 
+export async function reorderListItems(
+  listId: string,
+  orderedIds: string[],
+): Promise<void> {
+  await apiFetch(`/api/lists/${listId}/items/reorder`, {
+    method: "POST",
+    body: JSON.stringify({ orderedIds }),
+  });
+}
+
 export type { BookList, ListItem };

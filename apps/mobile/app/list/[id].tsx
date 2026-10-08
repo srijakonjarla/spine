@@ -18,6 +18,7 @@ import { ListGlyph } from "@/components/lists/listIcons";
 import { IDEA_TYPES, listTypeMeta } from "@/components/lists/coverMeta";
 import { BookRow } from "@/components/lists/BookRow";
 import { IdeaRow } from "@/components/lists/IdeaRow";
+import { ReorderRow } from "@/components/lists/ReorderRow";
 import { LedgerStats, LoanStats } from "@/components/lists/ListStats";
 import { TextAddRow } from "@/components/lists/TextAddRow";
 import {
@@ -35,6 +36,7 @@ import {
   deleteList,
   getList,
   removeListItem,
+  reorderListItems,
   updateList,
   updateListItem,
 } from "@/lib/lists";
@@ -51,6 +53,7 @@ export default function ListDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<ListItem | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [reordering, setReordering] = useState(false);
 
   const today = localDateStr(new Date());
 
@@ -170,6 +173,26 @@ export default function ListDetailScreen() {
     ]);
   }, []);
 
+  const handleMove = useCallback(
+    (index: number, delta: -1 | 1) => {
+      if (!list) return;
+      const target = index + delta;
+      if (target < 0 || target >= list.items.length) return;
+      const prevItems = list.items;
+      const items = [...prevItems];
+      [items[index], items[target]] = [items[target], items[index]];
+      setList({ ...list, items });
+      reorderListItems(
+        list.id,
+        items.map((i) => i.id),
+      ).catch(() => {
+        setList((prev) => (prev ? { ...prev, items: prevItems } : prev));
+        Alert.alert("couldn't reorder", "try again later.");
+      });
+    },
+    [list],
+  );
+
   const handleSaveList = useCallback(
     (patch: ListPatch) => {
       if (!list) return;
@@ -224,9 +247,20 @@ export default function ListDetailScreen() {
         <Pressable onPress={() => router.back()} hitSlop={10}>
           <Text style={styles.backLink}>← lists</Text>
         </Pressable>
-        <Pressable onPress={() => setSettingsOpen(true)} hitSlop={10}>
-          <Text style={styles.editLink}>edit</Text>
-        </Pressable>
+        <View style={styles.topActions}>
+          {list.items.length > 1 ? (
+            <Pressable onPress={() => setReordering((r) => !r)} hitSlop={10}>
+              <Text style={styles.editLink}>
+                {reordering ? "done" : "reorder"}
+              </Text>
+            </Pressable>
+          ) : null}
+          {reordering ? null : (
+            <Pressable onPress={() => setSettingsOpen(true)} hitSlop={10}>
+              <Text style={styles.editLink}>edit</Text>
+            </Pressable>
+          )}
+        </View>
       </View>
 
       <ScrollView
@@ -259,6 +293,16 @@ export default function ListDetailScreen() {
             <Text style={styles.empty}>
               nothing here yet — add the first one.
             </Text>
+          ) : reordering ? (
+            list.items.map((item, i) => (
+              <ReorderRow
+                key={item.id}
+                item={item}
+                isFirst={i === 0}
+                isLast={i === list.items.length - 1}
+                onMove={(delta) => handleMove(i, delta)}
+              />
+            ))
           ) : (
             list.items.map((item) =>
               isIdea ? (
@@ -285,7 +329,7 @@ export default function ListDetailScreen() {
           )}
         </View>
 
-        {isIdea ? (
+        {reordering ? null : isIdea ? (
           <TextAddRow
             placeholder={`add ${meta.itemLabel.slice(0, -1) || "item"}…`}
             onAdd={handleAddText}
@@ -343,6 +387,7 @@ const styles = StyleSheet.create({
   },
   backLink: { fontSize: 13, color: C.fgMuted, letterSpacing: 0.2 },
   editLink: { fontSize: 13, color: C.terraInk, letterSpacing: 0.2 },
+  topActions: { flexDirection: "row", gap: 18 },
 
   cover: {
     borderRadius: 16,

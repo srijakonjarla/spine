@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -19,6 +19,7 @@ import {
 import { DetailsTab, type PastReadDraft } from "@/components/book/DetailsTab";
 import { Hero } from "@/components/book/Hero";
 import { QuotesTab } from "@/components/book/QuotesTab";
+import { ReadSelector } from "@/components/book/ReadSelector";
 import { ReflectionTab } from "@/components/book/ReflectionTab";
 import { TabStrip, type TabId } from "@/components/book/TabStrip";
 import { TimelineTab } from "@/components/book/TimelineTab";
@@ -31,6 +32,8 @@ import {
   logPastRead,
   startNewRead,
   updateEntry,
+  updateRead,
+  type ReadPatch,
 } from "@/lib/library";
 
 export default function BookDetailScreen() {
@@ -44,6 +47,7 @@ export default function BookDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<TabId>("reflection");
   const [rereadLoading, setRereadLoading] = useState(false);
+  const [selectedReadId, setSelectedReadId] = useState<string | null>(null);
 
   // Always refetch with nested data — cached entry is missing thoughts/reads.
   useEffect(() => {
@@ -141,8 +145,51 @@ export default function BookDetailScreen() {
       const reads = entry.reads.filter((r) => r.id !== readId);
       setEntry({ ...entry, reads });
       updateBook(entry.id, { reads });
+      if (selectedReadId === readId) setSelectedReadId(null);
     },
-    [entry, updateBook],
+    [entry, selectedReadId, updateBook],
+  );
+
+  // Debounced reflection saves fire after other edits may have landed, so
+  // merge each patch onto the latest reads rather than a stale closure.
+  const entryRef = useRef(entry);
+  entryRef.current = entry;
+
+  // Optimistic, then reconciled with the server row (or rolled back).
+  const handleUpdateRead = useCallback(
+    async (readId: string, p: Partial<ReadPatch>) => {
+      const current = entryRef.current;
+      if (!current) return;
+      const prev = current.reads.find((r) => r.id === readId);
+      if (!prev) return;
+      const apply = (read: typeof prev) => {
+        setEntry((e) =>
+          e
+            ? { ...e, reads: e.reads.map((r) => (r.id === readId ? read : r)) }
+            : e,
+        );
+      };
+      const optimistic = { ...prev, ...p };
+      apply(optimistic);
+      try {
+        const saved = await updateRead(current.id, readId, {
+          dateStarted: optimistic.dateStarted,
+          dateFinished: optimistic.dateFinished,
+          rating: optimistic.rating,
+          feeling: optimistic.feeling,
+        });
+        apply(saved);
+      } catch (e) {
+        apply(prev);
+        throw e;
+      }
+    },
+    [],
+  );
+
+  const viewedRead = useMemo(
+    () => entry?.reads.find((r) => r.id === selectedReadId) ?? null,
+    [entry, selectedReadId],
   );
 
   const handleDelete = useCallback(async () => {
@@ -204,11 +251,24 @@ export default function BookDetailScreen() {
           onStatusChange={handleStatusChange}
           onReread={handleReread}
           rereadLoading={rereadLoading}
+          viewedRead={viewedRead}
+          onUpdateRead={handleUpdateRead}
+        />
+        <ReadSelector
+          reads={entry.reads}
+          selectedReadId={selectedReadId}
+          onSelect={setSelectedReadId}
         />
         <TabStrip tab={tab} setTab={setTab} />
         <View style={s.tabBody}>
           {tab === "reflection" ? (
-            <ReflectionTab entry={entry} onPatch={patch} />
+            <ReflectionTab
+              entry={entry}
+              onPatch={patch}
+              viewedRead={viewedRead}
+              onUpdateRead={handleUpdateRead}
+              onDeleteRead={handleDeleteRead}
+            />
           ) : tab === "details" ? (
             <DetailsTab
               entry={entry}
@@ -219,7 +279,10 @@ export default function BookDetailScreen() {
             />
           ) : tab === "timeline" ? (
             <TimelineTab
+              // Remount per read so the selected day doesn't carry over.
+              key={viewedRead?.id ?? "current"}
               entry={entry}
+              viewedRead={viewedRead}
               onThoughtsChange={handleThoughtsChange}
             />
           ) : (
