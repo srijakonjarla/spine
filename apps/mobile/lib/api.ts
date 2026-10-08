@@ -26,10 +26,6 @@ export async function apiFetch(
   };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  console.log(
-    `[apiFetch] ${init.method ?? "GET"} ${WEB_API_URL}${path} hasToken=${!!token} tokenLen=${token?.length ?? 0}`,
-  );
-
   const res = await fetch(`${WEB_API_URL}${path}`, { ...init, headers });
   if (!res.ok) {
     const text = await res.text().catch(() => "");

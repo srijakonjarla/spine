@@ -1,4 +1,6 @@
 import { Session } from "@supabase/supabase-js";
+import * as AppleAuthentication from "expo-apple-authentication";
+import * as Crypto from "expo-crypto";
 import {
   createContext,
   ReactNode,
@@ -51,6 +53,8 @@ type AuthState = {
   signIn: (email: string, password: string) => Promise<void>;
   /** Resolves true if signed in, false if user cancelled. Throws on real errors. */
   signInWithGoogle: () => Promise<boolean>;
+  /** iOS only. Resolves true if signed in, false if user cancelled. */
+  signInWithApple: () => Promise<boolean>;
   signOut: () => Promise<void>;
 };
 
@@ -106,6 +110,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (isCancellationError(e)) return false;
         throw e;
       }
+    },
+    signInWithApple: async () => {
+      // Apple gets the SHA-256 of a one-time nonce; Supabase gets the raw
+      // value and checks the hash inside the identity token matches.
+      const rawNonce = Crypto.randomUUID();
+      const hashedNonce = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        rawNonce,
+      );
+      let credential: AppleAuthentication.AppleAuthenticationCredential;
+      try {
+        credential = await AppleAuthentication.signInAsync({
+          requestedScopes: [
+            AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+            AppleAuthentication.AppleAuthenticationScope.EMAIL,
+          ],
+          nonce: hashedNonce,
+        });
+      } catch (e) {
+        if ((e as { code?: string })?.code === "ERR_REQUEST_CANCELED")
+          return false;
+        throw e;
+      }
+      if (!credential.identityToken)
+        throw new Error("No identity token returned from Apple");
+
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: "apple",
+        token: credential.identityToken,
+        nonce: rawNonce,
+      });
+      if (error) throw error;
+
+      // Apple only shares the name on the very first sign-in, and it isn't
+      // in the identity token — save it so the profile isn't nameless.
+      const name = [
+        credential.fullName?.givenName,
+        credential.fullName?.familyName,
+      ]
+        .filter(Boolean)
+        .join(" ");
+      if (name && !data.user?.user_metadata?.name) {
+        await supabase.auth
+          .updateUser({ data: { name, full_name: name, custom_name: name } })
+          .catch(() => {});
+      }
+      return true;
     },
     signOut: async () => {
       await supabase.auth.signOut();
