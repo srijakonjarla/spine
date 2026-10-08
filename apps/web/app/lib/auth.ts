@@ -1,3 +1,4 @@
+import { apiFetch } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 
 export async function signIn(email: string, password: string) {
@@ -83,6 +84,15 @@ export async function signInWithGoogle() {
 
 export async function signOut() {
   await supabase.auth.signOut();
+}
+
+/**
+ * Permanently deletes the account and all of its data server-side, then
+ * clears the local session (the server one is already gone).
+ */
+export async function deleteAccount() {
+  await apiFetch("/api/account", { method: "DELETE" });
+  await supabase.auth.signOut({ scope: "local" });
 }
 
 export async function markGoodreadsImported() {

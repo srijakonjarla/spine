@@ -2,6 +2,7 @@ export { LandingCover } from "./LandingCover";
 export { FormCover } from "./FormCover";
 export { FoldShadow } from "./FoldShadow";
 export { GoldSeal } from "./GoldSeal";
+export { AppleButton } from "./AppleButton";
 export { GoogleButton } from "./GoogleButton";
 export {
   Divider,
