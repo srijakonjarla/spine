@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { DM_Sans, Caveat, Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import "@/globals.css";
 import AuthProvider from "@/providers/AuthProvider";
@@ -14,16 +13,24 @@ import { NavigationProvider } from "@/providers/NavigationProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { TimeZoneSync } from "@/components/TimeZoneSync";
 
-const dmSans = DM_Sans({
+// All fonts are self-hosted Latin variable files from Google Fonts:
+// next/font/google started failing at build time — first Playfair on Vercel
+// ("next/font/google queries have exactly one entry"), then DM Sans in local
+// dev ("Module not found" in the generated font CSS).
+const dmSans = localFont({
   variable: "--font-dm-sans",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-  style: ["normal", "italic"],
+  src: [
+    { path: "./fonts/DMSans-latin.woff2", weight: "300 600", style: "normal" },
+    {
+      path: "./fonts/DMSans-Italic-latin.woff2",
+      weight: "300 600",
+      style: "italic",
+    },
+  ],
+  display: "swap",
+  fallback: ["system-ui", "sans-serif"],
 });
 
-// Self-hosted (Latin variable files from Google Fonts v40): fetching
-// Playfair via next/font/google at build time started failing on Vercel
-// ("next/font/google queries have exactly one entry").
 const playfair = localFont({
   variable: "--font-playfair",
   src: [
@@ -42,15 +49,18 @@ const playfair = localFont({
   fallback: ["Georgia", "serif"],
 });
 
-const caveat = Caveat({
+const caveat = localFont({
   variable: "--font-caveat",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  src: [{ path: "./fonts/Caveat-latin.woff2", weight: "400 600" }],
+  display: "swap",
+  fallback: ["cursive"],
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  src: [{ path: "./fonts/GeistMono-latin.woff2", weight: "100 900" }],
+  display: "swap",
+  fallback: ["ui-monospace", "monospace"],
 });
 
 export const metadata: Metadata = {
