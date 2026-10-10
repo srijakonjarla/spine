@@ -3,52 +3,15 @@
 import { useState } from "react";
 import {
   activeFilterCount,
+  clearDropdownFilters,
   LIBRARY_SORT_OPTIONS,
-  RATING_FILTER_OPTIONS,
   type LibraryFilterOptions,
   type LibraryFilterState,
   type LibrarySort,
-  type RatingFilter,
 } from "@spine/shared";
 import { MoodChip, AllMoodsChip } from "@/components/MoodChip";
-
-const SELECT_CLASS =
-  "text-xs bg-transparent border-none outline-none cursor-pointer transition-colors";
-
-function FilterSelect<T extends string | number>({
-  id,
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  value: T | null;
-  options: { value: T; label: string }[];
-  onChange: (v: T | null) => void;
-}) {
-  if (options.length === 0) return null;
-  return (
-    <select
-      id={id}
-      value={value ?? ""}
-      onChange={(e) => {
-        const raw = e.target.value;
-        if (!raw) return onChange(null);
-        onChange(options.find((o) => String(o.value) === raw)?.value ?? null);
-      }}
-      className={`${SELECT_CLASS} ${value != null ? "text-terra font-medium" : "text-fg-faint hover:text-fg-muted"}`}
-    >
-      <option value="">{label}</option>
-      {options.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </select>
-  );
-}
+import { RatingFilter } from "@/components/library/RatingFilter";
+import { MultiSelectMenu, SelectMenu } from "@/components/library/FilterMenu";
 
 const asOptions = <T extends string | number>(vs: T[]) =>
   vs.map((v) => ({ value: v, label: String(v) }));
@@ -98,19 +61,16 @@ export function LibraryControls({
         >
           filters{count > 0 ? ` · ${count}` : ""} {open ? "▾" : "▸"}
         </button>
-        <select
+        <SelectMenu
           id={`${id}-sort`}
-          aria-label="sort"
+          menuLabel="sort"
+          placeholder="sort"
           value={sort}
-          onChange={(e) => setSort(e.target.value as LibrarySort)}
-          className={`${SELECT_CLASS} text-fg-faint hover:text-fg-muted`}
-        >
-          {LIBRARY_SORT_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+          options={LIBRARY_SORT_OPTIONS}
+          onChange={(v) => v && setSort(v)}
+          align="right"
+          clearable={false}
+        />
       </div>
 
       {open && (
@@ -118,54 +78,49 @@ export function LibraryControls({
           id={`${id}-filters`}
           className="flex flex-wrap items-center gap-x-5 gap-y-2 mb-4 py-2 px-3 rounded-lg bg-surface border border-line"
         >
-          <FilterSelect<RatingFilter>
-            id={`${id}-rating`}
-            label="any rating"
-            value={filters.rating}
-            options={RATING_FILTER_OPTIONS}
-            onChange={(v) => set("rating", v)}
+          <RatingFilter
+            id={id}
+            value={filters.ratings}
+            counts={options.ratingCounts}
+            onChange={(v) => set("ratings", v)}
           />
-          <FilterSelect
+          <MultiSelectMenu
             id={`${id}-genre`}
-            label="all genres"
-            value={filters.genre}
+            menuLabel="filter by genre"
+            placeholder="all genres"
+            value={filters.genres}
             options={asOptions(options.genres)}
-            onChange={(v) => set("genre", v)}
+            onChange={(v) => set("genres", v)}
+            searchable
           />
-          <FilterSelect
+          <MultiSelectMenu
             id={`${id}-format`}
-            label="any format"
-            value={filters.format}
+            menuLabel="filter by format"
+            placeholder="any format"
+            value={filters.formats}
             options={asOptions(options.formats)}
-            onChange={(v) => set("format", v)}
+            onChange={(v) => set("formats", v)}
           />
-          <FilterSelect
+          <MultiSelectMenu
             id={`${id}-year`}
-            label="any year finished"
-            value={filters.year}
+            menuLabel="filter by year finished"
+            placeholder="any year finished"
+            value={filters.years}
             options={asOptions(options.years)}
-            onChange={(v) => set("year", v)}
+            onChange={(v) => set("years", v)}
           />
-          <FilterSelect
+          <MultiSelectMenu
             id={`${id}-bookshelf`}
-            label="all bookshelves"
-            value={filters.bookshelf}
+            menuLabel="filter by bookshelf"
+            placeholder="all bookshelves"
+            value={filters.bookshelves}
             options={asOptions(options.bookshelves)}
-            onChange={(v) => set("bookshelf", v)}
+            onChange={(v) => set("bookshelves", v)}
           />
           {count > 0 && (
             <button
               type="button"
-              onClick={() =>
-                setFilters({
-                  ...filters,
-                  genre: null,
-                  rating: null,
-                  format: null,
-                  year: null,
-                  bookshelf: null,
-                })
-              }
+              onClick={() => setFilters(clearDropdownFilters(filters))}
               className="text-xs text-terra hover:underline ml-auto"
             >
               clear
