@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Platform,
@@ -13,23 +13,17 @@ import {
   localDateStr,
   parseLocalDate,
   type BookEntry,
+  type BookRead,
   type Thought,
 } from "@spine/shared";
 import { BookOpenIcon, LeafIcon, MoonIcon, SunIcon } from "@/components/icons";
 import { C } from "@/components/login/tokens";
-import { addThought, removeThought } from "@/lib/library";
+import { addThought, getQuotes, removeThought } from "@/lib/library";
 import { uuid } from "@/lib/uuid";
+import { TimelineSummary, timeOfDay } from "./TimelineSummary";
 
 const SERIF = Platform.select({ ios: "Georgia", default: "serif" });
 const DAY_STRIP_THRESHOLD = 5;
-
-function timeOfDay(iso: string): "morning" | "afternoon" | "evening" | "night" {
-  const h = new Date(iso).getHours();
-  if (h >= 5 && h < 12) return "morning";
-  if (h >= 12 && h < 17) return "afternoon";
-  if (h >= 17 && h < 21) return "evening";
-  return "night";
-}
 
 function TimeOfDayIcon({ iso, size = 14 }: { iso: string; size?: number }) {
   const slot = timeOfDay(iso);
@@ -42,9 +36,12 @@ function TimeOfDayIcon({ iso, size = 14 }: { iso: string; size?: number }) {
 
 export function TimelineTab({
   entry,
+  viewedRead,
   onThoughtsChange,
 }: {
   entry: BookEntry;
+  /** A past read picked in the read selector; scopes the timeline to it. */
+  viewedRead: BookRead | null;
   /** Functional update so concurrent adds/deletes never clobber each other. */
   onThoughtsChange: (update: (prev: Thought[]) => Thought[]) => void;
 }) {
@@ -54,14 +51,42 @@ export function TimelineTab({
   const [posting, setPosting] = useState(false);
   const [stripExpanded, setStripExpanded] = useState(false);
 
-  const thoughts = useMemo(() => entry.thoughts ?? [], [entry.thoughts]);
+  const [quoteCount, setQuoteCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getQuotes(entry.id)
+      .then((q) => {
+        if (!cancelled) setQuoteCount(q.length);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [entry.id]);
+
+  const dateStarted = viewedRead ? viewedRead.dateStarted : entry.dateStarted;
+  const dateFinished = viewedRead
+    ? viewedRead.dateFinished
+    : entry.dateFinished;
+
+  // A past read only owns the notes written between its start and finish.
+  const thoughts = useMemo(() => {
+    const all = entry.thoughts ?? [];
+    if (!viewedRead) return all;
+    return all.filter((t) => {
+      const day = localDateStr(new Date(t.createdAt));
+      if (viewedRead.dateStarted && day < viewedRead.dateStarted) return false;
+      if (viewedRead.dateFinished && day > viewedRead.dateFinished)
+        return false;
+      return true;
+    });
+  }, [entry.thoughts, viewedRead]);
 
   const calendarDays = useMemo(() => {
-    if (!entry.dateStarted) return [];
-    const start = parseLocalDate(entry.dateStarted);
-    const end = entry.dateFinished
-      ? parseLocalDate(entry.dateFinished)
-      : new Date();
+    if (!dateStarted) return [];
+    const start = parseLocalDate(dateStarted);
+    const end = dateFinished ? parseLocalDate(dateFinished) : new Date();
     if (!start || !end) return [];
     const days: { dateStr: string; day: number }[] = [];
     const d = new Date(start);
@@ -70,7 +95,7 @@ export function TimelineTab({
       d.setDate(d.getDate() + 1);
     }
     return days;
-  }, [entry.dateStarted, entry.dateFinished]);
+  }, [dateStarted, dateFinished]);
 
   const sortedThoughts = useMemo(() => {
     const arr = activeDay
@@ -150,8 +175,8 @@ export function TimelineTab({
     [entry.id, onThoughtsChange, thoughts],
   );
 
-  const finishedDay = entry.dateFinished
-    ? localDateStr(parseLocalDate(entry.dateFinished) ?? new Date())
+  const finishedDay = dateFinished
+    ? localDateStr(parseLocalDate(dateFinished) ?? new Date())
     : null;
   const loggedDays = useMemo(() => {
     const set = new Set<string>();
@@ -271,39 +296,50 @@ export function TimelineTab({
         </View>
       )}
 
-      <View style={s.composer}>
-        <View style={s.composerRow}>
-          <TextInput
-            value={pageDraft}
-            onChangeText={setPageDraft}
-            placeholder="p."
-            placeholderTextColor={C.fgFaint}
-            keyboardType="number-pad"
-            style={s.composerPage}
-          />
-          <TextInput
-            value={noteDraft}
-            onChangeText={setNoteDraft}
-            placeholder="add a reading note…"
-            placeholderTextColor={C.fgFaint}
-            multiline
-            style={s.composerNote}
-          />
+      {viewedRead ? null : (
+        <View style={s.composer}>
+          <View style={s.composerRow}>
+            <TextInput
+              value={pageDraft}
+              onChangeText={setPageDraft}
+              placeholder="p."
+              placeholderTextColor={C.fgFaint}
+              keyboardType="number-pad"
+              style={s.composerPage}
+            />
+            <TextInput
+              value={noteDraft}
+              onChangeText={setNoteDraft}
+              placeholder="add a reading note…"
+              placeholderTextColor={C.fgFaint}
+              multiline
+              style={s.composerNote}
+            />
+          </View>
+          <Pressable
+            onPress={post}
+            disabled={posting || !noteDraft.trim()}
+            style={({ pressed }) => [
+              s.composerPost,
+              (posting || !noteDraft.trim()) && { opacity: 0.4 },
+              pressed && { backgroundColor: C.terraPressed },
+            ]}
+          >
+            <Text style={s.composerPostText}>
+              {posting ? "posting…" : "post"}
+            </Text>
+          </Pressable>
         </View>
-        <Pressable
-          onPress={post}
-          disabled={posting || !noteDraft.trim()}
-          style={({ pressed }) => [
-            s.composerPost,
-            (posting || !noteDraft.trim()) && { opacity: 0.4 },
-            pressed && { backgroundColor: C.terraPressed },
-          ]}
-        >
-          <Text style={s.composerPostText}>
-            {posting ? "posting…" : "post"}
-          </Text>
-        </Pressable>
-      </View>
+      )}
+
+      <TimelineSummary
+        thoughts={thoughts}
+        pageCount={entry.pageCount}
+        dateStarted={dateStarted}
+        dateFinished={dateFinished}
+        isOngoing={!viewedRead && entry.status === "reading"}
+        quoteCount={quoteCount}
+      />
     </View>
   );
 }

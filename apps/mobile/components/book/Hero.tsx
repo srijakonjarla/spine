@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  Alert,
   Platform,
   Pressable,
   StyleSheet,
@@ -18,12 +19,15 @@ import {
   heroGradientFor,
   localDateStr,
   type BookEntry,
+  type BookRead,
   type ReadingStatus,
 } from "@spine/shared";
 import { BookmarkIcon, CalendarIcon, StarIcon } from "@/components/icons";
 import { BookCoverThumb } from "@/components/library/BookCoverThumb";
 import { C, RGB, alpha } from "@/components/login/tokens";
 import { DatePickerSheet } from "@/components/ui/DatePickerSheet";
+import type { ReadPatch } from "@/lib/library";
+import { CoverPickerSheet } from "./CoverPickerSheet";
 
 type DateField = "dateStarted" | "dateFinished" | "dateDnfed" | "dateShelved";
 
@@ -50,6 +54,8 @@ export function Hero({
   onStatusChange,
   onReread,
   rereadLoading,
+  viewedRead,
+  onUpdateRead,
 }: {
   entry: BookEntry;
   onBack: () => void;
@@ -57,10 +63,29 @@ export function Hero({
   onStatusChange: (status: ReadingStatus) => void;
   onReread: () => void;
   rereadLoading: boolean;
+  /** A past read picked in the read selector; the date row then edits it. */
+  viewedRead: BookRead | null;
+  onUpdateRead: (readId: string, patch: Partial<ReadPatch>) => Promise<void>;
 }) {
   const gradient = heroGradientFor(entry.title);
   const [editing, setEditing] = useState<DateField | null>(null);
-  const dateFields = visibleDateFields(entry);
+  const [pickingCover, setPickingCover] = useState(false);
+  // Same as web: a past read shows (and edits) its own started/finished.
+  const dates: Pick<BookEntry, DateField> & { status: ReadingStatus } =
+    viewedRead ?? entry;
+  const dateFields: DateField[] = viewedRead
+    ? ["dateStarted", "dateFinished"]
+    : visibleDateFields(entry);
+  const pickDate = (field: DateField, d: string) => {
+    if (!viewedRead) {
+      onPatch({ [field]: d });
+      return;
+    }
+    if (field !== "dateStarted" && field !== "dateFinished") return;
+    onUpdateRead(viewedRead.id, { [field]: d }).catch(() =>
+      Alert.alert("couldn't save date", "try again later."),
+    );
+  };
   const canReread =
     entry.reads.length > 0 ||
     entry.status === "finished" ||
@@ -100,7 +125,14 @@ export function Hero({
       </View>
 
       <View style={s.heroTop}>
-        <View style={s.heroCoverWrap}>
+        <Pressable
+          onPress={() => setPickingCover(true)}
+          accessibilityLabel="change cover"
+          style={({ pressed }) => [
+            s.heroCoverWrap,
+            pressed && { opacity: 0.8 },
+          ]}
+        >
           <BookCoverThumb
             coverUrl={entry.coverUrl}
             title={entry.title || "untitled"}
@@ -108,7 +140,10 @@ export function Hero({
             width={68}
             height={102}
           />
-        </View>
+          <View style={s.coverHint}>
+            <Text style={s.coverHintText}>change</Text>
+          </View>
+        </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={s.heroTitle} numberOfLines={3}>
             {entry.title || "untitled"}
@@ -117,7 +152,7 @@ export function Hero({
             <Text style={s.heroAuthor}>by {entry.author}</Text>
           ) : null}
           <View style={s.heroMeta}>
-            <RatingStars rating={entry.rating ?? 0} />
+            <RatingStars rating={(viewedRead ?? entry).rating ?? 0} />
             {(entry.pageCount ?? 0) > 0 ? (
               <Text style={s.heroMetaText}>· {entry.pageCount} pages</Text>
             ) : null}
@@ -168,7 +203,7 @@ export function Hero({
           <DateBlock
             key={f}
             label={DATE_LABEL[f]}
-            value={entry[f]}
+            value={dates[f]}
             onPress={() => setEditing(f)}
           />
         ))}
@@ -177,11 +212,21 @@ export function Hero({
       <DatePickerSheet
         open={editing !== null}
         title={editing ? `${DATE_LABEL[editing].toLowerCase()} on` : ""}
-        value={editing ? entry[editing] : ""}
-        min={editing ? dateBounds(entry, editing).min : undefined}
-        max={editing ? dateBounds(entry, editing).max : undefined}
+        value={editing ? dates[editing] : ""}
+        min={editing ? dateBounds(dates, editing).min : undefined}
+        max={editing ? dateBounds(dates, editing).max : undefined}
         onClose={() => setEditing(null)}
-        onPick={(d) => editing && onPatch({ [editing]: d })}
+        onPick={(d) => editing && pickDate(editing, d)}
+      />
+
+      <CoverPickerSheet
+        open={pickingCover}
+        entry={entry}
+        onClose={() => setPickingCover(false)}
+        onSelect={(coverUrl) => {
+          setPickingCover(false);
+          onPatch({ coverUrl });
+        }}
       />
     </View>
   );
@@ -203,7 +248,7 @@ function visibleDateFields(entry: BookEntry): DateField[] {
 
 /** Same bounds as web's date inputs: no future dates, start ≤ end. */
 function dateBounds(
-  entry: BookEntry,
+  entry: Pick<BookEntry, DateField | "status">,
   field: DateField,
 ): { min?: string; max: string } {
   const today = localDateStr();
@@ -367,6 +412,16 @@ const s = StyleSheet.create({
     marginBottom: 16,
   },
   heroCoverWrap: { borderRadius: 4, overflow: "hidden" },
+  coverHint: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingVertical: 3,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    alignItems: "center",
+  },
+  coverHintText: { fontSize: 9, color: C.cream, letterSpacing: 0.6 },
   heroTitle: {
     fontFamily: SERIF,
     fontSize: 26,
