@@ -9,3 +9,4 @@ export * from "./year";
 export * from "./rereads";
 export * from "./progress";
 export * from "./queries";
+export * from "./libraryFilters";

@@ -12,8 +12,15 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
+  activeFilterCount,
+  EMPTY_LIBRARY_FILTERS,
+  hasActiveFilters,
+  libraryFilterOptions,
+  matchesLibraryFilters,
+  sortBooks,
   STATUS_LABEL,
-  type BookEntry,
+  type LibraryFilterState,
+  type LibrarySort,
   type ReadingStatus,
 } from "@spine/shared";
 import { homeStyles as h } from "@/components/home";
@@ -21,10 +28,9 @@ import { BookCoverThumb } from "@/components/library/BookCoverThumb";
 import { BookRow } from "@/components/library/BookRow";
 import { InlineAdd } from "@/components/library/InlineAdd";
 import {
-  MoodChipRow,
+  FilterPanel,
   SearchBar,
   ViewToggle,
-  normalizeMood,
 } from "@/components/library/LibraryFilters";
 import { C } from "@/components/login/tokens";
 import { BackBar, EmptyHint, ScreenHeader } from "@/components/ui/ScreenHeader";
@@ -58,42 +64,30 @@ export default function StatusShelfScreen() {
     removeBook,
   } = useBooks();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [search, setSearch] = useState("");
-  const [activeMood, setActiveMood] = useState<string | null>(null);
-  const [tagsOpen, setTagsOpen] = useState(false);
+  const [filters, setFilters] = useState<LibraryFilterState>(
+    EMPTY_LIBRARY_FILTERS,
+  );
+  const [sort, setSort] = useState<LibrarySort>("date-desc");
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const all = useMemo(
-    () =>
-      status
-        ? entries
-            .filter((b) => b.status === status)
-            .sort((a, b) =>
-              sortKey(b, status).localeCompare(sortKey(a, status)),
-            )
-        : [],
+    () => (status ? entries.filter((b) => b.status === status) : []),
     [entries, status],
   );
-  const upNext = useMemo(() => all.filter((b) => b.upNext), [all]);
-  const moods = useMemo(
-    () =>
-      Array.from(
-        new Set(all.flatMap((e) => (e.moodTags ?? []).map(normalizeMood))),
-      )
-        .filter(Boolean)
-        .sort(),
+  const upNext = useMemo(
+    () => sortBooks(all, "date-desc").filter((b) => b.upNext),
     [all],
   );
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return all.filter(
-      (e) =>
-        (!q ||
-          e.title.toLowerCase().includes(q) ||
-          (e.author ?? "").toLowerCase().includes(q)) &&
-        (!activeMood ||
-          (e.moodTags ?? []).some((m) => normalizeMood(m) === activeMood)),
-    );
-  }, [all, search, activeMood]);
+  const options = useMemo(() => libraryFilterOptions(all), [all]);
+  const filtering = hasActiveFilters(filters);
+  const filtered = useMemo(
+    () =>
+      sortBooks(
+        all.filter((e) => matchesLibraryFilters(e, filters)),
+        sort,
+      ),
+    [all, filters, sort],
+  );
 
   const handleAdd = useCallback(
     async (catalog?: CatalogEntry, raw?: string) => {
@@ -160,17 +154,19 @@ export default function StatusShelfScreen() {
         </View>
 
         <SearchBar
-          search={search}
-          setSearch={setSearch}
-          hasMoods={moods.length > 0}
-          tagsOpen={tagsOpen}
-          setTagsOpen={setTagsOpen}
+          search={filters.search}
+          setSearch={(search) => setFilters({ ...filters, search })}
+          filterCount={activeFilterCount(filters) + (filters.mood ? 1 : 0)}
+          filtersOpen={filtersOpen}
+          setFiltersOpen={setFiltersOpen}
         />
-        {moods.length > 0 && tagsOpen ? (
-          <MoodChipRow
-            moods={moods}
-            activeMood={activeMood}
-            setActiveMood={setActiveMood}
+        {filtersOpen ? (
+          <FilterPanel
+            filters={filters}
+            setFilters={setFilters}
+            sort={sort}
+            setSort={setSort}
+            options={options}
           />
         ) : null}
 
@@ -180,7 +176,7 @@ export default function StatusShelfScreen() {
           <Text style={s.error}>couldn&apos;t load. {error}</Text>
         ) : (
           <>
-            {upNext.length > 0 && !search && !activeMood ? (
+            {upNext.length > 0 && !filtering ? (
               <View style={s.section}>
                 <Text style={s.sectionLabel}>up next</Text>
                 <View style={s.upNextList}>
@@ -220,11 +216,11 @@ export default function StatusShelfScreen() {
 
             <View style={s.section}>
               <Text style={s.sectionLabel}>
-                {search || activeMood ? "matches" : "all"} · {filtered.length}
+                {filtering ? "matches" : "all"} · {filtered.length}
               </Text>
               {filtered.length === 0 ? (
                 <EmptyHint>
-                  {search || activeMood ? "no matches." : "no books here yet."}
+                  {filtering ? "no matches." : "no books here yet."}
                 </EmptyHint>
               ) : viewMode === "grid" ? (
                 <View style={[s.grid, { gap }]}>
@@ -276,20 +272,6 @@ export default function StatusShelfScreen() {
       </ScrollView>
     </SafeAreaView>
   );
-}
-
-/** Most-recent-first ordering by the date that matters for each shelf. */
-function sortKey(b: BookEntry, status: ReadingStatus): string {
-  switch (status) {
-    case "reading":
-      return b.dateStarted || b.createdAt;
-    case "finished":
-      return b.dateFinished || b.updatedAt;
-    case "did-not-finish":
-      return b.dateDnfed || b.updatedAt;
-    default:
-      return b.dateShelved || b.createdAt;
-  }
 }
 
 const s = StyleSheet.create({

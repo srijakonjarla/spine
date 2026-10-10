@@ -1,15 +1,25 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createEntry } from "@/lib/db";
 import { type CatalogEntry, lookupBook } from "@/lib/catalog";
 import { StarDisplay } from "@/components/StarDisplay";
 import { BookCoverThumb } from "@/components/BookCover";
-import { MoodChip, AllMoodsChip } from "@/components/MoodChip";
 import type { BookEntry } from "@/types";
-import { localDateStr, dateYear } from "@/lib/dates";
+import { localDateStr } from "@/lib/dates";
+import {
+  EMPTY_LIBRARY_FILTERS,
+  hasActiveFilters,
+  libraryFilterOptions,
+  matchesLibraryFilters,
+  shelveFinished,
+  sortBooks,
+  type LibraryFilterState,
+  type LibrarySort,
+} from "@spine/shared";
+import { LibraryControls } from "@/components/library/LibraryControls";
 import ShelfDivider from "@/components/library/ShelfDivider";
 import InlineAdd from "@/components/library/InlineAdd";
 import { LibrarySkeleton } from "@/components/library/LibrarySkeleton";
@@ -18,64 +28,25 @@ import { useBooks } from "@/providers/BooksProvider";
 export default function LibraryPage() {
   const router = useRouter();
   const { books: entries, loading, addBook: addToCache } = useBooks();
-  const [search, setSearch] = useState("");
-  const [activeMood, setActiveMood] = useState<string | null>(null);
-  const [activeGenre, setActiveGenre] = useState<string | null>(null);
+  const [filters, setFilters] = useState<LibraryFilterState>(
+    EMPTY_LIBRARY_FILTERS,
+  );
+  const [sort, setSort] = useState<LibrarySort>("date-desc");
   const [view, setView] = useState<"grid" | "list">("grid");
 
-  const allMoods = useMemo(
-    () => Array.from(new Set(entries.flatMap((e) => e.moodTags))).sort(),
-    [entries],
-  );
-  const allGenres = useMemo(
-    () => Array.from(new Set(entries.flatMap((e) => e.genres))).sort(),
-    [entries],
-  );
+  const options = useMemo(() => libraryFilterOptions(entries), [entries]);
 
-  const matchesFilter = useCallback(
-    (e: BookEntry) => {
-      const q = search.trim().toLowerCase();
-      const matchesSearch =
-        !q ||
-        e.title.toLowerCase().includes(q) ||
-        e.author.toLowerCase().includes(q);
-      const matchesMood = !activeMood || e.moodTags.includes(activeMood);
-      const matchesGenre = !activeGenre || e.genres.includes(activeGenre);
-      return matchesSearch && matchesMood && matchesGenre;
-    },
-    [search, activeMood, activeGenre],
-  );
-
-  const currentlyReading = useMemo(
-    () => entries.filter((e) => e.status === "reading" && matchesFilter(e)),
-    [entries, matchesFilter],
-  );
-  const wantToRead = useMemo(
-    () =>
-      entries.filter((e) => e.status === "want-to-read" && matchesFilter(e)),
-    [entries, matchesFilter],
-  );
-
-  // Finished books grouped by year, descending
-  const yearGroups = useMemo(() => {
-    const finished = entries.filter(
-      (e) => e.status === "finished" && matchesFilter(e),
-    );
-    const yearMap = new Map<number, BookEntry[]>();
-    finished.forEach((b) => {
-      const y = b.dateFinished ? (dateYear(b.dateFinished) ?? 0) : 0;
-      if (!yearMap.has(y)) yearMap.set(y, []);
-      yearMap.get(y)!.push(b);
-    });
-    return Array.from(yearMap.entries())
-      .sort((a, b) => b[0] - a[0])
-      .map(([year, books]) => ({
-        year,
-        books: books.sort((a, b) =>
-          (b.dateFinished ?? "").localeCompare(a.dateFinished ?? ""),
-        ),
-      }));
-  }, [entries, matchesFilter]);
+  const { currentlyReading, wantToRead, finishedShelves } = useMemo(() => {
+    const matching = entries.filter((e) => matchesLibraryFilters(e, filters));
+    const of = (status: BookEntry["status"]) =>
+      matching.filter((e) => e.status === status);
+    return {
+      currentlyReading: sortBooks(of("reading"), sort),
+      wantToRead: sortBooks(of("want-to-read"), sort),
+      finishedShelves: shelveFinished(of("finished"), sort),
+    };
+  }, [entries, filters, sort]);
+  const filtering = hasActiveFilters(filters);
 
   if (loading) return <LibrarySkeleton />;
 
@@ -159,50 +130,14 @@ export default function LibraryPage() {
           </div>
         </div>
 
-        {/* Search + genre filter */}
-        <div className="flex items-center gap-3 mb-4">
-          <input
-            id="library-search"
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="search by title or author..."
-            className="flex-1 underline-input"
-          />
-          {allGenres.length > 0 && (
-            <select
-              id="library-genre-filter"
-              value={activeGenre ?? ""}
-              onChange={(e) => setActiveGenre(e.target.value || null)}
-              className="text-xs bg-transparent border-none outline-none cursor-pointer transition-colors text-fg-faint hover:text-fg-muted"
-            >
-              <option value="">all tags</option>
-              {allGenres.map((g) => (
-                <option key={g} value={g}>
-                  {g}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-
-        {/* Mood filter chips */}
-        {allMoods.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-6">
-            <AllMoodsChip
-              active={!activeMood}
-              onClick={() => setActiveMood(null)}
-            />
-            {allMoods.map((mood) => (
-              <MoodChip
-                key={mood}
-                mood={mood}
-                active={activeMood === mood}
-                onClick={() => setActiveMood(activeMood === mood ? null : mood)}
-              />
-            ))}
-          </div>
-        )}
+        <LibraryControls
+          id="library"
+          filters={filters}
+          setFilters={setFilters}
+          sort={sort}
+          setSort={setSort}
+          options={options}
+        />
 
         <div className="mb-8 pb-8 border-b border-line">
           {/* Currently reading */}
@@ -304,17 +239,28 @@ export default function LibraryPage() {
         </div>
 
         {/* Finished — grouped by year */}
-        {yearGroups.length === 0 && !search && !activeMood && !activeGenre && (
-          <p className="text-xs text-fg-faint">no finished books yet.</p>
+        {finishedShelves.length === 0 && (
+          <p className="text-xs text-fg-faint">
+            {filtering ? "no finished books match." : "no finished books yet."}
+          </p>
         )}
 
-        {yearGroups.map(({ year, books }) => (
-          <div key={year}>
-            <ShelfDivider year={year} count={books.length} />
+        {finishedShelves.map((shelf) => (
+          <div key={shelf.kind === "year" ? shelf.year : shelf.kind}>
+            <ShelfDivider
+              label={
+                shelf.kind === "year"
+                  ? shelf.year
+                  : shelf.kind === "earlier"
+                    ? "earlier"
+                    : "read"
+              }
+              count={shelf.books.length}
+            />
 
             {view === "grid" ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-                {books.map((e) => (
+                {shelf.books.map((e) => (
                   <Link key={e.id} href={`/book/${e.id}`} className="group">
                     <div className="relative mb-2 rounded-lg overflow-hidden group-hover:-translate-y-1 transition-transform h-32.5 shadow-sm">
                       <BookCoverThumb
@@ -350,7 +296,7 @@ export default function LibraryPage() {
               </div>
             ) : (
               <div className="space-y-0.5">
-                {books.map((e) => (
+                {shelf.books.map((e) => (
                   <Link
                     key={e.id}
                     href={`/book/${e.id}`}

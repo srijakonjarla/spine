@@ -1,15 +1,15 @@
 export default function ShelfDivider({
-  year,
+  label,
   count,
 }: {
-  year: number;
+  label: string | number;
   count: number;
 }) {
   return (
     <div className="flex items-center gap-4 my-8">
       <div className="flex-1 h-px bg-[linear-gradient(90deg,transparent,var(--border-light))]" />
       <p className="font-serif text-subhead italic text-fg-heading shrink-0">
-        {year}
+        {label}
         <span className="font-hand text-sm font-normal not-italic ml-3 text-terra">
           · {count} {count === 1 ? "book" : "books"}
         </span>
