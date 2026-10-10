@@ -8,12 +8,14 @@ import {
 } from "react-native";
 import {
   activeFilterCount,
+  clearDropdownFilters,
   LIBRARY_SORT_OPTIONS,
   normalizeMood,
-  RATING_FILTER_OPTIONS,
+  RATING_BUCKETS,
   type LibraryFilterOptions,
   type LibraryFilterState,
   type LibrarySort,
+  type RatingBucket,
 } from "@spine/shared";
 import { GridIcon, ListIcon, SearchIcon } from "@/components/icons";
 import { C } from "@/components/login/tokens";
@@ -170,6 +172,56 @@ function OptionRow<T extends string | number>({
   onChange: (v: T | null) => void;
   allowNone?: boolean;
 }) {
+  return (
+    <ChipRow
+      label={label}
+      options={options}
+      isActive={(v) => v === value}
+      onPress={(v) => onChange(v === value && allowNone ? null : v)}
+    />
+  );
+}
+
+function MultiOptionRow<T extends string | number>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: { value: T; label: string }[];
+  value: T[];
+  onChange: (v: T[]) => void;
+}) {
+  return (
+    <ChipRow
+      label={label}
+      options={options}
+      isActive={(v) => value.includes(v)}
+      onPress={(v) =>
+        onChange(
+          value.includes(v)
+            ? value.filter((x) => x !== v)
+            : options
+                .map((o) => o.value)
+                .filter((x) => x === v || value.includes(x)),
+        )
+      }
+    />
+  );
+}
+
+function ChipRow<T extends string | number>({
+  label,
+  options,
+  isActive,
+  onPress,
+}: {
+  label: string;
+  options: { value: T; label: string }[];
+  isActive: (v: T) => boolean;
+  onPress: (v: T) => void;
+}) {
   if (options.length === 0) return null;
   return (
     <View style={s.optionRow}>
@@ -181,11 +233,11 @@ function OptionRow<T extends string | number>({
         style={s.chipRow}
       >
         {options.map((o) => {
-          const active = value === o.value;
+          const active = isActive(o.value);
           return (
             <Pressable
               key={o.value}
-              onPress={() => onChange(active && allowNone ? null : o.value)}
+              onPress={() => onPress(o.value)}
               style={[s.chip, s.chipAll, active && s.chipAllActive]}
             >
               <Text
@@ -246,40 +298,42 @@ export function FilterPanel({
           />
         </View>
       ) : null}
-      <OptionRow
+      <MultiOptionRow
         label="rating"
-        options={RATING_FILTER_OPTIONS}
-        value={filters.rating}
-        onChange={(v) => set("rating", v)}
+        options={RATING_OPTIONS}
+        value={filters.ratings}
+        onChange={(v) => set("ratings", v)}
       />
-      <OptionRow
+      <MultiOptionRow
         label="genre"
         options={asOptions(options.genres)}
-        value={filters.genre}
-        onChange={(v) => set("genre", v)}
+        value={filters.genres}
+        onChange={(v) => set("genres", v)}
       />
-      <OptionRow
+      <MultiOptionRow
         label="format"
         options={asOptions(options.formats)}
-        value={filters.format}
-        onChange={(v) => set("format", v)}
+        value={filters.formats}
+        onChange={(v) => set("formats", v)}
       />
-      <OptionRow
+      <MultiOptionRow
         label="year finished"
         options={asOptions(options.years)}
-        value={filters.year}
-        onChange={(v) => set("year", v)}
+        value={filters.years}
+        onChange={(v) => set("years", v)}
       />
-      <OptionRow
+      <MultiOptionRow
         label="bookshelf"
         options={asOptions(options.bookshelves)}
-        value={filters.bookshelf}
-        onChange={(v) => set("bookshelf", v)}
+        value={filters.bookshelves}
+        onChange={(v) => set("bookshelves", v)}
       />
       {hasFilters ? (
         <Pressable
           hitSlop={8}
-          onPress={() => setFilters({ ...filters, ...CLEARED })}
+          onPress={() =>
+            setFilters({ ...clearDropdownFilters(filters), mood: null })
+          }
           style={s.clearBtn}
         >
           <Text style={s.clearText}>clear filters</Text>
@@ -289,14 +343,13 @@ export function FilterPanel({
   );
 }
 
-const CLEARED: Partial<LibraryFilterState> = {
-  mood: null,
-  genre: null,
-  rating: null,
-  format: null,
-  year: null,
-  bookshelf: null,
-};
+const RATING_OPTIONS = RATING_BUCKETS.map<{
+  value: RatingBucket;
+  label: string;
+}>((b) => ({
+  value: b,
+  label: b === 0 ? "unrated" : "★".repeat(b),
+}));
 
 const s = StyleSheet.create({
   viewToggle: {

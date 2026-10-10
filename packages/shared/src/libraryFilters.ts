@@ -1,35 +1,42 @@
 import type { BookEntry } from "./types";
 import { dateYear } from "./dates";
 
-export type RatingFilter = "5" | "4+" | "3+" | "unrated";
+/**
+ * Whole-star rating bucket; 0 means unrated. Half stars round down
+ * (3.5★ is in bucket 3), except 0.5★, which counts as 1★.
+ */
+export type RatingBucket = 0 | 1 | 2 | 3 | 4 | 5;
 
 export interface LibraryFilterState {
   search: string;
   mood: string | null;
-  genre: string | null;
-  rating: RatingFilter | null;
-  format: string | null;
+  /** Multi-value filters match books with any of the selected values. */
+  genres: string[];
+  /** Selected rating buckets; empty means any rating. */
+  ratings: RatingBucket[];
+  formats: string[];
   /** Year the book was finished */
-  year: number | null;
-  bookshelf: string | null;
+  years: number[];
+  bookshelves: string[];
 }
 
 export const EMPTY_LIBRARY_FILTERS: LibraryFilterState = {
   search: "",
   mood: null,
-  genre: null,
-  rating: null,
-  format: null,
-  year: null,
-  bookshelf: null,
+  genres: [],
+  ratings: [],
+  formats: [],
+  years: [],
+  bookshelves: [],
 };
 
-export const RATING_FILTER_OPTIONS: { value: RatingFilter; label: string }[] = [
-  { value: "5", label: "★★★★★" },
-  { value: "4+", label: "4★ +" },
-  { value: "3+", label: "3★ +" },
-  { value: "unrated", label: "unrated" },
-];
+/** Rating buckets in display order: 5★ down to 1★, then unrated. */
+export const RATING_BUCKETS: RatingBucket[] = [5, 4, 3, 2, 1, 0];
+
+export function ratingBucket(rating: number): RatingBucket {
+  if (!rating || rating <= 0) return 0;
+  return Math.max(1, Math.min(5, Math.floor(rating))) as RatingBucket;
+}
 
 export type LibrarySort =
   | "date-desc"
@@ -78,6 +85,8 @@ export interface LibraryFilterOptions {
   /** Finish years, most recent first */
   years: number[];
   bookshelves: string[];
+  /** Number of books in each rating bucket */
+  ratingCounts: Record<RatingBucket, number>;
 }
 
 /** Distinct filter values present in the given books. */
@@ -87,7 +96,16 @@ export function libraryFilterOptions(books: BookEntry[]): LibraryFilterOptions {
   const formats = new Set<string>();
   const years = new Set<number>();
   const bookshelves = new Set<string>();
+  const ratingCounts: Record<RatingBucket, number> = {
+    0: 0,
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 0,
+    5: 0,
+  };
   for (const b of books) {
+    ratingCounts[ratingBucket(b.rating)]++;
     (b.moodTags ?? []).forEach((m) => {
       const n = normalizeMood(m);
       if (n) moods.add(n);
@@ -105,20 +123,8 @@ export function libraryFilterOptions(books: BookEntry[]): LibraryFilterOptions {
     formats: [...formats].sort(alpha),
     years: [...years].sort((a, b) => b - a),
     bookshelves: [...bookshelves].sort(alpha),
+    ratingCounts,
   };
-}
-
-function matchesRating(rating: number, filter: RatingFilter): boolean {
-  switch (filter) {
-    case "5":
-      return rating >= 5;
-    case "4+":
-      return rating >= 4;
-    case "3+":
-      return rating >= 3;
-    case "unrated":
-      return !rating;
-  }
 }
 
 export function matchesLibraryFilters(
@@ -134,19 +140,45 @@ export function matchesLibraryFilters(
     return false;
   if (f.mood && !(b.moodTags ?? []).some((m) => normalizeMood(m) === f.mood))
     return false;
-  if (f.genre && !(b.genres ?? []).includes(f.genre)) return false;
-  if (f.rating && !matchesRating(b.rating ?? 0, f.rating)) return false;
-  if (f.format && b.format !== f.format) return false;
-  if (f.year != null && dateYear(b.dateFinished ?? "") !== f.year) return false;
-  if (f.bookshelf && !(b.bookshelves ?? []).includes(f.bookshelf)) return false;
+  if (
+    f.genres.length > 0 &&
+    !(b.genres ?? []).some((g) => f.genres.includes(g))
+  )
+    return false;
+  if (f.ratings.length > 0 && !f.ratings.includes(ratingBucket(b.rating)))
+    return false;
+  if (f.formats.length > 0 && !f.formats.includes(b.format)) return false;
+  if (f.years.length > 0) {
+    const y = dateYear(b.dateFinished ?? "");
+    if (y == null || !f.years.includes(y)) return false;
+  }
+  if (
+    f.bookshelves.length > 0 &&
+    !(b.bookshelves ?? []).some((s) => f.bookshelves.includes(s))
+  )
+    return false;
   return true;
 }
 
 /** Number of active filters, excluding search and mood (which have their own UI). */
 export function activeFilterCount(f: LibraryFilterState): number {
-  return [f.genre, f.rating, f.format, f.year, f.bookshelf].filter(
-    (v) => v != null,
+  return [f.ratings, f.genres, f.formats, f.years, f.bookshelves].filter(
+    (v) => v.length > 0,
   ).length;
+}
+
+/** Clears the dropdown filters, keeping search and mood. */
+export function clearDropdownFilters(
+  f: LibraryFilterState,
+): LibraryFilterState {
+  return {
+    ...f,
+    ratings: [],
+    genres: [],
+    formats: [],
+    years: [],
+    bookshelves: [],
+  };
 }
 
 export function hasActiveFilters(f: LibraryFilterState): boolean {
