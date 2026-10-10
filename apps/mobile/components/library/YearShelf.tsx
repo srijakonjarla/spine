@@ -1,15 +1,13 @@
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import type { BookEntry } from "@spine/shared";
+import type { FinishedShelf } from "@spine/shared";
 import { BookCoverThumb } from "./BookCoverThumb";
 import { BookRow } from "./BookRow";
 import { C } from "@/components/login/tokens";
 
 const SERIF = Platform.select({ ios: "Georgia", default: "serif" });
 
-export type ShelfGroup =
-  | { kind: "year"; year: number; books: BookEntry[] }
-  | { kind: "earlier"; books: BookEntry[] };
+export type ShelfGroup = FinishedShelf;
 
 export function YearShelf({
   group,
@@ -23,7 +21,12 @@ export function YearShelf({
   tileHeight: number;
 }) {
   const router = useRouter();
-  const label = group.kind === "year" ? group.year : "earlier";
+  const label =
+    group.kind === "year"
+      ? group.year
+      : group.kind === "earlier"
+        ? "earlier"
+        : "read";
   return (
     <View style={s.yearBlock}>
       <View style={s.shelfDivider}>

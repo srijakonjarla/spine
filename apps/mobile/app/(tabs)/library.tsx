@@ -12,17 +12,27 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { dateYear, type BookEntry } from "@spine/shared";
+import {
+  activeFilterCount,
+  EMPTY_LIBRARY_FILTERS,
+  hasActiveFilters,
+  libraryFilterOptions,
+  matchesLibraryFilters,
+  shelveFinished,
+  sortBooks,
+  type BookEntry,
+  type LibraryFilterState,
+  type LibrarySort,
+} from "@spine/shared";
 import { TopBar, homeStyles as s } from "@/components/home";
 import { BookRow } from "@/components/library/BookRow";
 import { InlineAdd } from "@/components/library/InlineAdd";
 import {
-  MoodChipRow,
+  FilterPanel,
   SearchBar,
   ViewToggle,
-  normalizeMood,
 } from "@/components/library/LibraryFilters";
-import { YearShelf, type ShelfGroup } from "@/components/library/YearShelf";
+import { YearShelf } from "@/components/library/YearShelf";
 import { C } from "@/components/login/tokens";
 import { useBooks } from "@/lib/booksContext";
 import { createEntry, lookupBook, type CatalogEntry } from "@/lib/library";
@@ -52,34 +62,14 @@ export default function LibraryTab() {
   const { width } = useWindowDimensions();
   const router = useRouter();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [search, setSearch] = useState("");
-  const [activeMood, setActiveMood] = useState<string | null>(null);
-  const [tagsOpen, setTagsOpen] = useState(true);
-
-  const allMoods = useMemo(
-    () =>
-      Array.from(
-        new Set(entries.flatMap((e) => (e.moodTags ?? []).map(normalizeMood))),
-      )
-        .filter(Boolean)
-        .sort(),
-    [entries],
+  const [filters, setFilters] = useState<LibraryFilterState>(
+    EMPTY_LIBRARY_FILTERS,
   );
+  const [sort, setSort] = useState<LibrarySort>("date-desc");
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const matchesFilter = useCallback(
-    (e: BookEntry) => {
-      const q = search.trim().toLowerCase();
-      const matchesSearch =
-        !q ||
-        e.title.toLowerCase().includes(q) ||
-        (e.author ?? "").toLowerCase().includes(q);
-      const matchesMood =
-        !activeMood ||
-        (e.moodTags ?? []).some((m) => normalizeMood(m) === activeMood);
-      return matchesSearch && matchesMood;
-    },
-    [search, activeMood],
-  );
+  const options = useMemo(() => libraryFilterOptions(entries), [entries]);
+  const filtering = hasActiveFilters(filters);
 
   const handleAdd = useCallback(
     async (
@@ -106,56 +96,23 @@ export default function LibraryTab() {
     [addBook, removeBook, refresh],
   );
 
-  const currentlyReading = useMemo(
-    () => entries.filter((e) => e.status === "reading" && matchesFilter(e)),
-    [entries, matchesFilter],
-  );
-  const wantToRead = useMemo(
-    () =>
-      entries.filter((e) => e.status === "want-to-read" && matchesFilter(e)),
-    [entries, matchesFilter],
-  );
-
-  const dnf = useMemo(
-    () =>
-      entries.filter((e) => e.status === "did-not-finish" && matchesFilter(e)),
-    [entries, matchesFilter],
-  );
-
-  const yearGroups = useMemo<ShelfGroup[]>(() => {
-    const finished = entries.filter(
-      (e) => e.status === "finished" && matchesFilter(e),
-    );
-    const yearMap = new Map<number, BookEntry[]>();
-    const earlier: BookEntry[] = [];
-    finished.forEach((b) => {
-      const y = b.dateFinished ? dateYear(b.dateFinished) : null;
-      if (y == null) {
-        earlier.push(b);
-        return;
-      }
-      if (!yearMap.has(y)) yearMap.set(y, []);
-      yearMap.get(y)!.push(b);
-    });
-    const groups: ShelfGroup[] = Array.from(yearMap.entries())
-      .sort((a, b) => b[0] - a[0])
-      .map(([year, books]) => ({
-        kind: "year",
-        year,
-        books: books.sort((a, b) =>
-          (b.dateFinished ?? "").localeCompare(a.dateFinished ?? ""),
-        ),
-      }));
-    if (earlier.length > 0) {
-      groups.push({
-        kind: "earlier",
-        books: earlier.sort((a, b) =>
-          (a.title ?? "").localeCompare(b.title ?? ""),
-        ),
-      });
-    }
-    return groups;
-  }, [entries, matchesFilter]);
+  const { currentlyReading, wantToRead, dnf, yearGroups } = useMemo(() => {
+    const matching = entries.filter((e) => matchesLibraryFilters(e, filters));
+    const of = (status: BookEntry["status"]) =>
+      sortBooks(
+        matching.filter((e) => e.status === status),
+        sort,
+      );
+    return {
+      currentlyReading: of("reading"),
+      wantToRead: of("want-to-read"),
+      dnf: of("did-not-finish"),
+      yearGroups: shelveFinished(
+        matching.filter((e) => e.status === "finished"),
+        sort,
+      ),
+    };
+  }, [entries, filters, sort]);
 
   // Grid sizing: 3 cols on phones, 4 on wider screens.
   const cols = width >= 700 ? 4 : 3;
@@ -205,17 +162,19 @@ export default function LibraryTab() {
         </ScrollView>
 
         <SearchBar
-          search={search}
-          setSearch={setSearch}
-          hasMoods={allMoods.length > 0}
-          tagsOpen={tagsOpen}
-          setTagsOpen={setTagsOpen}
+          search={filters.search}
+          setSearch={(search) => setFilters({ ...filters, search })}
+          filterCount={activeFilterCount(filters) + (filters.mood ? 1 : 0)}
+          filtersOpen={filtersOpen}
+          setFiltersOpen={setFiltersOpen}
         />
-        {allMoods.length > 0 && tagsOpen ? (
-          <MoodChipRow
-            moods={allMoods}
-            activeMood={activeMood}
-            setActiveMood={setActiveMood}
+        {filtersOpen ? (
+          <FilterPanel
+            filters={filters}
+            setFilters={setFilters}
+            sort={sort}
+            setSort={setSort}
+            options={options}
           />
         ) : null}
 
@@ -280,11 +239,15 @@ export default function LibraryTab() {
             </View>
 
             {yearGroups.length === 0 ? (
-              <Text style={local.emptyHint}>no finished books yet.</Text>
+              <Text style={local.emptyHint}>
+                {filtering
+                  ? "no finished books match."
+                  : "no finished books yet."}
+              </Text>
             ) : (
               yearGroups.map((group) => (
                 <YearShelf
-                  key={group.kind === "year" ? group.year : "earlier"}
+                  key={group.kind === "year" ? group.year : group.kind}
                   group={group}
                   viewMode={viewMode}
                   tileWidth={tileWidth}

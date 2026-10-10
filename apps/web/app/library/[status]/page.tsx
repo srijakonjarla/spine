@@ -11,11 +11,20 @@ import { CatalogSearch } from "@/components/CatalogSearch";
 import { STATUS_LABEL } from "@/lib/statusMeta";
 import { StarDisplay } from "@/components/StarDisplay";
 import { BookCoverThumb } from "@/components/BookCover";
-import { MoodChip, AllMoodsChip } from "@/components/MoodChip";
 import { EmptyState } from "@/components/EmptyState";
 import { SkeletonRoot, SkeletonGrid } from "@/components/Skeleton";
 import type { BookEntry } from "@/types";
 import { localDateStr } from "@/lib/dates";
+import {
+  EMPTY_LIBRARY_FILTERS,
+  hasActiveFilters,
+  libraryFilterOptions,
+  matchesLibraryFilters,
+  sortBooks,
+  type LibraryFilterState,
+  type LibrarySort,
+} from "@spine/shared";
+import { LibraryControls } from "@/components/library/LibraryControls";
 
 const VALID_STATUSES = new Set([
   "reading",
@@ -35,9 +44,11 @@ export default function StatusCatalogPage() {
   } = useEntriesByStatus(isValidStatus ? status : undefined);
   const entries = fetched ?? [];
   const loading = isLoading;
-  const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<LibraryFilterState>(
+    EMPTY_LIBRARY_FILTERS,
+  );
+  const [sort, setSort] = useState<LibrarySort>("date-desc");
   const [view, setView] = useState<"grid" | "list">("grid");
-  const [activeMood, setActiveMood] = useState<string | null>(null);
   const [addValue, setAddValue] = useState("");
   const [adding, setAdding] = useState(false);
 
@@ -105,20 +116,13 @@ export default function StatusCatalogPage() {
     }
   };
 
-  const allMoods = Array.from(
-    new Set(entries.flatMap((e) => e.moodTags)),
-  ).sort();
-
+  const options = libraryFilterOptions(entries);
   const upNext = entries.filter((e) => e.upNext);
-
-  const filtered = entries.filter((e) => {
-    const matchSearch =
-      !search.trim() ||
-      e.title.toLowerCase().includes(search.toLowerCase()) ||
-      e.author.toLowerCase().includes(search.toLowerCase());
-    const matchMood = !activeMood || e.moodTags.includes(activeMood);
-    return matchSearch && matchMood;
-  });
+  const filtering = hasActiveFilters(filters);
+  const filtered = sortBooks(
+    entries.filter((e) => matchesLibraryFilters(e, filters)),
+    sort,
+  );
 
   return (
     <div className="page">
@@ -162,39 +166,18 @@ export default function StatusCatalogPage() {
           {addValue.trim() && !adding && <p className="hint-text">↵ to add</p>}
         </div>
 
-        {/* Search */}
-        <div className="mb-6">
-          <input
-            id="library-status-search"
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="search by title or author..."
-            className="underline-input"
-            disabled={loading}
-          />
-        </div>
-
-        {/* Mood filter chips */}
-        {allMoods.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-8">
-            <AllMoodsChip
-              active={!activeMood}
-              onClick={() => setActiveMood(null)}
-            />
-            {allMoods.map((mood) => (
-              <MoodChip
-                key={mood}
-                mood={mood}
-                active={activeMood === mood}
-                onClick={() => setActiveMood(activeMood === mood ? null : mood)}
-              />
-            ))}
-          </div>
-        )}
+        <LibraryControls
+          id="library-status"
+          filters={filters}
+          setFilters={setFilters}
+          sort={sort}
+          setSort={setSort}
+          options={options}
+          disabled={loading}
+        />
 
         {/* Up next pinned section */}
-        {!loading && upNext.length > 0 && (
+        {!loading && upNext.length > 0 && !filtering && (
           <div className="mb-8 pb-8 border-b border-line">
             <p className="section-label mb-3">up next</p>
             <div className="space-y-0.5">
@@ -232,7 +215,9 @@ export default function StatusCatalogPage() {
         )}
 
         {!loading && filtered.length === 0 && (
-          <EmptyState message="no books found." />
+          <EmptyState
+            message={filtering ? "no books match." : "no books found."}
+          />
         )}
 
         {!loading && filtered.length > 0 && view === "grid" && (

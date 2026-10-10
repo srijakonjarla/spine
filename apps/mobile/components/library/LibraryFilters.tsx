@@ -6,8 +6,19 @@ import {
   TextInput,
   View,
 } from "react-native";
+import {
+  activeFilterCount,
+  LIBRARY_SORT_OPTIONS,
+  normalizeMood,
+  RATING_FILTER_OPTIONS,
+  type LibraryFilterOptions,
+  type LibraryFilterState,
+  type LibrarySort,
+} from "@spine/shared";
 import { GridIcon, ListIcon, SearchIcon } from "@/components/icons";
 import { C } from "@/components/login/tokens";
+
+export { normalizeMood };
 
 const MOOD_COLOR: Record<string, string> = {
   cozy: "#c97b5a",
@@ -20,10 +31,6 @@ const MOOD_COLOR: Record<string, string> = {
   "heart-wrenching": "#be185d",
   "thought-provoking": "#2d1b2e",
 };
-
-export function normalizeMood(mood: string): string {
-  return mood.trim().toLowerCase().replace(/\s+/g, "-");
-}
 
 export function moodColor(mood: string): string {
   return MOOD_COLOR[normalizeMood(mood)] ?? "#8a7a6a";
@@ -59,15 +66,15 @@ export function ViewToggle({
 export function SearchBar({
   search,
   setSearch,
-  hasMoods,
-  tagsOpen,
-  setTagsOpen,
+  filterCount,
+  filtersOpen,
+  setFiltersOpen,
 }: {
   search: string;
   setSearch: (v: string) => void;
-  hasMoods: boolean;
-  tagsOpen: boolean;
-  setTagsOpen: (fn: (v: boolean) => boolean) => void;
+  filterCount: number;
+  filtersOpen: boolean;
+  setFiltersOpen: (fn: (v: boolean) => boolean) => void;
 }) {
   return (
     <View style={s.searchRow}>
@@ -86,11 +93,18 @@ export function SearchBar({
         <Pressable hitSlop={8} onPress={() => setSearch("")}>
           <Text style={s.searchClear}>×</Text>
         </Pressable>
-      ) : hasMoods ? (
-        <Pressable hitSlop={8} onPress={() => setTagsOpen((v) => !v)}>
-          <Text style={s.tagsToggle}>tags {tagsOpen ? "▾" : "▸"}</Text>
-        </Pressable>
       ) : null}
+      <Pressable
+        hitSlop={8}
+        onPress={() => setFiltersOpen((v) => !v)}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: filtersOpen }}
+      >
+        <Text style={[s.tagsToggle, filterCount > 0 && s.tagsToggleActive]}>
+          filters{filterCount > 0 ? ` · ${filterCount}` : ""}{" "}
+          {filtersOpen ? "▾" : "▸"}
+        </Text>
+      </Pressable>
     </View>
   );
 }
@@ -143,6 +157,147 @@ export function MoodChipRow({
   );
 }
 
+function OptionRow<T extends string | number>({
+  label,
+  options,
+  value,
+  onChange,
+  allowNone = true,
+}: {
+  label: string;
+  options: { value: T; label: string }[];
+  value: T | null;
+  onChange: (v: T | null) => void;
+  allowNone?: boolean;
+}) {
+  if (options.length === 0) return null;
+  return (
+    <View style={s.optionRow}>
+      <Text style={s.optionLabel}>{label}</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={s.chipRowContent}
+        style={s.chipRow}
+      >
+        {options.map((o) => {
+          const active = value === o.value;
+          return (
+            <Pressable
+              key={o.value}
+              onPress={() => onChange(active && allowNone ? null : o.value)}
+              style={[s.chip, s.chipAll, active && s.chipAllActive]}
+            >
+              <Text
+                style={[
+                  s.chipText,
+                  active ? s.chipAllActiveText : { color: C.fgMuted },
+                ]}
+              >
+                {o.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
+
+const asOptions = <T extends string | number>(vs: T[]) =>
+  vs.map((v) => ({ value: v, label: String(v) }));
+
+/** Expandable sort + filter panel shown under the search bar. */
+export function FilterPanel({
+  filters,
+  setFilters,
+  sort,
+  setSort,
+  options,
+}: {
+  filters: LibraryFilterState;
+  setFilters: (f: LibraryFilterState) => void;
+  sort: LibrarySort;
+  setSort: (s: LibrarySort) => void;
+  options: LibraryFilterOptions;
+}) {
+  const set = <K extends keyof LibraryFilterState>(
+    key: K,
+    value: LibraryFilterState[K],
+  ) => setFilters({ ...filters, [key]: value });
+  const hasFilters = activeFilterCount(filters) > 0 || !!filters.mood;
+
+  return (
+    <View style={s.panel}>
+      <OptionRow
+        label="sort"
+        options={LIBRARY_SORT_OPTIONS}
+        value={sort}
+        onChange={(v) => v && setSort(v)}
+        allowNone={false}
+      />
+      {options.moods.length > 0 ? (
+        <View style={s.optionRow}>
+          <Text style={s.optionLabel}>mood</Text>
+          <MoodChipRow
+            moods={options.moods}
+            activeMood={filters.mood}
+            setActiveMood={(m) => set("mood", m)}
+          />
+        </View>
+      ) : null}
+      <OptionRow
+        label="rating"
+        options={RATING_FILTER_OPTIONS}
+        value={filters.rating}
+        onChange={(v) => set("rating", v)}
+      />
+      <OptionRow
+        label="genre"
+        options={asOptions(options.genres)}
+        value={filters.genre}
+        onChange={(v) => set("genre", v)}
+      />
+      <OptionRow
+        label="format"
+        options={asOptions(options.formats)}
+        value={filters.format}
+        onChange={(v) => set("format", v)}
+      />
+      <OptionRow
+        label="year finished"
+        options={asOptions(options.years)}
+        value={filters.year}
+        onChange={(v) => set("year", v)}
+      />
+      <OptionRow
+        label="bookshelf"
+        options={asOptions(options.bookshelves)}
+        value={filters.bookshelf}
+        onChange={(v) => set("bookshelf", v)}
+      />
+      {hasFilters ? (
+        <Pressable
+          hitSlop={8}
+          onPress={() => setFilters({ ...filters, ...CLEARED })}
+          style={s.clearBtn}
+        >
+          <Text style={s.clearText}>clear filters</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+const CLEARED: Partial<LibraryFilterState> = {
+  mood: null,
+  genre: null,
+  rating: null,
+  format: null,
+  year: null,
+  bookshelf: null,
+};
+
 const s = StyleSheet.create({
   viewToggle: {
     flexDirection: "row",
@@ -178,8 +333,20 @@ const s = StyleSheet.create({
     lineHeight: 20,
   },
   tagsToggle: { fontSize: 12, color: C.fgFaint, letterSpacing: 0.3 },
+  tagsToggleActive: { color: C.terra, fontWeight: "600" },
 
-  chipRow: { marginBottom: 18 },
+  panel: { marginBottom: 18, gap: 12 },
+  optionRow: { gap: 6 },
+  optionLabel: {
+    fontSize: 10,
+    color: C.fgFaint,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+  },
+  clearBtn: { alignSelf: "flex-start" },
+  clearText: { fontSize: 12, color: C.terra },
+
+  chipRow: { flexGrow: 0 },
   chipRowContent: { gap: 8, paddingVertical: 2, paddingRight: 24 },
   chip: {
     paddingHorizontal: 12,
