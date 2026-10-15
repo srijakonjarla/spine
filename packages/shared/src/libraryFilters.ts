@@ -1,5 +1,6 @@
 import type { BookEntry } from "./types";
 import { dateYear } from "./dates";
+import { bookGenres } from "./genres";
 
 /**
  * Whole-star rating bucket; 0 means unrated. Half stars round down
@@ -110,7 +111,7 @@ export function libraryFilterOptions(books: BookEntry[]): LibraryFilterOptions {
       const n = normalizeMood(m);
       if (n) moods.add(n);
     });
-    (b.genres ?? []).forEach((g) => g && genres.add(g));
+    bookGenres(b).forEach((g) => genres.add(g));
     if (b.format) formats.add(b.format);
     const y = b.dateFinished ? dateYear(b.dateFinished) : null;
     if (y != null) years.add(y);
@@ -140,10 +141,7 @@ export function matchesLibraryFilters(
     return false;
   if (f.mood && !(b.moodTags ?? []).some((m) => normalizeMood(m) === f.mood))
     return false;
-  if (
-    f.genres.length > 0 &&
-    !(b.genres ?? []).some((g) => f.genres.includes(g))
-  )
+  if (f.genres.length > 0 && !bookGenres(b).some((g) => f.genres.includes(g)))
     return false;
   if (f.ratings.length > 0 && !f.ratings.includes(ratingBucket(b.rating)))
     return false;
@@ -199,6 +197,14 @@ export function shelfDate(b: BookEntry): string {
   }
 }
 
+/**
+ * When a book was shelved. Most older want-to-read books have no
+ * date_shelved, so fall back to when the book was added.
+ */
+function shelvedDate(b: BookEntry): string {
+  return b.dateShelved || b.createdAt || "";
+}
+
 /** Returns a new, sorted array. Ties fall back to title. */
 export function sortBooks(books: BookEntry[], sort: LibrarySort): BookEntry[] {
   const byTitle = (a: BookEntry, b: BookEntry) =>
@@ -217,9 +223,9 @@ export function sortBooks(books: BookEntry[], sort: LibrarySort): BookEntry[] {
       case "read-asc":
         return byDate(a.dateFinished, b.dateFinished, 1);
       case "shelved-desc":
-        return byDate(a.dateShelved, b.dateShelved, -1);
+        return byDate(shelvedDate(a), shelvedDate(b), -1);
       case "shelved-asc":
-        return byDate(a.dateShelved, b.dateShelved, 1);
+        return byDate(shelvedDate(a), shelvedDate(b), 1);
       case "title":
         return 0;
       case "author":
