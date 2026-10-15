@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -12,6 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { deleteAccount } from "@/lib/account";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { C, SERIF } from "@/components/login/tokens";
@@ -206,6 +208,44 @@ export default function ProfileScreen() {
     router.replace("/login");
   };
 
+  const [deleting, setDeleting] = useState(false);
+  const runDelete = async () => {
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      router.replace("/login");
+    } catch {
+      setDeleting(false);
+      Alert.alert("couldn't delete your account", "try again later.");
+    }
+  };
+  // Two steps so it can't happen from a stray tap.
+  const handleDeleteAccount = () =>
+    Alert.alert(
+      "delete account?",
+      "this permanently deletes your account and everything in it — books, notes, quotes, lists, goals. it can't be undone.",
+      [
+        { text: "cancel", style: "cancel" },
+        {
+          text: "continue",
+          style: "destructive",
+          onPress: () =>
+            Alert.alert(
+              "are you sure?",
+              `delete ${email ?? "this account"} forever?`,
+              [
+                { text: "keep my account", style: "cancel" },
+                {
+                  text: "delete forever",
+                  style: "destructive",
+                  onPress: runDelete,
+                },
+              ],
+            ),
+        },
+      ],
+    );
+
   return (
     <SafeAreaView style={s.safe} edges={["top"]}>
       <View style={s.topBar}>
@@ -346,6 +386,18 @@ export default function ProfileScreen() {
                 <Text style={local.signOutText}>sign out</Text>
               </Pressable>
             </View>
+            <Pressable
+              onPress={handleDeleteAccount}
+              disabled={deleting}
+              hitSlop={6}
+              style={local.deleteBtn}
+            >
+              {deleting ? (
+                <ActivityIndicator color={C.danger} />
+              ) : (
+                <Text style={local.deleteText}>delete account</Text>
+              )}
+            </Pressable>
           </Section>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -455,6 +507,8 @@ const local = StyleSheet.create({
     borderColor: C.line,
   },
   signOutText: { color: C.fgMid, fontSize: 13, letterSpacing: 0.3 },
+  deleteBtn: { alignSelf: "flex-start", marginTop: 20, paddingVertical: 6 },
+  deleteText: { color: C.danger, fontSize: 13, letterSpacing: 0.3 },
   pointerText: {
     fontSize: 13,
     color: C.fgMid,

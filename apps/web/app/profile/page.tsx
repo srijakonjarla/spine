@@ -12,6 +12,7 @@ import { Section } from "@/components/profile/Section";
 import { GoodreadsImport } from "@/components/profile/GoodreadsImport";
 import { EnrichLibrary } from "@/components/profile/EnrichLibrary";
 import { InviteFriend } from "@/components/profile/InviteFriend";
+import { DeleteAccount } from "@/components/profile/DeleteAccount";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function ProfilePage() {
@@ -297,6 +298,9 @@ export default function ProfilePage() {
             >
               sign out
             </button>
+            <div className="pt-2">
+              <DeleteAccount />
+            </div>
           </div>
         </Section>
       </div>

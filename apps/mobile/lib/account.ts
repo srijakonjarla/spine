@@ -1,3 +1,4 @@
+import { apiFetch } from "./api";
 import { supabase } from "./supabase";
 
 // Account lifecycle helpers — mirrors apps/web/app/lib/auth.ts and the
@@ -95,4 +96,13 @@ export async function claimUsername(username: string) {
       throw new Error(USERNAME_RULES);
     throw error;
   }
+}
+
+/**
+ * Permanently deletes the account and all of its data server-side, then
+ * clears the local session (the server one is already gone).
+ */
+export async function deleteAccount(): Promise<void> {
+  await apiFetch("/api/account", { method: "DELETE" });
+  await supabase.auth.signOut({ scope: "local" });
 }

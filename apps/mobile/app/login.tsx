@@ -27,6 +27,7 @@ import {
   FooterLink,
   FormCover,
   GoldSeal,
+  AppleButton,
   GoogleButton,
   LandingCover,
   NameField,
@@ -58,7 +59,7 @@ const HEADLINES: Record<
 
 export default function Login() {
   const router = useRouter();
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle, signInWithApple } = useAuth();
   const { height: screenHeight } = useWindowDimensions();
 
   const [step, setStep] = useState<Step>("landing");
@@ -198,6 +199,20 @@ export default function Login() {
     }
   }
 
+  async function handleAppleSignIn() {
+    setBusy(true);
+    setError("");
+    try {
+      const ok = await signInWithApple();
+      // Same as Google: the index gate sends new users to pick a username.
+      if (ok) router.replace("/");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "apple sign-in failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleGoogleSignIn() {
     setBusy(true);
     setError("");
@@ -274,6 +289,7 @@ export default function Login() {
 
             {step === "login" && (
               <View style={styles.formBlock}>
+                <AppleButton busy={busy} onPress={handleAppleSignIn} />
                 <GoogleButton busy={busy} onPress={handleGoogleSignIn} />
 
                 <Divider />
@@ -313,6 +329,7 @@ export default function Login() {
 
             {step === "signup" && (
               <View style={styles.formBlock}>
+                <AppleButton busy={busy} onPress={handleAppleSignIn} />
                 <GoogleButton busy={busy} onPress={handleGoogleSignIn} />
 
                 <Divider />

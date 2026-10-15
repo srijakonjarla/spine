@@ -122,8 +122,10 @@ export default function PrivacyPage() {
         <Section title="your data, your rights">
           <p>
             you can edit or delete any entry, quote, or book at any time from
-            within spine. if you would like to export everything you have
-            logged, or delete your account entirely, send us a note at the
+            within spine. to delete your account and everything in it, go to
+            profile → delete account (on the web or in the app); deletion is
+            immediate and permanent. if you would like an export of everything
+            you have logged, or can&apos;t sign in, send us a note at the
             address below and we will take care of it.
           </p>
         </Section>
