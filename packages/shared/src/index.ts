@@ -10,3 +10,4 @@ export * from "./rereads";
 export * from "./progress";
 export * from "./queries";
 export * from "./libraryFilters";
+export * from "./genres";
